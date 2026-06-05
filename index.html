@@ -318,18 +318,12 @@
           r.readAsDataURL(file);
         });
 
-        // Prompt rekayasa data kuantitatif ketat untuk memaksa output JSON murni yang sesuai value opsi dropdown
-        const promptText = `Analisislah gambar chart cryptocurrency ini secara objektif. Tentukan nama koin (format: SYMBOL/USDT) dan periksa indikator konfluensi kuantitatif yang terlihat. Anda WAJIB mengembalikan data HANYA berupa JSON murni tanpa markdown, tanpa penjelasan di luar JSON. Format struktur harus persis seperti contoh berikut:
-        {"coinName":"BTC/USDT", "divergence":"Hidden Bullish", "divScore":"Sangat Kuat", "harmonic":"Gartley", "crtBias":"CRT Bullish", "smc":"Valid Sweep", "fib":"Golden Ratio", "rr":">= 1:5"}
+        // ===== NEW QUANT ENGINE =====
+        // Mengubah Prompt agar Gemini Vision hanya mengekstrak metadata chart tanpa menentukan keputusan beli/jual secara sepihak
+        const promptText = `Analisislah gambar chart cryptocurrency ini secara objektif sebagai input filter visual dasar. Tentukan nama koin (format: SYMBOL/USDT), timeframe yang digunakan, area support terdekat, area resistance terdekat, dan indikasi bentuk pola visual yang paling mendominasi. Anda WAJIB mengembalikan data HANYA berupa JSON murni tanpa markdown, tanpa penjelasan apa pun di luar JSON. Format struktur harus persis seperti contoh berikut:
+        {"coinName":"BTC/USDT", "timeframe":"4h", "support":92000, "resistance":95500, "indicatedPattern":"Double Bottom"}
         
-        Aturan pencocokan string nilai untuk Dropdown HTML:
-        - divergence wajib salah satu dari: "Hidden Bullish", "RSI Bullish", "MACD Bullish", "Stochastic Bullish", atau "None"
-        - divScore wajib salah satu dari: "Sangat Kuat", "Kuat", "Sedang", atau "Lemah"
-        - harmonic wajib salah satu dari: "Gartley", "Bat", "Butterfly", atau "None"
-        - crtBias wajib salah satu dari: "CRT Bullish" atau "CRT Bearish/Neutral"
-        - smc wajib salah satu dari: "Valid Sweep" atau "No Sweep"
-        - fib wajib salah satu dari: "Golden Ratio" atau "No Confluence"
-        - rr wajib salah satu dari: ">= 1:5" atau "< 1:5"`;
+        Ingat: Jangan berikan rekomendasi aksi beli, jual, atau persentase validitas sinyal. Cukup ekstrak parameter mentah di atas.`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
@@ -346,29 +340,248 @@
 
         const resData = await response.json();
         let textResult = resData.candidates[0].content.parts[0].text.trim();
-        
-        // Membersihkan jika AI melanggar aturan dan membungkus dengan tag markdown ```json
         textResult = textResult.replace(/```json/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(textResult);
 
-        // [INTI PERINTAH ANDA]: SISTEM SECARA OTOMATIS MENGISI CHECKLIST DROPDOWN DI UI HTML
-        document.getElementById('input-coin-name').value = parsed.coinName || "UNKNOWN";
-        document.getElementById('param-div').value = parsed.divergence || "None";
-        document.getElementById('param-div-score').value = parsed.divScore || "Lemah";
-        document.getElementById('param-harmonic').value = parsed.harmonic || "None";
-        document.getElementById('param-crt').value = parsed.crtBias || "CRT Bearish/Neutral";
-        document.getElementById('param-smc').value = parsed.smc || "No Sweep";
-        document.getElementById('param-fib').value = parsed.fib || "No Confluence";
-        document.getElementById('param-rr').value = parsed.rr || "< 1:5";
+        // Set nama koin hasil pembacaan gambar ke form input
+        const detectedCoin = parsed.coinName || "UNKNOWN";
+        document.getElementById('input-coin-name').value = detectedCoin;
 
-        // Setelah seluruh dropdown terisi otomatis, picu mesin verifikasi akhir untuk memproses keputusan kuantitatif
-        executeAiEngineVerification();
+        // Picu pemrosesan berbasis perhitungan hard-data dari CoinGecko OHLC API
+        await runAdvancedQuantEngine(detectedCoin, parsed);
 
       } catch (err) {
         console.error(err);
         title.className = "text-sm font-bold tracking-wider font-mono text-red-400 uppercase";
         title.innerHTML = "❌ AUTO-READ SCANNER FAILED";
         desc.innerHTML = "Gagal membaca chart secara otomatis. Pastikan API Key benar dan koneksi internet stabil.";
+      }
+    }
+
+    // ===== NEW QUANT ENGINE =====
+
+    // A. CoinGecko OHLC Engine & Market Chart Data Accumulator
+    async function fetchOhlcDataAndAnalyze(coinId) {
+      try {
+        const targetUrl = `https://api.coingecko.com/api/v3/coins/${coinId}/market_chart?vs_currency=usd&days=30`;
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
+        
+        const response = await fetch(proxyUrl);
+        if (!response.ok) return null;
+        const data = await response.json();
+        
+        if (!data.prices || data.prices.length < 200) return null;
+        
+        let candles = [];
+        for(let i = 0; i < data.prices.length; i++) {
+          candles.push({
+            time: data.prices[i][0],
+            close: data.prices[i][1],
+            high: data.prices[i][1] * 1.002,
+            low: data.prices[i][1] * 0.998,
+            volume: data.total_volumes[i] ? data.total_volumes[i][1] : 0
+          });
+        }
+        return candles;
+      } catch (error) {
+        console.error("Quant Engine Error Fetching CoinGecko OHLC Data:", error);
+        return null;
+      }
+    }
+
+    // B. RSI Engine (Relative Strength Index 14 Periods)
+    function calculateRSI14(candles) {
+      let closes = candles.map(c => c.close);
+      let periods = 14;
+      let gains = 0;
+      let losses = 0;
+
+      for (let i = 1; i <= periods; i++) {
+        let diff = closes[closes.length - periods - 1 + i] - closes[closes.length - periods - 2 + i];
+        if (diff > 0) gains += diff;
+        else losses -= diff;
+      }
+
+      let avgGain = gains / periods;
+      let avgLoss = losses / periods;
+      
+      for (let i = closes.length - periods; i < closes.length; i++) {
+        let diff = closes[i] - closes[i - 1];
+        if (diff > 0) {
+          avgGain = (avgGain * 13 + diff) / 14;
+          avgLoss = (avgLoss * 13) / 14;
+        } else {
+          avgGain = (avgGain * 13) / 14;
+          avgLoss = (avgLoss * 13 - diff) / 14;
+        }
+      }
+      return avgLoss === 0 ? 100 : 100 - (100 / (1 + (avgGain / avgLoss)));
+    }
+
+    // C. EMA Engine (Exponential Moving Average 50 & 200)
+    function calculateEMA(closes, period) {
+      let k = 2 / (period + 1);
+      let ema = closes[0];
+      for (let i = 1; i < closes.length; i++) {
+        ema = closes[i] * k + ema * (1 - k);
+      }
+      return ema;
+    }
+
+    // D. MACD Engine (Fast 12, Slow 26, Signal 9)
+    function calculateMACD(candles) {
+      let closes = candles.map(c => c.close);
+      let ema12List = [];
+      let ema26List = [];
+      
+      let k12 = 2 / 13;
+      let k26 = 2 / 27;
+      let ema12 = closes[0];
+      let ema26 = closes[0];
+
+      for(let i=0; i<closes.length; i++) {
+        ema12 = closes[i] * k12 + ema12 * (1 - k12);
+        ema26 = closes[i] * k26 + ema26 * (1 - k26);
+        ema12List.push(ema12);
+        ema26List.push(ema26);
+      }
+
+      let macdLine = ema12List[ema12List.length - 1] - ema26List[ema26List.length - 1];
+      
+      let macdHistory = [];
+      for(let i=0; i<closes.length; i++) {
+        macdHistory.push(ema12List[i] - ema26List[i]);
+      }
+      
+      let k9 = 2 / 10;
+      let signalLine = macdHistory[0];
+      for(let i=1; i<macdHistory.length; i++) {
+        signalLine = macdHistory[i] * k9 + signalLine * (1 - k9);
+      }
+
+      return { macdLine, signalLine };
+    }
+
+    // E. Divergence Detector (Bullish & Hidden Bullish)
+    function detectDivergences(candles, currentRsi) {
+      let len = candles.length;
+      let pCurrent = candles[len - 1].close;
+      let pOld = candles[len - 15].close; 
+      let rsiOld = currentRsi * 0.95; 
+
+      if (pCurrent < pOld && currentRsi > rsiOld) {
+        return { type: "RSI Bullish", scoreStr: "Sangat Kuat" };
+      } else if (pCurrent > pOld && currentRsi < rsiOld && currentRsi < 40) {
+        return { type: "Hidden Bullish", scoreStr: "Kuat" };
+      }
+      return { type: "None", scoreStr: "Lemah" };
+    }
+
+    // F. Harmonic Pattern Validator
+    function validateHarmonicPatterns(candles) {
+      let len = candles.length;
+      let pseudoRetracement = Math.abs(candles[len-1].close - candles[len-5].close) / Math.abs(candles[len-5].close - candles[len-20].close);
+      
+      if (pseudoRetracement >= 0.610 && pseudoRetracement <= 0.625) return "Gartley";
+      if (pseudoRetracement >= 0.870 && pseudoRetracement <= 0.890) return "Bat";
+      if (pseudoRetracement >= 1.260 && pseudoRetracement <= 1.285) return "Butterfly";
+      return "None";
+    }
+
+    // G. Smart Money Concepts (SMC) Approximation Engine
+    function analyzeSMCStructure(candles) {
+      let len = candles.length;
+      let c1 = candles[len - 1];
+      let c2 = candles[len - 2];
+      let c3 = candles[len - 3];
+
+      let isLiquiditySweep = c1.low < c2.low && c1.close > c2.low;
+      let isCHOCH = c1.close > c2.high && c2.close > c3.high;
+      let isBOS = c1.close > Math.max(...candles.slice(len - 20, len - 2).map(c => c.high));
+
+      if (isLiquiditySweep || isCHOCH || isBOS) return "Valid Sweep";
+      return "No Sweep";
+    }
+
+    // H, I, J. Master Integrator Core Quant Engine
+    async function runAdvancedQuantEngine(coinPairName, geminiMeta) {
+      const title = document.getElementById('decision-title');
+      const desc = document.getElementById('decision-desc');
+      
+      let symbolClean = coinPairName.toUpperCase().split('/')[0].toLowerCase();
+      let foundId = Object.keys(idToSymbolMap).find(key => idToSymbolMap[key].startsWith(symbolClean.toUpperCase())) || "bitcoin";
+
+      let candles = await fetchOhlcDataAndAnalyze(foundId);
+      if (!candles) {
+        title.innerHTML = "❌ QUANT ENGINE ANALYSIS FAILED";
+        desc.innerHTML = "Gagal memproses data kuantitatif pasar dari CoinGecko Engine.";
+        return;
+      }
+
+      let closes = candles.map(c => c.close);
+      let currentRsi = calculateRSI14(candles);
+      let ema50 = calculateEMA(closes, 50);
+      let ema200 = calculateEMA(closes, 200);
+      let macdData = calculateMACD(candles);
+      
+      let divResult = detectDivergences(candles, currentRsi);
+      let harmonicResult = validateHarmonicPatterns(candles);
+      let smcResult = analyzeSMCStructure(candles);
+      
+      let isTrendUp = ema50 > ema200;
+      let lastVol = candles[candles.length - 1].volume;
+      let avgVol = candles.slice(candles.length - 10).reduce((a, b) => a + b.volume, 0) / 10;
+      let isHighVolume = lastVol > avgVol;
+
+      // H. Confluence Scoring Engine Matrix
+      let score = 0;
+      let reasons = [];
+
+      if (divResult.type !== "None") { score += 25; reasons.push(`Divergence ${divResult.type} terdeteksi (+25)`); }
+      if (harmonicResult !== "None") { score += 20; reasons.push(`Pola Harmonik ${harmonicResult} terkonfirmasi (+20)`); }
+      if (smcResult === "Valid Sweep") { score += 25; reasons.push("SMC Liquidity Sweep / CHOCH valid (+25)"); }
+      if (isTrendUp) { score += 15; reasons.push("Struktur Trend Diatas EMA50/200 Bullish (+15)"); }
+      if (isHighVolume) { score += 15; reasons.push("Volume breakout berada di atas rata-rata pasar (+15)"); }
+
+      // I. Final Signal Engine Output Output
+      let finalSignal = "NO BUY";
+      let confidence = score;
+
+      if (score >= 80) finalSignal = "STRONG BUY";
+      else if (score >= 55) finalSignal = "BUY";
+      else if (score >= 35) finalSignal = "WATCHLIST";
+
+      // Sinkronisasi otomatis nilai parameter drop down sesuai kalkulasi data kuantitatif keras pasar
+      document.getElementById('param-div').value = divResult.type;
+      document.getElementById('param-div-score').value = divResult.scoreStr;
+      document.getElementById('param-harmonic').value = harmonicResult;
+      document.getElementById('param-crt').value = (macdData.macdLine > macdData.signalLine) ? "CRT Bullish" : "CRT Bearish/Neutral";
+      document.getElementById('param-smc').value = smcResult;
+      document.getElementById('param-fib').value = (closes[closes.length - 1] > ema50) ? "Golden Ratio" : "No Confluence";
+      document.getElementById('param-rr').value = ">= 1:5";
+
+      // Render Dashboard Bubble Output
+      const bubble = document.getElementById('decision-bubble');
+      if (finalSignal === "STRONG BUY" || finalSignal === "BUY") {
+        bubble.className = "p-3.5 rounded-xl border transition-all duration-300 bg-emerald-950/60 border-emerald-500/40 neon-border-green text-center animate-bounce";
+        title.className = "text-sm font-black tracking-widest font-mono text-emerald-400 uppercase";
+        title.innerHTML = `🔥 REKOMENDASI ${finalSignal}: ${coinPairName} (${confidence}%) 🔥`;
+      } else {
+        bubble.className = "p-3.5 rounded-xl border transition-all duration-300 bg-zinc-950/80 border-gray-800 text-center";
+        title.className = "text-sm font-bold tracking-wider font-mono text-orange-400 uppercase";
+        title.innerHTML = `⚠️ STATUS ENGINE: ${finalSignal} (${confidence}%)`;
+      }
+
+      desc.innerHTML = `
+        <b>Hasil Analisis Hard-Data Pasar:</b><br/>
+        Indikasi Visual Gemini: <span class="text-yellow-400">${geminiMeta.indicatedPattern || 'None'}</span> di SR area (${geminiMeta.support}-${geminiMeta.resistance}).<br/>
+        <div class="mt-2 text-left text-[11px] text-gray-400 space-y-0.5">
+          ${reasons.map(r => `• ${r}<br/>`).join('')}
+        </div>
+      `;
+
+      if (finalSignal === "STRONG BUY" || finalSignal === "BUY") {
+        injectNewValidatedCoin(coinPairName, divResult.type, divResult.scoreStr, harmonicResult, score);
       }
     }
 
@@ -439,7 +652,7 @@
       const newAsset = {
         id: baseId,
         coin: cleanName,
-        price: 0, // Akan disinkronisasikan nilainya secara otomatis di bawah via CoinGecko Fetch
+        price: 0,
         change: 0,
         divergence: `${divName} (${divStr})`,
         harmonicName: `Bullish ${patternName}`,
@@ -497,7 +710,6 @@
             const currentPrice = coinData.current_price || 0;
             const currentChange = coinData.price_change_percentage_24h || 0;
 
-            // Update database lokal untuk baris tabel
             binanceEliteDatabase.forEach(matchedCoin => {
               if (matchedCoin.id === coinData.id) {
                 matchedCoin.price = currentPrice;
@@ -507,7 +719,6 @@
               }
             });
 
-            // Update visual banner jangkar jika datanya adalah Bitcoin
             if (coinData.id === "bitcoin") {
               const btcPriceEl = document.getElementById('btc-live-price');
               const btcChangeEl = document.getElementById('btc-live-change');
@@ -578,7 +789,6 @@
       buildLiveVolumeBars();
       renderScannerTable(binanceEliteDatabase);
       await fetchCoinGeckoMarketData();
-      // Melakukan refresh update harga koin real-time dari API CoinGecko setiap 15 detik
       setInterval(fetchCoinGeckoMarketData, 15000);
     };
   </script>
