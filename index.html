@@ -140,15 +140,84 @@
   </div>
 
   <script>
-    // Database lokal awal bertindak sebagai fallback sekaligus cetakan struktur parameter data kuantitatif Anda
-    let binanceEliteDatabase = [
-      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidity) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
-      { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "0", tp5: "0" },
-      { rank: 3, coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Kuat)", harmonicName: "Bullish Butterfly", harmonicValid: "91.0%", crtBias: "Bullish", smcScore: 88, ideal: 0, sl: 0, rrRatio: "1 : 5.2", techReason: "Struktur pasar menunjukkan akumulasi volume yang signifikan pada zona support fractal.", tp1: "0", tp5: "0" },
-      { rank: 4, coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish (Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "86.0%", crtBias: "Bullish", smcScore: 85, ideal: 0, sl: 0, rrRatio: "1 : 5.0", techReason: "Terjadi momentum crossover positif pada indikator MACD disertai konfluensi harmonic support.", tp1: "0", tp5: "0" },
-      { rank: 5, coin: "BTC/USDT", price: 0, change: 0, divergence: "Neutral Zone", harmonicName: "Sideways", harmonicValid: "85.0%", crtBias: "Neutral", smcScore: 75, ideal: 0, sl: 0, rrRatio: "1 : 4.5", techReason: "Induk pasar berada di bawah tekanan distribusi jangka pendek menuju area support psikologis.", tp1: "0", tp5: "0" },
-      { rank: 6, coin: "ETH/USDT", price: 0, change: 0, divergence: "RSI Oversold", harmonicName: "Bullish Crab", harmonicValid: "89.5%", crtBias: "Mild Bullish", smcScore: 82, ideal: 0, sl: 0, rrRatio: "1 : 5.1", techReason: "Harga mendekati area discount zone dengan struktur pengosongan order jual (liquidity sweep).", tp1: "0", tp5: "0" }
+    // JSON Data yang diberikan disatukan di sini
+    const rawJsonData = [
+      { "coin": "BTC/USDT", "price": 76558, "change": -1.83, "open": 76700, "close": 76558, "high": 76900, "low": 76400 },
+      { "coin": "ETH/USDT", "price": 3840.50, "change": 1.25, "open": 3790.00, "close": 3840.50, "high": 3880.00, "low": 3760.00 },
+      { "coin": "BNB/USDT", "price": 595.20, "change": -0.45, "open": 598.00, "close": 595.20, "high": 602.00, "low": 591.00 },
+      { "coin": "SOL/USDT", "price": 168.20, "change": 0.50, "open": 167.30, "close": 168.20, "high": 172.10, "low": 165.00 },
+      { "coin": "XRP/USDT", "price": 0.5230, "change": -1.10, "open": 0.5288, "close": 0.5230, "high": 0.5310, "low": 0.5190 },
+      { "coin": "ADA/USDT", "price": 0.4650, "change": 2.15, "open": 0.4550, "close": 0.4650, "high": 0.4720, "low": 0.4510 },
+      { "coin": "DOGE/USDT", "price": 0.1420, "change": -3.40, "open": 0.1470, "close": 0.1420, "high": 0.1490, "low": 0.1390 },
+      { "coin": "SHIB/USDT", "price": 0.0000223, "change": -2.10, "open": 0.0000227, "close": 0.0000223, "high": 0.0000231, "low": 0.0000219 },
+      { "coin": "AVAX/USDT", "price": 34.25, "change": 1.15, "open": 33.85, "close": 34.25, "high": 35.10, "low": 33.50 },
+      { "coin": "DOT/USDT", "price": 6.45, "change": -1.20, "open": 6.53, "close": 6.45, "high": 6.60, "low": 6.38 },
+      { "coin": "LINK/USDT", "price": 17.40, "change": -0.52, "open": 17.50, "close": 17.40, "high": 17.80, "low": 17.15 },
+      { "coin": "TRX/USDT", "price": 0.1140, "change": 0.35, "open": 0.1136, "close": 0.1140, "high": 0.1152, "low": 0.1130 },
+      { "coin": "MATIC/USDT", "price": 0.6850, "change": -1.80, "open": 0.6975, "close": 0.6850, "high": 0.7020, "low": 0.6790 },
+      { "coin": "TON/USDT", "price": 7.25, "change": 4.80, "open": 6.91, "close": 7.25, "high": 7.42, "low": 6.85 },
+      { "coin": "WBTC/USDT", "price": 76540, "change": -1.80, "open": 76680, "close": 76540, "high": 76880, "low": 76380 },
+      { "coin": "NEAR/USDT", "price": 6.12, "change": 3.10, "open": 5.93, "close": 6.12, "high": 6.28, "low": 5.85 },
+      { "coin": "LTC/USDT", "price": 82.40, "change": -0.90, "open": 83.15, "close": 82.40, "high": 84.00, "low": 81.60 },
+      { "coin": "BCH/USDT", "price": 465.30, "change": -2.40, "open": 476.70, "close": 465.30, "high": 482.00, "low": 461.00 },
+      { "coin": "UNI/USDT", "price": 9.15, "change": 5.60, "open": 8.66, "close": 9.15, "high": 9.34, "low": 8.55 },
+      { "coin": "PEPE/USDT", "price": 0.0000135, "change": -5.20, "open": 0.0000142, "close": 0.0000135, "high": 0.0000145, "low": 0.0000129 },
+      { "coin": "APT/USDT", "price": 8.65, "change": 0.40, "open": 8.61, "close": 8.65, "high": 8.90, "low": 8.42 },
+      { "coin": "ICP/USDT", "price": 11.20, "change": -1.35, "open": 11.35, "close": 11.20, "high": 11.60, "low": 11.05 },
+      { "coin": "XLM/USDT", "price": 0.0980, "change": -0.60, "open": 0.0986, "close": 0.0980, "high": 0.0995, "low": 0.0971 },
+      { "coin": "HBAR/USDT", "price": 0.0880, "change": 1.10, "open": 0.0870, "close": 0.0880, "high": 0.0910, "low": 0.0862 },
+      { "coin": "ETC/USDT", "price": 28.40, "change": -1.90, "open": 28.95, "close": 28.40, "high": 29.30, "low": 28.10 },
+      { "coin": "ATOM/USDT", "price": 7.85, "change": -0.25, "open": 7.87, "close": 7.85, "high": 8.02, "low": 7.76 },
+      { "coin": "WHBAR/USDT", "price": 0.0881, "change": 1.05, "open": 0.0871, "close": 0.0881, "high": 0.0912, "low": 0.0861 },
+      { "coin": "FIL/USDT", "price": 5.45, "change": -2.10, "open": 5.56, "close": 5.45, "high": 5.62, "low": 5.38 },
+      { "coin": "RENDER/USDT", "price": 8.15, "change": 6.40, "open": 7.66, "close": 8.15, "high": 8.35, "low": 7.52 },
+      { "coin": "MKR/USDT", "price": 2450.00, "change": -0.80, "open": 2470.00, "close": 2450.00, "high": 2510.00, "low": 2420.00 },
+      { "coin": "SUI/USDT", "price": 1.08, "change": 2.30, "open": 1.05, "close": 1.08, "high": 1.12, "low": 1.03 },
+      { "coin": "AAVE/USDT", "price": 94.60, "change": 1.85, "open": 92.88, "close": 94.60, "high": 96.50, "low": 91.70 },
+      { "coin": "OP/USDT", "price": 2.15, "change": -1.40, "open": 2.18, "close": 2.15, "high": 2.22, "low": 2.11 },
+      { "coin": "GRT/USDT", "price": 0.2450, "change": 3.12, "open": 0.2375, "close": 0.2450, "high": 0.2510, "low": 0.2350 },
+      { "coin": "THETA/USDT", "price": 1.95, "change": -0.50, "open": 1.96, "close": 1.95, "high": 2.02, "low": 1.91 },
+      { "coin": "IMX/USDT", "price": 1.72, "change": -2.30, "open": 1.76, "close": 1.72, "high": 1.80, "low": 1.69 },
+      { "coin": "RUNE/USDT", "price": 5.85, "change": 4.15, "open": 5.61, "close": 5.85, "high": 6.05, "low": 5.54 },
+      { "coin": "LDO/USDT", "price": 1.92, "change": -1.10, "open": 1.94, "close": 1.92, "high": 1.98, "low": 1.89 },
+      { "coin": "FET/USDT", "price": 1.65, "change": 5.20, "open": 1.56, "close": 1.65, "high": 1.72, "low": 1.53 },
+      { "coin": "AR/USDT", "price": 26.40, "change": 0.85, "open": 26.17, "close": 26.40, "high": 27.30, "low": 25.80 },
+      { "coin": "TIA/USDT", "price": 8.12, "change": -3.10, "open": 8.38, "close": 8.12, "high": 8.45, "low": 7.95 },
+      { "coin": "VET/USDT", "price": 0.0315, "change": -0.80, "open": 0.0317, "close": 0.0315, "high": 0.0322, "low": 0.0310 },
+      { "coin": "FLOKI/USDT", "price": 0.000215, "change": -4.60, "open": 0.000225, "close": 0.000215, "high": 0.000228, "low": 0.000208 },
+      { "coin": "FTM/USDT", "price": 0.7650, "change": 1.45, "open": 0.7540, "close": 0.7650, "high": 0.7820, "low": 0.7480 },
+      { "coin": "INJ/USDT", "price": 24.20, "change": -1.15, "open": 24.48, "close": 24.20, "high": 24.90, "low": 23.85 },
+      { "coin": "WIF/USDT", "price": 2.85, "change": -5.40, "open": 3.01, "close": 2.85, "high": 3.06, "low": 2.74 },
+      { "coin": "JUP/USDT", "price": 0.9650, "change": 0.30, "open": 0.9620, "close": 0.9650, "high": 0.9910, "low": 0.9450 },
+      { "coin": "CRV/USDT", "price": 0.3250, "change": -8.40, "open": 0.3548, "close": 0.3250, "high": 0.3580, "low": 0.3120 },
+      { "coin": "GALA/USDT", "price": 0.0385, "change": -2.15, "open": 0.0393, "close": 0.0385, "high": 0.0401, "low": 0.0378 },
+      { "coin": "BGB/USDT", "price": 1.12, "change": 0.90, "open": 1.11, "close": 1.12, "high": 1.15, "low": 1.09 }
     ];
+
+    // Otomatis mapping data JSON ke format Elite Scanner
+    let binanceEliteDatabase = rawJsonData.map((item, index) => {
+      // Logic sederhana untuk generate fallback indicator
+      const isBullish = item.change > 0;
+      const decPlaces = item.price < 1 ? 5 : 2;
+      
+      return {
+        rank: index + 1,
+        coin: item.coin,
+        price: item.price,
+        change: item.change,
+        divergence: isBullish ? "Hidden Bullish Zone" : "Neutral/Bearish Div",
+        harmonicName: isBullish ? "Bullish Pattern" : "Consolidation",
+        harmonicValid: (80 + Math.random() * 15).toFixed(1) + "%",
+        crtBias: isBullish ? "Bullish" : "Bearish",
+        smcScore: Math.floor(75 + Math.random() * 20),
+        ideal: item.price,
+        sl: item.price * 0.98,
+        rrRatio: "1 : 5.0",
+        techReason: `Data di-load dari JSON seed. Harga dibuka pada ${item.open} dan bergerak ke titik tertinggi ${item.high} dengan support terendah di ${item.low}.`,
+        tp1: (item.price * 1.02).toFixed(decPlaces),
+        tp5: (item.price * 1.08).toFixed(decPlaces)
+      };
+    });
 
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
     setInterval(updateClock, 1000);
@@ -178,38 +247,31 @@
       }, 1500);
     }
 
-    // Fungsi memuat data lokal dari Github
+    // Fungsi memuat data lokal dari Github (Tetap dibiarkan jika ingin fitur update JSON via Github)
     async function loadLocalDatabaseFromGithub() {
       try {
-        // Gunakan URL mentah (raw) dari GitHub Pages atau raw.githubusercontent
         const githubRawUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti./main/screener-data.json';
-        
         const response = await fetch(githubRawUrl);
         if (!response.ok) return;
         const remoteJson = await response.json();
         
-        // Inject data dari GitHub ke database lokal aplikasi
         remoteJson.forEach(remoteCoin => {
           let localCoin = binanceEliteDatabase.find(c => c.coin === remoteCoin.coin);
           if (localCoin) {
             localCoin.price = remoteCoin.price;
             localCoin.change = remoteCoin.change;
-            // pertahankan indikator harmonic bawaan Anda
           }
         });
-        
-        // Render ulang tabel setelah data github masuk
         triggerLiveFilter();
       } catch (error) {
         console.log("Gagal memuat pre-sed data dari GitHub, menggunakan fallback lokal.");
       }
     }
 
-    // ENGINE BARU: Mengambil data real-time dari CoinGecko API API v3
+    // Mengambil data real-time dari CoinGecko API API v3
     async function fetchCoinGeckoMarketData() {
       try {
-        // Mengambil top 40 koin berdasarkan Market Cap dengan denominasi USD
-        const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
+        const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=50&page=1&sparkline=false';
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
         
         const response = await fetch(proxyUrl);
@@ -229,30 +291,11 @@
               matchedCoin.change = currentChange;
               matchedCoin.ideal = currentPrice;
               matchedCoin.sl = currentPrice * 0.99;
-              matchedCoin.tp1 = (currentPrice * 1.01).toFixed(2);
-              matchedCoin.tp5 = (currentPrice * 1.05).toFixed(2);
-            } else if (binanceEliteDatabase.length < 50) {
-              // Jika koin belum ada di database lokal awal, suntikkan secara otomatis agar scanner meluas
-              binanceEliteDatabase.push({
-                rank: binanceEliteDatabase.length + 1,
-                coin: formattedSymbol,
-                price: currentPrice,
-                change: currentChange,
-                divergence: "Volume Analysed",
-                harmonicName: "Standard Wave",
-                harmonicValid: "88.2%",
-                crtBias: "Neutral Zone",
-                smcScore: 78,
-                ideal: currentPrice,
-                sl: currentPrice * 0.99,
-                rrRatio: "1 : 5.0",
-                techReason: `Sistem kuantitatif memproses data struktur pasar untuk ${formattedSymbol} secara teratur lewat database CoinGecko.`,
-                tp1: (currentPrice * 1.01).toFixed(2),
-                tp5: (currentPrice * 1.05).toFixed(2)
-              });
+              matchedCoin.tp1 = (currentPrice * 1.01).toFixed(currentPrice < 1 ? 5 : 2);
+              matchedCoin.tp5 = (currentPrice * 1.05).toFixed(currentPrice < 1 ? 5 : 2);
             }
 
-            // SINKRONISASI COIN UTAMA (BTC/USDT) KE HEADER INDUK PASAR
+            // Update Sinkronisasi Induk Pasar (BTC)
             if (coinData.symbol.toLowerCase() === "btc") {
               const btcPriceEl = document.getElementById('btc-live-price');
               const btcChangeEl = document.getElementById('btc-live-change');
@@ -287,7 +330,7 @@
           <td class="p-3 text-white font-bold flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> ${item.coin}
           </td>
-          <td class="p-3 text-gray-100">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</td>
+          <td class="p-3 text-gray-100">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 5})}</td>
           <td class="p-3 font-bold ${item.change >= 0 ? 'price-up' : 'price-down'}">${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%</td>
           <td class="p-3 text-blue-400">${item.divergence}</td>
           <td class="p-3 text-gray-200">${item.harmonicName}</td>
@@ -307,9 +350,9 @@
       document.getElementById('detail-coin-name').textContent = item.coin;
       document.getElementById('detail-tech-reason').textContent = item.techReason;
       document.getElementById('target-profit-ladder').innerHTML = `
-        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Matrix:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
-        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${parseFloat(item.tp1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
-        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP5 Projection:</span><span class="text-green-400 font-bold">$${parseFloat(item.tp5).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Matrix:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 5})}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${parseFloat(item.tp1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 5})}</span></div>
+        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP5 Projection:</span><span class="text-green-400 font-bold">$${parseFloat(item.tp5).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 5})}</span></div>
       `;
     }
 
@@ -322,15 +365,17 @@
     window.onload = async () => {
       buildLiveVolumeBars();
       triggerVolumeBarPulse();
+      
+      // Render data base dari JSON Array User
       renderScannerTable(binanceEliteDatabase);
       
-      // Request data dari Github terlebih dahulu
-      await loadLocalDatabaseFromGithub();
-      
-      // Request awal data pasar dari CoinGecko setelah data github selesai diload
+      // Request awal data pasar dari CoinGecko jika tersedia
       fetchCoinGeckoMarketData();
       
-      // Update data secara periodik setiap 10 detik (Disesuaikan dengan limit rate publik CoinGecko)
+      // Optional: Update data dari Github secara spesifik jika diinginkan
+      // await loadLocalDatabaseFromGithub();
+      
+      // Update data secara periodik setiap 10 detik
       setInterval(fetchCoinGeckoMarketData, 10000);
     };
   </script>
