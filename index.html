@@ -79,9 +79,9 @@
             <div class="flex items-center justify-between bg-zinc-950/40 p-1.5 rounded border border-white/5">
               <span class="text-gray-300">Divergence Tipe</span>
               <select id="param-div" class="bg-zinc-900 border border-white/10 text-[11px] rounded p-0.5 text-orange-400">
-                <option value="Hidden Bullish">Hidden Bullish (Prioritas 1)</option>
-                <option value="RSI Bullish">RSI Bullish (Prioritas 2)</option>
-                <option value="MACD Bullish">MACD Bullish (Prioritas 3)</option>
+                <option value="Hidden Bullish">Hidden Bullish</option>
+                <option value="RSI Bullish">RSI Bullish</option>
+                <option value="MACD Bullish">MACD Bullish</option>
                 <option value="Stochastic Bullish">Stochastic Bullish</option>
                 <option value="None">Tidak Ada Divergence</option>
               </select>
@@ -118,7 +118,7 @@
             <div class="flex items-center justify-between bg-zinc-950/40 p-1.5 rounded border border-white/5">
               <span class="text-gray-300">SMC / Liquidity Sweep</span>
               <select id="param-smc" class="bg-zinc-900 border border-white/10 text-[11px] rounded p-0.5 text-orange-400">
-                <option value="Valid Sweep">Sweep Sell Side Liquidity (Valid)</option>
+                <option value="Valid Sweep">Sweep Sell Side (Valid)</option>
                 <option value="No Sweep">Tidak Ada Clear Structure</option>
               </select>
             </div>
@@ -126,7 +126,7 @@
             <div class="flex items-center justify-between bg-zinc-950/40 p-1.5 rounded border border-white/5">
               <span class="text-gray-300">Fibonacci Confluence</span>
               <select id="param-fib" class="bg-zinc-900 border border-white/10 text-[11px] rounded p-0.5 text-orange-400">
-                <option value="Golden Ratio">Hit OTE Zone (0.618 - 0.786)</option>
+                <option value="Golden Ratio">Hit OTE Zone (0.618-0.786)</option>
                 <option value="No Confluence">No Fibonacci Confluence</option>
               </select>
             </div>
@@ -134,8 +134,8 @@
             <div class="flex items-center justify-between bg-zinc-950/40 p-1.5 rounded border border-white/5">
               <span class="text-gray-300">Risk Reward Ratio</span>
               <select id="param-rr" class="bg-zinc-900 border border-white/10 text-[11px] rounded p-0.5 text-orange-400">
-                <option value=">= 1:5">Minimal 1:5 Ke atas (Memenuhi)</option>
-                <option value="< 1:5">Di bawah 1:5 (Gagal Skema)</option>
+                <option value=">= 1:5">Minimal 1:5 Ke atas</option>
+                <option value="< 1:5">Di bawah 1:5</option>
               </select>
             </div>
           </div>
@@ -150,7 +150,7 @@
                 Awaiting Parameter Input
               </h4>
               <p id="decision-desc" class="text-[11px] text-gray-400 font-sans mt-2 leading-relaxed">
-                Isi API Key, lalu masukkan screenshot chart untuk memproses pembacaan indikator kuantitatif secara otomatis.
+                Masukkan API Key, lalu upload chart Anda. AI akan otomatis mendeteksi, mengisi checklist di samping, dan mengevaluasi sinyal.
               </p>
             </div>
           </div>
@@ -190,7 +190,7 @@
           <div class="bg-black/30 px-3 py-2 rounded-lg border border-white/5 w-full md:w-auto md:max-w-md">
             <span class="text-[9px] text-gray-500 uppercase font-mono block">Proyeksi 24 Jam & Range</span>
             <p class="text-[11px] text-gray-300 leading-snug mt-0.5">
-              Bias Market: <span class="text-red-400 font-bold">Bearish Control</span>. Area pantulan terdekat diproyeksikan berada di kisaran akumulasi institusional.
+              Bias Market: <span class="text-red-400 font-bold">Institutional Control</span>. Sinkronisasi multi-aset berjalan real-time via CoinGecko Engine Core.
             </p>
           </div>
         </div>
@@ -210,7 +210,7 @@
         <div>
           <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
             <i data-lucide="shield-alert" class="w-5 h-5 text-green-400"></i>
-            J. PROBABILITAS PUMP HIGHEST RANKING (COINGECKO FEED)
+            J. PROBABILITAS PUMP HIGHEST RANKING (COINGECKO REAL-TIME FEED)
           </h2>
         </div>
         <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 max-w-xs w-full">
@@ -258,7 +258,7 @@
   </div>
 
   <script>
-    // Pemetaan nama koin CoinGecko ID ke Simbol Pasarnya
+    // Pemetaan ID CoinGecko ke standar Simbol Trading Pasar
     const idToSymbolMap = {
       "bitcoin": "BTC/USDT", "ethereum": "ETH/USDT", "binancecoin": "BNB/USDT",
       "solana": "SOL/USDT", "ripple": "XRP/USDT", "cardano": "ADA/USDT",
@@ -267,18 +267,18 @@
 
     // Database Dasar Kuantitatif Lokal
     let binanceEliteDatabase = [
-      { id: "bitcoin", coin: "BTC/USDT", price: 0, change: 0, divergence: "RSI Bullish Divergence", harmonicName: "Bullish Gartley", harmonicValid: "92.5%", crtBias: "CRT Bullish", smcScore: 88, rrRatio: "1 : 5.5", techReason: "Struktur pasar bertahan pada zona demand harian dengan konfluensi RSI.", tp1: "0", tp5: "0" },
-      { id: "ethereum", coin: "ETH/USDT", price: 0, change: 0, divergence: "Hidden Bullish Zone", harmonicName: "Bullish Bat", harmonicValid: "94.1%", crtBias: "Strong Bullish", smcScore: 92, rrRatio: "1 : 6.0", techReason: "Sweep likuiditas sell-side terkonfirmasi bersih pada timeframe 4 Jam.", tp1: "0", tp5: "0" },
-      { id: "binancecoin", coin: "BNB/USDT", price: 0, change: 0, divergence: "MACD Bullish Divergence", harmonicName: "Bullish Gartley", harmonicValid: "89.4%", crtBias: "CRT Bullish", smcScore: 78, rrRatio: "1 : 5.1", techReason: "Konfluensi golden ratio fibonacci 0.618 bertepatan dengan pola gartley.", tp1: "0", tp5: "0" },
-      { id: "solana", coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish Zone", harmonicName: "Bullish Butterfly", harmonicValid: "91.2%", crtBias: "Strong Bullish", smcScore: 85, rrRatio: "1 : 5.7", techReason: "Solana memantul dari OTE Zone dengan peningkatan akumulasi volume spot.", tp1: "0", tp5: "0" },
-      { id: "ripple", coin: "XRP/USDT", price: 0, change: 0, divergence: "RSI Bullish Divergence", harmonicName: "Bullish Bat", harmonicValid: "87.5%", crtBias: "Neutral Bias", smcScore: 65, rrRatio: "1 : 5.0", techReason: "Mencoba membuat basis akumulasi baru namun struktur klan masih lemah.", tp1: "0", tp5: "0" },
+      { id: "bitcoin", coin: "BTC/USDT", price: 0, change: 0, divergence: "RSI Bullish", harmonicName: "Bullish Gartley", harmonicValid: "92.5%", crtBias: "CRT Bullish", smcScore: 88, rrRatio: "1 : 5.5", techReason: "Struktur pasar menahan area demand harian dengan konfluensi RSI.", tp1: "0", tp5: "0" },
+      { id: "ethereum", coin: "ETH/USDT", price: 0, change: 0, divergence: "Hidden Bullish", harmonicName: "Bullish Bat", harmonicValid: "94.1%", crtBias: "CRT Bullish", smcScore: 92, rrRatio: "1 : 6.0", techReason: "Sweep likuiditas sell-side terkonfirmasi bersih pada timeframe 4 Jam.", tp1: "0", tp5: "0" },
+      { id: "binancecoin", coin: "BNB/USDT", price: 0, change: 0, divergence: "MACD Bullish", harmonicName: "Bullish Gartley", harmonicValid: "89.4%", crtBias: "CRT Bullish", smcScore: 78, rrRatio: "1 : 5.1", techReason: "Konfluensi golden ratio fibonacci 0.618 bertepatan dengan pola gartley.", tp1: "0", tp5: "0" },
+      { id: "solana", coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish", harmonicName: "Bullish Butterfly", harmonicValid: "91.2%", crtBias: "CRT Bullish", smcScore: 85, rrRatio: "1 : 5.7", techReason: "Solana memantul dari OTE Zone dengan peningkatan akumulasi volume spot.", tp1: "0", tp5: "0" },
+      { id: "ripple", coin: "XRP/USDT", price: 0, change: 0, divergence: "RSI Bullish", harmonicName: "Bullish Bat", harmonicValid: "87.5%", crtBias: "CRT Bearish/Neutral", smcScore: 65, rrRatio: "1 : 5.0", techReason: "Mencoba membuat basis akumulasi baru namun struktur klan masih lemah.", tp1: "0", tp5: "0" },
       { id: "cardano", coin: "ADA/USDT", price: 0, change: 0, divergence: "Stochastic Bullish", harmonicName: "Bullish Gartley", harmonicValid: "90.3%", crtBias: "CRT Bullish", smcScore: 80, rrRatio: "1 : 5.2", techReason: "Divergence stochastic oversold terkonfirmasi pada pengujian major support.", tp1: "0", tp5: "0" },
-      { id: "avalanche-2", coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish Zone", harmonicName: "Bullish Bat", harmonicValid: "93.0%", crtBias: "Strong Bullish", smcScore: 89, rrRatio: "1 : 5.9", techReason: "Pembentukan area pembalikan potensial (PRZ) tervalidasi sangat akurat.", tp1: "0", tp5: "0" },
-      { id: "polkadot", coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish Divergence", harmonicName: "None", harmonicValid: "0%", crtBias: "Neutral / Bearish", smcScore: 40, rrRatio: "1 : 3.2", techReason: "Gagal mempertahankan rasio RR minimal 1:5, setup dibatalkan sistem.", tp1: "0", tp5: "0" },
-      { id: "chainlink", coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish Divergence", harmonicName: "Bullish Butterfly", harmonicValid: "91.8%", crtBias: "CRT Bullish", smcScore: 84, rrRatio: "1 : 5.4", techReason: "Koleksi supply sekunder selesai, bersiap melakukan ekspansi struktur atas.", tp1: "0", tp5: "0" }
+      { id: "avalanche-2", coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish", harmonicName: "Bullish Bat", harmonicValid: "93.0%", crtBias: "CRT Bullish", smcScore: 89, rrRatio: "1 : 5.9", techReason: "Pembentukan area pembalikan potensial (PRZ) tervalidasi sangat akurat.", tp1: "0", tp5: "0" },
+      { id: "polkadot", coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish", harmonicName: "None", harmonicValid: "0%", crtBias: "CRT Bearish/Neutral", smcScore: 40, rrRatio: "1 : 3.2", techReason: "Gagal mempertahankan rasio RR minimal 1:5, setup dibatalkan sistem.", tp1: "0", tp5: "0" },
+      { id: "chainlink", coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish", harmonicName: "Bullish Butterfly", harmonicValid: "91.8%", crtBias: "CRT Bullish", smcScore: 84, rrRatio: "1 : 5.4", techReason: "Koleksi supply sekunder selesai, bersiap melakukan ekspansi struktur atas.", tp1: "0", tp5: "0" }
     ];
 
-    // AUTOMATIC AI VISION SCANNING SYSTEM
+    // AUTOMATIC AI VISION SCANNING SYSTEM - MEMBACA DAN MENGISI CHECKLIST OTOMATIS
     async function processAutomaticAiScan(event) {
       const apiKey = document.getElementById('api-key-input').value.trim();
       const input = event.target;
@@ -288,7 +288,7 @@
       if (!input.files || !input.files[0]) return;
       const file = input.files[0];
 
-      // Tampilkan pratinjau gambar secara lokal
+      // Tampilkan preview gambar
       const reader = new FileReader();
       reader.onload = (e) => {
         preview.src = e.target.result;
@@ -303,13 +303,13 @@
       if (!apiKey) {
         title.className = "text-sm font-bold tracking-wider font-mono text-red-400 uppercase";
         title.innerHTML = "⚠️ API KEY REQUIRED";
-        desc.innerHTML = "Harap isi <strong>Gemini API Key</strong> Anda di kolom atas terlebih dahulu untuk menggunakan fitur Auto-Scan.";
+        desc.innerHTML = "Harap masukkan <strong>Gemini API Key</strong> Anda pada kolom di atas sebelum melakukan upload chart.";
         return;
       }
 
       title.className = "text-sm font-bold tracking-wider font-mono text-orange-400 uppercase animate-pulse";
-      title.innerHTML = "🔄 AI IS SCANNING CHART STRUCTURE...";
-      desc.innerHTML = "Mengirim data gambar ke sistem kognitif vision. Harap tunggu proses identifikasi parameter teknikal selesai...";
+      title.innerHTML = "🔄 AI AUTO-READING CHART STRUCTURE...";
+      desc.innerHTML = "Sistem vision sedang membedah indikator, struktur swing, dan harmonic pattern dari gambar chart Anda...";
 
       try {
         const base64Data = await new Promise((resolve) => {
@@ -318,17 +318,18 @@
           r.readAsDataURL(file);
         });
 
-        // Prompt rekayasa kuantitatif ketat untuk memaksa output berupa JSON murni
-        const promptText = `Analisislah gambar chart cryptocurrency ini secara objektif. Deteksi koin apa ini dan periksa indikator osilator, swing high/low, serta pola harmonic yang terbentuk untuk mencocokkan syarat konfluensi bullish berikut. Kembalikan data HANYA DALAM BENTUK JSON MURNI tanpa markdown, tanpa kata-kata penjelasan, dengan struktur persis seperti contoh di bawah ini:
+        // Prompt rekayasa data kuantitatif ketat untuk memaksa output JSON murni yang sesuai value opsi dropdown
+        const promptText = `Analisislah gambar chart cryptocurrency ini secara objektif. Tentukan nama koin (format: SYMBOL/USDT) dan periksa indikator konfluensi kuantitatif yang terlihat. Anda WAJIB mengembalikan data HANYA berupa JSON murni tanpa markdown, tanpa penjelasan di luar JSON. Format struktur harus persis seperti contoh berikut:
         {"coinName":"BTC/USDT", "divergence":"Hidden Bullish", "divScore":"Sangat Kuat", "harmonic":"Gartley", "crtBias":"CRT Bullish", "smc":"Valid Sweep", "fib":"Golden Ratio", "rr":">= 1:5"}
-        Opsi nilai yang valid untuk struktur JSON tersebut adalah:
-        - divergence: "Hidden Bullish", "RSI Bullish", "MACD Bullish", "Stochastic Bullish", atau "None"
-        - divScore: "Sangat Kuat", "Kuat", "Sedang", atau "Lemah"
-        - harmonic: "Gartley", "Bat", "Butterfly", atau "None"
-        - crtBias: "CRT Bullish" atau "CRT Bearish/Neutral"
-        - smc: "Valid Sweep" atau "No Sweep"
-        - fib: "Golden Ratio" or "No Confluence"
-        - rr: ">= 1:5" atau "< 1:5"`;
+        
+        Aturan pencocokan string nilai untuk Dropdown HTML:
+        - divergence wajib salah satu dari: "Hidden Bullish", "RSI Bullish", "MACD Bullish", "Stochastic Bullish", atau "None"
+        - divScore wajib salah satu dari: "Sangat Kuat", "Kuat", "Sedang", atau "Lemah"
+        - harmonic wajib salah satu dari: "Gartley", "Bat", "Butterfly", atau "None"
+        - crtBias wajib salah satu dari: "CRT Bullish" atau "CRT Bearish/Neutral"
+        - smc wajib salah satu dari: "Valid Sweep" atau "No Sweep"
+        - fib wajib salah satu dari: "Golden Ratio" atau "No Confluence"
+        - rr wajib salah satu dari: ">= 1:5" atau "< 1:5"`;
 
         const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
           method: 'POST',
@@ -346,11 +347,11 @@
         const resData = await response.json();
         let textResult = resData.candidates[0].content.parts[0].text.trim();
         
-        // Membersihkan pembungkus markdown ```json jika AI melanggar instruksi
+        // Membersihkan jika AI melanggar aturan dan membungkus dengan tag markdown ```json
         textResult = textResult.replace(/```json/g, "").replace(/```/g, "").trim();
         const parsed = JSON.parse(textResult);
 
-        // Otomatis suntikkan hasil bacaan AI ke element Input dan Dropdown Form
+        // [INTI PERINTAH ANDA]: SISTEM SECARA OTOMATIS MENGISI CHECKLIST DROPDOWN DI UI HTML
         document.getElementById('input-coin-name').value = parsed.coinName || "UNKNOWN";
         document.getElementById('param-div').value = parsed.divergence || "None";
         document.getElementById('param-div-score').value = parsed.divScore || "Lemah";
@@ -360,14 +361,14 @@
         document.getElementById('param-fib').value = parsed.fib || "No Confluence";
         document.getElementById('param-rr').value = parsed.rr || "< 1:5";
 
-        // Jalankan mesin verifikasi aturan logic untuk memperbarui Bubble H4
+        // Setelah seluruh dropdown terisi otomatis, picu mesin verifikasi akhir untuk memproses keputusan kuantitatif
         executeAiEngineVerification();
 
       } catch (err) {
         console.error(err);
         title.className = "text-sm font-bold tracking-wider font-mono text-red-400 uppercase";
-        title.innerHTML = "❌ AI READING FAILED";
-        desc.innerHTML = "Gagal memproses gambar secara otomatis. Pastikan API Key Anda valid dan format gambar didukung.";
+        title.innerHTML = "❌ AUTO-READ SCANNER FAILED";
+        desc.innerHTML = "Gagal membaca chart secara otomatis. Pastikan API Key benar dan koneksi internet stabil.";
       }
     }
 
@@ -433,10 +434,12 @@
       const assetExist = binanceEliteDatabase.find(c => c.coin === cleanName);
       if (assetExist) return;
 
+      const baseId = coinName.toLowerCase().split('/')[0];
+
       const newAsset = {
-        id: coinName.toLowerCase().split('/')[0],
+        id: baseId,
         coin: cleanName,
-        price: 0, // Akan diisi dan diperbarui secara otomatis oleh fetch real-time CoinGecko
+        price: 0, // Akan disinkronisasikan nilainya secara otomatis di bawah via CoinGecko Fetch
         change: 0,
         divergence: `${divName} (${divStr})`,
         harmonicName: `Bullish ${patternName}`,
@@ -453,7 +456,7 @@
       fetchCoinGeckoMarketData();
     }
 
-    // CLOCK & AMBIENT GRAPHICS
+    // CLOCK & AMBIENT INTERACTION GRAPHICS
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
     setInterval(updateClock, 1000);
 
@@ -478,10 +481,9 @@
       container.appendChild(firstBar);
     }, 1500);
 
-    // REAL-TIME DATA INTEGRATION FROM COINGECKO API
+    // SINKRONISASI DATA HARGA REAL-TIME AMBIL DARI API COINGECKO
     async function fetchCoinGeckoMarketData() {
       try {
-        // Buat daftar ID unik untuk ditarik dari API (termasuk koin hasil custom upload manual)
         const idList = binanceEliteDatabase.map(item => item.id).join(',');
         const targetUrl = `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${idList}&order=market_cap_desc&sparkline=false`;
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
@@ -495,7 +497,7 @@
             const currentPrice = coinData.current_price || 0;
             const currentChange = coinData.price_change_percentage_24h || 0;
 
-            // Cari dan perbarui semua kecocokan database internal berdasarkan ID koin
+            // Update database lokal untuk baris tabel
             binanceEliteDatabase.forEach(matchedCoin => {
               if (matchedCoin.id === coinData.id) {
                 matchedCoin.price = currentPrice;
@@ -505,7 +507,7 @@
               }
             });
 
-            // Perbarui visualisasi banner khusus Bitcoin (Induk Pasar) jika koin tersebut adalah BTC
+            // Update visual banner jangkar jika datanya adalah Bitcoin
             if (coinData.id === "bitcoin") {
               const btcPriceEl = document.getElementById('btc-live-price');
               const btcChangeEl = document.getElementById('btc-live-change');
@@ -517,12 +519,11 @@
             }
           });
           
-          // Re-index ranking berdasarkan posisi array terbaru dan render ulang tabel
           binanceEliteDatabase.forEach((item, index) => item.rank = index + 1);
           triggerLiveFilter();
         }
       } catch (error) {
-        console.warn("CoinGecko API rate limit reached. Menjaga data visual lokal tetap berjalan.");
+        console.warn("CoinGecko rate limit. Menjaga retensi visual data lokal.");
       }
     }
 
@@ -577,7 +578,7 @@
       buildLiveVolumeBars();
       renderScannerTable(binanceEliteDatabase);
       await fetchCoinGeckoMarketData();
-      // Melakukan sinkronisasi interval harga pasar real-time setiap 15 detik
+      // Melakukan refresh update harga koin real-time dari API CoinGecko setiap 15 detik
       setInterval(fetchCoinGeckoMarketData, 15000);
     };
   </script>
