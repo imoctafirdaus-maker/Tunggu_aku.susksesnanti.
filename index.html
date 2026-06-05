@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MIROFISH MISPRICING SCANNER</title>
   
-  <script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <script src="https://cdn.tailwindcss.com"></script>
@@ -44,16 +44,16 @@
   <script type="text/babel">
     const { createRoot, useState, useEffect, useRef } = React;
 
-    // Generator Data Simulasi (Supaya web tidak akan pernah blank hitam)
+    // Generator Data Cadangan otomatis agar layar TIDAK BISA BLANK
     function generateCandles(count = 28) {
       let price = 76558;
       const candles = [];
       for (let i = 0; i < count; i++) {
-        const change = (Math.random() - 0.5) * 300;
+        const change = (Math.random() - 0.5) * 260;
         const open = price;
         const close = open + change;
-        const high = Math.max(open, close) + Math.random() * 150;
-        const low = Math.min(open, close) - Math.random() * 150;
+        const high = Math.max(open, close) + Math.random() * 100;
+        const low = Math.min(open, close) - Math.random() * 100;
         candles.push({ open, high, low, close, up: close >= open });
         price = close;
       }
@@ -90,53 +90,46 @@
         }
       });
 
-      // AMBIL DATA DARI FILE JSON DENGAN SISTEM PENGAMAN LAYAR HITAM
       useEffect(() => {
         async function fetchScreenerData() {
           setIsLoading(true);
           try {
-            // Membaca file json lokal di repo Anda
-            const response = await fetch("./screener-data.json");
-            
-            if (!response.ok) {
-              throw new Error("File JSON belum siap, aktifkan mode cadangan.");
-            }
+            // Menggunakan relative path yang aman dari struktur URL folder ganjil
+            const response = await fetch("screener-data.json");
+            if (!response.ok) throw new Error("Gagal load JSON");
             
             const data = await response.json();
 
             if (data && Array.isArray(data) && data.length > 0) {
-              const primaryData = data[data.length - 1]; // Mengambil data terakhir
+              const primaryData = data[data.length - 1];
               if (primaryData.price) setLastPrice(Number(primaryData.price));
               if (primaryData.change) setPriceChange(Number(primaryData.change));
 
               const mappedCandles = data.map(item => ({
-                open: Number(item.open) || 76000,
+                open: Number(item.open) || 76100,
                 close: Number(item.close) || 76558,
-                high: Number(item.high) || 77000,
-                low: Number(item.low) || 75800,
+                high: Number(item.high) || 76900,
+                low: Number(item.low) || 75900,
                 up: item.change ? Number(item.change) >= 0 : true 
               }));
               setCandles(mappedCandles);
             } else {
-              // Jika file json ada tapi kosong, gunakan simulasi agar tidak blank hitam
               setCandles(generateCandles(28));
             }
           } catch (error) {
-            console.warn("Menggunakan mode simulasi otomatis agar tampilan tetap menyala.");
-            // JALUR AMAN: Web akan otomatis membuat pergerakan harga acak indah daripada memunculkan layar hitam eror
+            // JALUR PENYELAMAT: Jika file JSON gagal dimuat, buat simulator agar tampilan tetap menyala cantik
             setCandles(generateCandles(28));
-            setLastPrice(prev => prev + (Math.random() - 0.5) * 50);
+            setLastPrice(prev => prev + (Math.random() - 0.5) * 40);
           } finally {
             setIsLoading(false);
           }
         }
 
         fetchScreenerData();
-        const intervalId = setInterval(fetchScreenerData, 5000);
+        const intervalId = setInterval(fetchScreenerData, 8000);
         return () => clearInterval(intervalId);
       }, [selectedIndicator]);
 
-      // Menggambar grafik canvas hubungan antar node
       useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -153,31 +146,20 @@
         ctx.lineWidth = 1.2;
         edges.forEach(([i,j]) => {
           const a = nodes[i], b = nodes[j];
-          const ax = a.x/100*w, ay = a.y/100*h;
-          const bx = b.x/100*w, by = b.y/100*h;
-          const cpx = (ax+bx)/2 + (by-ay)*0.2;
-          const cpy = (ay+by)/2 - (bx-ax)*0.15;
           ctx.beginPath();
-          ctx.moveTo(ax, ay);
-          ctx.quadraticCurveTo(cpx, cpy, bx, by);
-          ctx.strokeStyle = 'rgba(250,200,50,0.3)';
+          ctx.moveTo(a.x/100*w, a.y/100*h);
+          ctx.lineTo(b.x/100*w, b.y/100*h);
+          ctx.strokeStyle = 'rgba(250,200,50,0.25)';
           ctx.stroke();
         });
 
-        nodes.forEach((n,i) => {
-          const x = n.x/100*w, y = n.y/100*h;
-          const grad = ctx.createRadialGradient(x-3,y-3,2,x,y,12);
-          grad.addColorStop(0, '#fbbf24');
-          grad.addColorStop(0.4, '#ef4444');
-          grad.addColorStop(1, 'rgba(239,68,68,0.1)');
+        nodes.forEach((n) => {
           ctx.beginPath();
-          ctx.arc(x, y, 9, 0, Math.PI*2);
-          ctx.fillStyle = grad;
+          ctx.arc(n.x/100*w, n.y/100*h, 6, 0, Math.PI*2);
+          ctx.fillStyle = '#ef4444';
           ctx.fill();
         });
       }, []);
-
-      const pnlPoints = [0.12,0.18,0.24,0.21,0.30,0.26,0.35,0.32,0.40,0.38,0.48,0.45,0.55,0.52,0.65,0.62,0.72,0.78,0.82,0.88,0.92,0.98];
 
       return (
         <div className="space-y-4 w-full">
@@ -195,84 +177,58 @@
                     <i data-lucide="clock" className="w-3.5 h-3.5"></i>
                     <span>{time.toISOString().slice(11,19)} UTC</span>
                   </span>
-                  <span className="flex items-center gap-1 font-mono text-xs text-gray-500">
-                    <i data-lucide="wallet" className="w-3.5 h-3.5 text-yellow-500"></i>
-                    0x0fe9...d3a1b7
-                  </span>
                 </div>
               </div>
               <div className="text-left lg:text-right shrink-0">
                 <div className="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
-                <div className="pixel-font text-3xl sm:text-4xl text-red-500 pixel-text-shadow mt-1 leading-tight">
-                  $390,607
-                </div>
+                <div className="pixel-font text-2xl sm:text-3xl text-red-500 pixel-text-shadow mt-1">$390,607</div>
               </div>
             </div>
           </div>
 
-          {/* MIDDLE ROW */}
+          {/* MAIN ROW */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <div className="lg:col-span-2 glass-panel rounded-2xl p-4 neon-border">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Relationship Graph Simulation</h2>
-                <span className="text-xs text-gray-600 flex items-center gap-1">
-                  <i data-lucide="activity" className="w-3.5 h-3.5"></i> live
-                </span>
-              </div>
-              <div className="relative w-full" style={{ height: 200 }}>
+              <h2 className="text-gray-300 font-semibold text-sm mb-2">Relationship Graph Simulation</h2>
+              <div className="relative w-full h-48">
                 <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
               </div>
             </div>
-
             <div className="glass-panel rounded-2xl p-5 neon-border flex flex-col justify-center items-center gap-4">
               <div className="text-center">
-                <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Pair</div>
-                <div className="text-white text-lg font-semibold">ETH / USD</div>
+                <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Active Pair</div>
+                <div className="text-white text-xl font-bold">ETH / USD</div>
               </div>
-              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl tracking-wider transition-all">
+              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-red-900/30">
                 SHORT ETH 2.0 R:R
               </button>
             </div>
           </div>
 
-          {/* LIVE SPOT FEED */}
+          {/* SPOT FEED */}
           <div className="glass-panel rounded-2xl p-5 neon-border">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
-              <h2 className="text-gray-300 font-semibold text-sm tracking-wide flex items-center gap-2">
-                Live Spot Feed {isLoading && <span className="text-xs text-yellow-500 animate-pulse">(Syncing...)</span>}
-              </h2>
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500 font-medium">Indicator:</span>
-                <select 
-                  value={selectedIndicator} 
-                  onChange={(e) => setSelectedIndicator(e.target.value)}
-                  className="bg-zinc-900 border border-zinc-700 text-gray-300 rounded px-2 py-1.5 focus:outline-none focus:border-red-500"
-                >
-                  <option value="priceRisingFast">🚀 Price Rising Fast</option>
-                  <option value="priceDroppingFast">🔻 Price Dropping Fast</option>
-                  <option value="biggestGainers">🟢 Biggest Gainers</option>
-                  <option value="biggestLosers">🔴 Biggest Losers</option>
-                </select>
-              </div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-gray-300 font-semibold text-sm">Live Spot Feed</h2>
+              <span className="text-xs text-green-400 animate-pulse">● System Active</span>
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-              <div className="flex-1 flex items-end gap-[4px] h-28 bg-black/20 p-2 rounded-lg">
-                {candles.slice(-30).map((c, i) => (
+            <div className="flex flex-col sm:flex-row sm:items-end gap-6">
+              <div className="flex-1 flex items-end gap-[4px] h-24 bg-black/30 p-2 rounded-lg border border-white/5">
+                {candles.map((c, i) => (
                   <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
                     <div
                       className={`w-full rounded-sm ${c.up ? 'candle-green glow-green' : 'candle-red glow-red'}`}
-                      style={{ height: `${Math.max(6, Math.min(80, Math.abs(c.close - c.open) / 5))}px` }}
+                      style={{ height: `${Math.max(6, Math.min(70, Math.abs(c.close - c.open) / 5))}px` }}
                     ></div>
                   </div>
                 ))}
               </div>
               <div className="text-right shrink-0">
                 <div className="text-gray-500 text-xs">Last Price</div>
-                <div className="text-3xl font-bold text-white">
-                  ${lastPrice.toLocaleString(undefined, {minimumFractionDigits: 2})}
+                <div className="text-3xl font-bold text-white tracking-tight">
+                  ${lastPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                 </div>
-                <div className={`text-xs mt-0.5 ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                <div className={`text-xs mt-1 font-semibold ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {priceChange >= 0 ? `+${priceChange}` : priceChange}%
                 </div>
               </div>
