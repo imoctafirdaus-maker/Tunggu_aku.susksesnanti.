@@ -96,31 +96,27 @@
         }
       });
 
-      // ---- FETCH REALTIME BINANCE DATA WITH CRASH PROTECTION ----
+      // ---- FETCH REALTIME DATA DARI FILE JSON REPO LOKAL ----
       useEffect(() => {
         async function fetchScreenerData() {
           setIsLoading(true);
-          const url = "http://jarvis-futures-agent.jarvis.svc.cluster.local/api/v1/futures/smart-screener";
+          
+          // Membaca file screener-data.json di repositori GitHub Anda sendiri
+          const url = "./screener-data.json";
           
           try {
-            const response = await fetch(url, {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ indicator: selectedIndicator })
-            });
+            const response = await fetch(url);
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
-            // Pemetaan data aman dari respon API Binance ke UI komponen Anda
+            // Pemetaan data dari file JSON ke UI Komponen Grafik
             if (data && Array.isArray(data) && data.length > 0) {
               const primaryData = data[0]; 
               if (primaryData.price) setLastPrice(Number(primaryData.price));
               if (primaryData.change) setPriceChange(Number(primaryData.change));
 
-              // Ubah array data respon dari API menjadi format data visual lilin
+              // Ubah array data dari file JSON menjadi format visual lilin (candlestick)
               const mappedCandles = data.map(item => ({
                 open: Number(item.open) || 100,
                 close: Number(item.close) || 105,
@@ -133,8 +129,8 @@
               setCandles(generateCandles(28));
             }
           } catch (error) {
-            console.warn("API Cluster Lokal tidak terjangkau dari internet publik. Mengaktifkan visualisasi simulasi.");
-            // Proteksi otomatis: jika diakses dari GitHub Pages publik, gunakan simulator data market agar web tidak blank hitam
+            console.warn("Membaca data lokal json gagal, mengaktifkan simulasi otomatis.");
+            // Pengaman otomatis jika file json kosong/tidak terbaca
             setCandles(generateCandles(28));
             setLastPrice(76558 + (Math.random() - 0.5) * 450);
           } finally {
@@ -144,8 +140,8 @@
 
         fetchScreenerData();
         
-        // Auto-refresh interval data setiap 10 detik
-        const intervalId = setInterval(fetchScreenerData, 10000);
+        // Auto-refresh data setiap 15 detik dari file lokal Anda
+        const intervalId = setInterval(fetchScreenerData, 15000);
         return () => clearInterval(intervalId);
 
       }, [selectedIndicator]);
@@ -282,7 +278,7 @@
             </div>
           </div>
 
-          {/* ========== LIVE SPOT FEED (API ENUM INTEGRATED) ========== */}
+          {/* ========== LIVE SPOT FEED (LOCAL JSON REPO) ========== */}
           <div className="glass-panel rounded-2xl p-5 neon-border">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
               <h2 className="text-gray-300 font-semibold text-sm tracking-wide flex items-center gap-2">
@@ -290,7 +286,7 @@
                 {isLoading && <span className="text-xs text-yellow-500 animate-pulse">(Updating...)</span>}
               </h2>
               
-              {/* Dropdown Selector Kategori Indikator Smart Screener */}
+              {/* Dropdown Selector Kategori Indikator */}
               <div className="flex items-center gap-2 text-xs">
                 <span className="text-gray-500 font-medium">Indicator:</span>
                 <select 
@@ -327,4 +323,95 @@
                     ></div>
                     <div
                       className="w-[2px] bg-white/10 rounded-full mt-0.5"
-                      style={{ height: `${Math.max(4, (c
+                      style={{ height: `${Math.max(4, (c.high - c.low) / 18)}px` }}
+                    ></div>
+                  </div>
+                ))}
+              </div>
+              {/* Realtime Price Status */}
+              <div className="text-right shrink-0">
+                <div className="text-gray-500 text-xs">Last Price</div>
+                <div className="text-3xl font-bold text-white">
+                  ${lastPrice.toLocaleString(undefined, {minimumFractionDigits: 0, maximumFractionDigits: 2})}
+                </div>
+                <div className={`text-xs flex items-center justify-end gap-1 mt-0.5 ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  <i data-lucide={priceChange >= 0 ? "chevron-up" : "chevron-down"} className="w-3.5 h-3.5"></i>
+                  {priceChange >= 0 ? `+${priceChange}` : priceChange}%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ========== BOTTOM METRICS ========== */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Stats */}
+            <div className="glass-panel rounded-2xl p-5 neon-border">
+              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Trading Stats</div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-2xl font-bold text-white">1,259</div>
+                  <div className="text-xs text-gray-500">Total Trades</div>
+                </div>
+                <div>
+                  <div className="text-2xl font-bold text-green-400">78%</div>
+                  <div className="text-xs text-gray-500">Win Rate</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Win Stack */}
+            <div className="glass-panel rounded-2xl p-5 neon-border">
+              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Win Stack</div>
+              <div className="flex h-8 rounded-full overflow-hidden border border-white/5">
+                <div className="bg-green-500/70" style={{ width: '78%' }}></div>
+                <div className="bg-red-500/60" style={{ width: '22%' }}></div>
+              </div>
+              <div className="flex justify-between text-xs mt-2 text-gray-500">
+                <span>Wins 78%</span>
+                <span>Loss 22%</span>
+              </div>
+            </div>
+
+            {/* PnL Curve */}
+            <div className="glass-panel rounded-2xl p-5 neon-border">
+              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">PnL Curve</div>
+              <div className="relative h-16 w-full">
+                <svg viewBox="0 0 100 24" className="w-full h-full" preserveAspectRatio="none">
+                  <defs>
+                    <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.45"/>
+                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0.02"/>
+                    </linearGradient>
+                  </defs>
+                  <path
+                    d={pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')}
+                    fill="none" stroke="#22c55e" strokeWidth="1.5" className="drop-shadow-lg"
+                  />
+                  <path
+                    d={`${pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')} L 100 24 L 0 24 Z`}
+                    fill="url(#pnlGrad)"
+                  />
+                </svg>
+              </div>
+              <div className="flex justify-between text-xs text-gray-600 mt-1">
+                <span>Jan</span>
+                <span className="text-green-400 font-semibold">+$390.6K</span>
+                <span>Jun</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer credit */}
+          <div className="text-center text-[10px] text-gray-700 tracking-widest pt-2">
+            MIROFISH · MISPRICING SCANNER v2.4.1
+          </div>
+        </div>
+      );
+    }
+
+    // ---- Mount ----
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
