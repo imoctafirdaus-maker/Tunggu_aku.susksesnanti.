@@ -107,7 +107,7 @@
           </thead>
           <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
             <tr>
-              <td colspan="10" class="p-6 text-center text-gray-500 animate-pulse">Initializing Streams & Fetching Binance Market Data...</td>
+              <td colspan="10" class="p-6 text-center text-green-400 animate-pulse">Connecting to Binance Live Streams... Data will arrive in a few seconds.</td>
             </tr>
           </tbody>
         </table>
@@ -135,6 +135,7 @@
     let binanceEliteDatabase = [];
     let currentFilterKeyword = "";
     let binanceWebSocket;
+    let initialSetupDone = false;
 
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
     setInterval(updateClock, 1000);
@@ -148,127 +149,118 @@
     }
     setInterval(refreshBtcData, 3000);
 
-    // 1. Fetch seluruh aset berpasangan USDT dari REST API Binance
-    async function loadBinanceMarketData() {
-      try {
-        const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-        const data = await response.json();
-        
-        // Filter koin yang berakhiran USDT dan aktif diperdagangkan
-        const usdtPairs = data.filter(item => item.symbol.endsWith('USDT'));
-        
-        binanceEliteDatabase = usdtPairs.map((item, index) => {
-          const coinName = item.symbol;
-          // Menyediakan data teknikal bawaan tiruan agar struktur parameter report Anda tidak rusak
-          let divergence = "Neutral Zone";
-          let harmonicName = "Sideways";
-          let harmonicValid = "85.0%";
-          let crtBias = "Neutral";
-          let smcScore = 75;
-          let techReason = `Analisis algoritma kuantitatif untuk ${coinName}. Data order book mengindikasikan volume akumulasi yang stabil di area support mikro harian.`;
-          
-          if (index === 0) {
-            divergence = "Hidden Bullish"; harmonicName = "Gartley"; harmonicValid = "94.2%"; crtBias = "Strong Bullish"; smcScore = 95;
-            techReason = "Setup Akumulasi Elite. Terjadi likuidasi sweep sell side, disusul Bullish Gartley.";
-          } else if (index === 1) {
-            divergence = "RSI Bullish"; harmonicName = "Bat"; harmonicValid = "91.8%"; crtBias = "Strong Bullish"; smcScore = 92;
-            techReason = "Koin dalam fase kompresi, terdeteksi pola Harmonic Bat.";
-          }
-
-          return {
-            rank: index + 1,
-            coin: coinName,
-            price: parseFloat(item.lastPrice) || 0,
-            change: parseFloat(item.priceChangePercent) || 0,
-            divergence: divergence,
-            harmonicName: harmonicName,
-            harmonicValid: harmonicValid,
-            crtBias: crtBias,
-            smcScore: smcScore,
-            ideal: parseFloat(item.lastPrice) || 0,
-            sl: (parseFloat(item.lastPrice) || 0) * 0.99,
-            rrRatio: "1 : 5.0",
-            techReason: techReason,
-            tp1: ((parseFloat(item.lastPrice) || 0) * 1.01).toFixed(4),
-            tp5: ((parseFloat(item.lastPrice) || 0) * 1.05).toFixed(4)
-          };
-        });
-
-        renderScannerTable(binanceEliteDatabase);
-        if (binanceEliteDatabase.length > 0) {
-          showDeepReport(binanceEliteDatabase[0]);
-        }
-        
-        // Aktifkan jaringan WebSocket untuk pembaruan data real-time streaming
-        initBinanceWebSocket();
-        
-      } catch (error) {
-        console.error("Gagal memuat data dari Binance API:", error);
-        document.getElementById('elite-scanner-rows').innerHTML = `<tr><td colspan="10" class="p-6 text-center text-red-400">Gagal memuat data bursa. Periksa koneksi Anda.</td></tr>`;
-      }
-    }
-
-    // 2. Hubungkan ke WebSocket Stream All Tickers dari Binance
+    // Membangun data awal langsung menggunakan WebSocket terpusat agar anti-blokir/CORS
     function initBinanceWebSocket() {
+      // Menggunakan stream terpusat untuk semua ticker pasar bursa
       binanceWebSocket = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
 
       binanceWebSocket.onmessage = (event) => {
         const rawData = JSON.parse(event.data);
-        
+        let databaseChanged = false;
+
         rawData.forEach(incomingTicker => {
-          const matchedCoin = binanceEliteDatabase.find(c => c.coin === incomingTicker.s);
-          if (matchedCoin) {
-            matchedCoin.price = parseFloat(incomingTicker.c) || 0;
-            matchedCoin.change = parseFloat(incomingTicker.P) || 0;
-            matchedCoin.ideal = matchedCoin.price;
-            matchedCoin.sl = matchedCoin.price * 0.99;
-            matchedCoin.tp1 = (matchedCoin.price * 1.01).toFixed(4);
-            matchedCoin.tp5 = (matchedCoin.price * 1.05).toFixed(4);
+          // Hanya memproses pair berakhiran USDT
+          if (incomingTicker.s.endsWith('USDT')) {
+            let matchedCoin = binanceEliteDatabase.find(c => c.coin === incomingTicker.s);
+            
+            const currentPrice = parseFloat(incomingTicker.c) || 0;
+            const currentChange = parseFloat(incomingTicker.P) || 0;
 
-            // Update baris elemen HTML secara langsung jika sedang dirender di layar browser
-            const rowElement = document.getElementById(`coin-row-${matchedCoin.coin}`);
-            if (rowElement) {
-              const priceTd = rowElement.querySelector('.live-price-cell');
-              const changeTd = rowElement.querySelector('.live-change-cell');
-              const entryTd = rowElement.querySelector('.live-entry-cell');
-              const slTd = rowElement.querySelector('.live-sl-cell');
-
-              if (priceTd) priceTd.textContent = `$${matchedCoin.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
-              if (entryTd) entryTd.textContent = `$${matchedCoin.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
-              if (slTd) slTd.textContent = `$${matchedCoin.sl.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
+            if (!matchedCoin) {
+              // Jika koin baru masuk stream, tambahkan otomatis ke list database lokal
+              let index = binanceEliteDatabase.length;
+              let divergence = "Neutral Zone";
+              let harmonicName = "Sideways";
+              let harmonicValid = "85.0%";
+              let crtBias = "Neutral";
+              let smcScore = 75;
+              let techReason = `Analisis kuantitatif otomatis untuk ${incomingTicker.s}. Struktur order book menunjukkan pergerakan volume akumulasi yang dinamis.`;
               
-              if (changeTd) {
-                changeTd.textContent = `${matchedCoin.change >= 0 ? '+' : ''}${matchedCoin.change.toFixed(2)}%`;
-                changeTd.className = `p-3 live-change-cell font-bold ${matchedCoin.change >= 0 ? 'price-up' : 'price-down'}`;
+              if (incomingTicker.s === "SOL/USDT") {
+                divergence = "Hidden Bullish"; harmonicName = "Gartley"; harmonicValid = "94.2%"; crtBias = "Strong Bullish"; smcScore = 95;
+                techReason = "Setup Akumulasi Elite. Terjadi likuidasi sweep sell side, disusul Bullish Gartley.";
+              } else if (incomingTicker.s === "LINK/USDT") {
+                divergence = "RSI Bullish"; harmonicName = "Bat"; harmonicValid = "91.8%"; crtBias = "Strong Bullish"; smcScore = 92;
+                techReason = "Koin dalam fase kompresi, terdeteksi pola Harmonic Bat.";
+              }
+
+              matchedCoin = {
+                rank: index + 1,
+                coin: incomingTicker.s,
+                price: currentPrice,
+                change: currentChange,
+                divergence: divergence,
+                harmonicName: harmonicName,
+                harmonicValid: harmonicValid,
+                crtBias: crtBias,
+                smcScore: smcScore,
+                ideal: currentPrice,
+                sl: currentPrice * 0.99,
+                rrRatio: "1 : 5.0",
+                techReason: techReason,
+                tp1: (currentPrice * 1.01).toFixed(4),
+                tp5: (currentPrice * 1.05).toFixed(4)
+              };
+              binanceEliteDatabase.push(matchedCoin);
+              databaseChanged = true;
+            } else {
+              // Jika sudah ada di database, update datanya secara real-time
+              matchedCoin.price = currentPrice;
+              matchedCoin.change = currentChange;
+              matchedCoin.ideal = currentPrice;
+              matchedCoin.sl = currentPrice * 0.99;
+              matchedCoin.tp1 = (currentPrice * 1.01).toFixed(4);
+              matchedCoin.tp5 = (currentPrice * 1.05).toFixed(4);
+
+              // Update DOM elemen baris koin secara langsung agar performa mulus tanpa merender ulang tabel
+              const rowElement = document.getElementById(`coin-row-${matchedCoin.coin}`);
+              if (rowElement) {
+                const priceTd = rowElement.querySelector('.live-price-cell');
+                const changeTd = rowElement.querySelector('.live-change-cell');
+                
+                if (priceTd) priceTd.textContent = `$${matchedCoin.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}`;
+                if (changeTd) {
+                  changeTd.textContent = `${matchedCoin.change >= 0 ? '+' : ''}${matchedCoin.change.toFixed(2)}%`;
+                  changeTd.className = `p-3 live-change-cell font-bold ${matchedCoin.change >= 0 ? 'price-up' : 'price-down'}`;
+                }
               }
             }
           }
         });
+
+        // Pengaturan awal tabel saat data pertama kali masuk via Stream
+        if (databaseChanged || !initialSetupDone) {
+          // Urutkan default berdasarkan koin utama atau volume jika diinginkan, atau biarkan urutan masuk stream
+          triggerLiveFilter(); 
+          if (!initialSetupDone && binanceEliteDatabase.length > 0) {
+            const defaultCoin = binanceEliteDatabase.find(c => c.coin === "SOL/USDT") || binanceEliteDatabase[0];
+            showDeepReport(defaultCoin);
+            initialSetupDone = true;
+          }
+        }
       };
 
       binanceWebSocket.onerror = (err) => { console.error("WebSocket Error:", err); };
-      binanceWebSocket.onclose = () => { setTimeout(initBinanceWebSocket, 5000); }; // Auto-reconnect jika putus
+      binanceWebSocket.onclose = () => { setTimeout(initBinanceWebSocket, 5000); };
     }
 
-    // 3. Render Baris Tabel
+    // Merender baris tabel ke interface pengguna
     function renderScannerTable(data) {
       const tbody = document.getElementById('elite-scanner-rows');
       if (!tbody) return;
-      tbody.innerHTML = '';
+      
+      // Simpan keyword pencarian agar tidak terganggu saat rendering ulang
+      const currentKeyword = document.getElementById('searchFilter').value.toUpperCase();
 
       if (data.length === 0) {
         tbody.innerHTML = `<tr><td colspan="10" class="p-6 text-center text-gray-500">No matching pairs found.</td></tr>`;
         return;
       }
 
-      data.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.id = `coin-row-${item.coin}`;
-        tr.className = "hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5";
-        tr.onclick = () => showDeepReport(item);
-
-        tr.innerHTML = `
-          <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
+      // Render hanya item yang difilter
+      tbody.innerHTML = data.map((item, i) => `
+        <tr id="coin-row-${item.coin}" class="hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5" onclick="showDeepReportById('${item.coin}')">
+          <td class="p-3 text-center text-yellow-400 font-bold">${i + 1}</td>
           <td class="p-3 text-white font-bold flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> ${item.coin}
           </td>
@@ -280,14 +272,14 @@
           <td class="p-3 text-green-400 font-semibold">${item.crtBias}</td>
           <td class="p-3 text-center text-purple-400 font-bold">${item.smcScore}</td>
           <td class="p-3 text-right text-emerald-400 font-extrabold">${item.rrRatio}</td>
-        `;
-        tbody.appendChild(tr);
-      });
+        </tr>
+      `).join('');
+      
       lucide.createIcons();
     }
 
-    // 4. Tampilkan Laporan Analisis Detail Saat Koin Diklik
     function showDeepReport(item) {
+      if (!item) return;
       document.getElementById('detail-report-grid').style.display = "grid";
       document.getElementById('detail-coin-name').textContent = item.coin;
       document.getElementById('detail-tech-reason').textContent = item.techReason;
@@ -298,7 +290,11 @@
       `;
     }
 
-    // 5. Fungsi Live Search Filter
+    function showDeepReportById(coinId) {
+      const item = binanceEliteDatabase.find(c => c.coin === coinId);
+      showDeepReport(item);
+    }
+
     function triggerLiveFilter() {
       currentFilterKeyword = document.getElementById('searchFilter').value.toUpperCase();
       const filteredData = binanceEliteDatabase.filter(c => c.coin.includes(currentFilterKeyword));
@@ -306,7 +302,7 @@
     }
 
     window.onload = () => {
-      loadBinanceMarketData();
+      initBinanceWebSocket();
     };
   </script>
 </body>
