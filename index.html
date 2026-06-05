@@ -42,9 +42,10 @@
   <div id="root" class="w-full max-w-7xl"></div>
 
   <script type="text/babel">
+    // ---- React 18 + ReactDOM via CDN ----
     const { createRoot, useState, useEffect, useRef } = React;
 
-    // ---- Dummy Generator untuk data candlestick bawaan ----
+    // ---- Candlestick generator (Fallback Data) ----
     function generateCandles(count = 28) {
       let price = 78500;
       const candles = [];
@@ -60,6 +61,7 @@
       return candles;
     }
 
+    // ---- Relationship node positions (pre-calc) ----
     const nodes = [
       { x: 30, y: 70 }, { x: 28, y: 45 }, { x: 55, y: 30 },
       { x: 70, y: 55 }, { x: 58, y: 72 }, { x: 78, y: 80 },
@@ -69,12 +71,15 @@
       [0,1],[1,2],[2,3],[3,4],[0,4],[0,5],[1,6],[2,7],[3,8],[4,8],[5,7],[6,2],[7,8]
     ];
 
+    // ---- Main App ----
     function App() {
+      // API & Market States
       const [candles, setCandles] = useState(() => generateCandles(28));
       const [lastPrice, setLastPrice] = useState(76558);
       const [priceChange, setPriceChange] = useState(-1.83);
       const [selectedIndicator, setSelectedIndicator] = useState("priceRisingFast");
       const [isLoading, setIsLoading] = useState(false);
+      
       const [time, setTime] = useState(new Date());
       const canvasRef = useRef(null);
 
@@ -84,17 +89,17 @@
         return () => clearInterval(id);
       }, []);
 
+      // Trigger Lucide Icons re-render on state changes
       useEffect(() => {
         if (window.lucide) {
           window.lucide.createIcons();
         }
       });
 
-      // ---- INTEGRASI JAVASCRIPT BINANCE AI SMART SCREENER ----
+      // ---- FETCH REALTIME BINANCE DATA ----
       useEffect(() => {
         async function fetchScreenerData() {
           setIsLoading(true);
-          // Ganti ke URL publik jika diakses di luar jaringan internal cluster
           const url = "http://jarvis-futures-agent.jarvis.svc.cluster.local/api/v1/futures/smart-screener";
           
           try {
@@ -109,27 +114,25 @@
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
 
-            // MAPPING DATA: Sesuaikan properti di bawah ini dengan format object response asli Binance Anda
+            // Pemetaan data dari respon API Binance ke UI komponen Anda
             if (data && data.length > 0) {
-              // Ambil item pertama sebagai display harga utama
               const primaryData = data[0]; 
               if (primaryData.price) setLastPrice(Number(primaryData.price));
               if (primaryData.change) setPriceChange(Number(primaryData.change));
 
-              // Ubah data API menjadi format block candle visual
+              // Ubah array koin dari API menjadi data batang candle visual
               const mappedCandles = data.map(item => ({
                 open: item.open || 100,
                 close: item.close || 105,
                 high: item.high || 110,
                 low: item.low || 95,
-                // Jika close > open dianggap naik, atau sesuaikan dengan data change koin
                 up: item.change ? item.change >= 0 : true 
               }));
               setCandles(mappedCandles);
             }
           } catch (error) {
-            console.error("Gagal mengambil data dari Binance AI:", error);
-            // Fallback ke data simulasi jika API error / tidak terjangkau
+            console.error("Gagal memuat data Binance Smart Screener:", error);
+            // Fallback otomatis menggunakan simulator jika API cluster lokal tidak terjangkau
             setCandles(generateCandles(28));
           } finally {
             setIsLoading(false);
@@ -138,13 +141,13 @@
 
         fetchScreenerData();
         
-        // Auto-refresh data setiap 10 detik
+        // Auto-refresh interval 10 detik
         const intervalId = setInterval(fetchScreenerData, 10000);
         return () => clearInterval(intervalId);
 
       }, [selectedIndicator]);
 
-      // Relationship graph canvas render
+      // Draw relationship graph on canvas
       useEffect(() => {
         const canvas = canvasRef.current;
         if (!canvas) return;
@@ -159,6 +162,7 @@
 
         ctx.clearRect(0,0,w,h);
 
+        // Edges — curved lines
         ctx.lineWidth = 1.2;
         edges.forEach(([i,j]) => {
           const a = nodes[i], b = nodes[j];
@@ -173,6 +177,7 @@
           ctx.stroke();
         });
 
+        // Nodes
         nodes.forEach((n,i) => {
           const x = n.x/100*w, y = n.y/100*h;
           const grad = ctx.createRadialGradient(x-3,y-3,2,x,y,12);
@@ -183,8 +188,16 @@
           ctx.arc(x, y, 9, 0, Math.PI*2);
           ctx.fillStyle = grad;
           ctx.fill();
+          ctx.shadowColor = 'rgba(239,68,68,0.5)';
+          ctx.shadowBlur = 14;
+          ctx.beginPath();
+          ctx.arc(x, y, 10, 0, Math.PI*2);
+          ctx.fillStyle = 'rgba(255,200,50,0.06)';
+          ctx.fill();
+          ctx.shadowBlur = 0;
         });
 
+        // Downward trend line
         ctx.beginPath();
         ctx.moveTo(15/100*w, 25/100*h);
         ctx.quadraticCurveTo(45/100*w, 50/100*h, 92/100*w, 82/100*h);
@@ -195,6 +208,7 @@
         ctx.setLineDash([]);
       }, []);
 
+      // PnL Curve area data (simulated)
       const pnlPoints = [0.12,0.18,0.24,0.21,0.30,0.26,0.35,0.32,0.40,0.38,0.48,0.45,0.55,0.52,0.65,0.62,0.72,0.78,0.82,0.88,0.92,0.98];
 
       return (
@@ -202,6 +216,7 @@
           {/* ========== HEADER ========== */}
           <div className="glass-panel rounded-2xl p-5 neon-border">
             <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+              {/* Left */}
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
                   <span className="text-gray-400 text-sm font-medium">@gobblewobble</span>
@@ -219,6 +234,7 @@
                   </span>
                 </div>
               </div>
+              {/* Right — PnL */}
               <div className="text-left lg:text-right shrink-0">
                 <div className="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
                 <div className="pixel-font text-3xl sm:text-4xl text-red-500 pixel-text-shadow mt-1 leading-tight">
@@ -230,6 +246,7 @@
 
           {/* ========== MIDDLE ROW ========== */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Relationship Graph — spans 2 cols */}
             <div className="lg:col-span-2 glass-panel rounded-2xl p-4 neon-border">
               <div className="flex items-center justify-between mb-3">
                 <h2 className="text-gray-300 font-semibold text-sm tracking-wide">Relationship Graph Simulation</h2>
@@ -242,153 +259,8 @@
               </div>
             </div>
 
+            {/* Order Panel */}
             <div className="glass-panel rounded-2xl p-5 neon-border flex flex-col justify-center items-center gap-4">
               <div className="text-center">
                 <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Pair</div>
-                <div className="text-white text-lg font-semibold">ETH / USD</div>
-              </div>
-              <div className="flex items-center gap-2 text-sm text-gray-400">
-                <span className="flex items-center gap-1">
-                  <i data-lucide="trending-down" className="w-4 h-4 text-red-400"></i> -2.4%
-                </span>
-                <span className="text-white/20">|</span>
-                <span className="text-gray-500">R:R 1:2.8</span>
-              </div>
-              <button className="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-3 rounded-xl tracking-wider transition-all duration-150 shadow-lg shadow-red-900/40">
-                SHORT ETH 2.0 R:R
-              </button>
-              <div className="text-[10px] text-gray-600 font-mono">Entry: $3,210 / SL: $3,380</div>
-            </div>
-          </div>
-
-          {/* ========== LIVE SPOT FEED (INTEGRATED WITH DROPDOWN) ========== */}
-          <div className="glass-panel rounded-2xl p-5 neon-border">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-gray-300 font-semibold text-sm tracking-wide flex items-center gap-2">
-                Live Spot Feed 
-                {isLoading && <span className="text-xs text-yellow-500 animate-pulse">(Updating...)</span>}
-              </h2>
-              
-              {/* Dropdown Selector untuk Indikator Enum Binance */}
-              <div className="flex items-center gap-2 text-xs">
-                <span className="text-gray-500">Indicator:</span>
-                <select 
-                  value={selectedIndicator} 
-                  onChange={(e) => setSelectedIndicator(e.target.value)}
-                  class="bg-zinc-900 border border-zinc-700 text-gray-300 rounded px-2 py-1 focus:outline-none focus:border-red-500"
-                >
-                  <option value="priceRisingFast">🚀 Price Rising Fast</option>
-                  <option value="priceDroppingFast">🔻 Price Dropping Fast</option>
-                  <option value="biggestGainers">🟢 Biggest Gainers</option>
-                  <option value="biggestLosers">🔴 Biggest Losers</option>
-                  <option value="newHigh">📈 New High</option>
-                  <option value="newLow">📉 New Low</option>
-                  <option value="rsiOversold">🔥 RSI Oversold</option>
-                  <option value="rsiOverbought">⚡ RSI Overbought</option>
-                  <option value="smaGoldenCross">🔱 SMA Golden Cross</option>
-                  <option value="macdCrossAbove">🌌 MACD Cross Above</option>
-                  <option value="mostActive">💎 Most Active</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-end gap-4">
-              {/* Render visualisasi data yang di-fetch */}
-              <div className="flex-1 flex items-end gap-[3px] h-28">
-                {candles.slice(-30).map((c, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                    <div
-                      className={`w-full rounded-sm ${c.up ? 'candle-green glow-green' : 'candle-red glow-red'}`}
-                      style={{
-                        height: `${Math.max(6, Math.abs(c.close - c.open) / 8)}px`,
-                        opacity: 0.85
-                      }}
-                    ></div>
-                    <div
-                      className="w-[2px] bg-white/10 rounded-full mt-0.5"
-                      style={{ height: `${Math.max(4, (c.high - c.low) / 18)}px` }}
-                    ></div>
-                  </div>
-                ))}
-              </div>
-              
-              {/* Render Nilai Harga dari API */}
-              <div className="text-right shrink-0">
-                <div className="text-gray-500 text-xs">Last Price</div>
-                <div className="text-3xl font-bold text-white">${lastPrice.toLocaleString()}</div>
-                <div className={`text-xs flex items-center justify-end gap-1 mt-0.5 ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  <i data-lucide={priceChange >= 0 ? "chevron-up" : "chevron-down"} className="w-3.5 h-3.5"></i> 
-                  {priceChange}%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ========== BOTTOM METRICS ========== */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="glass-panel rounded-2xl p-5 neon-border">
-              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Trading Stats</div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-2xl font-bold text-white">1,259</div>
-                  <div className="text-xs text-gray-500">Total Trades</div>
-                </div>
-                <div>
-                  <div className="text-2xl font-bold text-green-400">78%</div>
-                  <div className="text-xs text-gray-500">Win Rate</div>
-                </div>
-              </div>
-            </div>
-
-            <div className="glass-panel rounded-2xl p-5 neon-border">
-              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Win Stack</div>
-              <div className="flex h-8 rounded-full overflow-hidden border border-white/5">
-                <div className="bg-green-500/70" style={{ width: '78%' }}></div>
-                <div className="bg-red-500/60" style={{ width: '22%' }}></div>
-              </div>
-              <div className="flex justify-between text-xs mt-2 text-gray-500">
-                <span>Wins 78%</span>
-                <span>Loss 22%</span>
-              </div>
-            </div>
-
-            <div className="glass-panel rounded-2xl p-5 neon-border">
-              <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">PnL Curve</div>
-              <div className="relative h-16 w-full">
-                <svg viewBox="0 0 100 24" className="w-full h-full" preserveAspectRatio="none">
-                  <defs>
-                    <linearGradient id="pnlGrad" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#22c55e" stopOpacity="0.45"/>
-                      <stop offset="100%" stopColor="#22c55e" stopOpacity="0.02"/>
-                    </linearGradient>
-                  </defs>
-                  <path
-                    d={pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')}
-                    fill="none" stroke="#22c55e" strokeWidth="1.5" className="drop-shadow-lg"
-                  />
-                  <path
-                    d={`${pnlPoints.map((p,i) => `${i===0?'M':'L'} ${(i/(pnlPoints.length-1))*100} ${24-p*22}`).join(' ')} L 100 24 L 0 24 Z`}
-                    fill="url(#pnlGrad)"
-                  />
-                </svg>
-              </div>
-              <div className="flex justify-between text-xs text-gray-600 mt-1">
-                <span>Jan</span>
-                <span className="text-green-400 font-semibold">+$390.6K</span>
-                <span>Jun</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="text-center text-[10px] text-gray-700 tracking-widest pt-2">
-            MIROFISH · MISPRICING SCANNER v2.4.1
-          </div>
-        </div>
-      );
-    }
-
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
-  </script>
-</body>
-</html>
+                <div className="text-white text-lg font
