@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MIROFISH MISPRICING SCANNER</title>
   
-  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
@@ -17,6 +13,7 @@
     body {
       background: #0f0f1a;
       font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      color: #e2e8f0;
     }
     .pixel-font {
       font-family: 'Press Start 2P', monospace;
@@ -39,207 +36,212 @@
   </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
-  <div id="root" class="w-full max-w-7xl"></div>
 
-  <script type="text/babel">
-    const { createRoot, useState, useEffect, useRef } = React;
-
-    // Generator Data Cadangan otomatis agar layar TIDAK BISA BLANK
-    function generateCandles(count = 28) {
-      let price = 76558;
-      const candles = [];
-      for (let i = 0; i < count; i++) {
-        const change = (Math.random() - 0.5) * 260;
-        const open = price;
-        const close = open + change;
-        const high = Math.max(open, close) + Math.random() * 100;
-        const low = Math.min(open, close) - Math.random() * 100;
-        candles.push({ open, high, low, close, up: close >= open });
-        price = close;
-      }
-      return candles;
-    }
-
-    const nodes = [
-      { x: 30, y: 70 }, { x: 28, y: 45 }, { x: 55, y: 30 },
-      { x: 70, y: 55 }, { x: 58, y: 72 }, { x: 78, y: 80 },
-      { x: 20, y: 22 }, { x: 88, y: 42 }, { x: 92, y: 70 },
-    ];
-    const edges = [
-      [0,1],[1,2],[2,3],[3,4],[0,4],[0,5],[1,6],[2,7],[3,8],[4,8],[5,7],[6,2],[7,8]
-    ];
-
-    function App() {
-      const [candles, setCandles] = useState(() => generateCandles(28));
-      const [lastPrice, setLastPrice] = useState(76558);
-      const [priceChange, setPriceChange] = useState(-1.83);
-      const [selectedIndicator, setSelectedIndicator] = useState("priceRisingFast");
-      const [isLoading, setIsLoading] = useState(false);
-      
-      const [time, setTime] = useState(new Date());
-      const canvasRef = useRef(null);
-
-      useEffect(() => {
-        const id = setInterval(() => setTime(new Date()), 1000);
-        return () => clearInterval(id);
-      }, []);
-
-      useEffect(() => {
-        if (window.lucide) {
-          window.lucide.createIcons();
-        }
-      });
-
-      useEffect(() => {
-        async function fetchScreenerData() {
-          setIsLoading(true);
-          try {
-            // Menggunakan relative path yang aman dari struktur URL folder ganjil
-            const response = await fetch("screener-data.json");
-            if (!response.ok) throw new Error("Gagal load JSON");
-            
-            const data = await response.json();
-
-            if (data && Array.isArray(data) && data.length > 0) {
-              const primaryData = data[data.length - 1];
-              if (primaryData.price) setLastPrice(Number(primaryData.price));
-              if (primaryData.change) setPriceChange(Number(primaryData.change));
-
-              const mappedCandles = data.map(item => ({
-                open: Number(item.open) || 76100,
-                close: Number(item.close) || 76558,
-                high: Number(item.high) || 76900,
-                low: Number(item.low) || 75900,
-                up: item.change ? Number(item.change) >= 0 : true 
-              }));
-              setCandles(mappedCandles);
-            } else {
-              setCandles(generateCandles(28));
-            }
-          } catch (error) {
-            // JALUR PENYELAMAT: Jika file JSON gagal dimuat, buat simulator agar tampilan tetap menyala cantik
-            setCandles(generateCandles(28));
-            setLastPrice(prev => prev + (Math.random() - 0.5) * 40);
-          } finally {
-            setIsLoading(false);
-          }
-        }
-
-        fetchScreenerData();
-        const intervalId = setInterval(fetchScreenerData, 8000);
-        return () => clearInterval(intervalId);
-      }, [selectedIndicator]);
-
-      useEffect(() => {
-        const canvas = canvasRef.current;
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-        const dpr = window.devicePixelRatio || 1;
-        const rect = canvas.getBoundingClientRect();
-        canvas.width = rect.width * dpr;
-        canvas.height = rect.height * dpr;
-        ctx.scale(dpr, dpr);
-        const w = rect.width;
-        const h = rect.height;
-
-        ctx.clearRect(0,0,w,h);
-        ctx.lineWidth = 1.2;
-        edges.forEach(([i,j]) => {
-          const a = nodes[i], b = nodes[j];
-          ctx.beginPath();
-          ctx.moveTo(a.x/100*w, a.y/100*h);
-          ctx.lineTo(b.x/100*w, b.y/100*h);
-          ctx.strokeStyle = 'rgba(250,200,50,0.25)';
-          ctx.stroke();
-        });
-
-        nodes.forEach((n) => {
-          ctx.beginPath();
-          ctx.arc(n.x/100*w, n.y/100*h, 6, 0, Math.PI*2);
-          ctx.fillStyle = '#ef4444';
-          ctx.fill();
-        });
-      }, []);
-
-      return (
-        <div className="space-y-4 w-full">
-          {/* HEADER */}
-          <div className="glass-panel rounded-2xl p-5 neon-border">
-            <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-3 flex-wrap">
-                  <span className="text-gray-400 text-sm font-medium">@gobblewobble</span>
-                  <span className="text-white/20 hidden sm:inline">|</span>
-                  <h1 className="text-white/90 font-bold text-lg tracking-wide">MIROFISH MISPRICING SCANNER</h1>
-                </div>
-                <div className="flex items-center gap-4 mt-2 text-sm text-gray-400">
-                  <span className="flex items-center gap-1">
-                    <i data-lucide="clock" className="w-3.5 h-3.5"></i>
-                    <span>{time.toISOString().slice(11,19)} UTC</span>
-                  </span>
-                </div>
-              </div>
-              <div className="text-left lg:text-right shrink-0">
-                <div className="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
-                <div className="pixel-font text-2xl sm:text-3xl text-red-500 pixel-text-shadow mt-1">$390,607</div>
-              </div>
-            </div>
+  <div class="w-full max-w-7xl space-y-4">
+    
+    <div class="glass-panel rounded-2xl p-5 neon-border">
+      <div class="flex flex-col lg:flex-row lg:items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-3 flex-wrap">
+            <span class="text-gray-400 text-sm font-medium">@gobblewobble</span>
+            <span class="text-white/20 hidden sm:inline">|</span>
+            <h1 class="text-white/90 font-bold text-lg tracking-wide">MIROFISH MISPRICING SCANNER</h1>
           </div>
-
-          {/* MAIN ROW */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-            <div className="lg:col-span-2 glass-panel rounded-2xl p-4 neon-border">
-              <h2 className="text-gray-300 font-semibold text-sm mb-2">Relationship Graph Simulation</h2>
-              <div className="relative w-full h-48">
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full"></canvas>
-              </div>
-            </div>
-            <div className="glass-panel rounded-2xl p-5 neon-border flex flex-col justify-center items-center gap-4">
-              <div className="text-center">
-                <div className="text-gray-500 text-xs uppercase tracking-wider mb-1">Active Pair</div>
-                <div className="text-white text-xl font-bold">ETH / USD</div>
-              </div>
-              <button className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl transition-all shadow-md shadow-red-900/30">
-                SHORT ETH 2.0 R:R
-              </button>
-            </div>
-          </div>
-
-          {/* SPOT FEED */}
-          <div className="glass-panel rounded-2xl p-5 neon-border">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-gray-300 font-semibold text-sm">Live Spot Feed</h2>
-              <span className="text-xs text-green-400 animate-pulse">● System Active</span>
-            </div>
-
-            <div className="flex flex-col sm:flex-row sm:items-end gap-6">
-              <div className="flex-1 flex items-end gap-[4px] h-24 bg-black/30 p-2 rounded-lg border border-white/5">
-                {candles.map((c, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center justify-end h-full">
-                    <div
-                      className={`w-full rounded-sm ${c.up ? 'candle-green glow-green' : 'candle-red glow-red'}`}
-                      style={{ height: `${Math.max(6, Math.min(70, Math.abs(c.close - c.open) / 5))}px` }}
-                    ></div>
-                  </div>
-                ))}
-              </div>
-              <div className="text-right shrink-0">
-                <div className="text-gray-500 text-xs">Last Price</div>
-                <div className="text-3xl font-bold text-white tracking-tight">
-                  ${lastPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                </div>
-                <div className={`text-xs mt-1 font-semibold ${priceChange >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {priceChange >= 0 ? `+${priceChange}` : priceChange}%
-                </div>
-              </div>
-            </div>
+          <div class="flex items-center gap-4 mt-2 text-sm text-gray-400">
+            <span class="flex items-center gap-1">
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+              <span id="digital-clock">00:00:00 UTC</span>
+            </span>
+            <span class="flex items-center gap-1 font-mono text-xs text-gray-500">
+              <i data-lucide="wallet" class="w-3.5 h-3.5 text-yellow-500"></i>
+              0x0fe9...d3a1b7
+            </span>
           </div>
         </div>
-      );
+        <div class="text-left lg:text-right shrink-0">
+          <div class="text-gray-500 text-xs uppercase tracking-wider">Unrealized PnL</div>
+          <div class="pixel-font text-2xl sm:text-3xl text-red-500 pixel-text-shadow mt-1 leading-tight">
+            $390,607
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      <div class="lg:col-span-2 glass-panel rounded-2xl p-4 neon-border">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-gray-300 font-semibold text-sm tracking-wide">Relationship Graph Simulation</h2>
+          <span class="text-xs text-gray-600 flex items-center gap-1">
+            <i data-lucide="activity" class="w-3.5 h-3.5 animate-pulse text-red-500"></i> live
+          </span>
+        </div>
+        <div class="relative w-full" style="height: 160px;">
+          <canvas id="graphCanvas" class="absolute inset-0 w-full h-full"></canvas>
+        </div>
+      </div>
+
+      <div class="glass-panel rounded-2xl p-5 neon-border flex flex-col justify-center items-center gap-4">
+        <div class="text-center">
+          <div class="text-gray-500 text-xs uppercase tracking-wider mb-1">Pair</div>
+          <div class="text-white text-xl font-bold">ETH / USD</div>
+        </div>
+        <button class="w-full bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold py-3 rounded-xl tracking-wider transition-all shadow-md shadow-red-900/30">
+          SHORT ETH 2.0 R:R
+        </button>
+      </div>
+    </div>
+
+    <div class="glass-panel rounded-2xl p-5 neon-border">
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-gray-300 font-semibold text-sm tracking-wide flex items-center gap-2">
+          Live Spot Feed <span id="sync-status" class="text-xs text-green-400">● Live Connected</span>
+        </h2>
+        <div class="text-xs text-gray-500">Auto-refresh Active</div>
+      </div>
+
+      <div class="flex flex-col sm:flex-row sm:items-end gap-6">
+        <div id="candle-container" class="flex-1 flex items-end gap-[5px] h-24 bg-black/20 p-2 rounded-lg border border-white/5">
+          </div>
+        
+        <div class="text-right shrink-0">
+          <div class="text-gray-500 text-xs">Last Price</div>
+          <div id="last-price-display" class="text-3xl font-bold text-white tracking-tight">
+            $76,558.00
+          </div>
+          <div id="price-change-display" class="text-xs mt-1 font-semibold text-red-400">
+            -1.83%
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // 1. Fungsi Jam Digital
+    function updateClock() {
+      const clockElement = document.getElementById('digital-clock');
+      if (clockElement) {
+        const now = new Date();
+        clockElement.textContent = now.toISOString().slice(11, 19) + ' UTC';
+      }
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // 2. Simulasi Data Awal Lilin (Candlestick)
+    function renderCandles() {
+      const container = document.getElementById('candle-container');
+      if (!container) return;
+      container.innerHTML = '';
+
+      // Membuat 24 batang lilin acak dekoratif
+      for (let i = 0; i < 24; i++) {
+        const isUp = Math.random() > 0.45;
+        const height = Math.floor(Math.random() * 50) + 15;
+        
+        const candleWrapper = document.createElement('div');
+        candleWrapper.className = 'flex-1 flex flex-col items-center justify-end h-full';
+        
+        const candleBody = document.createElement('div');
+        candleBody.className = `w-full rounded-sm ${isUp ? 'candle-green glow-green' : 'candle-red glow-red'}`;
+        candleBody.style.height = `${height}px`;
+        candleBody.style.opacity = '0.85';
+        
+        candleWrapper.appendChild(candleBody);
+        container.appendChild(candleWrapper);
+      }
     }
 
-    const root = createRoot(document.getElementById('root'));
-    root.render(<App />);
+    // 3. Sistem Pengambilan Data Terintegrasi screener-data.json
+    async function loadScreenerData() {
+      const statusElement = document.getElementById('sync-status');
+      const priceElement = document.getElementById('last-price-display');
+      const changeElement = document.getElementById('price-change-display');
+
+      if (statusElement) statusElement.textContent = '● Syncing...';
+
+      try {
+        // Mengambil data langsung dari file lokal Anda di GitHub
+        const response = await fetch('screener-data.json?t=' + new Date().getTime());
+        if (!response.ok) throw new Error("File tidak ditemukan");
+        
+        const data = await response.json();
+
+        if (data && Array.isArray(data) && data.length > 0) {
+          const lastData = data[data.length - 1]; // Ambil entri data paling baru
+          
+          if (lastData.price) {
+            priceElement.textContent = '$' + Number(lastData.price).toLocaleString(undefined, {minimumFractionDigits: 2});
+          }
+          if (lastData.change) {
+            const changeVal = Number(lastData.change);
+            changeElement.textContent = (changeVal >= 0 ? '+' : '') + changeVal + '%';
+            changeElement.className = `text-xs mt-1 font-semibold ${changeVal >= 0 ? 'text-green-400' : 'text-red-400'}`;
+          }
+        }
+        if (statusElement) statusElement.textContent = '● Live Connected';
+      } catch (error) {
+        // Jika file json kosong, sistem tetap berjalan normal menggunakan data aman bawaan
+        if (statusElement) statusElement.textContent = '● Simulation Mode';
+        // Variasi harga acak agar web terlihat hidup dinamis
+        const mockPrice = 76558 + (Math.random() - 0.5) * 60;
+        priceElement.textContent = '$' + mockPrice.toLocaleString(undefined, {minimumFractionDigits: 2});
+      }
+      
+      renderCandles();
+    }
+
+    // Jalankan sistem pembaca data otomatis setiap 6 detik
+    setInterval(loadScreenerData, 6000);
+    loadScreenerData();
+
+    // 4. Menggambar Grafis Jaringan (Canvas)
+    function drawGraph() {
+      const canvas = document.getElementById('graphCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      
+      const w = canvas.clientWidth;
+      const h = canvas.clientHeight;
+      canvas.width = w;
+      canvas.height = h;
+
+      const points = [
+        {x: w*0.15, y: h*0.3}, {x: w*0.35, y: h*0.15}, {x: w*0.6, y: h*0.4},
+        {x: w*0.8, y: h*0.2}, {x: w*0.25, y: h*0.7}, {x: w*0.5, y: h*0.8},
+        {x: w*0.75, y: h*0.65}, {x: w*0.9, y: h*0.5}
+      ];
+
+      // Garis penghubung antar titik
+      ctx.strokeStyle = 'rgba(251, 191, 36, 0.2)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      for(let i=0; i<points.length - 1; i++) {
+        ctx.moveTo(points[i].x, points[i].y);
+        ctx.lineTo(points[i+1].x, points[i+1].y);
+      }
+      ctx.stroke();
+
+      // Bulatan Titik Node jaringan
+      points.forEach(p => {
+        ctx.fillStyle = '#ef4444';
+        ctx.shadowBlur = 8;
+        ctx.shadowColor = '#ef4444';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, 5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+    }
+    
+    // Tunggu komponen siap lalu gambar grafik
+    setTimeout(drawGraph, 500);
+    window.addEventListener('resize', drawGraph);
+
+    // Inisialisasi Ikon Lucide
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
   </script>
 </body>
 </html>
