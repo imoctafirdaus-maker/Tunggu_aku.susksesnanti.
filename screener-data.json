@@ -1,0 +1,20 @@
+[
+  {
+    "symbol": "BTCUSD",
+    "price": 68500,
+    "change": 2.5,
+    "open": 67000,
+    "close": 68500,
+    "high": 69000,
+    "low": 66800
+  },
+  {
+    "symbol": "ETHUSD",
+    "price": 3500,
+    "change": -1.2,
+    "open": 3550,
+    "close": 3500,
+    "high": 3580,
+    "low": 3480
+  }
+]
