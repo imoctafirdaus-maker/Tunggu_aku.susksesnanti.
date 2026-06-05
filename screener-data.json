@@ -1,7 +1,17 @@
-{
-  "coin":"bitcoin",
-  "signal":"BUY",
-  "score":78,
-  "rsi":62.4,
-  "trend":"BULLISH"
-}
+[
+  {
+    "id": "bitcoin",
+    "pair": "BTC/USDT",
+    "name": "Bitcoin"
+  },
+  {
+    "id": "ethereum",
+    "pair": "ETH/USDT",
+    "name": "Ethereum"
+  },
+  {
+    "id": "solana",
+    "pair": "SOL/USDT",
+    "name": "Solana"
+  }
+]
