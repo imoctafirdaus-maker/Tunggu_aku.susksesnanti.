@@ -31,7 +31,7 @@
             <span class="text-green-400 font-semibold tracking-wider pixel-font text-[10px] bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">AI QUANT B-SCANNER</span>
             <h1 class="text-white font-bold text-base tracking-wide uppercase">Mirofish Elite Scanner</h1>
           </div>
-          <p class="text-xs text-gray-400 mt-1">Real-time Binance Spot & Futures Multi-Symbol System.</p>
+          <p class="text-xs text-gray-400 mt-1">Real-time Bybit Spot Multi-Symbol System.</p>
         </div>
         <div class="text-left sm:text-right">
           <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
@@ -80,7 +80,7 @@
         <div>
           <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
             <i data-lucide="shield-alert" class="w-5 h-5 text-green-400"></i>
-            J. PROBABILITAS PUMP HIGHEST RANKING (ALL BINANCE PAIRS)
+            J. PROBABILITAS PUMP HIGHEST RANKING (ALL BYBIT PAIRS)
           </h2>
         </div>
         <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 max-w-xs w-full">
@@ -129,7 +129,7 @@
   </div>
 
   <script>
-    // Database utama dasar yang langsung tampil tanpa menunggu loading API / Websocket
+    // Database utama dasar bawaan agar tampilan langsung ada isi data sejak detik pertama
     let binanceEliteDatabase = [
       { rank: 1, coin: "SOL/USDT", price: 182.50, change: 5.12, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, ideal: 182.50, sl: 181.20, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidity) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "184.30", tp5: "196.90" },
       { rank: 2, coin: "LINK/USDT", price: 17.80, change: -0.42, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, ideal: 17.80, sl: 17.65, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "18.15", tp5: "20.60" },
@@ -142,68 +142,74 @@
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
     setInterval(updateClock, 1000);
 
-    // Pembaruan harga simulasi mandiri untuk menjaga kestabilan interface dari masalah koneksi lokal perangkat
-    function startLivePriceSimulation() {
-      setInterval(() => {
-        binanceEliteDatabase.forEach(item => {
-          // Fluktuasi harga mikro acak harian agar visual tetap berkedip hidup secara real-time
-          const changePercent = (Math.random() - 0.5) * 0.08; 
-          item.price += item.price * changePercent;
-          item.ideal = item.price;
-          item.sl = item.price * 0.99;
-          item.tp1 = (item.price * 1.01).toFixed(2);
-          item.tp5 = (item.price * 1.05).toFixed(2);
-          
-          const rowElement = document.getElementById(`coin-row-${item.coin.replace('/', '-')}`);
-          if (rowElement) {
-            const priceTd = rowElement.querySelector('.live-price-cell');
-            if (priceTd) {
-              priceTd.textContent = `$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-            }
-          }
-        });
-      }, 2000);
-    }
-
-    // Inisialisasi pengambilan data sekunder tambahan dari Binance API (Hybrid Mode)
-    async function tryFetchBinanceUpdates() {
+    // Ambil data ticker real-time langsung dari REST API V5 Bybit dengan proteksi AllOrigins Proxy
+    async function fetchBybitMarketData() {
       try {
-        const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-        if (!response.ok) return;
-        const data = await response.json();
+        const targetUrl = 'https://api.bybit.com/v5/market/tickers?category=spot';
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
         
-        data.forEach(ticker => {
-          // Format dari Binance berbentuk BTCUSDT, kita ubah agar cocok dengan format array koin (BTC/USDT)
-          const formattedSymbol = ticker.symbol.replace('USDT', '/USDT');
-          let localCoin = binanceEliteDatabase.find(c => c.coin === formattedSymbol);
+        const response = await fetch(proxyUrl);
+        if (!response.ok) return;
+        const resData = await response.json();
+        
+        if (resData && resData.result && resData.result.list) {
+          const tickers = resData.result.list;
           
-          if (localCoin) {
-            localCoin.price = parseFloat(ticker.lastPrice) || localCoin.price;
-            localCoin.change = parseFloat(ticker.priceChangePercent) || localCoin.change;
-          } else if (ticker.symbol.endsWith('USDT') && binanceEliteDatabase.length < 40) {
-            // Jika ada koin USDT baru dari bursa, otomatis dimasukkan ke list database aplikasi Anda
-            binanceEliteDatabase.push({
-              rank: binanceEliteDatabase.length + 1,
-              coin: formattedSymbol,
-              price: parseFloat(ticker.lastPrice) || 0,
-              change: parseFloat(ticker.priceChangePercent) || 0,
-              divergence: "Quant Analysed",
-              harmonicName: "Regular Pattern",
-              harmonicValid: "88.0%",
-              crtBias: "Neutral Zone",
-              smcScore: 78,
-              ideal: parseFloat(ticker.lastPrice) || 0,
-              sl: (parseFloat(ticker.lastPrice) || 0) * 0.99,
-              rrRatio: "1 : 5.0",
-              techReason: `Sistem kuantitatif memproses data trading volume untuk ${formattedSymbol} secara teratur.`,
-              tp1: ((parseFloat(ticker.lastPrice) || 0) * 1.01).toFixed(2),
-              tp5: ((parseFloat(ticker.lastPrice) || 0) * 1.05).toFixed(2)
-            });
-          }
-        });
-        triggerLiveFilter();
-      } catch (e) {
-        console.log("Sistem API Binance sibuk, menggunakan mode database lokal mandiri.");
+          tickers.forEach(ticker => {
+            if (ticker.symbol.endsWith('USDT')) {
+              // Ubah format string BTCUSDT menjadi BTC/USDT agar sesuai dengan model database Anda
+              const formattedSymbol = ticker.symbol.replace('USDT', '/USDT');
+              let matchedCoin = binanceEliteDatabase.find(c => c.coin === formattedSymbol);
+              
+              const currentPrice = parseFloat(ticker.lastPrice) || 0;
+              // Bybit mengembalikan nilai persentase dlm bentuk desimal (misal: 0.025 = 2.5%), kita kalikan 100
+              const currentChange = (parseFloat(ticker.price24hPcnt) || 0) * 100;
+
+              if (matchedCoin) {
+                matchedCoin.price = currentPrice;
+                matchedCoin.change = currentChange;
+                matchedCoin.ideal = currentPrice;
+                matchedCoin.sl = currentPrice * 0.99;
+                matchedCoin.tp1 = (currentPrice * 1.01).toFixed(2);
+                matchedCoin.tp5 = (currentPrice * 1.05).toFixed(2);
+              } else if (binanceEliteDatabase.length < 80) {
+                // Tambahkan koin baru dari bursa Bybit jika belum terdaftar di list awal
+                binanceEliteDatabase.push({
+                  rank: binanceEliteDatabase.length + 1,
+                  coin: formattedSymbol,
+                  price: currentPrice,
+                  change: currentChange,
+                  divergence: "Quant Analysed",
+                  harmonicName: "Regular Pattern",
+                  harmonicValid: "88.0%",
+                  crtBias: "Neutral Zone",
+                  smcScore: 78,
+                  ideal: currentPrice,
+                  sl: currentPrice * 0.99,
+                  rrRatio: "1 : 5.0",
+                  techReason: `Sistem kuantitatif memproses data trading volume untuk ${formattedSymbol} secara teratur pada bursa Bybit.`,
+                  tp1: (currentPrice * 1.01).toFixed(2),
+                  tp5: (currentPrice * 1.05).toFixed(2)
+                });
+              }
+
+              // Update data BTC Live Feed Section jika koin yang diproses adalah BTC/USDT
+              if (formattedSymbol === "BTC/USDT") {
+                const btcPriceEl = document.getElementById('btc-live-price');
+                const btcChangeEl = document.getElementById('btc-live-change');
+                if (btcPriceEl) btcPriceEl.textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+                if (btcChangeEl) {
+                  btcChangeEl.textContent = `${currentChange >= 0 ? '+' : ''}${currentChange.toFixed(2)}%`;
+                  btcChangeEl.className = `text-xs font-bold font-mono ${currentChange >= 0 ? 'price-up' : 'price-down'}`;
+                }
+              }
+            }
+          });
+          
+          triggerLiveFilter();
+        }
+      } catch (error) {
+        console.log("Koneksi API Bybit limit/delay, mempertahankan sistem data lokal aktif.");
       }
     }
 
@@ -214,7 +220,6 @@
 
       data.forEach(item => {
         const tr = document.createElement('tr');
-        // ID baris menggunakan tanda hubung agar aman dari pembacaan CSS DOM browser
         tr.id = `coin-row-${item.coin.replace('/', '-')}`;
         tr.className = "hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5";
         tr.onclick = () => showDeepReport(item);
@@ -224,7 +229,7 @@
           <td class="p-3 text-white font-bold flex items-center gap-1.5">
             <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> ${item.coin}
           </td>
-          <td class="p-3 live-price-cell text-gray-100">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</td>
+          <td class="p-3 text-gray-100">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</td>
           <td class="p-3 font-bold ${item.change >= 0 ? 'price-up' : 'price-down'}">${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%</td>
           <td class="p-3 text-blue-400">${item.divergence}</td>
           <td class="p-3 text-gray-200">${item.harmonicName}</td>
@@ -244,9 +249,9 @@
       document.getElementById('detail-coin-name').textContent = item.coin;
       document.getElementById('detail-tech-reason').textContent = item.techReason;
       document.getElementById('target-profit-ladder').innerHTML = `
-        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Matrix:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString(undefined, {minimumFractionDigits:2})}</span></div>
-        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${item.tp1}</span></div>
-        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP5 Projection:</span><span class="text-green-400 font-bold">$${item.tp5}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Matrix:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${parseFloat(item.tp1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
+        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP5 Projection:</span><span class="text-green-400 font-bold">$${parseFloat(item.tp5).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
       `;
     }
 
@@ -259,11 +264,12 @@
     window.onload = () => {
       renderScannerTable(binanceEliteDatabase);
       showDeepReport(binanceEliteDatabase[0]);
-      startLivePriceSimulation();
       
-      // Lakukan sync data latar belakang ke server bursa setiap 10 detik
-      tryFetchBinanceUpdates();
-      setInterval(tryFetchBinanceUpdates, 10000);
+      // Jalankan fetching data pasar Bybit langsung saat load awal
+      fetchBybitMarketData();
+      
+      // Set interval auto-refresh data harga dari Bybit setiap 5 detik agar selalu up-to-date
+      setInterval(fetchBybitMarketData, 5000);
     };
   </script>
 </body>
