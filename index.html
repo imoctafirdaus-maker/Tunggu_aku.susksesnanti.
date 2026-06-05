@@ -178,6 +178,33 @@
       }, 1500);
     }
 
+    // Fungsi memuat data lokal dari Github
+    async function loadLocalDatabaseFromGithub() {
+      try {
+        // Gunakan URL mentah (raw) dari GitHub Pages atau raw.githubusercontent
+        const githubRawUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti./main/screener-data.json';
+        
+        const response = await fetch(githubRawUrl);
+        if (!response.ok) return;
+        const remoteJson = await response.json();
+        
+        // Inject data dari GitHub ke database lokal aplikasi
+        remoteJson.forEach(remoteCoin => {
+          let localCoin = binanceEliteDatabase.find(c => c.coin === remoteCoin.coin);
+          if (localCoin) {
+            localCoin.price = remoteCoin.price;
+            localCoin.change = remoteCoin.change;
+            // pertahankan indikator harmonic bawaan Anda
+          }
+        });
+        
+        // Render ulang tabel setelah data github masuk
+        triggerLiveFilter();
+      } catch (error) {
+        console.log("Gagal memuat pre-sed data dari GitHub, menggunakan fallback lokal.");
+      }
+    }
+
     // ENGINE BARU: Mengambil data real-time dari CoinGecko API API v3
     async function fetchCoinGeckoMarketData() {
       try {
@@ -292,12 +319,15 @@
       renderScannerTable(filteredData);
     }
 
-    window.onload = () => {
+    window.onload = async () => {
       buildLiveVolumeBars();
       triggerVolumeBarPulse();
       renderScannerTable(binanceEliteDatabase);
       
-      // Request awal data pasar dari CoinGecko
+      // Request data dari Github terlebih dahulu
+      await loadLocalDatabaseFromGithub();
+      
+      // Request awal data pasar dari CoinGecko setelah data github selesai diload
       fetchCoinGeckoMarketData();
       
       // Update data secara periodik setiap 10 detik (Disesuaikan dengan limit rate publik CoinGecko)
