@@ -422,7 +422,7 @@
 
     // --- DATABASE SCANNERS & FALLBACK COINGECKO ENGINE ---
     let binanceEliteDatabase = [
-      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
+      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
       { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, finalInstitutionalScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "0", tp5: "0" },
       { rank: 3, coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Kuat)", harmonicName: "Bullish Butterfly", harmonicValid: "91.0%", crtBias: "Bullish", smcScore: 88, finalInstitutionalScore: 88, ideal: 0, sl: 0, rrRatio: "1 : 5.2", techReason: "Struktur pasar menunjukkan akumulasi volume yang signifikan pada zona support fractal.", tp1: "0", tp5: "0" },
       { rank: 4, coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish (Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "86.0%", crtBias: "Bullish", smcScore: 85, finalInstitutionalScore: 85, ideal: 0, sl: 0, rrRatio: "1 : 5.0", techReason: "Terjadi momentum crossover positif pada indikator MACD disertai konfluensi harmonic support.", tp1: "0", tp5: "0" },
@@ -730,7 +730,7 @@
           dropzone.classList.remove('border-green-500');
           if (e.dataTransfer.files.length >= 4) { 
             this.handleMultipleFiles(e.dataTransfer.files); 
-          } else if (e.dataTransfer.files.length > 0) {
+          } else {
             alert('Upload minimal 4 chart:\n\n' + '1. Daily (D1)\n' + '2. H4\n' + '3. H1\n' + '4. M15');
           }
         });
@@ -739,7 +739,7 @@
           if (e.target.files.length >= 4) { 
             this.handleMultipleFiles(e.target.files); 
           } else { 
-            alert('Upload minimal 4 chart:\n\n' + '1. Daily (D1)\n' + '2. H4\n' + '3. H1\n' + '4. M15'); 
+            alert('Upload minimal 4 chart:\n\n' + '1. Daily (D1)\n' + '2. H4\n' + '3. h1\n' + '4. M15'); 
           } 
         });
       },
@@ -756,7 +756,6 @@
         this.setLoadingState(true, "Processing Multi-Timeframe Images...");
 
         try {
-          // Membaca 4 berkas gambar pertama sesuai urutan indikator indeks
           for (let i = 0; i < 4; i++) {
             const file = files[i];
             if (!validTypes.includes(file.type)) {
@@ -771,12 +770,13 @@
             });
 
             this.uploadedImages.push({
-              mimeType: file.type,
-              data: base64Data
+              inlineData: {
+                mimeType: file.type,
+                data: base64Data
+              }
             });
           }
 
-          // Tetap load gambar M15 (indeks 3) sebagai pratinjau rendering anotasi canvas existing
           const canvasPreviewFile = files[3];
           await new Promise((resolve) => {
             const reader = new FileReader();
@@ -791,15 +791,16 @@
             reader.readAsDataURL(canvasPreviewFile);
           });
 
-          this.analyzeMultiTF(apiKey);
+          document.getElementById('chart-screenshot-input').value = '';
+          await this.analyzeMultiTF(apiKey);
         } catch (err) {
           alert(err.message);
+          document.getElementById('chart-screenshot-input').value = '';
           this.setLoadingState(false);
         }
       },
 
       handleFile(file) {
-        // Fallback backward-compatibility kept intact for application runtime stability
         const apiKey = document.getElementById('gemini-api-key').value.trim();
         if (!apiKey) return;
         this.uploadedImageMime = file.type;
@@ -905,10 +906,10 @@ REQUIRED JSON SCHEMA:
           contents: [{
             parts: [
               { text: promptText },
-              { text: "Image 1 = Daily" }, { inlineData: this.uploadedImages[0] },
-              { text: "Image 2 = H4" }, { inlineData: this.uploadedImages[1] },
-              { text: "Image 3 = H1" }, { inlineData: this.uploadedImages[2] },
-              { text: "Image 4 = M15" }, { inlineData: this.uploadedImages[3] }
+              { text: "Image 1 = Daily" }, this.uploadedImages[0],
+              { text: "Image 2 = H4" }, this.uploadedImages[1],
+              { text: "Image 3 = H1" }, this.uploadedImages[2],
+              { text: "Image 4 = M15" }, this.uploadedImages[3]
             ]
           }],
           generationConfig: { responseMimeType: "application/json" }
@@ -941,7 +942,6 @@ REQUIRED JSON SCHEMA:
             parsedResult.m15_raw || {}
           );
 
-          // Sinkronisasi field tambahan baru hasil evaluasi multi-timeframe alignment
           report.exchange = parsedResult.exchange || "Binance";
           report.timeframe = parsedResult.timeframe || "4-TF Aligned";
           report.currentPrice = parsedResult.currentPrice || 0;
@@ -955,10 +955,9 @@ REQUIRED JSON SCHEMA:
           report.fvg = parsedResult.m15_raw?.fvg_box?.detected ? "Active" : "None";
           report.orderBlock = parsedResult.m15_raw?.ob_box?.detected ? "Detected" : "None";
 
-          // Gunakan status entri spesifik hasil deteksi multi-timeframe jika status konflik dipenuhi
-          if (parsedResult.tradeStatus === "EXECUTE") {
+          if (parsedResult.tradeStatus === "EXECUTE" || parsedResult.tradeStatus === "APPROVED") {
             report.tradeStatus = "EXECUTE / FULL CONFLUENCE";
-          } else if (parsedResult.conflictDetected) {
+          } else if (parsedResult.conflictDetected || parsedResult.tradeStatus === "NO TRADE") {
             report.tradeStatus = "NO TRADE / TIMEFRAME CONFLICT";
           }
 
@@ -971,11 +970,25 @@ REQUIRED JSON SCHEMA:
       },
 
       async analyzeChartWithGemini(apiKey) {
-        // Legacy function placeholder mapping retained for seamless multi-module integrity code compilation
         this.setLoadingState(true, "Redirecting structural stream parameters...");
         if (this.uploadedImageBase64) {
-          this.uploadedImages = [{ mimeType: this.uploadedImageMime, data: this.uploadedImageBase64 }, {}, {}, {}];
+          const fakeImg = { inlineData: { mimeType: this.uploadedImageMime, data: this.uploadedImageBase64 } };
+          this.uploadedImages = [fakeImg, fakeImg, fakeImg, fakeImg];
           this.analyzeMultiTF(apiKey);
+        }
+      },
+
+      setLoadingState(isLoading, text = "") {
+        const promptView = document.getElementById('upload-prompt-view');
+        const loadingView = document.getElementById('upload-loading-view');
+        const txtState = document.getElementById('loading-text-state');
+        if (isLoading) {
+          promptView.classList.add('hidden');
+          loadingView.classList.remove('hidden');
+          txtState.textContent = text;
+        } else {
+          loadingView.classList.add('hidden');
+          promptView.classList.remove('hidden');
         }
       },
 
