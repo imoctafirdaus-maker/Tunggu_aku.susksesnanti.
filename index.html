@@ -105,7 +105,7 @@
           <thead>
             <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[11px] uppercase tracking-wider">
               <th class="p-3 text-center">Rank</th>
-              <th class="p-3">Coin</th>
+              <th class="p-3">Coin (Final Score)</th>
               <th class="p-3">Price (USDT)</th>
               <th class="p-3">24h Change</th>
               <th class="p-3">Divergence</th>
@@ -245,14 +245,94 @@
   </div>
 
   <script>
-    // --- COINGECKO ENGINE (UNTOUCHED AND FUNCTIONING) ---
+    // ========================================== GLOBAL STATE: INSTITUTIONAL DATABASE POOL ==========================================
+    let marketRegime = {};
+    let btcContext = {};
+    let usdtContext = {};
+    let institutionalScore = {};
+    let whaleScore = {};
+    let fundingScore = {};
+    let oiScore = {};
+
+    // Helper fetch dengan perlindungan timeout & mekanisme retry otomatis
+    async function fetchWithRetry(url, options = {}, retries = 3, backoff = 1000) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 6000); 
+      
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+        return await response.json();
+      } catch (err) {
+        clearTimeout(id);
+        if (retries > 0) {
+          console.warn(`Fetch failed for URL: ${url}. Retrying in ${backoff}ms... (${retries} attempts left). Error: ${err.message}`);
+          await new Promise(resolve => setTimeout(resolve, backoff));
+          return fetchWithRetry(url, options, retries - 1, backoff * 2);
+        }
+        throw err;
+      }
+    }
+
+    // ========================================== FUNCTION: INSTITUTIONAL DATA LOADER ==========================================
+    async function loadInstitutionalData() {
+      const baseUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/';
+      const targets = [
+        { key: 'marketRegime', file: 'market-regime.json' },
+        { key: 'btcContext', file: 'btc-context.json' },
+        { key: 'usdtContext', file: 'usdt-context.json' },
+        { key: 'institutionalScore', file: 'institutional-score.json' },
+        { key: 'whaleScore', file: 'whale-score.json' },
+        { key: 'fundingScore', file: 'funding-score.json' },
+        { key: 'oiScore', file: 'oi-score.json' }
+      ];
+
+      console.log("Initializing Institutional Data Core Stream...");
+      
+      await Promise.all(targets.map(async (target) => {
+        try {
+          const jsonData = await fetchWithRetry(`${baseUrl}${target.file}`);
+          
+          if (target.key === 'marketRegime') marketRegime = jsonData;
+          else if (target.key === 'btcContext') btcContext = jsonData;
+          else if (target.key === 'usdtContext') usdtContext = jsonData;
+          else if (target.key === 'institutionalScore') institutionalScore = jsonData;
+          else if (target.key === 'whaleScore') whaleScore = jsonData;
+          else if (target.key === 'fundingScore') fundingScore = jsonData;
+          else if (target.key === 'oiScore') oiScore = jsonData;
+          
+          console.log(`✓ Successfully synchronized: ${target.file}`);
+        } catch (error) {
+          console.error(`✕ Corrupted data or Network Error on [${target.file}]: ${error.message}. Activating Fallback State.`);
+          if (target.key === 'marketRegime') marketRegime = {};
+          else if (target.key === 'btcContext') btcContext = {};
+          else if (target.key === 'usdtContext') usdtContext = {};
+          else if (target.key === 'institutionalScore') institutionalScore = {};
+          else if (target.key === 'whaleScore') whaleScore = {};
+          else if (target.key === 'fundingScore') fundingScore = {};
+          else if (target.key === 'oiScore') oiScore = {};
+        }
+      }));
+
+      // VALIDASI DATA KOSONG (Console Peringatan & Fallback Engine Protection)
+      if (!marketRegime || Object.keys(marketRegime).length === 0) console.warn("Warning: marketRegime Database is Empty. Fallback triggered.");
+      if (!btcContext || Object.keys(btcContext).length === 0) console.warn("Warning: btcContext Database is Empty. Fallback triggered.");
+      if (!usdtContext || Object.keys(usdtContext).length === 0) console.warn("Warning: usdtContext Database is Empty. Fallback triggered.");
+      if (!institutionalScore || Object.keys(institutionalScore).length === 0) console.warn("Warning: institutionalScore Database is Empty. Fallback triggered.");
+      if (!whaleScore || Object.keys(whaleScore).length === 0) console.warn("Warning: whaleScore Database is Empty. Fallback triggered.");
+      if (!fundingScore || Object.keys(fundingScore).length === 0) console.warn("Warning: fundingScore Database is Empty. Fallback triggered.");
+      if (!oiScore || Object.keys(oiScore).length === 0) console.warn("Warning: oiScore Database is Empty. Fallback triggered.");
+    }
+
+    // --- DATABASE SCANNERS & FALLBACK COINGECKO ENGINE ---
     let binanceEliteDatabase = [
-      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
-      { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "0", tp5: "0" },
-      { rank: 3, coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Kuat)", harmonicName: "Bullish Butterfly", harmonicValid: "91.0%", crtBias: "Bullish", smcScore: 88, ideal: 0, sl: 0, rrRatio: "1 : 5.2", techReason: "Struktur pasar menunjukkan akumulasi volume yang signifikan pada zona support fractal.", tp1: "0", tp5: "0" },
-      { rank: 4, coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish (Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "86.0%", crtBias: "Bullish", smcScore: 85, ideal: 0, sl: 0, rrRatio: "1 : 5.0", techReason: "Terjadi momentum crossover positif pada indikator MACD disertai konfluensi harmonic support.", tp1: "0", tp5: "0" },
-      { rank: 5, coin: "BTC/USDT", price: 0, change: 0, divergence: "Neutral Zone", harmonicName: "Sideways", harmonicValid: "85.0%", crtBias: "Neutral", smcScore: 75, ideal: 0, sl: 0, rrRatio: "1 : 4.5", techReason: "Induk pasar berada di bawah tekanan distribusi jangka pendek menuju area support psikologis.", tp1: "0", tp5: "0" },
-      { rank: 6, coin: "ETH/USDT", price: 0, change: 0, divergence: "RSI Oversold", harmonicName: "Bullish Crab", harmonicValid: "89.5%", crtBias: "Mild Bullish", smcScore: 82, ideal: 0, sl: 0, rrRatio: "1 : 5.1", techReason: "Harga mendekati area discount zone dengan struktur pengosongan order jual (liquidity sweep).", tp1: "0", tp5: "0" }
+      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
+      { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, finalInstitutionalScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "0", tp5: "0" },
+      { rank: 3, coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Kuat)", harmonicName: "Bullish Butterfly", harmonicValid: "91.0%", crtBias: "Bullish", smcScore: 88, finalInstitutionalScore: 88, ideal: 0, sl: 0, rrRatio: "1 : 5.2", techReason: "Struktur pasar menunjukkan akumulasi volume yang signifikan pada zona support fractal.", tp1: "0", tp5: "0" },
+      { rank: 4, coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish (Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "86.0%", crtBias: "Bullish", smcScore: 85, finalInstitutionalScore: 85, ideal: 0, sl: 0, rrRatio: "1 : 5.0", techReason: "Terjadi momentum crossover positif pada indikator MACD disertai konfluensi harmonic support.", tp1: "0", tp5: "0" },
+      { rank: 5, coin: "BTC/USDT", price: 0, change: 0, divergence: "Neutral Zone", harmonicName: "Sideways", harmonicValid: "85.0%", crtBias: "Neutral", smcScore: 75, finalInstitutionalScore: 75, ideal: 0, sl: 0, rrRatio: "1 : 4.5", techReason: "Induk pasar berada di bawah tekanan distribusi jangka pendek menuju area support psikologis.", tp1: "0", tp5: "0" },
+      { rank: 6, coin: "ETH/USDT", price: 0, change: 0, divergence: "RSI Oversold", harmonicName: "Bullish Crab", harmonicValid: "89.5%", crtBias: "Mild Bullish", smcScore: 82, finalInstitutionalScore: 82, ideal: 0, sl: 0, rrRatio: "1 : 5.1", techReason: "Harga mendekati area discount zone dengan struktur pengosongan order jual (liquidity sweep).", tp1: "0", tp5: "0" }
     ];
 
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
@@ -287,16 +367,107 @@
       try {
         const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        const response = await fetch(proxyUrl);
-        if (!response.ok) return;
-        const data = await response.json();
+        
+        // PRIORITAS 8: Menggunakan mesin fetchWithRetry untuk mitigasi perlindungan rate-limit
+        const data = await fetchWithRetry(proxyUrl);
         
         if (Array.isArray(data)) {
           data.forEach(coinData => {
-            const formattedSymbol = `${coinData.symbol.toUpperCase()}/USDT`;
+            const tokenKey = coinData.symbol.toUpperCase();
+            const formattedSymbol = `${tokenKey}/USDT`;
             let matchedCoin = binanceEliteDatabase.find(c => c.coin === formattedSymbol);
             const currentPrice = coinData.current_price || 0;
             const currentChange = coinData.price_change_percentage_24h || 0;
+
+            // CORE ENGINE REFACTOR: Hitung Bobot Konfluensi Makro & Mikro Pasar
+            let baseScoreBonus = 0;
+            let calculatedBias = "Neutral Zone";
+
+            // 1. Kondisi Regime Global
+            if (marketRegime && marketRegime.current_regime === "Bullish Expansion") {
+              baseScoreBonus += 5;
+              calculatedBias = "Mild Bullish";
+            }
+            // 2. Kondisi USDT Context
+            let usdtContextScore = 50; 
+            if (usdtContext && usdtContext.environment === "risk-on") {
+              baseScoreBonus += 5;
+              usdtContextScore = 90;
+            } else if (usdtContext && usdtContext.environment === "risk-off") {
+              baseScoreBonus -= 10;
+              usdtContextScore = 20;
+              calculatedBias = "Risk Off Alert";
+            }
+
+            // PRIORITAS 1: Integrasi Komprehensif btcContext Ke Scoring Engine
+            let btcContextScore = 50; 
+            if (btcContext && btcContext.bias) {
+              if (btcContext.bias === "strong_bullish") { baseScoreBonus += 15; btcContextScore = 100; }
+              else if (btcContext.bias === "bullish") { baseScoreBonus += 10; btcContextScore = 80; }
+              else if (btcContext.bias === "bearish") { baseScoreBonus -= 15; btcContextScore = 30; }
+              else if (btcContext.bias === "strong_bearish") { baseScoreBonus -= 25; btcContextScore = 0; }
+              
+              if (btcContext.trend === "up") baseScoreBonus += 5;
+              if (btcContext.market_structure === "bullish") baseScoreBonus += 5;
+            }
+
+            // PRIORITAS 2: Integrasi Komprehensif fundingScore
+            let currentFundingWeight = 50;
+            if (fundingScore && fundingScore[tokenKey]) {
+              let fData = fundingScore[tokenKey];
+              if (typeof fData.score === 'number') {
+                baseScoreBonus += fData.score;
+                currentFundingWeight = Math.min(100, Math.max(0, 50 + (fData.score * 3)));
+              } else if (fData.rate) {
+                let rate = parseFloat(fData.rate);
+                if (rate === 0 || (rate > 0 && rate <= 0.01)) { baseScoreBonus += 5; currentFundingWeight = 85; }
+                else if (rate > 0.01 && rate <= 0.05) { baseScoreBonus += 3; currentFundingWeight = 70; }
+                else if (rate > 0.05 && rate <= 0.1) { baseScoreBonus -= 10; currentFundingWeight = 30; }
+                else if (rate > 0.1) { baseScoreBonus -= 15; currentFundingWeight = 10; }
+                else if (rate < -0.1) { baseScoreBonus -= 15; currentFundingWeight = 15; }
+              }
+            }
+
+            // PRIORITAS 3: Integrasi Komprehensif whaleScore
+            let currentWhaleWeight = 50;
+            if (whaleScore && whaleScore[tokenKey]) {
+              let wData = whaleScore[tokenKey];
+              if (typeof wData.score === 'number') {
+                baseScoreBonus += wData.score;
+                currentWhaleWeight = Math.min(100, Math.max(0, 50 + (wData.score * 2.5)));
+              } else if (wData.activity) {
+                let act = wData.activity.toLowerCase();
+                if (act.includes("strong_accumulation") || act.includes("strong accumulation")) { baseScoreBonus += 15; currentWhaleWeight = 100; }
+                else if (act.includes("heavy_accumulation")) { baseScoreBonus += 15; currentWhaleWeight = 100; }
+                else if (act.includes("accumulation")) { baseScoreBonus += 10; currentWhaleWeight = 85; }
+                else if (act.includes("neutral")) { baseScoreBonus += 0; currentWhaleWeight = 50; }
+                else if (act.includes("heavy_distribution")) { baseScoreBonus -= 20; currentWhaleWeight = 0; }
+                else if (act.includes("distribution")) { baseScoreBonus -= 10; currentWhaleWeight = 25; }
+              }
+            }
+
+            // PRIORITAS 4: Integrasi Komprehensif oiScore
+            let currentOiWeight = 50;
+            if (oiScore && oiScore[tokenKey]) {
+              let oData = oiScore[tokenKey];
+              if (typeof oData.score === 'number') {
+                baseScoreBonus += oData.score;
+                currentOiWeight = Math.min(100, Math.max(0, 50 + (oData.score * 2.5)));
+              } else if (oData.status) {
+                let status = oData.status.toLowerCase();
+                if (status.includes("rising") && status.includes("volume")) { baseScoreBonus += 15; currentOiWeight = 100; }
+                else if (status.includes("rising")) { baseScoreBonus += 10; currentOiWeight = 85; }
+                else if (status.includes("flat")) { baseScoreBonus += 0; currentOiWeight = 50; }
+                else if (status.includes("falling")) { baseScoreBonus -= 10; currentOiWeight = 25; }
+                else if (status.includes("collapse")) { baseScoreBonus -= 20; currentOiWeight = 0; }
+              }
+            }
+
+            // Ambil referensi basis institutionalScore statis eksternal
+            let extTargetScore = 75;
+            if (institutionalScore && institutionalScore[tokenKey]) {
+              extTargetScore = institutionalScore[tokenKey].score || institutionalScore[tokenKey].institutionalScore || 75;
+            }
 
             if (matchedCoin) {
               matchedCoin.price = currentPrice;
@@ -305,7 +476,21 @@
               matchedCoin.sl = currentPrice * 0.99;
               matchedCoin.tp1 = (currentPrice * 1.01).toFixed(2);
               matchedCoin.tp5 = (currentPrice * 1.05).toFixed(2);
+              
+              if (baseScoreBonus !== 0) {
+                matchedCoin.smcScore = Math.min(100, Math.max(0, matchedCoin.smcScore + baseScoreBonus));
+              }
+
+              // PRIORITAS 5: Formula Dynamic Institutional Score Multi-Faktor Kuantitatif
+              matchedCoin.finalInstitutionalScore = parseFloat(((matchedCoin.smcScore * 0.25) + (extTargetScore * 0.25) + (currentWhaleWeight * 0.15) + (currentFundingWeight * 0.15) + (currentOiWeight * 0.10) + (btcContextScore * 0.05) + (usdtContextScore * 0.05)).toFixed(1));
+
             } else if (binanceEliteDatabase.length < 50) {
+              let targetSMC = 78;
+              let calculatedSMC = Math.min(100, Math.max(0, targetSMC + baseScoreBonus));
+              
+              // Hitung Formula Dynamic Institutional Score untuk koin baru
+              let finalScoreComputed = parseFloat(((calculatedSMC * 0.25) + (extTargetScore * 0.25) + (currentWhaleWeight * 0.15) + (currentFundingWeight * 0.15) + (currentOiWeight * 0.10) + (btcContextScore * 0.05) + (usdtContextScore * 0.05)).toFixed(1));
+
               binanceEliteDatabase.push({
                 rank: binanceEliteDatabase.length + 1,
                 coin: formattedSymbol,
@@ -314,12 +499,13 @@
                 divergence: "Volume Analysed",
                 harmonicName: "Standard Wave",
                 harmonicValid: "88.2%",
-                crtBias: "Neutral Zone",
-                smcScore: 78,
+                crtBias: calculatedBias,
+                smcScore: calculatedSMC,
+                finalInstitutionalScore: finalScoreComputed,
                 ideal: currentPrice,
                 sl: currentPrice * 0.99,
                 rrRatio: "1 : 5.0",
-                techReason: `Sistem kuantitatif memproses data struktur pasar untuk ${formattedSymbol} secara teratur lewat database CoinGecko.`,
+                techReason: `Sistem kuantitatif memproses data struktur pasar untuk ${formattedSymbol} secara teratur lewat database CoinGecko. Regime: ${marketRegime.current_regime || 'Standard'}.`,
                 tp1: (currentPrice * 1.01).toFixed(2),
                 tp5: (currentPrice * 1.05).toFixed(2)
               });
@@ -335,10 +521,17 @@
               }
             }
           });
+
+          // PRIORITAS 6: Urutkan Berdasarkan Final Institutional Score Tertinggi secara Dinamis
+          binanceEliteDatabase.sort((a, b) => b.finalInstitutionalScore - a.finalInstitutionalScore);
+          
+          // Re-index urutan baris ranking pasca pengurutan dynamic score
+          binanceEliteDatabase.forEach((coin, idx) => { coin.rank = idx + 1; });
+
           triggerLiveFilter();
         }
       } catch (error) {
-        console.log("Koneksi API CoinGecko limit atau terhambat.");
+        console.error("Koneksi API CoinGecko limit atau terhambat.", error);
       }
     }
 
@@ -347,16 +540,30 @@
       if (!tbody) return;
       tbody.innerHTML = '';
 
-      data.forEach(item => {
+      const dataSource = Array.isArray(data) ? data : binanceEliteDatabase;
+
+      dataSource.forEach(item => {
         const tr = document.createElement('tr');
         tr.id = `coin-row-${item.coin.replace('/', '-')}`;
         tr.className = "hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5";
         tr.onclick = () => showDeepReport(item);
 
+        // PRIORITAS 7: Tampilkan Kolom & Pewarnaan Threshold Dinamis Final Score Tanpa Mengubah DOM HTML Asli
+        let fScore = item.finalInstitutionalScore || item.smcScore;
+        let colorClass = "text-red-400"; 
+        if (fScore >= 90) colorClass = "text-green-400 font-extrabold brightness-125 drop-shadow-[0_0_6px_rgba(34,197,94,0.4)]";
+        else if (fScore >= 80) colorClass = "text-green-500 font-bold";
+        else if (fScore >= 70) colorClass = "text-yellow-400 font-semibold";
+
         tr.innerHTML = `
           <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
-          <td class="p-3 text-white font-bold flex items-center gap-1.5">
-            <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> ${item.coin}
+          <td class="p-3 text-white font-bold flex flex-col justify-center">
+            <div class="flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> ${item.coin}
+            </div>
+            <div class="text-[10px] tracking-wide font-mono mt-0.5 opacity-90">
+              Score: <span class="${colorClass}">${fScore.toFixed(1)}</span>
+            </div>
           </td>
           <td class="p-3 text-gray-100">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</td>
           <td class="p-3 font-bold ${item.change >= 0 ? 'price-up' : 'price-down'}">${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%</td>
@@ -376,7 +583,18 @@
       if (!item || item.price === 0) return;
       document.getElementById('detail-report-grid').style.display = "grid";
       document.getElementById('detail-coin-name').textContent = item.coin;
-      document.getElementById('detail-tech-reason').textContent = item.techReason;
+      
+      let symbolClean = item.coin.split('/')[0];
+      let addendumContext = "";
+      
+      if (whaleScore && whaleScore[symbolClean]) {
+        addendumContext += ` Net Whale Absorption Status: ${whaleScore[symbolClean].activity || 'Accumulating'}.`;
+      }
+      if (oiScore && oiScore[symbolClean]) {
+        addendumContext += ` Open Interest Velocity Delta: ${oiScore[symbolClean].delta || 'Increasing'}.`;
+      }
+
+      document.getElementById('detail-tech-reason').textContent = item.techReason + addendumContext;
       document.getElementById('target-profit-ladder').innerHTML = `
         <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Matrix:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
         <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${parseFloat(item.tp1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
@@ -392,24 +610,24 @@
 
     async function loadLocalDatabaseFromGithub() {
       try {
-        const githubRawUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti./main/screener-data.json';
-        const response = await fetch(githubRawUrl);
-        if (!response.ok) return;
-        const remoteJson = await response.json();
-        remoteJson.forEach(remoteCoin => {
-          let localCoin = binanceEliteDatabase.find(c => c.coin === remoteCoin.coin);
-          if (localCoin) {
-            localCoin.price = remoteCoin.price;
-            localCoin.change = remoteCoin.change;
-          }
-        });
-        triggerLiveFilter();
+        const githubRawUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/screener-data.json';
+        const remoteJson = await fetchWithRetry(githubRawUrl);
+        if (Array.isArray(remoteJson)) {
+          remoteJson.forEach(remoteCoin => {
+            let localCoin = binanceEliteDatabase.find(c => c.coin === remoteCoin.coin);
+            if (localCoin) {
+              localCoin.price = remoteCoin.price;
+              localCoin.change = remoteCoin.change;
+            }
+          });
+          triggerLiveFilter();
+        }
       } catch (error) {
-        console.log("Gagal memuat pre-sed data dari GitHub, menggunakan fallback lokal.");
+        console.log("Gagal memuat screener-data dari GitHub, menggunakan fallback lokal.");
       }
     }
 
-    // ========================================== UPGRADED INSTITUTIONAL VISION ENGINE ==========================================
+    // ========================================== UPGRADED REAL GEMINI VISION ENGINE ==========================================
     const AI_ICT_Analyzer = {
       uploadedImageBase64: null,
       uploadedImageMime: null,
@@ -483,32 +701,34 @@
       },
 
       async analyzeChartWithGemini(apiKey) {
-        this.setLoadingState(true, "Executing Multi-Factor Institutional Vision Analysis...");
+        this.setLoadingState(true, "Analyzing Market Structure with Gemini Vision API...");
         
-        const promptText = `You are an expert Institutional Smart Money Trader, ICT Master Analyst, Quantitative Market Scanner, Futures Orderflow Analyst, and Risk Manager.
-Analyze this chart screenshot exactly as a professional institutional trader would.
+        // PRIORITAS 6: Integrasi Penuh Seluruh Database Kuantitatif Makro Ke Dalam Prompt Gemini Vision Engine
+        const currentMarketRegimeStr = JSON.stringify(marketRegime || {});
+        const currentBtcContextStr = JSON.stringify(btcContext || {});
+        const currentUsdtContextStr = JSON.stringify(usdtContext || {});
+        const currentFundingScoreStr = JSON.stringify(fundingScore || {});
+        const currentWhaleScoreStr = JSON.stringify(whaleScore || {});
+        const currentOiScoreStr = JSON.stringify(oiScore || {});
+        const currentInstitutionalScoreStr = JSON.stringify(institutionalScore || {});
 
-CRITICAL RULES:
-1. NEVER GUESS OR INVENT DATA. If structure cannot be confirmed, mark it as "Unconfirmed".
-2. If chart quality score < 60, automatically set confidence < 60, meaning NO TRADE execution type.
-3. Factor in live macro correlation assumptions if relevant, but prioritize objective raw chart metrics.
-4. Extract strict architectural data points: Market Structure, BOS, CHoCH, MSS, Liquidity Footprints, FVG, OB, Breaker/Mitigation Block zones, Premium/Discount dealing ranges, and check for standard Fibonacci Harmonic Pattern structures (Gartley, Bat, Butterfly, Crab, Deep Crab, Shark, Cypher). If ratios do not align precisely with Fibonacci parameters, set harmonicPattern to "Invalid".
+        const promptText = `You are an Institutional ICT Analyst, Smart Money Concept Specialist, Quantitative Market Structure Engine, and Professional Futures Trader.
+Analyze this chart screenshot exactly as a human professional ICT trader would. 
 
-Calculate the Institutional Matrix Score out of 125 using this exact point weighting scale:
-- BOS = 15
-- CHoCH = 10
-- MSS = 10
-- Liquidity Sweep = 15
-- FVG = 10
-- Order Block = 10
-- Volume Confirmation = 10
-- Divergence = 10
-- Harmonic = 10
-- Open Interest / Orderbook Dynamics = 10
-- Funding Rate Alignment = 10
-- Whale Absorption Signs = 15
+CRITICAL MACRO & QUANT INTELLIGENCE CONTEXT INPUT:
+- Global Market Regime: ${currentMarketRegimeStr}
+- Bitcoin Core Status Context (Trend, Structure, Liquidity): ${currentBtcContextStr}
+- USDT Dominance Environment: ${currentUsdtContextStr}
+- Institutional Score Parameter Pool: ${currentInstitutionalScoreStr}
+- Global Live Funding Rates Matrix: ${currentFundingScoreStr}
+- Whale Accumulation/Distribution Analytics Feed: ${currentWhaleScoreStr}
+- Futures Open Interest Delta Profile: ${currentOiScoreStr}
 
-You MUST respond ONLY with a clean, valid JSON object following this structured format without any markdown wrappers or code blocks.
+You MUST evaluate the input image combined with the provided quantitative macro metrics (Whale Absorption, Open Interest velocity, Funding parameters) before finalizing your trading bias score and structural output.
+
+CRITICAL RULES: 1. NEVER GUESS. 2. NEVER INVENT DATA. 3. NEVER FORCE A PATTERN. 4. If chart quality is poor, reduce confidence. 5. If structure cannot be confirmed, mark it as "Unconfirmed". 6. Price levels must be extracted only from visible chart data.
+
+You MUST respond ONLY with a clean, valid JSON object following this structured format without any markdown wrappers or code blocks. Do not include any character output except the raw JSON structure.
 
 REQUIRED JSON SCHEMA:
 {
@@ -522,9 +742,9 @@ REQUIRED JSON SCHEMA:
   "bos": "string (e.g. Confirmed / Unconfirmed)",
   "choch": "string (e.g. Confirmed / Unconfirmed)",
   "mss": "string (e.g. Confirmed / Unconfirmed)",
-  "buySideLiquidity": "string (e.g. Detected / Not Detected)",
-  "sellSideLiquidity": "string (e.g. Detected / Not Detected)",
-  "liquiditySweep": "string (e.g. BSL Sweep / SSL Sweep / None)",
+  "buySideLiquidity": "string",
+  "sellSideLiquidity": "string",
+  "liquiditySweep": "string",
   "equalHighs": "string",
   "equalLows": "string",
   "fvg": "string (e.g. Active / Mitigated / Invalid)",
@@ -552,24 +772,18 @@ REQUIRED JSON SCHEMA:
   "tp1": number,
   "tp2": number,
   "tp3": number,
-  "riskReward": "string (e.g. 1:5.2)",
-  "executionType": "NO TRADE / Aggressive Entry / Conservative Entry / Confirmation Entry",
+  "riskReward": "string",
+  "executionType": "Aggressive Entry / Conservative Entry / Confirmation Entry",
   "scenarioBullish": "string description",
   "scenarioBearish": "string description",
   "scenarioNeutral": "string description",
-  "summary": "string professional matrix wrap up",
+  "summary": "string professional summary",
   "annotations": {
     "bos_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
     "choch_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
-    "mss_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
     "fvg_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
     "ob_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "breaker_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "mitigation_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "premium_zone": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "discount_zone": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "buy_side_liquidity": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
-    "sell_side_liquidity": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
+    "liquidity_line": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number, "type": "BSL/SSL"},
     "entry_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
     "sl_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
     "tp_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number}
@@ -607,38 +821,32 @@ REQUIRED JSON SCHEMA:
           this.syncDashboardWithRealData(parsedResult);
         } catch (error) {
           console.error(error);
-          alert(`API ERROR: ${error.message}\nCheck your Gemini API Key validation parameters.`);
+          alert(`API ERROR: ${error.message}\nPastikan API Key valid dan terhubung internet.`);
           this.setLoadingState(false);
         }
       },
 
       syncDashboardWithRealData(data) {
-        // Enforce strict Confidence Rules internally on UI mapping
+        // Pengecekan otomatis batas kualitas hancur (Kualitas/Confidence di bawah 60)
         if (data.confidence < 60 || data.chartQuality < 60) {
           data.executionType = "NO TRADE";
-          data.entry = "-";
-          data.stopLoss = "-";
-          data.tp1 = "-";
-          data.tp2 = "-";
-          data.tp3 = "-";
-          data.riskReward = "-";
+          data.entry = null; data.stopLoss = null; data.tp1 = null; data.tp2 = null; data.tp3 = null;
         }
 
-        // Text Matrix Mappings
+        // Text Syncing
         document.getElementById('rep-pair').textContent = data.pair || "Unknown";
         document.getElementById('rep-exchange').textContent = data.exchange || "-";
         document.getElementById('rep-tf').textContent = data.timeframe || "-";
-        document.getElementById('rep-curr-price').textContent = (typeof data.currentPrice === 'number') ? `$${data.currentPrice}` : "-";
+        document.getElementById('rep-curr-price').textContent = data.currentPrice ? `$${data.currentPrice}` : "-";
         document.getElementById('rep-quality').textContent = data.chartQuality ? `${data.chartQuality}/100` : "-";
         document.getElementById('rep-structure').textContent = data.marketStructure || "-";
         document.getElementById('rep-trend').textContent = data.trend || "-";
         
         const setStatusColor = (elId, value, checkActive) => {
           const el = document.getElementById(elId);
-          if (!el) return;
           el.textContent = value || "None";
           if (checkActive) {
-            el.className = (value && (value.toLowerCase().includes("conf") || value === "Active" || value === "Detected" || value.includes("Sweep"))) ? "text-green-400 font-bold" : "text-red-400 font-semibold";
+            el.className = (value && value.toLowerCase().includes("conf") || value === "Active" || value === "Detected") ? "text-green-400 font-bold" : "text-red-400 font-semibold";
           }
         };
 
@@ -647,7 +855,7 @@ REQUIRED JSON SCHEMA:
         setStatusColor('rep-mss', data.mss, true);
         setStatusColor('rep-bsl', data.buySideLiquidity, false);
         setStatusColor('rep-ssl', data.sellSideLiquidity, false);
-        setStatusColor('rep-sweep', data.liquiditySweep, true);
+        setStatusColor('rep-sweep', data.liquiditySweep, false);
         setStatusColor('rep-eqh', data.equalHighs, false);
         setStatusColor('rep-eql', data.equalLows, false);
         setStatusColor('rep-fvg', data.fvg, true);
@@ -658,14 +866,14 @@ REQUIRED JSON SCHEMA:
         setStatusColor('rep-pd', data.premiumDiscount, false);
         document.getElementById('rep-bias').textContent = data.institutionalBias || "-";
         
-        // Probabilities & Scores
+        // Probabilities
         document.getElementById('rep-bull-prob').textContent = `${data.bullishProbability || 0}%`;
         document.getElementById('rep-bear-prob').textContent = `${data.bearishProbability || 0}%`;
         document.getElementById('rep-confidence').textContent = `${data.confidence || 0}%`;
         document.getElementById('rep-inst-score').textContent = `${data.institutionalScore || 0} / 125`;
 
-        // Execution Matrix Targets
-        const fmtPrice = (val) => (typeof val === 'number') ? `$${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}` : val;
+        // Trade Matrix
+        const fmtPrice = (val) => (typeof val === 'number') ? `$${val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}` : (val || "-");
         document.getElementById('rep-entry').textContent = fmtPrice(data.entry);
         document.getElementById('rep-sl').textContent = fmtPrice(data.stopLoss);
         document.getElementById('rep-tp1').textContent = fmtPrice(data.tp1);
@@ -674,19 +882,13 @@ REQUIRED JSON SCHEMA:
         document.getElementById('rep-rr').textContent = data.riskReward || "-";
         document.getElementById('rep-exectype').textContent = data.executionType || "-";
 
-        if (data.executionType === "NO TRADE") {
-          document.getElementById('rep-exectype').className = "text-red-500 font-extrabold animate-pulse";
-        } else {
-          document.getElementById('rep-exectype').className = "text-cyan-400 font-extrabold";
-        }
-
         // Forecast Scenarios
         document.getElementById('rep-scen-bull').textContent = data.scenarioBullish || "-";
         document.getElementById('rep-scen-bear').textContent = data.scenarioBearish || "-";
         document.getElementById('rep-scen-neutral').textContent = data.scenarioNeutral || "-";
-        document.getElementById('rep-conclusion').textContent = data.summary || "No description loaded.";
+        document.getElementById('rep-conclusion').textContent = data.summary || "No data.";
         
-        // Bias Badge Syncing
+        // Badge Sync
         const badge = document.getElementById('bias-badge');
         const bias = data.institutionalBias ? data.institutionalBias.toUpperCase() : "NEUTRAL";
         badge.textContent = bias;
@@ -698,11 +900,11 @@ REQUIRED JSON SCHEMA:
           badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase bg-zinc-800 text-gray-400";
         }
 
-        // Render Multi-factor Architectural Annotations Canvas
-        this.renderAnnotationsOnCanvas(data.annotations, data.executionType);
+        // Render Canvas Annotations
+        this.renderAnnotationsOnCanvas(data.annotations);
       },
 
-      renderAnnotationsOnCanvas(coords, executionType) {
+      renderAnnotationsOnCanvas(coords) {
         const canvas = document.getElementById('ict-annotation-canvas');
         const wrapper = document.getElementById('canvas-wrapper');
         const ctx = canvas.getContext('2d');
@@ -719,84 +921,111 @@ REQUIRED JSON SCHEMA:
         ctx.lineWidth = Math.max(2, w * 0.0025);
         ctx.font = `bold ${Math.max(11, w * 0.014)}px monospace`;
 
-        if (!coords || executionType === "NO TRADE") { this.setLoadingState(false); return; }
+        if (!coords) { this.setLoadingState(false); return; }
 
         const pctX = (p) => (p / 100) * w;
         const pctY = (p) => (p / 100) * h;
 
-        // Draw Architectural Zones / Box Frameworks
-        const drawBox = (boxObj, fillColor, strokeColor, label) => {
-          if (boxObj && boxObj.detected) {
-            ctx.fillStyle = fillColor;
-            ctx.strokeStyle = strokeColor;
-            ctx.fillRect(pctX(boxObj.x_pct), pctY(boxObj.box_y_pct || boxObj.y_pct), pctX(boxObj.width_pct), pctY(boxObj.height_pct));
-            ctx.strokeRect(pctX(boxObj.x_pct), pctY(boxObj.box_y_pct || boxObj.y_pct), pctX(boxObj.width_pct), pctY(boxObj.height_pct));
-            ctx.fillStyle = strokeColor;
-            ctx.fillText(label, pctX(boxObj.x_pct) + 6, pctY(boxObj.box_y_pct || boxObj.y_pct) + 16);
-          }
-        };
+        // BOS Line
+        if (coords.bos_coord && coords.bos_coord.detected) {
+          ctx.strokeStyle = '#22c55e';
+          ctx.beginPath();
+          ctx.moveTo(pctX(coords.bos_coord.x_start_pct), pctY(coords.bos_coord.y_pct));
+          ctx.lineTo(pctX(coords.bos_coord.x_end_pct), pctY(coords.bos_coord.y_pct));
+          ctx.stroke();
+          ctx.fillStyle = '#22c55e';
+          ctx.fillText("BOS", pctX(coords.bos_coord.x_end_pct) + 4, pctY(coords.bos_coord.y_pct) + 4);
+        }
 
-        drawBox(coords.fvg_box, 'rgba(234, 179, 8, 0.10)', '#eab308', 'FVG ZONE');
-        drawBox(coords.ob_box, 'rgba(168, 85, 247, 0.12)', '#a855f7', 'ORDER BLOCK');
-        drawBox(coords.breaker_box, 'rgba(249, 115, 22, 0.12)', '#f97316', 'BREAKER');
-        drawBox(coords.mitigation_box, 'rgba(6, 182, 212, 0.12)', '#06b6d4', 'MITIGATION');
-        drawBox(coords.premium_zone, 'rgba(239, 68, 68, 0.05)', '#ef4444', 'PREMIUM RANGE');
-        drawBox(coords.discount_zone, 'rgba(34, 197, 94, 0.05)', '#22c55e', 'DISCOUNT RANGE');
+        // CHoCH Line
+        if (coords.choch_coord && coords.choch_coord.detected) {
+          ctx.strokeStyle = '#06b6d4';
+          ctx.beginPath();
+          ctx.moveTo(pctX(coords.choch_coord.x_start_pct), pctY(coords.choch_coord.y_pct));
+          ctx.lineTo(pctX(coords.choch_coord.x_end_pct), pctY(coords.choch_coord.y_pct));
+          ctx.stroke();
+          ctx.fillStyle = '#06b6d4';
+          ctx.fillText("CHoCH", pctX(coords.choch_coord.x_end_pct) + 4, pctY(coords.choch_coord.y_pct) + 4);
+        }
 
-        // Draw Structure Vectors Lines
-        const drawVectorLine = (lineObj, color, label, isDash = false) => {
-          if (lineObj && lineObj.detected) {
+        // FVG Box
+        if (coords.fvg_box && coords.fvg_box.detected) {
+          ctx.fillStyle = 'rgba(234, 179, 8, 0.12)';
+          ctx.strokeStyle = '#eab308';
+          ctx.fillRect(pctX(coords.fvg_box.x_pct), pctY(coords.fvg_box.y_pct), pctX(coords.fvg_box.width_pct), pctY(coords.fvg_box.height_pct));
+          ctx.strokeRect(pctX(coords.fvg_box.x_pct), pctY(coords.fvg_box.y_pct), pctX(coords.fvg_box.width_pct), pctY(coords.fvg_box.height_pct));
+          ctx.fillStyle = '#eab308';
+          ctx.fillText("FVG", pctX(coords.fvg_box.x_pct) + 4, pctY(coords.fvg_box.y_pct) + 14);
+        }
+
+        // OB Box
+        if (coords.ob_box && coords.ob_box.detected) {
+          ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
+          ctx.strokeStyle = '#a855f7';
+          ctx.fillRect(pctX(coords.ob_box.x_pct), pctY(coords.ob_box.y_pct), pctX(coords.ob_box.width_pct), pctY(coords.ob_box.height_pct));
+          ctx.strokeRect(pctX(coords.ob_box.x_pct), pctY(coords.ob_box.y_pct), pctX(coords.ob_box.width_pct), pctY(coords.ob_box.height_pct));
+          ctx.fillStyle = '#a855f7';
+          ctx.fillText("OB", pctX(coords.ob_box.x_pct) + 4, pctY(coords.ob_box.y_pct) + 14);
+        }
+
+        // Liquidity Line
+        if (coords.liquidity_line && coords.liquidity_line.detected) {
+          ctx.strokeStyle = '#ef4444';
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(pctX(coords.liquidity_line.x_start_pct), pctY(coords.liquidity_line.y_pct));
+          ctx.lineTo(pctX(coords.liquidity_line.x_end_pct), pctY(coords.liquidity_line.y_pct));
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillText(`x ${coords.liquidity_line.type || 'Liq'}`, pctX(coords.liquidity_line.x_start_pct), pctY(coords.liquidity_line.y_pct) - 5);
+        }
+
+        // Dynamic Real Price Executions Overlay from Gemini
+        const drawPriceLine = (coordObj, color, text) => {
+          if (coordObj && coordObj.detected) {
             ctx.strokeStyle = color;
-            if (isDash) ctx.setLineDash([5, 5]);
             ctx.beginPath();
-            ctx.moveTo(pctX(lineObj.x_start_pct), pctY(lineObj.y_pct));
-            ctx.lineTo(pctX(lineObj.x_end_pct), pctY(lineObj.y_pct));
-            ctx.stroke();
-            if (isDash) ctx.setLineDash([]);
-            ctx.fillStyle = color;
-            ctx.fillText(label, pctX(lineObj.x_end_pct) + 4, pctY(lineObj.y_pct) + 4);
-          }
-        };
-
-        drawVectorLine(coords.bos_coord, '#22c55e', 'BOS');
-        drawVectorLine(coords.choch_coord, '#06b6d4', 'CHoCH');
-        drawVectorLine(coords.mss_coord, '#3b82f6', 'MSS');
-        drawVectorLine(coords.buy_side_liquidity, '#ef4444', 'BSL LIQUIDITYPOOL', true);
-        drawVectorLine(coords.sell_side_liquidity, '#ef4444', 'SSL LIQUIDITYPOOL', true);
-        drawVectorLine(coords.liquidity_line, '#eab308', 'LIQUIDITY SWEEP', true);
-
-        // Draw Dynamic Trigger Price Execution Boundaries
-        const drawExecutionBound = (execObj, color, label) => {
-          if (execObj && execObj.detected) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = Math.max(2.5, w * 0.003);
-            ctx.beginPath();
-            ctx.moveTo(pctX(execObj.x_start_pct || 0), pctY(execObj.y_pct));
-            ctx.lineTo(pctX(execObj.x_end_pct || 100), pctY(execObj.y_pct));
+            ctx.moveTo(pctX(coordObj.x_start_pct || 0), pctY(coordObj.y_pct));
+            ctx.lineTo(pctX(coordObj.x_end_pct || 100), pctY(coordObj.y_pct));
             ctx.stroke();
             ctx.fillStyle = '#09090e';
-            ctx.fillRect(15, pctY(execObj.y_pct) - 10, ctx.measureText(label).width + 8, 18);
+            ctx.fillRect(15, pctY(coordObj.y_pct) - 9, ctx.measureText(text).width + 8, 16);
             ctx.fillStyle = color;
-            ctx.fillText(label, 19, pctY(execObj.y_pct) + 4);
+            ctx.fillText(text, 19, pctY(coordObj.y_pct) + 3);
           }
         };
 
-        drawExecutionBound(coords.entry_coord, '#22c55e', 'INSTITUTIONAL ENTRY ZONE');
-        drawExecutionBound(coords.sl_coord, '#ef4444', 'PROTECTIVE STOP LOSS (SL)');
-        drawExecutionBound(coords.tp_coord, '#3b82f6', 'TARGET PROFIT MATRIX (TP)');
+        drawPriceLine(coords.entry_coord, '#22c55e', 'ENTRY TRIGGER ZONE');
+        drawPriceLine(coords.sl_coord, '#ef4444', 'STOP LOSS (SL)');
+        drawPriceLine(coords.tp_coord, '#3b82f6', 'TARGET PROFIT TAKE (TP)');
 
         this.setLoadingState(false);
       }
     };
 
-    // --- INITIALIZATION SINK ---
-    window.onload = () => {
+    // --- INITIALIZATION STARTUP FLOW SINK (RACE-CONDITION FREE) ---
+    window.onload = async () => {
+      // Step 1: Jalankan dan muat basis data institusional
+      await loadInstitutionalData();
+      
+      // Step 2 & 3: Jalankan antarmuka spot volume bars harian
       buildLiveVolumeBars();
       triggerVolumeBarPulse();
+      
+      // Step 4: Render tabel pemindai awal sebelum pembaruan real-time berjalan
       renderScannerTable(binanceEliteDatabase);
-      fetchCoinGeckoMarketData();
-      loadLocalDatabaseFromGithub();
+      
+      // Step 5: Ambil data pasar terbaru dan sinkronisasikan context skoring
+      await fetchCoinGeckoMarketData();
+      
+      // Step 6: Muat data lokal sekunder dari GitHub penyedia backup data
+      await loadLocalDatabaseFromGithub();
+      
+      // Step 7: Inisialisasi Event Listener Visi AI Analyzer
       AI_ICT_Analyzer.init();
+      
+      // Jalankan interval pembaruan data spot kuantitatif secara berkala
       setInterval(fetchCoinGeckoMarketData, 10000);
     };
   </script>
