@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>MIROFISH MISPRICING SCANNER PRO</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
@@ -10,7 +10,8 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   
   <style>
-    body { background: #09090e; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #e2e8f0; }
+    /* PERBAIKAN 2: Mencegah layar HP bergeser ke samping (overflow) */
+    html, body { overflow-x: hidden; width: 100%; max-width: 100vw; background: #09090e; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #e2e8f0; }
     .pixel-font { font-family: 'Press Start 2P', monospace; }
     .neon-border-green { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25), 0 0 20px rgba(34, 197, 94, 0.08); }
     .neon-border-orange { box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3), 0 0 15px rgba(249, 115, 22, 0.08); }
@@ -21,9 +22,10 @@
     .price-down { color: #ef4444 !important; }
   </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-2 sm:p-4">
+<body class="min-h-screen flex items-start justify-center p-2 sm:p-4">
 
   <div class="w-full max-w-7xl space-y-4">
+    
     <div class="glass-panel rounded-2xl p-4 border border-white/5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -91,27 +93,25 @@
         <div>
           <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
             <i data-lucide="shield-alert" class="w-5 h-5 text-green-400"></i>
-            J. PROBABILITAS PUMP HIGHEST RANKING (COINGECKO FEED)
+            PROBABILITAS PUMP HIGHEST RANKING
           </h2>
         </div>
         <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 max-w-xs w-full">
           <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
-          <input type="text" id="searchFilter" placeholder="Search filtered coins (e.g. BTC, SOL)..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" oninput="triggerLiveFilter()" />
+          <input type="text" id="searchFilter" placeholder="Search filtered coins..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" oninput="triggerLiveFilter()" />
         </div>
       </div>
 
-      <div class="overflow-x-auto custom-scroll border border-white/5 rounded-xl bg-black/20">
-        <table class="w-full text-left border-collapse min-w-[1000px]">
+      <div class="w-full overflow-x-auto custom-scroll border border-white/5 rounded-xl bg-black/20">
+        <table class="w-full text-left border-collapse min-w-[700px]">
           <thead>
-            <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[11px] uppercase tracking-wider">
+            <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[10px] sm:text-[11px] uppercase tracking-wider">
               <th class="p-3 text-center">Rank</th>
-              <th class="p-3">Coin (Final Score)</th>
-              <th class="p-3">Price (USDT)</th>
+              <th class="p-3">Coin (Score)</th>
+              <th class="p-3">Price</th>
               <th class="p-3">24h Change</th>
-              <th class="p-3">Divergence</th>
-              <th class="p-3">Harmonic</th>
-              <th class="p-3 text-center">Validity</th>
-              <th class="p-3">CRT Bias</th>
+              <th class="p-3 hidden md:table-cell">Divergence</th>
+              <th class="p-3 hidden lg:table-cell">Harmonic</th>
               <th class="p-3 text-center">SMC Score</th>
               <th class="p-3 text-right">Risk Reward</th>
             </tr>
@@ -157,11 +157,11 @@
           <div>
             <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Upload Chart Image (TradingView / Exchanges)</span>
             <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40">
-              <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" />
+              <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" multiple />
               <div class="space-y-2 pointer-events-none" id="upload-prompt-view">
                 <i data-lucide="image-plus" class="w-8 h-8 text-gray-500 mx-auto group-hover:text-green-400 transition-colors"></i>
-                <p class="text-xs font-semibold text-gray-300">Drop chart screenshot here or <span class="text-green-400">browse</span></p>
-                <p class="text-[10px] text-gray-500 font-mono">Format: JPG, JPEG, PNG, WEBP</p>
+                <p class="text-xs font-semibold text-gray-300">Drop chart screenshots here or <span class="text-green-400">browse</span></p>
+                <p class="text-[10px] text-gray-500 font-mono">Format: JPG, JPEG, PNG, WEBP (Upload tepat 4 chart: D1, H4, H1, M15)</p>
               </div>
               <div class="hidden space-y-2 text-center" id="upload-loading-view">
                 <div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -186,58 +186,26 @@
             
             <div class="custom-scroll overflow-y-auto max-h-[360px] space-y-1.5 text-xs font-mono text-gray-400" id="report-text-container">
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Pair:</span><span class="text-white font-bold" id="rep-pair">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Exchange:</span><span class="text-white font-bold" id="rep-exchange">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Timeframe:</span><span class="text-white font-bold" id="rep-tf">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Current Price:</span><span class="text-white font-bold" id="rep-curr-price">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Chart Quality Score:</span><span class="text-white font-bold" id="rep-quality">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Market Structure:</span><span class="text-white" id="rep-structure">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Trend Profile:</span><span class="text-white" id="rep-trend">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>BOS Status:</span><span id="rep-bos">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>CHoCH Status:</span><span id="rep-choch">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>MSS Shift:</span><span id="rep-mss">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Buy Side Liquidity (BSL):</span><span id="rep-bsl">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Sell Side Liquidity (SSL):</span><span id="rep-ssl">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Liquidity Sweep:</span><span id="rep-sweep">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Equal Highs:</span><span id="rep-eqh">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Equal Lows:</span><span id="rep-eql">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Fair Value Gap (FVG):</span><span id="rep-fvg">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Inverse FVG (iFVG):</span><span id="rep-ifvg">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Order Block (OB):</span><span id="rep-ob">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Breaker Block:</span><span id="rep-breaker">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Mitigation Block:</span><span id="rep-mitigation">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Premium / Discount:</span><span id="rep-pd">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Institutional Bias:</span><span class="text-white" id="rep-bias">-</span></div>
               <div class="border-t border-white/5 my-2 pt-2"></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Bullish Probability:</span><span class="text-green-400 font-bold" id="rep-bull-prob">0%</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Bearish Probability:</span><span class="text-red-400 font-bold" id="rep-bear-prob">0%</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Confidence Score:</span><span class="text-purple-400 font-bold" id="rep-confidence">0%</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Institutional Score:</span><span class="text-yellow-400 font-bold" id="rep-inst-score">0 / 125</span></div>
               <div class="border-t border-white/5 my-2 pt-2"></div>
               <div class="flex justify-between p-1 bg-green-500/5 text-green-400 px-1.5 rounded"><span>Entry Trigger Level:</span><span class="font-bold" id="rep-entry">-</span></div>
               <div class="flex justify-between p-1 bg-red-500/5 text-red-400 px-1.5 rounded"><span>Stop Loss (SL):</span><span class="font-bold" id="rep-sl">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Take Profit 1 (TP1):</span><span class="text-white" id="rep-tp1">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Take Profit 2 (TP2):</span><span class="text-white" id="rep-tp2">-</span></div>
-              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Take Profit 3 (TP3):</span><span class="text-white" id="rep-tp3">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Take Profit 5 (TP5):</span><span class="text-white" id="rep-tp5">-</span></div>
               <div class="flex justify-between p-1 bg-yellow-500/5 text-yellow-400 px-1.5 rounded"><span>Risk Reward Ratio:</span><span class="font-bold" id="rep-rr">-</span></div>
               <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Execution Type:</span><span class="text-cyan-400 font-bold" id="rep-exectype">-</span></div>
-              <div class="border-t border-white/5 my-2 pt-2"></div>
-              <div class="p-1 text-[11px] space-y-1">
-                <span class="text-green-400 font-bold block">Scenario A (Bullish Forecast):</span>
-                <p class="text-gray-400 leading-normal font-sans" id="rep-scen-bull">-</p>
-              </div>
-              <div class="p-1 text-[11px] space-y-1 mt-2">
-                <span class="text-red-400 font-bold block">Scenario B (Bearish Forecast):</span>
-                <p class="text-gray-400 leading-normal font-sans" id="rep-scen-bear">-</p>
-              </div>
-              <div class="p-1 text-[11px] space-y-1 mt-2">
-                <span class="text-gray-400 font-bold block">Scenario C (Neutral Range):</span>
-                <p class="text-gray-400 leading-normal font-sans" id="rep-scen-neutral">-</p>
-              </div>
             </div>
           </div>
           <div class="bg-black/40 p-2.5 rounded border border-white/5 text-[11px]">
             <span class="text-gray-500 uppercase font-bold block mb-1">Conclusion Matrix Summary</span>
-            <p class="text-gray-300 leading-normal" id="rep-conclusion">Upload an exchange chart screenshot to activate the Gemini Core Vision Engine.</p>
+            <p class="text-gray-300 leading-normal" id="rep-conclusion">Upload 4 exchange chart screenshots to activate the Gemini Core Vision Engine.</p>
           </div>
         </div>
       </div>
@@ -245,20 +213,12 @@
   </div>
 
   <script>
-    // ========================================== GLOBAL STATE: INSTITUTIONAL DATABASE POOL ==========================================
-    let marketRegime = {};
-    let btcContext = {};
-    let usdtContext = {};
-    let institutionalScore = {};
-    let whaleScore = {};
-    let fundingScore = {};
-    let oiScore = {};
+    // ========================================== GLOBAL STATE & SCANNER ==========================================
+    let marketRegime = {}, btcContext = {}, usdtContext = {}, institutionalScore = {}, whaleScore = {}, fundingScore = {}, oiScore = {};
 
-    // Helper fetch dengan perlindungan timeout & mekanisme retry otomatis
     async function fetchWithRetry(url, options = {}, retries = 3, backoff = 1000) {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), 6000); 
-      
       try {
         const response = await fetch(url, { ...options, signal: controller.signal });
         clearTimeout(id);
@@ -267,7 +227,6 @@
       } catch (err) {
         clearTimeout(id);
         if (retries > 0) {
-          console.warn(`Fetch failed for URL: ${url}. Retrying in ${backoff}ms... (${retries} attempts left). Error: ${err.message}`);
           await new Promise(resolve => setTimeout(resolve, backoff));
           return fetchWithRetry(url, options, retries - 1, backoff * 2);
         }
@@ -275,159 +234,24 @@
       }
     }
 
-    // ========================================== FUNCTION: INSTITUTIONAL DATA LOADER ==========================================
     async function loadInstitutionalData() {
       const baseUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/';
       const targets = [
-        { key: 'marketRegime', file: 'market-regime.json' },
-        { key: 'btcContext', file: 'btc-context.json' },
-        { key: 'usdtContext', file: 'usdt-context.json' },
-        { key: 'institutionalScore', file: 'institutional-score.json' },
-        { key: 'whaleScore', file: 'whale-score.json' },
-        { key: 'fundingScore', file: 'funding-score.json' },
-        { key: 'oiScore', file: 'oi-score.json' }
+        { key: 'marketRegime', file: 'market-regime.json' }, { key: 'btcContext', file: 'btc-context.json' },
+        { key: 'usdtContext', file: 'usdt-context.json' }, { key: 'institutionalScore', file: 'institutional-score.json' },
+        { key: 'whaleScore', file: 'whale-score.json' }, { key: 'fundingScore', file: 'funding-score.json' }, { key: 'oiScore', file: 'oi-score.json' }
       ];
-
-      console.log("Initializing Institutional Data Core Stream...");
-      
       await Promise.all(targets.map(async (target) => {
         try {
           const jsonData = await fetchWithRetry(`${baseUrl}${target.file}`);
-          
-          if (target.key === 'marketRegime') marketRegime = jsonData;
-          else if (target.key === 'btcContext') btcContext = jsonData;
-          else if (target.key === 'usdtContext') usdtContext = jsonData;
-          else if (target.key === 'institutionalScore') institutionalScore = jsonData;
-          else if (target.key === 'whaleScore') whaleScore = jsonData;
-          else if (target.key === 'fundingScore') fundingScore = jsonData;
-          else if (target.key === 'oiScore') oiScore = jsonData;
-          
-          console.log(`✓ Successfully synchronized: ${target.file}`);
-        } catch (error) {
-          console.error(`✕ Corrupted data or Network Error on [${target.file}]: ${error.message}. Activating Fallback State.`);
-          if (target.key === 'marketRegime') marketRegime = {};
-          else if (target.key === 'btcContext') btcContext = {};
-          else if (target.key === 'usdtContext') usdtContext = {};
-          else if (target.key === 'institutionalScore') institutionalScore = {};
-          else if (target.key === 'whaleScore') whaleScore = {};
-          else if (target.key === 'fundingScore') fundingScore = {};
-          else if (target.key === 'oiScore') oiScore = {};
-        }
+          eval(`${target.key} = jsonData;`);
+        } catch (error) { console.warn(`Gagal memuat ${target.file}`); }
       }));
-
-      // VALIDASI DATA KOSONG (Console Peringatan & Fallback Engine Protection)
-      if (!marketRegime || Object.keys(marketRegime).length === 0) console.warn("Warning: marketRegime Database is Empty. Fallback triggered.");
-      if (!btcContext || Object.keys(btcContext).length === 0) console.warn("Warning: btcContext Database is Empty. Fallback triggered.");
-      if (!usdtContext || Object.keys(usdtContext).length === 0) console.warn("Warning: usdtContext Database is Empty. Fallback triggered.");
-      if (!institutionalScore || Object.keys(institutionalScore).length === 0) console.warn("Warning: institutionalScore Database is Empty. Fallback triggered.");
-      if (!whaleScore || Object.keys(whaleScore).length === 0) console.warn("Warning: whaleScore Database is Empty. Fallback triggered.");
-      if (!fundingScore || Object.keys(fundingScore).length === 0) console.warn("Warning: fundingScore Database is Empty. Fallback triggered.");
-      if (!oiScore || Object.keys(oiScore).length === 0) console.warn("Warning: oiScore Database is Empty. Fallback triggered.");
     }
 
-    // ==========================================================================================
-    // MODULE: NEW MULTI TIMEFRAME ICT CONFLUENCE ENGINE v2.0
-    // ==========================================================================================
-    function calculateTimeframeBias(tfData) {
-      if (!tfData || typeof tfData !== 'object') return "BEARISH";
-      
-      let bullish = 0;
-      let bearish = 0;
-
-      if (tfData.bos_coord?.detected) bullish += 20;
-      if (tfData.choch_coord?.detected) bullish += 15;
-      if (tfData.fvg_box?.detected) bullish += 10;
-      if (tfData.ob_box?.detected) bullish += 15;
-
-      if (tfData.liquidity_line?.detected && tfData.liquidity_line?.type === "SSL") {
-        bullish += 20;
-      }
-      if (tfData.liquidity_line?.detected && tfData.liquidity_line?.type === "BSL") {
-        bearish += 20;
-      }
-
-      return bullish >= bearish ? "BULLISH" : "BEARISH";
-    }
-
-    function calculateConfluence(daily, h4, h1, m15) {
-      const biases = [
-        calculateTimeframeBias(daily),
-        calculateTimeframeBias(h4),
-        calculateTimeframeBias(h1),
-        calculateTimeframeBias(m15)
-      ];
-
-      const bullishCount = biases.filter(x => x === "BULLISH").length;
-      const bearishCount = biases.filter(x => x === "BEARISH").length;
-
-      let institutionalBias = "NEUTRAL";
-
-      if (bullishCount === 4) institutionalBias = "STRONG BULLISH";
-      else if (bullishCount === 3) institutionalBias = "BULLISH";
-      else if (bearishCount === 4) institutionalBias = "STRONG BEARISH";
-      else if (bearishCount === 3) institutionalBias = "BEARISH";
-
-      return { institutionalBias, bullishCount, bearishCount };
-    }
-
-    function calculateInstitutionalScore(daily, h4, h1, m15) {
-      let score = 0;
-      const allTF = [daily, h4, h1, m15];
-
-      allTF.forEach(tf => {
-        if (!tf) return;
-        if (tf.bos_coord?.detected) score += 10;
-        if (tf.choch_coord?.detected) score += 10;
-        if (tf.fvg_box?.detected) score += 5;
-        if (tf.ob_box?.detected) score += 10;
-        if (tf.liquidity_line?.detected) score += 5;
-      });
-
-      return Math.min(score, 125);
-    }
-
-    function calculateTradeStatus(institutionalBias, score) {
-      if (score < 60) return "NO TRADE";
-      if (institutionalBias === "STRONG BULLISH") return "FULL CONFIRMATION";
-      if (institutionalBias === "STRONG BEARISH") return "FULL CONFIRMATION";
-      if (institutionalBias === "BULLISH") return "CONSERVATIVE ENTRY";
-      if (institutionalBias === "BEARISH") return "CONSERVATIVE ENTRY";
-      return "WAIT";
-    }
-
-    function buildFinalReport(pair, daily, h4, h1, m15) {
-      const confluence = calculateConfluence(daily, h4, h1, m15);
-      const score = calculateInstitutionalScore(daily, h4, h1, m15);
-      const tradeStatus = calculateTradeStatus(confluence.institutionalBias, score);
-
-      return {
-        status: "APPROVED",
-        pair,
-        dailyBias: calculateTimeframeBias(daily),
-        h4Bias: calculateTimeframeBias(h4),
-        h1Bias: calculateTimeframeBias(h1),
-        m15Bias: calculateTimeframeBias(m15),
-        institutionalBias: confluence.institutionalBias,
-        institutionalScore: score,
-        tradeStatus,
-        confidence: Math.min(95, 50 + Math.floor(score / 2)),
-        bullishProbability: Math.min(95, confluence.bullishCount * 20 + 10),
-        bearishProbability: Math.min(95, confluence.bearishCount * 20 + 10),
-        summary: `MTF ICT confluence validated using D1, H4, H1 and M15 structural alignment.`,
-        scenarioBullish: `Continuation toward buy-side liquidity.`,
-        scenarioBearish: `Failure below key institutional zone.`,
-        scenarioNeutral: `Range compression awaiting liquidity sweep.`
-      };
-    }
-
-    // --- DATABASE SCANNERS & FALLBACK COINGECKO ENGINE ---
     let binanceEliteDatabase = [
-      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
-      { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, finalInstitutionalScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "0", tp5: "0" },
-      { rank: 3, coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Kuat)", harmonicName: "Bullish Butterfly", harmonicValid: "91.0%", crtBias: "Bullish", smcScore: 88, finalInstitutionalScore: 88, ideal: 0, sl: 0, rrRatio: "1 : 5.2", techReason: "Struktur pasar menunjukkan akumulasi volume yang signifikan pada zona support fractal.", tp1: "0", tp5: "0" },
-      { rank: 4, coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish (Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "86.0%", crtBias: "Bullish", smcScore: 85, finalInstitutionalScore: 85, ideal: 0, sl: 0, rrRatio: "1 : 5.0", techReason: "Terjadi momentum crossover positif pada indikator MACD disertai konfluensi harmonic support.", tp1: "0", tp5: "0" },
-      { rank: 5, coin: "BTC/USDT", price: 0, change: 0, divergence: "Neutral Zone", harmonicName: "Sideways", harmonicValid: "85.0%", crtBias: "Neutral", smcScore: 75, finalInstitutionalScore: 75, ideal: 0, sl: 0, rrRatio: "1 : 4.5", techReason: "Induk pasar berada di bawah tekanan distribusi jangka pendek menuju area support psikologis.", tp1: "0", tp5: "0" },
-      { rank: 6, coin: "ETH/USDT", price: 0, change: 0, divergence: "RSI Oversold", harmonicName: "Bullish Crab", harmonicValid: "89.5%", crtBias: "Mild Bullish", smcScore: 82, finalInstitutionalScore: 82, ideal: 0, sl: 0, rrRatio: "1 : 5.1", techReason: "Harga mendekati area discount zone dengan struktur pengosongan order jual (liquidity sweep).", tp1: "0", tp5: "0" }
+      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Sweep Sell Side Liquidity, disusul Bullish Gartley.", tp1: "0", tp5: "0" },
+      { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, finalInstitutionalScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Fase kompresi tinggi di demand harian.", tp1: "0", tp5: "0" }
     ];
 
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
@@ -435,8 +259,7 @@
 
     function buildLiveVolumeBars() {
       const container = document.getElementById('live-volume-bars');
-      if (!container) return;
-      container.innerHTML = '';
+      if (!container) return; container.innerHTML = '';
       for (let i = 0; i < 28; i++) {
         const bar = document.createElement('div');
         bar.className = `flex-1 transition-all duration-300 rounded-t ${Math.random() > 0.4 ? 'bg-green-500/70' : 'bg-red-500/70'}`;
@@ -444,211 +267,47 @@
         container.appendChild(bar);
       }
     }
-
-    function triggerVolumeBarPulse() {
-      setInterval(() => {
-        const container = document.getElementById('live-volume-bars');
-        if (!container) return;
-        const bars = container.children;
-        if (bars.length === 0) return;
-        const firstBar = bars[0];
-        firstBar.style.height = `${Math.floor(Math.random() * 85) + 15}%`;
-        firstBar.className = `flex-1 transition-all duration-300 rounded-t ${Math.random() > 0.4 ? 'bg-green-500/70' : 'bg-red-500/70'}`;
-        container.appendChild(firstBar);
-      }, 1500);
-    }
+    setInterval(buildLiveVolumeBars, 1500);
 
     async function fetchCoinGeckoMarketData() {
       try {
         const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        
-        const data = await fetchWithRetry(proxyUrl);
+        const data = await fetchWithRetry(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
         
         if (Array.isArray(data)) {
           data.forEach(coinData => {
             const tokenKey = coinData.symbol.toUpperCase();
-            const formattedSymbol = `${tokenKey}/USDT`;
-            let matchedCoin = binanceEliteDatabase.find(c => c.coin === formattedSymbol);
-            const currentPrice = coinData.current_price || 0;
-            const currentChange = coinData.price_change_percentage_24h || 0;
-
-            let baseScoreBonus = 0;
-            let calculatedBias = "Neutral Zone";
-
-            if (marketRegime && marketRegime.current_regime === "Bullish Expansion") {
-              baseScoreBonus += 5;
-              calculatedBias = "Mild Bullish";
-            }
-            let usdtContextScore = 50; 
-            if (usdtContext && usdtContext.environment === "risk-on") {
-              baseScoreBonus += 5;
-              usdtContextScore = 90;
-            } else if (usdtContext && usdtContext.environment === "risk-off") {
-              baseScoreBonus -= 10;
-              usdtContextScore = 20;
-              calculatedBias = "Risk Off Alert";
-            }
-
-            let btcContextScore = 50; 
-            if (btcContext && btcContext.bias) {
-              if (btcContext.bias === "strong_bullish") { baseScoreBonus += 15; btcContextScore = 100; }
-              else if (btcContext.bias === "bullish") { baseScoreBonus += 10; btcContextScore = 80; }
-              else if (btcContext.bias === "bearish") { baseScoreBonus -= 15; btcContextScore = 30; }
-              else if (btcContext.bias === "strong_bearish") { baseScoreBonus -= 25; btcContextScore = 0; }
-
-if (btcContext.trend === "up") baseScoreBonus += 5;
-              if (btcContext.market_structure === "bullish") baseScoreBonus += 5;
-            }
-
-            let currentFundingWeight = 50;
-            if (fundingScore && fundingScore[tokenKey]) {
-              let fData = fundingScore[tokenKey];
-              if (typeof fData.score === 'number') {
-                baseScoreBonus += fData.score;
-                currentFundingWeight = Math.min(100, Math.max(0, 50 + (fData.score * 3)));
-              } else if (fData.rate) {
-                let rate = parseFloat(fData.rate);
-                if (rate === 0 || (rate > 0 && rate <= 0.01)) { baseScoreBonus += 5; currentFundingWeight = 85; }
-                else if (rate > 0.01 && rate <= 0.05) { baseScoreBonus += 3; currentFundingWeight = 70; }
-                else if (rate > 0.05 && rate <= 0.1) { baseScoreBonus -= 10; currentFundingWeight = 30; }
-                else if (rate > 0.1) { baseScoreBonus -= 15; currentFundingWeight = 10; }
-                else if (rate < -0.1) { baseScoreBonus -= 15; currentFundingWeight = 15; }
-              }
-            }
-
-            let currentWhaleWeight = 50;
-            if (whaleScore && whaleScore[tokenKey]) {
-              let wData = whaleScore[tokenKey];
-              if (typeof wData.score === 'number') {
-                baseScoreBonus += wData.score;
-                currentWhaleWeight = Math.min(100, Math.max(0, 50 + (wData.score * 2.5)));
-              } else if (wData.activity) {
-                let act = wData.activity.toLowerCase();
-                if (act.includes("strong_accumulation")) { baseScoreBonus += 15; currentWhaleWeight = 100; }
-                else if (act.includes("heavy_accumulation")) { baseScoreBonus += 15; currentWhaleWeight = 100; }
-                else if (act.includes("accumulation")) { baseScoreBonus += 10; currentWhaleWeight = 85; }
-                else if (act.includes("neutral")) { baseScoreBonus += 0; currentWhaleWeight = 50; }
-                else if (act.includes("heavy_distribution")) { baseScoreBonus -= 20; currentWhaleWeight = 0; }
-                else if (act.includes("distribution")) { baseScoreBonus -= 10; currentWhaleWeight = 25; }
-              }
-            }
-
-            let currentOiWeight = 50;
-            if (oiScore && oiScore[tokenKey]) {
-              let oData = oiScore[tokenKey];
-              if (typeof oData.score === 'number') {
-                baseScoreBonus += oData.score;
-                currentOiWeight = Math.min(100, Math.max(0, 50 + (oData.score * 2.5)));
-              } else if (oData.status) {
-                let status = oData.status.toLowerCase();
-                if (status.includes("rising") && status.includes("volume")) { baseScoreBonus += 15; currentOiWeight = 100; }
-                else if (status.includes("rising")) { baseScoreBonus += 10; currentOiWeight = 85; }
-                else if (status.includes("flat")) { baseScoreBonus += 0; currentOiWeight = 50; }
-                else if (status.includes("falling")) { baseScoreBonus -= 10; currentOiWeight = 25; }
-                else if (status.includes("collapse")) { baseScoreBonus -= 20; currentOiWeight = 0; }
-              }
-            }
-
-            let extTargetScore = 75;
-            if (institutionalScore && institutionalScore[tokenKey]) {
-              extTargetScore = institutionalScore[tokenKey].score || institutionalScore[tokenKey].institutionalScore || 75;
-            }
-
+            let matchedCoin = binanceEliteDatabase.find(c => c.coin === `${tokenKey}/USDT`);
             if (matchedCoin) {
-              matchedCoin.price = currentPrice;
-              matchedCoin.change = currentChange;
-              matchedCoin.ideal = currentPrice;
-              matchedCoin.sl = currentPrice * 0.99;
-              matchedCoin.tp1 = (currentPrice * 1.01).toFixed(2);
-              matchedCoin.tp5 = (currentPrice * 1.05).toFixed(2);
-              
-              if (baseScoreBonus !== 0) {
-                matchedCoin.smcScore = Math.min(100, Math.max(0, matchedCoin.smcScore + baseScoreBonus));
-              }
-
-              matchedCoin.finalInstitutionalScore = parseFloat(((matchedCoin.smcScore * 0.25) + (extTargetScore * 0.25) + (currentWhaleWeight * 0.15) + (currentFundingWeight * 0.15) + (currentOiWeight * 0.10) + (btcContextScore * 0.05) + (usdtContextScore * 0.05)).toFixed(1));
-
-            } else if (binanceEliteDatabase.length < 50) {
-              let targetSMC = 78;
-              let calculatedSMC = Math.min(100, Math.max(0, targetSMC + baseScoreBonus));
-              let finalScoreComputed = parseFloat(((calculatedSMC * 0.25) + (extTargetScore * 0.25) + (currentWhaleWeight * 0.15) + (currentFundingWeight * 0.15) + (currentOiWeight * 0.10) + (btcContextScore * 0.05) + (usdtContextScore * 0.05)).toFixed(1));
-
-              binanceEliteDatabase.push({
-                rank: binanceEliteDatabase.length + 1,
-                coin: formattedSymbol,
-                price: currentPrice,
-                change: currentChange,
-                divergence: "Volume Analysed",
-                harmonicName: "Standard Wave",
-                harmonicValid: "88.2%",
-                crtBias: calculatedBias,
-                smcScore: calculatedSMC,
-                finalInstitutionalScore: finalScoreComputed,
-                ideal: currentPrice,
-                sl: currentPrice * 0.99,
-                rrRatio: "1 : 5.0",
-                techReason: `Sistem kuantitatif memproses data struktur pasar untuk ${formattedSymbol} secara teratur lewat database CoinGecko.`,
-                tp1: (currentPrice * 1.01).toFixed(2),
-                tp5: (currentPrice * 1.05).toFixed(2)
-              });
+              matchedCoin.price = coinData.current_price || 0;
+              matchedCoin.change = coinData.price_change_percentage_24h || 0;
+              matchedCoin.tp1 = (matchedCoin.price * 1.01).toFixed(2);
+              matchedCoin.tp5 = (matchedCoin.price * 1.05).toFixed(2);
             }
-
-            if (coinData.symbol.toLowerCase() === "btc") {
-              const btcPriceEl = document.getElementById('btc-live-price');
-              const btcChangeEl = document.getElementById('btc-live-change');
-              if (btcPriceEl) btcPriceEl.textContent = `$${currentPrice.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
-              if (btcChangeEl) {
-                btcChangeEl.textContent = `${currentChange >= 0 ? '+' : ''}${currentChange.toFixed(2)}%`;
-                btcChangeEl.className = `text-xs font-bold font-mono ${currentChange >= 0 ? 'price-up' : 'price-down'}`;
-              }
+            if (tokenKey === "BTC") {
+              document.getElementById('btc-live-price').textContent = `$${coinData.current_price.toLocaleString()}`;
+              document.getElementById('btc-live-change').textContent = `${coinData.price_change_percentage_24h.toFixed(2)}%`;
             }
           });
-
-          binanceEliteDatabase.sort((a, b) => b.finalInstitutionalScore - a.finalInstitutionalScore);
-          binanceEliteDatabase.forEach((coin, idx) => { coin.rank = idx + 1; });
           triggerLiveFilter();
         }
-      } catch (error) {
-        console.error("Koneksi API CoinGecko limit atau terhambat.", error);
-      }
+      } catch (error) { console.error("Koneksi CoinGecko error.", error); }
     }
 
     function renderScannerTable(data) {
       const tbody = document.getElementById('elite-scanner-rows');
-      if (!tbody) return;
-      tbody.innerHTML = '';
-
-      const dataSource = Array.isArray(data) ? data : binanceEliteDatabase;
-
-      dataSource.forEach(item => {
+      if (!tbody) return; tbody.innerHTML = '';
+      data.forEach(item => {
         const tr = document.createElement('tr');
-        tr.id = `coin-row-${item.coin.replace('/', '-')}`;
-        tr.className = "hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5";
+        tr.className = "hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5 whitespace-nowrap";
         tr.onclick = () => showDeepReport(item);
-
-        let fScore = item.finalInstitutionalScore || item.smcScore;
-        let colorClass = "text-red-400"; 
-        if (fScore >= 90) colorClass = "text-green-400 font-extrabold brightness-125 drop-shadow-[0_0_6px_rgba(34,197,94,0.4)]";
-        else if (fScore >= 80) colorClass = "text-green-500 font-bold";
-        else if (fScore >= 70) colorClass = "text-yellow-400 font-semibold";
-
         tr.innerHTML = `
           <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
-          <td class="p-3 text-white font-bold flex flex-col justify-center">
-            <div class="flex items-center gap-1.5">
-              <span class="w-1.5 h-1.5 rounded-full bg-green-400"></span> ${item.coin}
-            </div>
-            <div class="text-[10px] tracking-wide font-mono mt-0.5 opacity-90">
-              Score: <span class="${colorClass}">${fScore.toFixed(1)}</span>
-            </div>
-          </td>
-          <td class="p-3 text-gray-100">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</td>
-          <td class="p-3 font-bold ${item.change >= 0 ? 'price-up' : 'price-down'}">${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%</td>
-          <td class="p-3 text-blue-400">${item.divergence}</td>
-          <td class="p-3 text-gray-200">${item.harmonicName}</td>
-          <td class="p-3 text-center text-emerald-400 font-bold">${item.harmonicValid}</td>
-          <td class="p-3 text-green-400 font-semibold">${item.crtBias}</td>
+          <td class="p-3 text-white font-bold">${item.coin} <span class="text-[9px] block text-gray-500">Score: ${item.finalInstitutionalScore}</span></td>
+          <td class="p-3">$${item.price.toLocaleString()}</td>
+          <td class="p-3 font-bold ${item.change >= 0 ? 'price-up' : 'price-down'}">${item.change.toFixed(2)}%</td>
+          <td class="p-3 text-blue-400 hidden md:table-cell">${item.divergence}</td>
+          <td class="p-3 text-gray-200 hidden lg:table-cell">${item.harmonicName}</td>
           <td class="p-3 text-center text-purple-400 font-bold">${item.smcScore}</td>
           <td class="p-3 text-right text-emerald-400 font-extrabold">${item.rrRatio}</td>
         `;
@@ -658,389 +317,118 @@ if (btcContext.trend === "up") baseScoreBonus += 5;
     }
 
     function showDeepReport(item) {
-      if (!item || item.price === 0) return;
       document.getElementById('detail-report-grid').style.display = "grid";
       document.getElementById('detail-coin-name').textContent = item.coin;
-      
-      let symbolClean = item.coin.split('/')[0];
-      let addendumContext = "";
-      
-      if (whaleScore && whaleScore[symbolClean]) {
-        addendumContext += ` Net Whale Absorption Status: ${whaleScore[symbolClean].activity || 'Accumulating'}.`;
-      }
-      if (oiScore && oiScore[symbolClean]) {
-        addendumContext += ` Open Interest Velocity Delta: ${oiScore[symbolClean].delta || 'Increasing'}.`;
-      }
-
-      document.getElementById('detail-tech-reason').textContent = item.techReason + addendumContext;
+      document.getElementById('detail-tech-reason').textContent = item.techReason;
       document.getElementById('target-profit-ladder').innerHTML = `
-        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Matrix:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
-        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${parseFloat(item.tp1).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
-        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP5 Projection:</span><span class="text-green-400 font-bold">$${parseFloat(item.tp5).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 4})}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry:</span><span class="text-green-400 font-bold">$${item.price.toLocaleString()}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1:</span><span class="text-white font-bold">$${item.tp1}</span></div>
+        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP5 Projection:</span><span class="text-green-400 font-bold">$${item.tp5}</span></div>
       `;
     }
 
     function triggerLiveFilter() {
       const kw = document.getElementById('searchFilter').value.toUpperCase();
-      const filteredData = binanceEliteDatabase.filter(c => c.coin.includes(kw));
-      renderScannerTable(filteredData);
+      renderScannerTable(binanceEliteDatabase.filter(c => c.coin.includes(kw)));
     }
 
-    async function loadLocalDatabaseFromGithub() {
-      try {
-        const githubRawUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/screener-data.json';
-        const remoteJson = await fetchWithRetry(githubRawUrl);
-        if (Array.isArray(remoteJson)) {
-          remoteJson.forEach(remoteCoin => {
-            let localCoin = binanceEliteDatabase.find(c => c.coin === remoteCoin.coin);
-            if (localCoin) {
-              localCoin.price = remoteCoin.price;
-              localCoin.change = remoteCoin.change;
-            }
-          });
-          triggerLiveFilter();
-        }
-      } catch (error) {
-        console.log("Gagal memuat screener-data dari GitHub, menggunakan fallback lokal.");
-      }
-    }
-
-    // ========================================== REAL GEMINI VISION ENGINE ==========================================
+    // ========================================== VISION ENGINE ==========================================
     const AI_ICT_Analyzer = {
-      uploadedImageBase64: null,
-      uploadedImageMime: null,
-      imgElement: null,
+      uploadedImages: [], imgElement: null,
 
       init() {
         const dropzone = document.getElementById('dropzone-area');
         const fileInput = document.getElementById('chart-screenshot-input');
         const savedKey = localStorage.getItem('mirofish_gemini_key');
-        if (savedKey) { document.getElementById('gemini-api-key').value = savedKey; }
+        if (savedKey) document.getElementById('gemini-api-key').value = savedKey;
 
-        document.getElementById('gemini-api-key').addEventListener('input', (e) => {
-          localStorage.setItem('mirofish_gemini_key', e.target.value.trim());
-        });
-
+        document.getElementById('gemini-api-key').addEventListener('input', (e) => localStorage.setItem('mirofish_gemini_key', e.target.value.trim()));
         dropzone.addEventListener('click', () => fileInput.click());
-        dropzone.addEventListener('dragover', (e) => { e.preventDefault(); dropzone.classList.add('border-green-500'); });
-        dropzone.addEventListener('dragleave', () => dropzone.classList.remove('border-green-500'));
-        dropzone.addEventListener('drop', (e) => {
-          e.preventDefault();
-          dropzone.classList.remove('border-green-500');
-          if (e.dataTransfer.files.length > 0) { this.handleFile(e.dataTransfer.files[0]); }
-        });
-
         fileInput.addEventListener('change', (e) => {
-          if (e.target.files.length > 0) { this.handleFile(e.target.files[0]); }
+          if (e.target.files.length !== 4) { alert('Wajib unggah tepat 4 chart sekaligus (D1, H4, H1, M15).'); e.target.value = ''; return; }
+          this.handleMultipleFiles(e.target.files);
         });
       },
 
-      handleFile(file) {
+      async handleMultipleFiles(files) {
         const apiKey = document.getElementById('gemini-api-key').value.trim();
-        if (!apiKey) {
-          alert('KRITIS: Anda wajib mengisi Gemini API Key terlebih dahulu di kolom kanan atas!');
-          return;
-        }
-
-        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        if (!validTypes.includes(file.type)) {
-          alert('Ekstensi file tidak valid! Gunakan JPG, JPEG, PNG, atau WEBP.');
-          return;
-        }
-
-        this.uploadedImageMime = file.type;
-        this.setLoadingState(true, "Processing Matrix Image...");
-
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          this.uploadedImageBase64 = e.target.result.split(',')[1];
-          const img = new Image();
-          img.onload = () => {
-            this.imgElement = img;
-            this.analyzeChartWithGemini(apiKey);
-          };
-          img.src = e.target.result;
-        };
-        reader.readAsDataURL(file);
-      },
-
-      setLoadingState(isLoading, text = "") {
-        const promptView = document.getElementById('upload-prompt-view');
-        const loadingView = document.getElementById('upload-loading-view');
-        const txtState = document.getElementById('loading-text-state');
-        if (isLoading) {
-          promptView.classList.add('hidden');
-          loadingView.classList.remove('hidden');
-          txtState.textContent = text;
-        } else {
-          loadingView.classList.add('hidden');
-          promptView.classList.remove('hidden');
-        }
-      },
-
-      async analyzeChartWithGemini(apiKey) {
-        this.setLoadingState(true, "Analyzing Market Structure with Gemini Vision API...");
+        if (!apiKey) return alert('Isi Gemini API Key terlebih dahulu!');
         
-        const currentMarketRegimeStr = JSON.stringify(marketRegime || {});
-        const currentBtcContextStr = JSON.stringify(btcContext || {});
-        const currentUsdtContextStr = JSON.stringify(usdtContext || {});
-        const currentFundingScoreStr = JSON.stringify(fundingScore || {});
-        const currentWhaleScoreStr = JSON.stringify(whaleScore || {});
-        const currentOiScoreStr = JSON.stringify(oiScore || {});
-        const currentInstitutionalScoreStr = JSON.stringify(institutionalScore || {});
-
-        const promptText = `You are an Institutional ICT Analyst, Smart Money Concept Specialist, and Quantitative Market Structure Engine.
-Analyze this chart screenshot exactly as a human professional ICT trader would. 
-
-CRITICAL MACRO & QUANT INTELLIGENCE CONTEXT INPUT:
-- Global Market Regime: ${currentMarketRegimeStr}
-- Bitcoin Core Status Context: ${currentBtcContextStr}
-- USDT Dominance Environment: ${currentUsdtContextStr}
-- Institutional Score Parameter Pool: ${currentInstitutionalScoreStr}
-- Global Live Funding Rates Matrix: ${currentFundingScoreStr}
-- Whale Accumulation/Distribution Analytics Feed: ${currentWhaleScoreStr}
-- Futures Open Interest Delta Profile: ${currentOiScoreStr}
-
-You MUST evaluate the input image combined with the provided quantitative macro metrics before finalizing your structural output.
-Return ONLY a valid raw JSON matching the schema below. No markdown formatting.
-
-REQUIRED JSON SCHEMA:
-{
-  "pair": "string",
-  "exchange": "string",
-  "timeframe": "string",
-  "currentPrice": number,
-  "chartQuality": number,
-  "marketStructure": "Bullish / Bearish / Sideways",
-  "trend": "string",
-  "institutionalBias": "STRONG BULLISH / BULLISH / NEUTRAL / BEARISH / STRONG BEARISH",
-  "executionType": "Aggressive / Conservative / Confirmation",
-  "summary": "string professional summary",
-  "daily_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": false}, "fvg_box": {"detected": true}, "ob_box": {"detected": true}, "liquidity_line": {"detected": true, "type": "SSL"} },
-  "h4_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": false}, "fvg_box": {"detected": true}, "ob_box": {"detected": true}, "liquidity_line": {"detected": false} },
-  "h1_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": false}, "fvg_box": {"detected": false}, "ob_box": {"detected": true}, "liquidity_line": {"detected": false} },
-  "m15_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": true}, "fvg_box": {"detected": true}, "ob_box": {"detected": true}, "liquidity_line": {"detected": true, "type": "SSL"} },
-  "annotations": {
-    "bos_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
-    "choch_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
-    "fvg_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "ob_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
-    "liquidity_line": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number, "type": "BSL/SSL"},
-    "entry_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
-    "sl_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
-    "tp_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number}
-  }
-}`;
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-        const payload = {
-          contents: [{
-            parts: [
-              { text: promptText },
-              { inlineData: { mimeType: this.uploadedImageMime, data: this.uploadedImageBase64 } }
-            ]
-          }],
-          generationConfig: { responseMimeType: "application/json" }
-        };
+        this.uploadedImages = [];
+        this.setLoadingState(true, "Processing Multi-Timeframe Images...");
 
         try {
-          const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-
-          if (!response.ok) {
-            const errData = await response.json();
-            throw new Error(errData.error?.message || "HTTP Connection Error");
+          for (let i = 0; i < 4; i++) {
+            const b64 = await new Promise(r => { const rd = new FileReader(); rd.onload = (e) => r(e.target.result.split(',')[1]); rd.readAsDataURL(files[i]); });
+            this.uploadedImages.push({ inlineData: { mimeType: files[i].type, data: b64 } });
           }
-
-          const resData = await response.json();
-          let rawText = resData.candidates[0].content.parts[0].text;
-          rawText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+          await new Promise(r => { const rd = new FileReader(); rd.onload = (e) => { const img = new Image(); img.onload = () => { this.imgElement = img; r(); }; img.src = e.target.result; }; rd.readAsDataURL(files[3]); });
           
-          const parsedResult = JSON.parse(rawText);
-          
-          // INTEGRASI UTAMA: Hitung hasil laporan menggunakan Engine Confluence v2.0 baru
-          const pairName = parsedResult.pair || "SOL/USDT";
-          const report = buildFinalReport(
-            pairName,
-            parsedResult.daily_raw || {},
-            parsedResult.h4_raw || {},
-            parsedResult.h1_raw || {},
-            parsedResult.m15_raw || {}
-          );
-
-          // Masukkan kembali meta-data visual hasil capture untuk sinkronisasi render DOM
-          report.exchange = parsedResult.exchange || "Binance";
-          report.timeframe = parsedResult.timeframe || "Multi-TF";
-          report.currentPrice = parsedResult.currentPrice || 0;
-          report.chartQuality = parsedResult.chartQuality || 90;
-          report.marketStructure = parsedResult.marketStructure || "Bullish Continuation";
-          report.trend = parsedResult.trend || "Upward Structural Flow";
-          report.annotations = parsedResult.annotations || {};
-          
-          // Salin kembali status komponen deteksi individual ke objek report
-          report.bos = parsedResult.daily_raw?.bos_coord?.detected ? "Confirmed" : "None";
-          report.choch = parsedResult.m15_raw?.choch_coord?.detected ? "Confirmed" : "None";
-          report.fvg = parsedResult.m15_raw?.fvg_box?.detected ? "Active" : "None";
-          report.orderBlock = parsedResult.m15_raw?.ob_box?.detected ? "Detected" : "None";
-
-          this.syncDashboardWithRealData(report);
-        } catch (error) {
-          console.error(error);
-          alert(`API ERROR: ${error.message}\nPastikan API Key valid.`);
-          this.setLoadingState(false);
-        }
+          document.getElementById('chart-screenshot-input').value = '';
+          await this.analyzeMultiTF(apiKey);
+        } catch (err) { alert(err.message); this.setLoadingState(false); }
       },
 
-      syncDashboardWithRealData(data) {
-        document.getElementById('rep-pair').textContent = data.pair || "Unknown";
-        document.getElementById('rep-exchange').textContent = data.exchange || "-";
-        document.getElementById('rep-tf').textContent = data.timeframe || "-";
-        document.getElementById('rep-curr-price').textContent = data.currentPrice ? `$${data.currentPrice}` : "-";
-        document.getElementById('rep-quality').textContent = data.chartQuality ? `${data.chartQuality}/100` : "-";
-        document.getElementById('rep-structure').textContent = data.marketStructure || "-";
-        document.getElementById('rep-trend').textContent = data.trend || "-";
-        
-        const setStatusColor = (elId, value, checkActive) => {
-          const el = document.getElementById(elId);
-          if (!el) return;
-          el.textContent = value || "None";
-          if (checkActive) {
-            el.className = (value && value.toLowerCase().includes("conf") || value === "Active" || value === "Detected") ? "text-green-400 font-bold" : "text-red-400 font-semibold";
-          }
-        };
+      async analyzeMultiTF(apiKey) {
+        this.setLoadingState(true, "Analyzing Structure with Gemini...");
+        const promptText = `Analyze 4 charts (D1, H4, H1, M15). Hierarchy: D1=Bias, H4=Structure, H1=POI, M15=Entry. Return ONLY VALID JSON matching schema. Do not use markdown.
+        Schema: {"pair":"string", "timeframe":"MULTI-TF", "marketStructure":"string", "tradeStatus":"EXECUTE or NO TRADE", "daily_raw":{"bos_coord":{"detected":true}}, "m15_raw":{"choch_coord":{"detected":true}}, "annotations":{"bos_coord":{"detected":true,"x_start_pct":10,"y_pct":20,"x_end_pct":40}}}`;
 
-        setStatusColor('rep-bos', data.bos, true);
-        setStatusColor('rep-choch', data.choch, true);
-        setStatusColor('rep-fvg', data.fvg, true);
-        setStatusColor('rep-ob', data.orderBlock, false);
-        
-        document.getElementById('rep-bias').textContent = data.institutionalBias || "-";
-        document.getElementById('rep-bull-prob').textContent = `${data.bullishProbability || 0}%`;
-        document.getElementById('rep-bear-prob').textContent = `${data.bearishProbability || 0}%`;
-        document.getElementById('rep-confidence').textContent = `${data.confidence || 0}%`;
-        document.getElementById('rep-inst-score').textContent = `${data.institutionalScore || 0} / 125`;
+        const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        for (const model of models) {
+          try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, ...this.uploadedImages] }], generationConfig: { responseMimeType: "application/json" } })
+            });
+            const resData = await res.json();
+            
+            if (resData.error?.message?.includes("high demand")) { alert("Gemini sedang overload."); this.setLoadingState(false); return; }
+            if (!resData.candidates) continue;
 
-        // Mengatur format trade matrix numerik dinamis otomatis
-        let baseEntry = data.currentPrice || 142.50;
-        let isBearish = data.institutionalBias.includes("BEARISH");
-
-        document.getElementById('rep-entry').textContent = `$${baseEntry.toFixed(2)}`;
-        document.getElementById('rep-sl').textContent = `$${(isBearish ? baseEntry * 1.015 : baseEntry * 0.985).toFixed(2)}`;
-        document.getElementById('rep-tp1').textContent = `$${(isBearish ? baseEntry * 0.96 : baseEntry * 1.04).toFixed(2)}`;
-        document.getElementById('rep-tp2').textContent = `$${(isBearish ? baseEntry * 0.92 : baseEntry * 1.08).toFixed(2)}`;
-        document.getElementById('rep-tp3').textContent = `$${(isBearish ? baseEntry * 0.88 : baseEntry * 1.12).toFixed(2)}`;
-        
-        document.getElementById('rep-rr').textContent = "1 : 3.5";
-        document.getElementById('rep-exectype').textContent = data.tradeStatus || "WAIT";
-
-        document.getElementById('rep-scen-bull').textContent = data.scenarioBullish || "-";
-        document.getElementById('rep-scen-bear').textContent = data.scenarioBearish || "-";
-        document.getElementById('rep-scen-neutral').textContent = data.scenarioNeutral || "-";
-        document.getElementById('rep-conclusion').textContent = `Multi-Timeframe Analysis Complete. Status: ${data.tradeStatus}. Score: ${data.institutionalScore}.`;
-        
-        const badge = document.getElementById('bias-badge');
-        const bias = data.institutionalBias ? data.institutionalBias.toUpperCase() : "NEUTRAL";
-        badge.textContent = bias;
-        if (bias.includes("BULLISH")) {
-          badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase bg-green-500/20 text-green-400 border border-green-500/30";
-        } else if (bias.includes("BEARISH")) {
-          badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase bg-red-500/20 text-red-400 border border-red-500/30";
-        } else {
-          badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded uppercase bg-zinc-800 text-gray-400";
+            const rawText = resData.candidates[0].content.parts[0].text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+            const parsedResult = JSON.parse(rawText);
+            this.syncDashboard(parsedResult);
+            return;
+          } catch (err) { console.warn(`Model ${model} gagal.`); }
         }
+        alert("Semua model gagal dieksekusi."); this.setLoadingState(false);
+      },
 
-        this.renderAnnotationsOnCanvas(data.annotations);
+      setLoadingState(isLoading, text) {
+        document.getElementById('upload-prompt-view').classList.toggle('hidden', isLoading);
+        document.getElementById('upload-loading-view').classList.toggle('hidden', !isLoading);
+        if(text) document.getElementById('loading-text-state').textContent = text;
+      },
+
+      syncDashboard(data) {
+        document.getElementById('rep-pair').textContent = data.pair || "-";
+        document.getElementById('rep-tf').textContent = data.timeframe || "MULTI-TF";
+        document.getElementById('rep-structure').textContent = data.marketStructure || "-";
+        document.getElementById('rep-bos').textContent = data.daily_raw?.bos_coord?.detected ? "Confirmed" : "None";
+        document.getElementById('rep-choch').textContent = data.m15_raw?.choch_coord?.detected ? "Confirmed" : "None";
+        document.getElementById('rep-exectype').textContent = data.tradeStatus || "NO TRADE";
+        
+        if (data.annotations) this.renderAnnotationsOnCanvas(data.annotations);
+        else this.setLoadingState(false);
       },
 
       renderAnnotationsOnCanvas(coords) {
         const canvas = document.getElementById('ict-annotation-canvas');
         const wrapper = document.getElementById('canvas-wrapper');
-        const ctx = canvas.getContext('2d');
-        const img = this.imgElement;
-
         wrapper.classList.remove('hidden');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
-
-        const w = canvas.width;
-        const h = canvas.height;
-
-        ctx.lineWidth = Math.max(2, w * 0.0025);
-        ctx.font = `bold ${Math.max(11, w * 0.014)}px monospace`;
-
-        if (!coords) { this.setLoadingState(false); return; }
-
-        const pctX = (p) => (p / 100) * w;
-        const pctY = (p) => (p / 100) * h;
-
-        if (coords.bos_coord && coords.bos_coord.detected) {
-          ctx.strokeStyle = '#22c55e';
-          ctx.beginPath();
-          ctx.moveTo(pctX(coords.bos_coord.x_start_pct), pctY(coords.bos_coord.y_pct));
-          ctx.lineTo(pctX(coords.bos_coord.x_end_pct), pctY(coords.bos_coord.y_pct));
-          ctx.stroke();
-          ctx.fillStyle = '#22c55e';
-          ctx.fillText("BOS", pctX(coords.bos_coord.x_end_pct) + 4, pctY(coords.bos_coord.y_pct) + 4);
-        }
-
-        if (coords.choch_coord && coords.choch_coord.detected) {
-          ctx.strokeStyle = '#06b6d4';
-          ctx.beginPath();
-          ctx.moveTo(pctX(coords.choch_coord.x_start_pct), pctY(coords.choch_coord.y_pct));
-          ctx.lineTo(pctX(coords.choch_coord.x_end_pct), pctY(coords.choch_coord.y_pct));
-          ctx.stroke();
-          ctx.fillStyle = '#06b6d4';
-          ctx.fillText("CHoCH", pctX(coords.choch_coord.x_end_pct) + 4, pctY(coords.choch_coord.y_pct) + 4);
-        }
-
-        if (coords.fvg_box && coords.fvg_box.detected) {
-          ctx.fillStyle = 'rgba(234, 179, 8, 0.12)';
-          ctx.strokeStyle = '#eab308';
-          ctx.fillRect(pctX(coords.fvg_box.x_pct), pctY(coords.fvg_box.y_pct), pctX(coords.fvg_box.width_pct), pctY(coords.fvg_box.height_pct));
-          ctx.strokeRect(pctX(coords.fvg_box.x_pct), pctY(coords.fvg_box.y_pct), pctX(coords.fvg_box.width_pct), pctY(coords.fvg_box.height_pct));
-          ctx.fillStyle = '#eab308';
-          ctx.fillText("FVG", pctX(coords.fvg_box.x_pct) + 4, pctY(coords.fvg_box.y_pct) + 14);
-        }
-
-        if (coords.ob_box && coords.ob_box.detected) {
-          ctx.fillStyle = 'rgba(168, 85, 247, 0.15)';
-          ctx.strokeStyle = '#a855f7';
-          ctx.fillRect(pctX(coords.ob_box.x_pct), pctY(coords.ob_box.y_pct), pctX(coords.ob_box.width_pct), pctY(coords.ob_box.height_pct));
-          ctx.strokeRect(pctX(coords.ob_box.x_pct), pctY(coords.ob_box.y_pct), pctX(coords.ob_box.width_pct), pctY(coords.ob_box.height_pct));
-          ctx.fillStyle = '#a855f7';
-          ctx.fillText("OB", pctX(coords.ob_box.x_pct) + 4, pctY(coords.ob_box.y_pct) + 14);
-        }
-
-        if (coords.liquidity_line && coords.liquidity_line.detected) {
-          ctx.strokeStyle = '#ef4444';
-          ctx.setLineDash([5, 5]);
-          ctx.beginPath();
-          ctx.moveTo(pctX(coords.liquidity_line.x_start_pct), pctY(coords.liquidity_line.y_pct));
-          ctx.lineTo(pctX(coords.liquidity_line.x_end_pct), pctY(coords.liquidity_line.y_pct));
-          ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.fillStyle = '#ef4444';
-          ctx.fillText(`x ${coords.liquidity_line.type || 'Liq'}`, pctX(coords.liquidity_line.x_start_pct), pctY(coords.liquidity_line.y_pct) - 5);
-        }
-
+        canvas.width = this.imgElement.width; canvas.height = this.imgElement.height;
+        canvas.getContext('2d').drawImage(this.imgElement, 0, 0);
         this.setLoadingState(false);
       }
     };
 
-    // --- INITIALIZATION STARTUP FLOW SINK ---
     window.onload = async () => {
       await loadInstitutionalData();
       buildLiveVolumeBars();
-      triggerVolumeBarPulse();
-      renderScannerTable(binanceEliteDatabase);
       await fetchCoinGeckoMarketData();
-      await loadLocalDatabaseFromGithub();
-      AI_ICT_Analyzer.init();
       setInterval(fetchCoinGeckoMarketData, 10000);
+      AI_ICT_Analyzer.init();
     };
   </script>
 </body>
