@@ -1,17 +1,8 @@
-[
-  {
-    "id": "bitcoin",
-    "pair": "BTC/USDT",
-    "name": "Bitcoin"
-  },
-  {
-    "id": "ethereum",
-    "pair": "ETH/USDT",
-    "name": "Ethereum"
-  },
-  {
-    "id": "solana",
-    "pair": "SOL/USDT",
-    "name": "Solana"
-  }
-]
+{
+  "coin": "VIRTUALUSDT",
+  "score": 92,
+  "signal": "STRONG BUY",
+  "entry": 1.25,
+  "target": 1.42,
+  "stoploss": 1.18
+}
