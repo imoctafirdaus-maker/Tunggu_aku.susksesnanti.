@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>INSTITUTIONAL QUANT B-SCANNER PRO</title>
+  <title>MIROFISH MISPRICING SCANNER PRO</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -25,36 +25,35 @@
 
   <div class="w-full max-w-7xl space-y-4">
     
-    <!-- HEADER -->
     <div class="glass-panel rounded-2xl p-4 border border-white/5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div class="flex items-center gap-2 flex-wrap">
             <span class="text-green-400 font-semibold tracking-wider pixel-font text-[10px] bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">QUANT ALGO v3.0</span>
-            <h1 class="text-white font-bold text-base tracking-wide uppercase">Institutional Elite Scanner</h1>
+            <h1 class="text-white font-bold text-base tracking-wide uppercase">Mirofish Elite Scanner</h1>
           </div>
-          <p class="text-xs text-gray-400 mt-1">Early Accumulation & Spot/Futures Flow Engine</p>
+          <p class="text-xs text-gray-400 mt-1">Real-time CoinGecko Multi-Symbol System.</p>
         </div>
         <div class="text-left sm:text-right">
           <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
             <i data-lucide="clock" class="w-3 h-3 text-green-400"></i> <span id="digital-clock">00:00:00 UTC</span>
           </span>
-          <div class="text-xs text-green-400 font-bold mt-1 tracking-tight animate-pulse">● Quant Filters Active</div>
+          <div class="text-xs text-green-400 font-bold mt-1 tracking-tight">● Engine Core Active</div>
         </div>
       </div>
     </div>
 
-    <!-- MACRO ANALYSIS (BTC/USDT.D) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 neon-border-green bg-gradient-to-b from-emerald-950/10 to-transparent space-y-4">
       <div class="bg-gradient-to-r from-red-950/20 to-black/40 p-4 rounded-xl border border-red-500/20 neon-border-orange">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div class="flex items-center gap-4">
             <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center shrink-0">
-              <i data-lucide="bitcoin" class="w-6 h-6 text-red-400"></i>
+              <i data-lucide="coins" class="w-6 h-6 text-red-400"></i>
             </div>
             <div>
               <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold text-red-400 uppercase tracking-widest font-mono">Macro Liquidity Anchor</span>
+                <span class="text-xs font-bold text-red-400 uppercase tracking-widest font-mono">Induk Pasar / Anchor Alpha</span>
+                <span class="text-[10px] bg-red-500/20 text-red-400 border border-red-500/30 px-1.5 py-0.2 rounded font-mono font-bold animate-pulse">LIVE FEED</span>
               </div>
               <div class="flex items-baseline gap-2 mt-0.5">
                 <span class="text-2xl font-extrabold text-white tracking-tight font-mono" id="btc-live-price">$0.00</span>
@@ -63,49 +62,83 @@
             </div>
           </div>
           <div class="bg-black/30 px-3 py-2 rounded-lg border border-white/5 w-full md:w-auto">
-            <span class="text-[9px] text-gray-500 uppercase font-mono block">USDT.D & Altcoin Season Status</span>
-            <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5 mt-0.5" id="macro-status">
-              <i data-lucide="activity" class="w-3.5 h-3.5"></i>
-              Evaluating Macro Risk...
+            <span class="text-[9px] text-gray-500 uppercase font-mono block">Pola Grafik Saat Ini (Pattern)</span>
+            <span class="text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5" id="macro-status">
+              <i data-lucide="trending-down" class="w-3.5 h-3.5 text-red-400"></i>
+              Bearish Continuation / Relief Watch
             </span>
+          </div>
+          <div class="bg-black/30 px-3 py-2 rounded-lg border border-white/5 w-full md:w-auto md:max-w-md">
+            <span class="text-[9px] text-gray-500 uppercase font-mono block">Proyeksi 24 Jam & Range</span>
+            <p class="text-[11px] text-gray-300 leading-snug mt-0.5">
+              Bias: <span class="text-red-400 font-bold">Bearish</span>. Rebound range di <span class="text-emerald-400">$63,500-$64,500</span>. Jika breakdown berlanjut, support krusial di <span class="text-red-400">$60,000</span>.
+            </p>
           </div>
         </div>
       </div>
 
-      <!-- FILTERED QUANT TABLE -->
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3 mt-4">
+      <div class="p-4 bg-black/40 rounded-xl border border-white/5 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold tracking-wider text-gray-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Spot Volume Feed
+          </span>
+          <span class="text-[10px] text-gray-500 font-mono">Auto-refresh Active</span>
+        </div>
+        <div id="live-volume-bars" class="h-16 flex items-end gap-1 pt-2 px-1 bg-zinc-950/50 rounded-lg overflow-hidden border border-white/5">
+        </div>
+      </div>
+
+      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div>
           <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
-            <i data-lucide="filter" class="w-5 h-5 text-green-400"></i>
-            TOP EARLY ACCUMULATION (WHALE FILTERED)
+            <i data-lucide="shield-alert" class="w-5 h-5 text-green-400"></i>
+            PROBABILITAS PUMP HIGHEST RANKING
           </h2>
+        </div>
+        <div class="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-xl border border-white/10 max-w-xs w-full">
+          <i data-lucide="search" class="w-4 h-4 text-gray-400"></i>
+          <input type="text" id="searchFilter" placeholder="Search filtered coins..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" oninput="triggerLiveFilter()" />
         </div>
       </div>
 
       <div class="w-full overflow-x-auto custom-scroll border border-white/5 rounded-xl bg-black/20">
         <table class="w-full text-left border-collapse min-w-[1000px]">
           <thead>
-            <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[10px] uppercase tracking-wider">
+            <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[10px] sm:text-[11px] uppercase tracking-wider">
               <th class="p-3 text-center">Rank</th>
-              <th class="p-3">Coin</th>
-              <th class="p-3">Price / 24h</th>
-              <th class="p-3">Demand Zone (Dist)</th>
-              <th class="p-3">OI / Vol 24H</th>
-              <th class="p-3">Funding</th>
-              <th class="p-3 text-center text-purple-400">Whale Score</th>
-              <th class="p-3 text-center text-cyan-400">Demand Score</th>
-              <th class="p-3 text-center text-green-400">Prob</th>
-              <th class="p-3 text-right">RR Ratio</th>
+              <th class="p-3">Coin (Score)</th>
+              <th class="p-3">Price / 24h Change</th>
+              <th class="p-3">Signal & Timeframe (TF)</th>
+              <th class="p-3">Ideal Entry Area</th>
+              <th class="p-3">Take Profit 1 (TP1)</th>
+              <th class="p-3">Take Profit 2 (TP2)</th>
+              <th class="p-3 text-center">Stop Loss (SL)</th>
+              <th class="p-3 text-center">SMC Score</th>
+              <th class="p-3 text-right">Risk Reward</th>
             </tr>
           </thead>
           <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
-            <!-- Data Injected Here -->
           </tbody>
         </table>
       </div>
+
+      <div class="border-t border-white/10 pt-3">
+        <h3 class="text-white font-bold text-sm mb-3 flex items-center gap-2 tracking-wide text-gray-300">
+          <i data-lucide="layers" class="w-4 h-4 text-yellow-400"></i>
+          DEEP QUANT TECH REPORT: <span id="detail-coin-name" class="text-green-400 font-extrabold text-base">SELECT A COIN</span>
+        </h3>
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4" id="detail-report-grid" style="display:none;">
+          <div class="lg:col-span-2 space-y-3 bg-black/40 p-4 rounded-xl border border-white/5">
+            <div><span class="text-[10px] uppercase font-bold text-gray-500">Alasan Teknikal</span><p id="detail-tech-reason" class="text-xs text-gray-300 mt-1"></p></div>
+          </div>
+          <div class="bg-zinc-900/60 p-4 rounded-xl border border-green-500/10">
+            <span class="text-[10px] uppercase font-bold text-gray-400">Target Profit & Order Matrix</span>
+            <div id="target-profit-ladder" class="mt-2 space-y-1 text-xs"></div>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- AI VISION ENGINE (THE BRAIN) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div class="flex items-center gap-2">
@@ -120,36 +153,60 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- UPLOAD SECTION -->
-        <div class="space-y-3 bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col">
-          <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Multi-TF Input (D1, H4, H1, M15)</span>
-          <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40 flex-1 flex flex-col justify-center">
-            <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" multiple />
-            <div class="space-y-2 pointer-events-none" id="upload-prompt-view">
-              <i data-lucide="image-plus" class="w-8 h-8 text-gray-500 mx-auto group-hover:text-green-400 transition-colors"></i>
-              <p class="text-xs font-semibold text-gray-300">Drop Exactly 4 Charts (D1, H4, H1, M15)</p>
-              <p class="text-[9px] text-gray-500 font-mono">Filters 5-9: SMC, Demand, Structure & Harmonic</p>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+        <div class="lg:col-span-2 space-y-3 bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col justify-between">
+          <div>
+            <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Upload Chart Image (TradingView / Exchanges)</span>
+            <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40">
+              <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" multiple />
+              <div class="space-y-2 pointer-events-none" id="upload-prompt-view">
+                <i data-lucide="image-plus" class="w-8 h-8 text-gray-500 mx-auto group-hover:text-green-400 transition-colors"></i>
+                <p class="text-xs font-semibold text-gray-300">Drop chart screenshots here or <span class="text-green-400">browse</span></p>
+                <p class="text-[10px] text-gray-500 font-mono">Format: JPG, JPEG, PNG, WEBP (Upload tepat 4 chart: D1, H4, H1, M15)</p>
+              </div>
+              <div class="hidden space-y-2 text-center" id="upload-loading-view">
+                <div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-xs font-mono text-green-400 tracking-wider animate-pulse" id="loading-text-state">Initializing Core Vision...</p>
+              </div>
             </div>
-            <div class="hidden space-y-2 text-center" id="upload-loading-view">
-              <div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p class="text-[10px] font-mono text-green-400 tracking-wider animate-pulse" id="loading-text-state">Running Quant Filters...</p>
-            </div>
+          </div>
+
+          <div class="mt-3 relative hidden overflow-hidden rounded-lg border border-white/5 bg-zinc-950" id="canvas-wrapper">
+            <canvas id="ict-annotation-canvas" class="w-full h-auto max-h-[520px] object-contain block"></canvas>
           </div>
         </div>
 
-        <!-- REPORT SECTION -->
-        <div class="bg-zinc-900/60 p-4 rounded-xl border border-yellow-500/10 flex flex-col h-[500px]">
-          <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
-            <span class="text-[11px] uppercase font-bold text-yellow-400 tracking-wider flex items-center gap-1">
-              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Institutional Entry Report
-            </span>
-            <span id="rep-status" class="text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-zinc-800 text-gray-400 uppercase">WAITING</span>
+        <div class="bg-zinc-900/60 p-4 rounded-xl border border-yellow-500/10 flex flex-col justify-between space-y-4">
+          <div>
+            <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
+              <span class="text-[11px] uppercase font-bold text-yellow-400 tracking-wider flex items-center gap-1">
+                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> ICT Smart Money Report
+              </span>
+              <span id="bias-badge" class="text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-zinc-800 text-gray-400 uppercase">NO DATA</span>
+            </div>
+            
+            <div class="custom-scroll overflow-y-auto max-h-[360px] space-y-1.5 text-xs font-mono text-gray-400" id="report-text-container">
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Pair:</span><span class="text-white font-bold" id="rep-pair">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Timeframe:</span><span class="text-white font-bold" id="rep-tf">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Market Structure:</span><span class="text-white" id="rep-structure">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>BOS Status:</span><span id="rep-bos">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>CHoCH Status:</span><span id="rep-choch">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Fair Value Gap (FVG):</span><span id="rep-fvg">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Institutional Bias:</span><span class="text-white" id="rep-bias">-</span></div>
+              <div class="border-t border-white/5 my-2 pt-2"></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Institutional Score:</span><span class="text-yellow-400 font-bold" id="rep-inst-score">0 / 125</span></div>
+              <div class="border-t border-white/5 my-2 pt-2"></div>
+              <div class="flex justify-between p-1 bg-green-500/5 text-green-400 px-1.5 rounded"><span>Entry Trigger Level:</span><span class="font-bold" id="rep-entry">-</span></div>
+              <div class="flex justify-between p-1 bg-red-500/5 text-red-400 px-1.5 rounded"><span>Stop Loss (SL):</span><span class="font-bold" id="rep-sl">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Take Profit 1 (TP1):</span><span class="text-white" id="rep-tp1">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Take Profit 5 (TP5):</span><span class="text-white" id="rep-tp5">-</span></div>
+              <div class="flex justify-between p-1 bg-yellow-500/5 text-yellow-400 px-1.5 rounded"><span>Risk Reward Ratio:</span><span class="font-bold" id="rep-rr">-</span></div>
+              <div class="flex justify-between p-1 hover:bg-white/[0.02]"><span>Execution Type:</span><span class="text-cyan-400 font-bold" id="rep-exectype">-</span></div>
+            </div>
           </div>
-          
-          <div class="custom-scroll overflow-y-auto flex-1 space-y-3 text-xs font-mono text-gray-300 pr-2" id="report-text-container">
-            <!-- 13 Mandatory Conclusion Points injected here -->
-            <p class="text-gray-500 text-center mt-10">Unggah 4 chart untuk menjalankan Filter 5-9 dan Analisis Makro BTC/USDT.</p>
+          <div class="bg-black/40 p-2.5 rounded border border-white/5 text-[11px]">
+            <span class="text-gray-500 uppercase font-bold block mb-1">Conclusion Matrix Summary</span>
+            <p class="text-gray-300 leading-normal" id="rep-conclusion">Upload 4 exchange chart screenshots to activate the Gemini Core Vision Engine.</p>
           </div>
         </div>
       </div>
@@ -157,21 +214,45 @@
   </div>
 
   <script>
-    // ========================================== GLOBAL STATE & QUANT DB ==========================================
-    let marketRegime = {}, btcContext = {}, oiScore = {}, whaleScore = {}, fundingScore = {};
+    // ========================================== GLOBAL STATE & SCANNER ==========================================
+    let marketRegime = {}, btcContext = {}, usdtContext = {}, institutionalScore = {}, whaleScore = {}, fundingScore = {}, oiScore = {};
 
-    // Mock Database menyesuaikan parameter output baru
-    let quantDatabase = [
-      { 
-        rank: 1, coin: "SOL/USDT", entryNow: "YA", demandZone: "$138.50 - $141.20", dist: "1.2%", 
-        oi24: "+12.4%", vol24: "+31.5%", funding: "Netral", priceChange: "+0.45%", 
-        whaleScore: 95, demandScore: 94, prob: "92%", rr: "1 : 6.1"
-      },
-      { 
-        rank: 2, coin: "LINK/USDT", entryNow: "YA", demandZone: "$13.10 - $13.55", dist: "2.4%", 
-        oi24: "+10.2%", vol24: "+26.8%", funding: "Sldt Positif", priceChange: "+1.10%", 
-        whaleScore: 92, demandScore: 91, prob: "89%", rr: "1 : 5.8"
+    async function fetchWithRetry(url, options = {}, retries = 3, backoff = 1000) {
+      const controller = new AbortController();
+      const id = setTimeout(() => controller.abort(), 6000); 
+      try {
+        const response = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(id);
+        if (!response.ok) throw new Error(`HTTP status ${response.status}`);
+        return await response.json();
+      } catch (err) {
+        clearTimeout(id);
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, backoff));
+          return fetchWithRetry(url, options, retries - 1, backoff * 2);
+        }
+        throw err;
       }
+    }
+
+    async function loadInstitutionalData() {
+      const baseUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/';
+      const targets = [
+        { key: 'marketRegime', file: 'market-regime.json' }, { key: 'btcContext', file: 'btc-context.json' },
+        { key: 'usdtContext', file: 'usdt-context.json' }, { key: 'institutionalScore', file: 'institutional-score.json' },
+        { key: 'whaleScore', file: 'whale-score.json' }, { key: 'fundingScore', file: 'funding-score.json' }, { key: 'oiScore', file: 'oi-score.json' }
+      ];
+      await Promise.all(targets.map(async (target) => {
+        try {
+          const jsonData = await fetchWithRetry(`${baseUrl}${target.file}`);
+          eval(`${target.key} = jsonData;`);
+        } catch (error) { console.warn(`Gagal memuat ${target.file}`); }
+      }));
+    }
+
+    let binanceEliteDatabase = [
+      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, signalType: "Forming Bullish", tf: "H4", entryArea: "$138.50 - $141.20", tp1: "151.00", tp2: "164.00", sl: "137.20", smcScore: 95, finalInstitutionalScore: 95, techReason: "Setup Akumulasi Elite. Sweep Sell Side Liquidity, disusul Bullish Gartley." },
+      { rank: 2, coin: "LINK/USDT", price: 0, change: 0, signalType: "Forming Bullish", tf: "D1", entryArea: "$13.10 - $13.55", tp1: "14.80", tp2: "16.10", sl: "12.90", smcScore: 92, finalInstitutionalScore: 92, techReason: "Fase kompresi tinggi di demand harian." }
     ];
 
     function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
@@ -192,14 +273,16 @@
     async function fetchCoinGeckoMarketData() {
       try {
         const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
+        const data = await fetchWithRetry(`https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`);
         
         if (Array.isArray(data)) {
           data.forEach(coinData => {
             const tokenKey = coinData.symbol.toUpperCase();
+            let matchedCoin = binanceEliteDatabase.find(c => c.coin === `${tokenKey}/USDT`);
+            if (matchedCoin) {
+              matchedCoin.price = coinData.current_price || 0;
+              matchedCoin.change = coinData.price_change_percentage_24h || 0;
+            }
             if (tokenKey === "BTC") {
               document.getElementById('btc-live-price').textContent = `$${coinData.current_price.toLocaleString()}`;
               const pc = coinData.price_change_percentage_24h;
@@ -209,56 +292,63 @@
               
               const macroStatus = document.getElementById('macro-status');
               if(pc < -3) {
-                 macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`;
-                 macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5";
+                 macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off`;
               } else {
-                 macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`;
-                 macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5";
+                 macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On`;
               }
             }
-            
-            // Sinkronisasi tabel kuantitatif (Simulasi Filter 1 & 2 dari API Live)
-            let matchedCoin = quantDatabase.find(c => c.coin === `${tokenKey}/USDT`);
-            if (matchedCoin) {
-              matchedCoin.price = coinData.current_price;
-              matchedCoin.priceChange = `${coinData.price_change_percentage_24h >= 0 ? '+' : ''}${coinData.price_change_percentage_24h.toFixed(2)}%`;
-            }
           });
-          renderQuantTable(quantDatabase);
+          triggerLiveFilter();
         }
-      } catch (error) { console.warn("API limit CoinGecko terpicu. Menggunakan data sistem."); }
+      } catch (error) { console.error("Koneksi CoinGecko error.", error); }
     }
 
-    function renderQuantTable(data) {
+    function renderScannerTable(data) {
       const tbody = document.getElementById('elite-scanner-rows');
       if (!tbody) return; tbody.innerHTML = '';
       data.forEach(item => {
-        const entryColor = item.entryNow === "YA" ? "bg-green-500/20 text-green-400 border-green-500/30" : "bg-red-500/20 text-red-400 border-red-500/30";
         const tr = document.createElement('tr');
-        tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap";
+        tr.className = "hover:bg-green-500/[0.03] transition-colors cursor-pointer border-b border-white/5 whitespace-nowrap";
+        tr.onclick = () => showDeepReport(item);
+        
+        let rrRatioComputed = item.price && item.sl ? `1 : ${((parseFloat(item.tp1) - item.price) / (item.price - parseFloat(item.sl))).toFixed(1)}` : "1 : 5.5";
+
         tr.innerHTML = `
           <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
-          <td class="p-3">
-            <div class="text-white font-bold">${item.coin}</div>
-            <span class="text-[9px] px-1 py-0.5 rounded border font-mono ${entryColor}">Entry: ${item.entryNow}</span>
-          </td>
-          <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange}</span></td>
-          <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td>
-          <td class="p-3 text-emerald-300">OI: ${item.oi24} <br><span class="text-[10px]">Vol: ${item.vol24}</span></td>
-          <td class="p-3 text-gray-300">${item.funding}</td>
-          <td class="p-3 text-center text-purple-400 font-extrabold text-sm">${item.whaleScore}</td>
-          <td class="p-3 text-center text-cyan-400 font-extrabold text-sm">${item.demandScore}</td>
-          <td class="p-3 text-center text-green-400 font-bold">${item.prob}</td>
-          <td class="p-3 text-right text-yellow-400 font-extrabold">${item.rr}</td>
+          <td class="p-3 text-white font-bold">${item.coin} <span class="text-[9px] block text-gray-500">Score: ${item.finalInstitutionalScore}</span></td>
+          <td class="p-3">$${item.price.toLocaleString()} <br><span class="${item.change >= 0 ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.change >= 0 ? '+' : ''}${item.change.toFixed(2)}%</span></td>
+          <td class="p-3"><span class="text-green-400 font-semibold">${item.signalType}</span> <br><span class="text-gray-400 text-[10px]">TF: ${item.tf}</span></td>
+          <td class="p-3 text-cyan-400 font-bold">${item.entryArea}</td>
+          <td class="p-3 text-white font-semibold">$${parseFloat(item.tp1).toLocaleString()}</td>
+          <td class="p-3 text-white font-semibold">$${parseFloat(item.tp2).toLocaleString()}</td>
+          <td class="p-3 text-center text-red-400 font-bold">$${parseFloat(item.sl).toLocaleString()}</td>
+          <td class="p-3 text-center text-purple-400 font-bold">${item.smcScore}</td>
+          <td class="p-3 text-right text-emerald-400 font-extrabold">${item.coin === "SOL/USDT" || item.coin === "LINK/USDT" ? item.rrRatio : rrRatioComputed}</td>
         `;
         tbody.appendChild(tr);
       });
       lucide.createIcons();
     }
 
-    // ========================================== VISION ENGINE (INSTITUTIONAL QUANT LOGIC) ==========================================
-    const AI_Quant_Engine = {
-      uploadedImages: [],
+    function showDeepReport(item) {
+      document.getElementById('detail-report-grid').style.display = "grid";
+      document.getElementById('detail-coin-name').textContent = item.coin;
+      document.getElementById('detail-tech-reason').textContent = item.techReason;
+      document.getElementById('target-profit-ladder').innerHTML = `
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>Ideal Entry Area:</span><span class="text-green-400 font-bold">${item.entryArea}</span></div>
+        <div class="p-2 bg-black/20 rounded border border-white/5 mb-1 flex justify-between"><span>TP1 Target:</span><span class="text-white font-bold">$${parseFloat(item.tp1).toLocaleString()}</span></div>
+        <div class="p-2 bg-green-500/10 rounded border border-green-500/20 flex justify-between"><span>TP2 Target:</span><span class="text-green-400 font-bold">$${parseFloat(item.tp2).toLocaleString()}</span></div>
+      `;
+    }
+
+    function triggerLiveFilter() {
+      const kw = document.getElementById('searchFilter').value.toUpperCase();
+      renderScannerTable(binanceEliteDatabase.filter(c => c.coin.includes(kw)));
+    }
+
+    // ========================================== VISION ENGINE ==========================================
+    const AI_ICT_Analyzer = {
+      uploadedImages: [], imgElement: null,
 
       init() {
         const dropzone = document.getElementById('dropzone-area');
@@ -279,55 +369,24 @@
         if (!apiKey) return alert('Isi Gemini API Key terlebih dahulu!');
         
         this.uploadedImages = [];
-        this.setLoadingState(true, "Menganalisis Filter 5-9 & Smart Money Flow...");
+        this.setLoadingState(true, "Processing Multi-Timeframe Images...");
 
         try {
           for (let i = 0; i < 4; i++) {
             const b64 = await new Promise(r => { const rd = new FileReader(); rd.onload = (e) => r(e.target.result.split(',')[1]); rd.readAsDataURL(files[i]); });
             this.uploadedImages.push({ inlineData: { mimeType: files[i].type, data: b64 } });
           }
+          await new Promise(r => { const rd = new FileReader(); rd.onload = (e) => { const img = new Image(); img.onload = () => { this.imgElement = img; r(); }; img.src = e.target.result; }; rd.readAsDataURL(files[3]); });
+          
           document.getElementById('chart-screenshot-input').value = '';
-          await this.analyzeQuantLogic(apiKey);
+          await this.analyzeMultiTF(apiKey);
         } catch (err) { alert(err.message); this.setLoadingState(false); }
       },
 
-      async analyzeQuantLogic(apiKey) {
-        // PROMPT RAKSASA: Memasukkan seluruh logika Institusional yang diminta pengguna
-        const promptText = `Bertindaklah sebagai Institutional Quant Trader, Smart Money Analyst, ICT Trader, dan AI Crypto Screening System.
-Tugas utama: Lakukan screening otomatis (berdasarkan 4 chart: D1, H4, H1, M15) untuk mencari setup "Early Accumulation".
-JANGAN MENCARI COIN YANG SUDAH PUMP.
-
-Berdasarkan gambar, jalankan Filter 5 (Institutional), Filter 6 (Demand Zone), Filter 7 (Smart Money), Filter 8 (Volume Profile), Filter 9 (Market Structure), dan Final Entry Filter.
-
-OUTPUT WAJIB JSON STRICT TANPA MARKDOWN. 
-Schema JSON yang wajib dipatuhi:
-{
-  "pair": "NAMA_COIN/USDT",
-  "status": "Strong Buy | Buy | Buy on Pullback | Watchlist | Avoid",
-  "alasan": "Alasan institusional rinci (whale, struktur, dll)",
-  "kondisi_akumulasi": "Deskripsi fase akumulasi",
-  "aktivitas_whale": "Deskripsi penyerapan supply",
-  "smart_money_status": "Contoh: Liquidity Grab terdeteksi",
-  "demand_zone": "Angka range harga demand",
-  "area_entry": "Angka range harga entry terbaik",
-  "stop_loss": "Angka pembatalan struktur",
-  "invalidasi": "Alasan batal",
-  "tp1": "Angka target 1",
-  "tp2": "Angka target 2",
-  "tp3": "Angka target 3",
-  "estimasi_waktu": "24-72 Jam",
-  "risiko_koreksi": "Rendah/Tinggi + Alasan",
-  "potensi_keuntungan": "Persentase %",
-  "kesimpulan": {
-    "q1_di_demand": "Ya/Tidak + penjelasan singkat",
-    "q2_institusi_akumulasi": "Ya/Tidak",
-    "q3_whale_menyerap": "Ya/Tidak",
-    "q4_beli_sekarang": "Sekarang/Tunggu pullback",
-    "q5_prob_markup": "Tinggi/Sedang/Rendah",
-    "q6_persentase_berhasil": "Angka %",
-    "q7_rr": "Rasio 1:X"
-  }
-}`;
+      async analyzeMultiTF(apiKey) {
+        this.setLoadingState(true, "Analyzing Structure with Gemini...");
+        const promptText = `Analyze 4 charts (D1, H4, H1, M15). Hierarchy: D1=Bias, H4=Structure, H1=POI, M15=Entry. Return ONLY VALID JSON matching schema. Do not use markdown.
+        Schema: {"pair":"string", "timeframe":"MULTI-TF", "marketStructure":"string", "tradeStatus":"EXECUTE or NO TRADE", "daily_raw":{"bos_coord":{"detected":true}}, "m15_raw":{"choch_coord":{"detected":true}}, "annotations":{"bos_coord":{"detected":true,"x_start_pct":10,"y_pct":20,"x_end_pct":40}}}`;
 
         const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
         for (const model of models) {
@@ -343,11 +402,11 @@ Schema JSON yang wajib dipatuhi:
 
             const rawText = resData.candidates[0].content.parts[0].text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
             const parsedResult = JSON.parse(rawText);
-            this.renderDeepReport(parsedResult);
+            this.syncDashboard(parsedResult);
             return;
-          } catch (err) { console.warn(`Model ${model} gagal memproses JSON logika kompleks.`, err); }
+          } catch (err) { console.warn(`Model ${model} gagal.`); }
         }
-        alert("Semua model gagal dieksekusi. Pastikan API key benar dan tidak limit."); this.setLoadingState(false);
+        alert("Semua model gagal dieksekusi."); this.setLoadingState(false);
       },
 
       setLoadingState(isLoading, text) {
@@ -356,69 +415,45 @@ Schema JSON yang wajib dipatuhi:
         if(text) document.getElementById('loading-text-state').textContent = text;
       },
 
-      renderDeepReport(data) {
-        const container = document.getElementById('report-text-container');
-        const badge = document.getElementById('rep-status');
+      syncDashboard(data) {
+        document.getElementById('rep-pair').textContent = data.pair || "-";
+        document.getElementById('rep-tf').textContent = data.timeframe || "MULTI-TF";
+        document.getElementById('rep-structure').textContent = data.marketStructure || "-";
+        document.getElementById('rep-bos').textContent = data.daily_raw?.bos_coord?.detected ? "Confirmed" : "None";
+        document.getElementById('rep-choch').textContent = data.m15_raw?.choch_coord?.detected ? "Confirmed" : "None";
+        document.getElementById('rep-exectype').textContent = data.tradeStatus || "NO TRADE";
         
-        // Atur warna badge
-        badge.textContent = data.status || "UNKNOWN";
-        if(data.status?.includes("Strong")) badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 uppercase";
-        else if(data.status?.includes("Avoid")) badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
-        else badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 uppercase";
+        if (data.annotations) this.renderAnnotationsOnCanvas(data.annotations);
+        else this.setLoadingState(false);
+      },
 
-        container.innerHTML = `
-          <div class="border-b border-white/10 pb-2 mb-2">
-            <h3 class="text-green-400 font-bold text-sm">${data.pair} | QUANTITATIVE REPORT</h3>
-          </div>
-          
-          <div class="space-y-2">
-            <div><span class="text-[10px] text-gray-500 uppercase block">1. Alasan Dipilih</span><span class="text-white">${data.alasan}</span></div>
-            <div class="grid grid-cols-2 gap-2 mt-2">
-              <div class="bg-black/30 p-2 rounded border border-white/5"><span class="text-[9px] text-gray-500 block">Kondisi Akumulasi</span><span class="text-emerald-300 font-bold">${data.kondisi_akumulasi}</span></div>
-              <div class="bg-black/30 p-2 rounded border border-white/5"><span class="text-[9px] text-gray-500 block">Aktivitas Whale</span><span class="text-blue-300 font-bold">${data.aktivitas_whale}</span></div>
-            </div>
-            <div class="grid grid-cols-2 gap-2 mt-2">
-              <div class="bg-black/30 p-2 rounded border border-white/5"><span class="text-[9px] text-gray-500 block">Smart Money Status</span><span class="text-purple-300 font-bold">${data.smart_money_status}</span></div>
-              <div class="bg-black/30 p-2 rounded border border-white/5"><span class="text-[9px] text-gray-500 block">Demand Zone</span><span class="text-cyan-300 font-bold">${data.demand_zone}</span></div>
-            </div>
-          </div>
-
-          <div class="border-t border-white/10 pt-2 mt-2 space-y-1 bg-zinc-950/50 p-2 rounded border border-white/5">
-            <div class="flex justify-between"><span>Area Entry (DCA):</span> <span class="text-green-400 font-bold">${data.area_entry}</span></div>
-            <div class="flex justify-between"><span>Stop Loss:</span> <span class="text-red-400 font-bold">${data.stop_loss}</span></div>
-            <div class="flex justify-between"><span>Target 1 (TP1):</span> <span class="text-white">${data.tp1}</span></div>
-            <div class="flex justify-between"><span>Target 2 (TP2):</span> <span class="text-white">${data.tp2}</span></div>
-            <div class="flex justify-between"><span>Target 3 (TP3):</span> <span class="text-white">${data.tp3}</span></div>
-            <div class="flex justify-between"><span>Potensi Keuntungan:</span> <span class="text-green-400 font-extrabold">${data.potensi_keuntungan}</span></div>
-            <div class="flex justify-between mt-1 pt-1 border-t border-white/5"><span>Estimasi Markup:</span> <span class="text-yellow-400">${data.estimasi_waktu}</span></div>
-          </div>
-
-          <div class="border-t border-white/10 pt-2 mt-3">
-            <h4 class="text-yellow-400 font-bold text-[10px] uppercase mb-2">13 Poin Kesimpulan Wajib:</h4>
-            <ul class="space-y-1.5 text-[11px] list-disc pl-4 text-gray-400">
-              <li><strong class="text-white">Di Demand Zone?</strong> ${data.kesimpulan?.q1_di_demand}</li>
-              <li><strong class="text-white">Institusi Akumulasi?</strong> ${data.kesimpulan?.q2_institusi_akumulasi}</li>
-              <li><strong class="text-white">Whale Menyerap?</strong> ${data.kesimpulan?.q3_whale_menyerap}</li>
-              <li><strong class="text-green-400">Keputusan Entry:</strong> ${data.kesimpulan?.q4_beli_sekarang}</li>
-              <li><strong class="text-white">Prob. Markup (24-72h):</strong> ${data.kesimpulan?.q5_prob_markup}</li>
-              <li><strong class="text-white">Win Rate Prob:</strong> <span class="text-cyan-400 font-bold">${data.kesimpulan?.q6_persentase_berhasil}</span></li>
-              <li><strong class="text-white">Risk/Reward:</strong> <span class="text-yellow-400 font-bold">${data.kesimpulan?.q7_rr}</span></li>
-              <li><strong class="text-white">Risiko Koreksi:</strong> ${data.risiko_koreksi}</li>
-              <li><strong class="text-white">Invalidasi:</strong> ${data.invalidasi}</li>
-            </ul>
-          </div>
-        `;
+      renderAnnotationsOnCanvas(coords) {
+        const canvas = document.getElementById('ict-annotation-canvas');
+        const wrapper = document.getElementById('canvas-wrapper');
+        wrapper.classList.remove('hidden');
+        canvas.width = this.imgElement.width; canvas.height = this.imgElement.height;
+        canvas.getContext('2d').drawImage(this.imgElement, 0, 0);
         this.setLoadingState(false);
       }
     };
 
     // --- INITIALIZATION STARTUP FLOW SINK ---
     window.onload = async () => {
+      // 1. Muat kembali seluruh data sinkronisasi eksternal dari repositori GitHub
+      await loadInstitutionalData();
       buildLiveVolumeBars();
-      renderQuantTable(quantDatabase); // Render tabel dengan database quant awal
-      await fetchCoinGeckoMarketData(); // Tarik macro liquidity & price change
-      setInterval(fetchCoinGeckoMarketData, 60000); // 1 menit sekali agar aman dari rate limit
-      AI_Quant_Engine.init(); // Inisiasi mesin AI prompt raksasa
+      
+      // 2. Render struktur tabel awal (SOL & LINK) agar langsung terisi rekomendasi teknikal sebelum API dimuat
+      renderScannerTable(binanceEliteDatabase);
+      
+      // 3. Tarik data riil dari bursa CoinGecko API
+      await fetchCoinGeckoMarketData();
+      
+      // 4. Set interval pembaruan bursa otomatis setiap 60 detik agar aman dari proteksi limit server
+      setInterval(fetchCoinGeckoMarketData, 60000);
+      
+      // 5. Inisiasi Vision Analyzer
+      AI_ICT_Analyzer.init();
     };
   </script>
 </body>
