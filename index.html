@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MIROFISH MISPRICING SCANNER PRO</title>
   
-  <script src="[https://cdn.tailwindcss.com](https://cdn.tailwindcss.com)"></script>
-  <script src="[https://unpkg.com/lucide@latest](https://unpkg.com/lucide@latest)"></script>
-  <link href="[https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap](https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap)" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   
   <style>
     body { background: #09090e; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #e2e8f0; }
@@ -157,11 +157,11 @@
           <div>
             <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Upload Chart Image (TradingView / Exchanges)</span>
             <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40">
-              <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" multiple />
+              <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" />
               <div class="space-y-2 pointer-events-none" id="upload-prompt-view">
                 <i data-lucide="image-plus" class="w-8 h-8 text-gray-500 mx-auto group-hover:text-green-400 transition-colors"></i>
-                <p class="text-xs font-semibold text-gray-300">Drop chart screenshots here or <span class="text-green-400">browse</span></p>
-                <p class="text-[10px] text-gray-500 font-mono">Format: JPG, JPEG, PNG, WEBP (Upload tepat 4 chart)</p>
+                <p class="text-xs font-semibold text-gray-300">Drop chart screenshot here or <span class="text-green-400">browse</span></p>
+                <p class="text-[10px] text-gray-500 font-mono">Format: JPG, JPEG, PNG, WEBP</p>
               </div>
               <div class="hidden space-y-2 text-center" id="upload-loading-view">
                 <div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
@@ -277,7 +277,7 @@
 
     // ========================================== FUNCTION: INSTITUTIONAL DATA LOADER ==========================================
     async function loadInstitutionalData() {
-      const baseUrl = '[https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/](https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/)';
+      const baseUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/';
       const targets = [
         { key: 'marketRegime', file: 'market-regime.json' },
         { key: 'btcContext', file: 'btc-context.json' },
@@ -325,7 +325,9 @@
       if (!oiScore || Object.keys(oiScore).length === 0) console.warn("Warning: oiScore Database is Empty. Fallback triggered.");
     }
 
-    // ========================================== MODULE: NEW MULTI TIMEFRAME ICT CONFLUENCE ENGINE v2.0 ==========================================
+    // ==========================================================================================
+    // MODULE: NEW MULTI TIMEFRAME ICT CONFLUENCE ENGINE v2.0
+    // ==========================================================================================
     function calculateTimeframeBias(tfData) {
       if (!tfData || typeof tfData !== 'object') return "BEARISH";
       
@@ -420,7 +422,7 @@
 
     // --- DATABASE SCANNERS & FALLBACK COINGECKO ENGINE ---
     let binanceEliteDatabase = [
-      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
+      { rank: 1, coin: "SOL/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Sangat Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "94.2%", crtBias: "Strong Bullish", smcScore: 95, finalInstitutionalScore: 95, ideal: 0, sl: 0, rrRatio: "1 : 6.1", techReason: "Setup Akumulasi Elite. Terjadi likuidasi besar (Sweep Sell Side Liquidation) di bawah area low mingguan, disusul pembentukan Bullish Gartley.", tp1: "0", tp5: "0" },
       { rank: 2, coin: "LINK/USDT", price: 0, change: 0, divergence: "RSI Bullish (Kuat)", harmonicName: "Bullish Bat", harmonicValid: "91.8%", crtBias: "Strong Bullish", smcScore: 92, finalInstitutionalScore: 92, ideal: 0, sl: 0, rrRatio: "1 : 5.8", techReason: "Koin dalam fase kompresi tinggi di area demand harian, terdeteksi pola Harmonic Bat valid.", tp1: "0", tp5: "0" },
       { rank: 3, coin: "AVAX/USDT", price: 0, change: 0, divergence: "Hidden Bullish (Kuat)", harmonicName: "Bullish Butterfly", harmonicValid: "91.0%", crtBias: "Bullish", smcScore: 88, finalInstitutionalScore: 88, ideal: 0, sl: 0, rrRatio: "1 : 5.2", techReason: "Struktur pasar menunjukkan akumulasi volume yang signifikan pada zona support fractal.", tp1: "0", tp5: "0" },
       { rank: 4, coin: "DOT/USDT", price: 0, change: 0, divergence: "MACD Bullish (Kuat)", harmonicName: "Bullish Gartley", harmonicValid: "86.0%", crtBias: "Bullish", smcScore: 85, finalInstitutionalScore: 85, ideal: 0, sl: 0, rrRatio: "1 : 5.0", techReason: "Terjadi momentum crossover positif pada indikator MACD disertai konfluensi harmonic support.", tp1: "0", tp5: "0" },
@@ -458,7 +460,7 @@
 
     async function fetchCoinGeckoMarketData() {
       try {
-        const targetUrl = '[https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false](https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false)';
+        const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
         const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
         
         const data = await fetchWithRetry(proxyUrl);
@@ -494,8 +496,8 @@
               else if (btcContext.bias === "bullish") { baseScoreBonus += 10; btcContextScore = 80; }
               else if (btcContext.bias === "bearish") { baseScoreBonus -= 15; btcContextScore = 30; }
               else if (btcContext.bias === "strong_bearish") { baseScoreBonus -= 25; btcContextScore = 0; }
-              
-              if (btcContext.trend === "up") baseScoreBonus += 5;
+
+if (btcContext.trend === "up") baseScoreBonus += 5;
               if (btcContext.market_structure === "bullish") baseScoreBonus += 5;
             }
 
@@ -686,7 +688,7 @@
 
     async function loadLocalDatabaseFromGithub() {
       try {
-        const githubRawUrl = '[https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/screener-data.json](https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/screener-data.json)';
+        const githubRawUrl = 'https://raw.githubusercontent.com/imoctafirdaus-maker/Tunggu_aku.susksesnanti/main/screener-data.json';
         const remoteJson = await fetchWithRetry(githubRawUrl);
         if (Array.isArray(remoteJson)) {
           remoteJson.forEach(remoteCoin => {
@@ -705,7 +707,8 @@
 
     // ========================================== REAL GEMINI VISION ENGINE ==========================================
     const AI_ICT_Analyzer = {
-      uploadedImages: [],
+      uploadedImageBase64: null,
+      uploadedImageMime: null,
       imgElement: null,
 
       init() {
@@ -724,263 +727,41 @@
         dropzone.addEventListener('drop', (e) => {
           e.preventDefault();
           dropzone.classList.remove('border-green-500');
-          if (e.dataTransfer.files.length !== 4) { 
-            alert('VALIDASI GAGAL: Anda wajib memilih dan mengunggah tepat 4 gambar chart sekaligus (D1, H4, H1, M15).');
-            return;
-          }
-          this.handleMultipleFiles(e.dataTransfer.files);
+          if (e.dataTransfer.files.length > 0) { this.handleFile(e.dataTransfer.files[0]); }
         });
 
         fileInput.addEventListener('change', (e) => {
-          if (e.target.files.length !== 4) { 
-            alert('VALIDASI GAGAL: Anda wajib memilih dan mengunggah tepat 4 gambar chart sekaligus (D1, H4, H1, M15).');
-            e.target.value = '';
-            return;
-          } 
-          this.handleMultipleFiles(e.target.files);
+          if (e.target.files.length > 0) { this.handleFile(e.target.files[0]); }
         });
       },
 
-      async handleMultipleFiles(files) {
+      handleFile(file) {
         const apiKey = document.getElementById('gemini-api-key').value.trim();
         if (!apiKey) {
           alert('KRITIS: Anda wajib mengisi Gemini API Key terlebih dahulu di kolom kanan atas!');
-          document.getElementById('chart-screenshot-input').value = '';
           return;
         }
 
         const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
-        this.uploadedImages = [];
-        this.setLoadingState(true, "Processing Multi-Timeframe Images...");
-
-        try {
-          for (let i = 0; i < 4; i++) {
-            const file = files[i];
-            if (!validTypes.includes(file.type)) {
-              throw new Error(`Format file ${file.name} tidak valid! Gunakan JPG, JPEG, PNG, atau WEBP.`);
-            }
-
-            const base64Data = await new Promise((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = (e) => resolve(e.target.result.split(',')[1]);
-              reader.onerror = (e) => reject(e);
-              reader.readAsDataURL(file);
-            });
-
-            this.uploadedImages.push({
-              inlineData: {
-                mimeType: file.type,
-                data: base64Data
-              }
-            });
-          }
-
-          const canvasPreviewFile = files[3];
-          await new Promise((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = (e) => {
-              const img = new Image();
-              img.onload = () => {
-                this.imgElement = img;
-                resolve();
-              };
-              img.onerror = (err) => reject(err);
-              img.src = e.target.result;
-            };
-            reader.readAsDataURL(canvasPreviewFile);
-          });
-
-          document.getElementById('chart-screenshot-input').value = '';
-          await this.analyzeMultiTF(apiKey);
-        } catch (err) {
-          alert(err.message);
-          document.getElementById('chart-screenshot-input').value = '';
-          this.setLoadingState(false);
-        }
-      },
-
-      async analyzeMultiTF(apiKey) {
-        this.setLoadingState(true, "Analyzing Multi-Timeframe Market Structure with Gemini...");
-
-        const currentMarketRegimeStr = JSON.stringify(marketRegime || {});
-        const currentBtcContextStr = JSON.stringify(btcContext || {});
-        const currentUsdtContextStr = JSON.stringify(usdtContext || {});
-        const currentFundingScoreStr = JSON.stringify(fundingScore || {});
-        const currentWhaleScoreStr = JSON.stringify(whaleScore || {});
-        const currentOiScoreStr = JSON.stringify(oiScore || {});
-        const currentInstitutionalScoreStr = JSON.stringify(institutionalScore || {});
-
-        const promptText = `You are an Institutional ICT Analyst, Smart Money Concept Specialist, and Quantitative Market Structure Engine.
-Analyze 4 chart screenshots simultaneously.
-
-Image 1 = Daily Image 2 = H4 Image 3 = H1 Image 4 = M15
-
-Hierarchy:
-Daily = Macro Bias H4 = Market Structure H1 = Point Of Interest M15 = Entry Execution
-
-Rules:
-D1 determines primary directional bias.
-H4 validates structure.
-H1 validates institutional POI.
-M15 validates execution trigger.
-
-If timeframe conflict exists:
-tradeStatus = "NO TRADE"
-If alignment exists:
-tradeStatus = "EXECUTE"
-
-CRITICAL MACRO & QUANT INTELLIGENCE CONTEXT INPUT:
-- Global Market Regime: ${currentMarketRegimeStr}
-- Bitcoin Core Status Context: ${currentBtcContextStr}
-- USDT Dominance Environment: ${currentUsdtContextStr}
-- Institutional Score Parameter Pool: ${currentInstitutionalScoreStr}
-- Global Live Funding Rates Matrix: ${currentFundingScoreStr}
-- Whale Accumulation/Distribution Analytics Feed: ${currentWhaleScoreStr}
-- Futures Open Interest Delta Profile: ${currentOiScoreStr}
-
-IMPORTANT:
-Return ONLY VALID JSON.
-Do not explain.
-Do not use markdown.
-Do not use code blocks.
-Do not use \`\`\`json.
-Do not add text before JSON.
-Do not add text after JSON.
-Output must be parsable by JSON.parse() without modification.
-
-STRICT JSON SCHEMA REQUIRED:
-{
-  "pair": "",
-  "timeframe": "MULTI-TF",
-  "marketStructure": "",
-  "tradeStatus": "",
-  "daily_raw": {
-    "bos_coord": { "detected": true },
-    "choch_coord": { "detected": false },
-    "fvg_box": { "detected": false },
-    "ob_box": { "detected": false },
-    "liquidity_line": { "detected": false, "type": "SSL/BSL" }
-  },
-  "h4_raw": {
-    "structure": ""
-  },
-  "h1_raw": {
-    "poi_detected": true
-  },
-  "m15_raw": {
-    "choch_coord": { "detected": true }
-  },
-  "annotations": {
-    "bos_coord": { "detected": true, "x_start_pct": 10, "y_pct": 20, "x_end_pct": 40 },
-    "choch_coord": { "detected": false, "x_start_pct": 0, "y_pct": 0, "x_end_pct": 0 },
-    "fvg_box": { "detected": false, "x_pct": 0, "y_pct": 0, "width_pct": 0, "height_pct": 0 },
-    "ob_box": { "detected": false, "x_pct": 0, "y_pct": 0, "width_pct": 0, "height_pct": 0 },
-    "liquidity_line": { "detected": false, "x_start_pct": 0, "y_pct": 0, "x_end_pct": 0, "type": "BSL/SSL" }
-  }
-}`;
-
-        // Sistem Auto Fallback Model Loop Jaminan Stabilitas Produksi
-        const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-        let success = false;
-        let lastError = null;
-        let resData = null;
-
-        for (const modelName of models) {
-          try {
-            console.log(`Attempting Core Inference using: ${modelName}`);
-            const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`;
-            const payload = {
-              contents: [{
-                parts: [
-                  { text: promptText },
-                  { text: "Image 1 = Daily" }, this.uploadedImages[0],
-                  { text: "Image 2 = H4" }, this.uploadedImages[1],
-                  { text: "Image 3 = H1" }, this.uploadedImages[2],
-                  { text: "Image 4 = M15" }, this.uploadedImages[3]
-                ]
-              }],
-              generationConfig: { responseMimeType: "application/json" }
-            };
-
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-            });
-
-            resData = await response.json();
-
-            // Proteksi Overload Deteksi & Kandungan Candidate Struktural
-            if (resData.error?.message && resData.error.message.includes("experiencing high demand")) {
-              alert("Gemini sedang overload. Coba lagi beberapa saat.");
-              this.setLoadingState(false);
-              return;
-            }
-
-            if (!resData.candidates) {
-              console.error(`Model ${modelName} returned empty candidates.`, resData);
-              lastError = resData.error?.message || "Empty candidates payload structure.";
-              continue; // Jalankan Fallback Model berikutnya
-            }
-
-            success = true;
-            break; 
-          } catch (fetchErr) {
-            console.error(`Network Exception on ${modelName}:`, fetchErr);
-            lastError = fetchErr.message;
-          }
-        }
-
-        if (!success) {
-          alert(`CRITICAL ENGINE FAILURE: Seluruh model pemindai cadangan gagal dieksekusi. Eror terakhir: ${lastError}`);
-          this.setLoadingState(false);
+        if (!validTypes.includes(file.type)) {
+          alert('Ekstensi file tidak valid! Gunakan JPG, JPEG, PNG, atau WEBP.');
           return;
         }
 
-        // Jalur Ekstraksi JSON Aman
-        try {
-          let rawText = resData.candidates[0].content.parts[0].text;
-          rawText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
-          
-          let parsedResult;
-          try {
-            parsedResult = JSON.parse(rawText);
-          } catch (parseError) {
-            console.error("Raw unparsable payload string layout:", rawText);
-            alert("Gemini mengembalikan JSON tidak valid");
-            this.setLoadingState(false);
-            return;
-          }
-          
-          const pairName = parsedResult.pair || "SOL/USDT";
-          const report = buildFinalReport(
-            pairName,
-            parsedResult.daily_raw || {},
-            parsedResult.daily_raw || {}, // Diarahkan ke fallback internal
-            parsedResult.daily_raw || {},
-            parsedResult.m15_raw || {}
-          );
+        this.uploadedImageMime = file.type;
+        this.setLoadingState(true, "Processing Matrix Image...");
 
-          report.exchange = "Binance Quants";
-          report.timeframe = parsedResult.timeframe || "MULTI-TF";
-          report.currentPrice = parsedResult.currentPrice || 0;
-          report.chartQuality = 100;
-          report.marketStructure = parsedResult.marketStructure || "Aligned Cluster";
-          report.trend = "Institutional Orderflow";
-          report.annotations = parsedResult.annotations || {};
-          
-          report.bos = parsedResult.daily_raw?.bos_coord?.detected ? "Confirmed" : "None";
-          report.choch = parsedResult.m15_raw?.choch_coord?.detected ? "Confirmed" : "None";
-          report.fvg = "Active Mapping";
-          report.orderBlock = "Detected Zone";
-          report.tradeStatus = parsedResult.tradeStatus || "NO TRADE";
-
-          this.syncDashboardWithRealData(report);
-        } catch (globalEngineError) {
-          console.error(globalEngineError);
-          alert(`Runtime synchronization anomaly: ${globalEngineError.message}`);
-          this.setLoadingState(false);
-        }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          this.uploadedImageBase64 = e.target.result.split(',')[1];
+          const img = new Image();
+          img.onload = () => {
+            this.imgElement = img;
+            this.analyzeChartWithGemini(apiKey);
+          };
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(file);
       },
 
       setLoadingState(isLoading, text = "") {
@@ -994,6 +775,122 @@ STRICT JSON SCHEMA REQUIRED:
         } else {
           loadingView.classList.add('hidden');
           promptView.classList.remove('hidden');
+        }
+      },
+
+      async analyzeChartWithGemini(apiKey) {
+        this.setLoadingState(true, "Analyzing Market Structure with Gemini Vision API...");
+        
+        const currentMarketRegimeStr = JSON.stringify(marketRegime || {});
+        const currentBtcContextStr = JSON.stringify(btcContext || {});
+        const currentUsdtContextStr = JSON.stringify(usdtContext || {});
+        const currentFundingScoreStr = JSON.stringify(fundingScore || {});
+        const currentWhaleScoreStr = JSON.stringify(whaleScore || {});
+        const currentOiScoreStr = JSON.stringify(oiScore || {});
+        const currentInstitutionalScoreStr = JSON.stringify(institutionalScore || {});
+
+        const promptText = `You are an Institutional ICT Analyst, Smart Money Concept Specialist, and Quantitative Market Structure Engine.
+Analyze this chart screenshot exactly as a human professional ICT trader would. 
+
+CRITICAL MACRO & QUANT INTELLIGENCE CONTEXT INPUT:
+- Global Market Regime: ${currentMarketRegimeStr}
+- Bitcoin Core Status Context: ${currentBtcContextStr}
+- USDT Dominance Environment: ${currentUsdtContextStr}
+- Institutional Score Parameter Pool: ${currentInstitutionalScoreStr}
+- Global Live Funding Rates Matrix: ${currentFundingScoreStr}
+- Whale Accumulation/Distribution Analytics Feed: ${currentWhaleScoreStr}
+- Futures Open Interest Delta Profile: ${currentOiScoreStr}
+
+You MUST evaluate the input image combined with the provided quantitative macro metrics before finalizing your structural output.
+Return ONLY a valid raw JSON matching the schema below. No markdown formatting.
+
+REQUIRED JSON SCHEMA:
+{
+  "pair": "string",
+  "exchange": "string",
+  "timeframe": "string",
+  "currentPrice": number,
+  "chartQuality": number,
+  "marketStructure": "Bullish / Bearish / Sideways",
+  "trend": "string",
+  "institutionalBias": "STRONG BULLISH / BULLISH / NEUTRAL / BEARISH / STRONG BEARISH",
+  "executionType": "Aggressive / Conservative / Confirmation",
+  "summary": "string professional summary",
+  "daily_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": false}, "fvg_box": {"detected": true}, "ob_box": {"detected": true}, "liquidity_line": {"detected": true, "type": "SSL"} },
+  "h4_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": false}, "fvg_box": {"detected": true}, "ob_box": {"detected": true}, "liquidity_line": {"detected": false} },
+  "h1_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": false}, "fvg_box": {"detected": false}, "ob_box": {"detected": true}, "liquidity_line": {"detected": false} },
+  "m15_raw": { "bos_coord": {"detected": true}, "choch_coord": {"detected": true}, "fvg_box": {"detected": true}, "ob_box": {"detected": true}, "liquidity_line": {"detected": true, "type": "SSL"} },
+  "annotations": {
+    "bos_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
+    "choch_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
+    "fvg_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
+    "ob_box": {"detected": boolean, "x_pct": number, "y_pct": number, "width_pct": number, "height_pct": number},
+    "liquidity_line": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number, "type": "BSL/SSL"},
+    "entry_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
+    "sl_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number},
+    "tp_coord": {"detected": boolean, "x_start_pct": number, "y_pct": number, "x_end_pct": number}
+  }
+}`;
+
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const payload = {
+          contents: [{
+            parts: [
+              { text: promptText },
+              { inlineData: { mimeType: this.uploadedImageMime, data: this.uploadedImageBase64 } }
+            ]
+          }],
+          generationConfig: { responseMimeType: "application/json" }
+        };
+
+        try {
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          if (!response.ok) {
+            const errData = await response.json();
+            throw new Error(errData.error?.message || "HTTP Connection Error");
+          }
+
+          const resData = await response.json();
+          let rawText = resData.candidates[0].content.parts[0].text;
+          rawText = rawText.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
+          
+          const parsedResult = JSON.parse(rawText);
+          
+          // INTEGRASI UTAMA: Hitung hasil laporan menggunakan Engine Confluence v2.0 baru
+          const pairName = parsedResult.pair || "SOL/USDT";
+          const report = buildFinalReport(
+            pairName,
+            parsedResult.daily_raw || {},
+            parsedResult.h4_raw || {},
+            parsedResult.h1_raw || {},
+            parsedResult.m15_raw || {}
+          );
+
+          // Masukkan kembali meta-data visual hasil capture untuk sinkronisasi render DOM
+          report.exchange = parsedResult.exchange || "Binance";
+          report.timeframe = parsedResult.timeframe || "Multi-TF";
+          report.currentPrice = parsedResult.currentPrice || 0;
+          report.chartQuality = parsedResult.chartQuality || 90;
+          report.marketStructure = parsedResult.marketStructure || "Bullish Continuation";
+          report.trend = parsedResult.trend || "Upward Structural Flow";
+          report.annotations = parsedResult.annotations || {};
+          
+          // Salin kembali status komponen deteksi individual ke objek report
+          report.bos = parsedResult.daily_raw?.bos_coord?.detected ? "Confirmed" : "None";
+          report.choch = parsedResult.m15_raw?.choch_coord?.detected ? "Confirmed" : "None";
+          report.fvg = parsedResult.m15_raw?.fvg_box?.detected ? "Active" : "None";
+          report.orderBlock = parsedResult.m15_raw?.ob_box?.detected ? "Detected" : "None";
+
+          this.syncDashboardWithRealData(report);
+        } catch (error) {
+          console.error(error);
+          alert(`API ERROR: ${error.message}\nPastikan API Key valid.`);
+          this.setLoadingState(false);
         }
       },
 
@@ -1011,7 +908,7 @@ STRICT JSON SCHEMA REQUIRED:
           if (!el) return;
           el.textContent = value || "None";
           if (checkActive) {
-            el.className = (value && value.toLowerCase().includes("conf") || value === "Active" || value === "Detected" || value === "Active Mapping") ? "text-green-400 font-bold" : "text-red-400 font-semibold";
+            el.className = (value && value.toLowerCase().includes("conf") || value === "Active" || value === "Detected") ? "text-green-400 font-bold" : "text-red-400 font-semibold";
           }
         };
 
@@ -1026,6 +923,7 @@ STRICT JSON SCHEMA REQUIRED:
         document.getElementById('rep-confidence').textContent = `${data.confidence || 0}%`;
         document.getElementById('rep-inst-score').textContent = `${data.institutionalScore || 0} / 125`;
 
+        // Mengatur format trade matrix numerik dinamis otomatis
         let baseEntry = data.currentPrice || 142.50;
         let isBearish = data.institutionalBias.includes("BEARISH");
 
@@ -1036,7 +934,7 @@ STRICT JSON SCHEMA REQUIRED:
         document.getElementById('rep-tp3').textContent = `$${(isBearish ? baseEntry * 0.88 : baseEntry * 1.12).toFixed(2)}`;
         
         document.getElementById('rep-rr').textContent = "1 : 3.5";
-        document.getElementById('rep-exectype').textContent = data.tradeStatus || "NO TRADE";
+        document.getElementById('rep-exectype').textContent = data.tradeStatus || "WAIT";
 
         document.getElementById('rep-scen-bull').textContent = data.scenarioBullish || "-";
         document.getElementById('rep-scen-bear').textContent = data.scenarioBearish || "-";
@@ -1062,8 +960,6 @@ STRICT JSON SCHEMA REQUIRED:
         const wrapper = document.getElementById('canvas-wrapper');
         const ctx = canvas.getContext('2d');
         const img = this.imgElement;
-
-        if (!img) { this.setLoadingState(false); return; }
 
         wrapper.classList.remove('hidden');
         canvas.width = img.width;
@@ -1117,6 +1013,18 @@ STRICT JSON SCHEMA REQUIRED:
           ctx.strokeRect(pctX(coords.ob_box.x_pct), pctY(coords.ob_box.y_pct), pctX(coords.ob_box.width_pct), pctY(coords.ob_box.height_pct));
           ctx.fillStyle = '#a855f7';
           ctx.fillText("OB", pctX(coords.ob_box.x_pct) + 4, pctY(coords.ob_box.y_pct) + 14);
+        }
+
+        if (coords.liquidity_line && coords.liquidity_line.detected) {
+          ctx.strokeStyle = '#ef4444';
+          ctx.setLineDash([5, 5]);
+          ctx.beginPath();
+          ctx.moveTo(pctX(coords.liquidity_line.x_start_pct), pctY(coords.liquidity_line.y_pct));
+          ctx.lineTo(pctX(coords.liquidity_line.x_end_pct), pctY(coords.liquidity_line.y_pct));
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#ef4444';
+          ctx.fillText(`x ${coords.liquidity_line.type || 'Liq'}`, pctX(coords.liquidity_line.x_start_pct), pctY(coords.liquidity_line.y_pct) - 5);
         }
 
         this.setLoadingState(false);
