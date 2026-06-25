@@ -10,7 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   
   <style>
-    /* PERBAIKAN 2: Mencegah layar HP bergeser ke samping (overflow) */
+    /* Mencegah layar HP bergeser ke samping (overflow) */
     html, body { overflow-x: hidden; width: 100%; max-width: 100vw; background: #09090e; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #e2e8f0; }
     .pixel-font { font-family: 'Press Start 2P', monospace; }
     .neon-border-green { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25), 0 0 20px rgba(34, 197, 94, 0.08); }
@@ -423,11 +423,22 @@
       }
     };
 
+    // --- INITIALIZATION STARTUP FLOW SINK ---
     window.onload = async () => {
+      // 1. Muat data eksternal
       await loadInstitutionalData();
       buildLiveVolumeBars();
+      
+      // 2. Render data bawaan terlebih dahulu (SOL & LINK) agar tabel tidak kosong
+      renderScannerTable(binanceEliteDatabase);
+      
+      // 3. Tarik data live dari CoinGecko API
       await fetchCoinGeckoMarketData();
-      setInterval(fetchCoinGeckoMarketData, 10000);
+      
+      // 4. Ubah interval penarikan data menjadi 60 detik (60000 ms) agar tidak kena Rate Limit
+      setInterval(fetchCoinGeckoMarketData, 60000);
+      
+      // 5. Inisiasi AI
       AI_ICT_Analyzer.init();
     };
   </script>
