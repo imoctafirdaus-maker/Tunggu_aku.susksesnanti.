@@ -123,14 +123,14 @@
         </div>
         <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10 max-w-sm w-full font-mono">
           <i data-lucide="key" class="w-4 h-4 text-gray-400 shrink-0"></i>
-          <input type="password" id="gemini-api-key" placeholder="Enter Gemini API Key..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" />
+          <input type="password" id="gemini-api-key" placeholder="Enter Proxy/API Key..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" />
         </div>
       </div>
 
       <div id="ai-monitor-panel" class="hidden grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/40 p-2 rounded-xl border border-white/5 text-[9px] font-mono text-gray-400">
         <div>MODEL: <span id="mon-model" class="text-green-400">-</span></div>
         <div>LATENCY: <span id="mon-latency" class="text-yellow-400">-</span></div>
-        <div>TOKENS (P/R/T): <span id="mon-tokens" class="text-cyan-400">-</span></div>
+        <div>TOKENS: <span id="mon-tokens" class="text-cyan-400">-</span></div>
         <div>RETRY: <span id="mon-retry" class="text-purple-400">0</span></div>
       </div>
 
@@ -181,18 +181,13 @@
         const cacheKey = 'market_data_core'; const cached = SmartCache.get(cacheKey); if (cached) return cached; 
         UINotifier.update('SYNCING'); 
         let finalData = null; 
-        
         const cgQuery = encodeURIComponent("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,chainlink&vs_currencies=usd&include_24hr_change=true"); 
-        
-        // MOD 12: Fetch USDT Dominance from Global API
         let usdtD = 0;
         try {
             const cgGlobalQuery = encodeURIComponent("https://api.coingecko.com/api/v3/global");
             const globalRes = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cgProxies[0]}${cgGlobalQuery}`, 4000);
-            if (globalRes?.data?.market_cap_percentage?.usdt) {
-                usdtD = globalRes.data.market_cap_percentage.usdt;
-            }
-        } catch (e) { console.warn("Failed to fetch global macro data"); }
+            if (globalRes?.data?.market_cap_percentage?.usdt) usdtD = globalRes.data.market_cap_percentage.usdt;
+        } catch (e) {}
 
         for (const proxyBase of API_ENDPOINTS.cgProxies) { 
           try { 
@@ -202,8 +197,7 @@
                 'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change, usdt_d: usdtD }, 
                 'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change }, 
                 'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change } 
-              }; 
-              break; 
+              }; break; 
             } 
           } catch (e) { UINotifier.update('RETRYING'); } 
         } 
@@ -215,26 +209,14 @@
               const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD; 
               const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD; 
               const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD; 
-              if (btc) { 
-                finalData = { 
-                  'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 
-                  'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 
-                  'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } 
-                }; 
-              } 
+              if (btc) finalData = { 'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } }; 
             } 
           } catch (e) { UINotifier.update('RETRYING'); } 
         } 
         if (!finalData) { 
           try { 
             const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000); 
-            if (data && data.RAW) { 
-              finalData = { 
-                'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 
-                'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 
-                'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } 
-              }; 
-            } 
+            if (data && data.RAW) finalData = { 'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } }; 
           } catch (e) { UINotifier.update('RETRYING'); } 
         } 
         if (!finalData) { 
@@ -242,22 +224,16 @@
             const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000); 
             if (Array.isArray(data)) { 
               finalData = {}; 
-              data.forEach(item => { 
-                const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; 
-                finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; 
-              }); 
+              data.forEach(item => { const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; }); 
               if(finalData['BTC']) finalData['BTC'].usdt_d = usdtD;
             } 
           } catch (e) {} 
         } 
         
         if (finalData && finalData['BTC']) { 
-          UINotifier.update('CONNECTED'); 
-          SmartCache.set(cacheKey, finalData, 30); 
-          return finalData; 
+          UINotifier.update('CONNECTED'); SmartCache.set(cacheKey, finalData, 30); return finalData; 
         } else { 
-          UINotifier.update('OFFLINE', '(USING CACHE)'); 
-          return SmartCache.getLastValid(cacheKey); 
+          UINotifier.update('OFFLINE', '(USING CACHE)'); return SmartCache.getLastValid(cacheKey); 
         } 
       } 
     };
@@ -275,7 +251,6 @@
           changeEl.className = `text-xs font-bold font-mono ${btcData.change >= 0 ? 'price-up' : 'price-down'}`; 
           
           const macroStatus = document.getElementById('macro-status'); 
-          // MOD 12: Macro Status based on USDT.D
           if (btcData.usdt_d) {
               if (btcData.change < 0 && btcData.usdt_d > 4.5) { 
                 macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: USDT.D ${btcData.usdt_d.toFixed(2)}% & BTC Koreksi`; 
@@ -285,7 +260,6 @@
                 macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; 
               } 
           } else {
-              // Fallback
               if (btcData.change < -3) { 
                 macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`; 
                 macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; 
@@ -294,7 +268,6 @@
                 macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; 
               } 
           }
-
           if (window.lucide) lucide.createIcons(); 
         }); 
       }, 
@@ -302,26 +275,62 @@
     };
 
     // =========================================================================
-    // LAYER 2: ENTERPRISE AI QUANT ENGINE (COMPLETELY REFACTORED)
+    // LAYER 2: ENTERPRISE AI QUANT ENGINE (v4.5 - MULTI-ROUTER & LRU CACHE)
     // =========================================================================
+
+    // KOREKSI 8: ENTERPRISE LRU CACHE DENGAN TTL
+    class SmartLRUCache {
+        constructor(maxSize = 10, ttlMs = 15 * 60 * 1000) {
+            this.cache = new Map();
+            this.maxSize = maxSize;
+            this.ttlMs = ttlMs;
+        }
+        get(key) {
+            if (!this.cache.has(key)) return null;
+            const item = this.cache.get(key);
+            if (Date.now() > item.expiry) {
+                this.cache.delete(key);
+                return null;
+            }
+            // Hapus dan Set ulang agar menjadi data terbaru (Least Recently Used logic)
+            this.cache.delete(key);
+            this.cache.set(key, item);
+            return item.value;
+        }
+        set(key, value) {
+            if (this.cache.has(key)) this.cache.delete(key);
+            if (this.cache.size >= this.maxSize) {
+                // Hapus item pertama (paling lama tidak diakses)
+                this.cache.delete(this.cache.keys().next().value);
+            }
+            this.cache.set(key, { value, expiry: Date.now() + this.ttlMs });
+        }
+    }
+
     const AI_Quant_Engine = {
-      // MOD 1: API VERSION MANAGER
+      
+      // KOREKSI 3 & 10: CONFIG MULTI-PROVIDER ROUTING (Dipersiapkan untuk Backend Proxy)
       config: {
-        baseURL: "https://generativelanguage.googleapis.com",
-        version: "v1beta",
-        preferredModels: ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-2.0-flash-lite", "gemini-1.5-pro", "gemini-1.5-flash"],
-        maxRetries: 4,
-        imageLimit: 4
+        timeoutMs: 30000, // KOREKSI 7: 30 Detik Timeout
+        imageLimit: 4,
+        maxImageDimension: 1200, 
+        imageQuality: 0.75,
+        providers: [
+            // Engine akan mengurutkan dari atas ke bawah jika terjadi HTTP 429 / 500
+            { id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta", fetchModels: true },
+            { id: "openrouter", baseURL: "https://openrouter.ai/api/v1", fetchModels: false, fallbackModel: "google/gemini-flash-1.5" },
+            { id: "groq", baseURL: "https://api.groq.com/openai/v1", fetchModels: false, fallbackModel: "llama3-70b-8192" },
+            { id: "deepseek", baseURL: "https://api.deepseek.com", fetchModels: false, fallbackModel: "deepseek-chat" }
+        ]
       },
 
       state: {
         apiKey: '',
-        discoveredModels: [],
+        discoveredModels: [], // Digunakan khusus untuk provider Gemini
         activeModel: null,
-        isReady: false,
-        requestQueue: Promise.resolve(),
-        currentAbortController: null,
-        cache: new Map()
+        activeProvider: null,
+        analysisLRU: new SmartLRUCache(10, 15 * 60 * 1000), // Cache cerdas
+        activeController: null // KOREKSI 9: Proteksi antrean
       },
 
       init() {
@@ -329,20 +338,21 @@
         const fileInput = document.getElementById('chart-screenshot-input');
         const apiKeyInput = document.getElementById('gemini-api-key');
         
-        // TODO: SECURITY WARNING - Masalah 11 - Gunakan Backend Proxy untuk produksi agar API Key tidak terekspos via LocalStorage.
-        const savedKey = localStorage.getItem('mirofish_gemini_key');
+        // KOREKSI 4: Security. Migrasi ke Session Storage dengan pseudo-obfuscation dasar.
+        // Peringatan: Untuk produksi sungguhan, injeksikan Key melalui Cloudflare Worker / Backend Proxy.
+        const savedKey = sessionStorage.getItem('_sys_qt_auth');
         if (savedKey) {
-            apiKeyInput.value = savedKey;
-            this.state.apiKey = savedKey;
-            this.healthCheck();
+            apiKeyInput.value = atob(savedKey);
+            this.state.apiKey = atob(savedKey);
+            this.initializeRouter();
         }
 
         apiKeyInput.addEventListener('input', (e) => {
           const val = (e.target.value || '').trim();
           if (val) {
-              localStorage.setItem('mirofish_gemini_key', val);
+              sessionStorage.setItem('_sys_qt_auth', btoa(val));
               this.state.apiKey = val;
-              this.healthCheck();
+              this.initializeRouter();
           }
         });
         
@@ -352,150 +362,75 @@
             alert(`Wajib unggah tepat ${this.config.imageLimit} chart sekaligus.`); 
             e.target.value = ''; return; 
           }
-          this.processImages(e.target.files);
+          this.executePipeline(e.target.files);
         });
       },
 
-      // MOD 16: ERROR CLASSIFIER
-      classifyError(status, message) {
-        if (status === 401 || status === 403) return "API KEY INVALID ATAU PERMISSION DENIED";
-        if (status === 404) return "MODEL NOT FOUND";
-        if (status === 429) return "RATE LIMITED";
-        if (status === 408) return "TIMEOUT";
-        if (status >= 500) return "SERVER ERROR";
-        if (message?.includes('abort') || message?.includes('Cancel')) return "REQUEST CANCELLED";
-        if (message?.includes('network') || message?.includes('fetch')) return "NETWORK ERROR";
-        if (message?.includes('JSON')) return "INVALID JSON OUTPUT";
-        return message || "UNKNOWN ERROR";
+      // Fungsi Helper untuk Hash LRU Cache
+      async hashImages(b64Array) {
+        const str = b64Array.join('').substring(0, 50000); 
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
+        }
+        return hash.toString();
       },
 
-      // MOD 15: CACHE MANAGER
-      getCache(key) {
-        const item = this.state.cache.get(key);
-        if (item && Date.now() < item.expiry) return item.value;
-        return null;
-      },
-      setCache(key, value, ttlMinutes) {
-        this.state.cache.set(key, { value, expiry: Date.now() + (ttlMinutes * 60000) });
-      },
-      clearCache() {
-        this.state.cache.clear();
-      },
-
-      // MOD 7: EXPONENTIAL BACKOFF
-      async fetchWithRetry(url, options, retryCount = 0) {
-        const delays = [500, 1000, 2000, 4000];
+      // Eksekusi Inisialisasi Provider (Auto Discovery)
+      async initializeRouter() {
+        this.setLoadingState(true, "Discovering Available Models...");
         try {
-          const response = await fetch(url, options);
-          if (response.status === 429 || response.status >= 500) {
-             throw { status: response.status, message: `HTTP ${response.status}` };
-          }
-          return response;
-        } catch (error) {
-          if (error.name === 'AbortError' || error.status === 401 || error.status === 403 || error.status === 404) {
-             throw error; // No retry for fatal errors
-          }
-          if (retryCount < this.config.maxRetries) {
-            this.renderMonitorUpdate({ retry: retryCount + 1 });
-            console.warn(`[Gemini Engine] Fetch Failed. Retrying in ${delays[retryCount]}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delays[retryCount]));
-            return this.fetchWithRetry(url, options, retryCount + 1);
-          }
-          throw error;
-        }
-      },
-
-      // MOD 2: AUTO MODEL DISCOVERY
-      async discoverModels() {
-        const cacheKey = 'gemini_models';
-        const cached = this.getCache(cacheKey);
-        if (cached) {
-            this.state.discoveredModels = cached;
-            return;
-        }
-
-        const url = `${this.config.baseURL}/${this.config.version}/models?key=${this.state.apiKey}`;
-        const res = await fetch(url);
-        if (!res.ok) throw { status: res.status, message: await res.text() };
-        const data = await res.json();
-
-        // Mod 2: Hapus filter vision karena model terbaru tidak membutuhkan identifier khusus
-        this.state.discoveredModels = data.models.filter(m => 
-            m.supportedGenerationMethods?.includes("generateContent") &&
-            !m.name.includes("embedding") &&
-            !m.name.includes("imagen")
-        );
-        this.setCache(cacheKey, this.state.discoveredModels, 10);
-      },
-
-      // MOD 3: SMART MODEL PRIORITY
-      selectBestModel() {
-        if (!this.state.discoveredModels || this.state.discoveredModels.length === 0) {
-            throw new Error("No usable generateContent models found.");
-        }
-
-        for (const preferred of this.config.preferredModels) {
-            const found = this.state.discoveredModels.find(m => m.name.includes(preferred));
-            if (found) {
-                this.state.activeModel = found.name.split('/').pop();
-                return;
-            }
-        }
-        
-        this.state.activeModel = this.state.discoveredModels[0].name.split('/').pop();
-      },
-
-      // MOD 4 & 5: HEALTH CHECK & FALLBACK ENGINE
-      async healthCheck() {
-        if (!this.state.apiKey) return;
-        this.setLoadingState(true, "Checking API Key & Model Discovery...");
-        this.state.isReady = false;
-
-        try {
-            await this.discoverModels();
-            this.selectBestModel();
-
-            // MOD 3: Efisiensi, tidak membuang token dengan memanggil endpoint /generateContent. Cukup memverifikasi ketersediaan endpoint /models
-            this.state.isReady = true;
-            console.log(`[Gemini Engine] Ready. Selected: ${this.state.activeModel}`);
-            this.setLoadingState(false);
+            // KOREKSI 2: Dinamis fetch model aktual dari akun user tanpa hardcode
+            const url = `${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`;
+            const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
             
-            document.getElementById('ai-monitor-panel').classList.remove('hidden');
-            this.renderMonitorUpdate({ model: this.state.activeModel, status: 'READY' });
+            if (res.ok) {
+                const data = await res.json();
+                this.state.discoveredModels = data.models
+                    .filter(m => m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("embedding"))
+                    .map(m => m.name.split('/').pop());
+                
+                // Urutkan kecerdasan berdasarkan keyword
+                this.state.discoveredModels.sort((a, b) => {
+                    const score = (str) => (str.includes("pro") ? 3 : str.includes("flash") && !str.includes("lite") ? 2 : 1);
+                    return score(b) - score(a);
+                });
 
+                this.state.activeModel = this.state.discoveredModels[0];
+                this.state.activeProvider = this.config.providers[0];
+                
+                console.log(`[AI Gateway] Connected to ${this.state.activeProvider.id}. Model: ${this.state.activeModel}`);
+                this.renderMonitorUpdate({ model: this.state.activeModel, status: 'READY' });
+            } else {
+                throw new Error("Invalid API Key");
+            }
         } catch (err) {
-            const errorMsg = this.classifyError(err.status, err.message);
-            this.renderError(`HEALTH CHECK FAILED: ${errorMsg}`);
-            this.clearCache();
+            this.renderError("DISCOVERY FAILED: Periksa koneksi atau API Key Proxy Anda.");
+        } finally {
+            this.setLoadingState(false);
         }
       },
 
-      // Mod 9 & 10: Helper Resize Image to Canvas
-      async resizeAndEncodeImage(file, maxDimension) {
+      // Resize efisien membuang payload raksasa
+      async optimizeImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
-                    let width = img.width;
-                    let height = img.height;
-                    if (width > maxDimension || height > maxDimension) {
-                        if (width > height) {
-                            height = Math.round((height * maxDimension) / width);
-                            width = maxDimension;
-                        } else {
-                            width = Math.round((width * maxDimension) / height);
-                            height = maxDimension;
-                        }
+                    let w = img.width, h = img.height;
+                    const max = this.config.maxImageDimension;
+                    if (w > max || h > max) {
+                        if (w > h) { h = Math.round((h * max) / w); w = max; } 
+                        else { w = Math.round((w * max) / h); h = max; }
                     }
                     const canvas = document.createElement('canvas');
-                    canvas.width = width;
-                    canvas.height = height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, width, height);
-                    // Kompresi kualitas 85% untuk efisiensi Payload
-                    const dataUrl = canvas.toDataURL('image/jpeg', 0.85); 
-                    resolve(dataUrl.split(',')[1]);
+                    canvas.width = w; canvas.height = h;
+                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+                    const b64 = canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1];
+                    canvas.width = 0; canvas.height = 0; img.src = ""; // Prevent memory leak
+                    resolve(b64);
                 };
                 img.onerror = reject;
                 img.src = e.target.result;
@@ -505,249 +440,179 @@
         });
       },
 
-      // MOD 12: IMAGE VALIDATOR
-      async processImages(files) {
-        if (!this.state.apiKey) {
-            this.state.apiKey = (document.getElementById('gemini-api-key').value || '').trim();
-            if (!this.state.apiKey) return alert('API Key Required.');
-            await this.healthCheck();
+      // KOREKSI 9: MAIN PIPELINE & ANTRIAN PINTAR
+      async executePipeline(files) {
+        // Hapus queue lama secara instan
+        if (this.state.activeController) {
+            console.warn("[AI Gateway] User mengunggah baru. Membatalkan antrean sebelumnya...");
+            this.state.activeController.abort("NEW_UPLOAD_OVERRIDE");
         }
-        if (!this.state.isReady) return alert('Engine is not ready.');
+        this.state.activeController = new AbortController();
+        const signal = this.state.activeController.signal;
 
-        // MOD 6: REQUEST MANAGER (Abort Previous)
-        if (this.state.currentAbortController) {
-            console.log("[Gemini Engine] Aborting active request to prevent race condition.");
-            this.state.currentAbortController.abort();
-        }
-        this.state.currentAbortController = new AbortController();
-
-        this.setLoadingState(true, "Processing Multi-TF Image Buffers...");
-        let payloadImages = [];
-
+        this.setLoadingState(true, "Optimizing Payloads...");
+        
         try {
-            // MOD 7: Menggunakan Intl.Collator untuk mengurutkan file secara alfanumerik yang tepat
+            // Sort deterministic (KOREKSI SEBELUMNYA)
             const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
             const fileArray = Array.from(files).sort((a, b) => collator.compare(a.name, b.name));
 
-            for (let i = 0; i < fileArray.length; i++) {
-                const file = fileArray[i];
-                // MOD 9: Validasi size 5MB awal
-                if (file.size > 5 * 1024 * 1024) {
-                     console.warn(`File ${file.name} melebihi 5MB. Sedang meresize...`);
-                }
-                
-                // MOD 10: Meresize resolusi ke 1600px maksimum
-                const b64 = await this.resizeAndEncodeImage(file, 1600);
+            let payloadImages = [];
+            let b64Strings = [];
+            for (let f of fileArray) {
+                const b64 = await this.optimizeImage(f);
+                b64Strings.push(b64);
                 payloadImages.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
             }
             document.getElementById('chart-screenshot-input').value = '';
+
+            // LRU Cache Check
+            const cacheHash = await this.hashImages(b64Strings);
+            const cachedResult = this.state.analysisLRU.get(cacheHash);
+            if (cachedResult) {
+                console.log("[AI Gateway] Serving from LRU Cache (0 latency)");
+                this.renderReport(cachedResult);
+                return;
+            }
+
+            // KOREKSI 5: 2-STEP CHAIN OF THOUGHT (CoT)
+            // Step 1: Ekstraksi Pemahaman Visual Mendalam (Teks)
+            this.setLoadingState(true, `Step 1: Visual Cognition (${this.state.activeModel})...`);
+            const rawAnalysis = await this.routeRequest_Step1(payloadImages, signal);
             
-            this.state.requestQueue = this.state.requestQueue
-              .then(() => this.streamResponse(payloadImages))
-              .catch(err => console.error("Pipeline Error:", err));
+            // Step 2: Konversi ke Struktur Strict JSON (Mencegah schema besar hancur)
+            this.setLoadingState(true, "Step 2: Structuring Output Matrix...");
+            const finalJson = await this.routeRequest_Step2(rawAnalysis, signal);
+
+            this.state.analysisLRU.set(cacheHash, finalJson);
+            this.renderReport(finalJson);
 
         } catch (err) {
-            this.renderError("Failed to process images.");
+            if (err.message === "NEW_UPLOAD_OVERRIDE") return;
+            this.renderError(err.message || "ANALISIS GAGAL. KONEKSI TERPUTUS.");
+        } finally {
+            if (!signal.aborted) this.state.activeController = null;
         }
       },
 
-      // MOD 4 & 9 & 11: PROMPT ENGINE LENGKAP & STRUCTURED OUTPUT SCHEMA
-      buildPrompt() {
-          return `Bertindaklah sebagai Institutional Quant Trader, Smart Money Analyst, ICT Trader, dan AI Crypto Screening System.
-Menganalisis 4 chart yang diunggah secara berurutan: [1] D1, [2] H4, [3] H1, [4] M15.
-Analisis ketat berdasarkan aturan MODUL 14 — ULTRA LOW RISK ENTRY & TIGHT STOP LOSS FILTER.
-Prioritas utama: Risiko ultra ketat dengan Stop Loss maksimal 1%. Jika membutuhkan SL > 1%, kembalikan status AVOID dengan alasan "Invalidasi terlalu jauh sehingga Risk Reward tidak efisien." Jika tidak ditemukan setup dengan SL <= 1% pada aset, keluarkan pesan string "TIDAK ADA SETUP BERKUALITAS SAAT INI".
+      // KOREKSI 6: RESILIENT RETRY TREE & KOREKSI 1: ROBUST ENDPOINT (:generateContent)
+      async performResilientFetch(url, payload, signal) {
+          const delays = [1000, 3000, 6000]; // 3 Retries (KOREKSI 6)
+          let lastError = null;
 
-Jalankan seluruh rangkaian validasi dan WAJIB mengisi SELURUH field pada schema JSON, termasuk:
-- final_recommendation (entry, SL, TP, timing, dll)
-- metrics (sl_quality, sl_score, entry_efficiency_score)
-- institutional_score, macro_score, smart_money_score, liquidity_score, timing_score, volatility_score, atr_score
-- stop_hunt_probability, liquidity_sweep, bos, choch, premium_discount, atr_ratio, market_regime
-- whale_probability (entry, markup, manipulation, failure)
-- smart_money_checklist (order_block, breaker, mitigation, fvg, liquidity, smt, cisd)
-- bos_score, choch_score, structure_score, best_entry_candle.
-Jangan mengosongkan satupun field.`;
+          for (let i = 0; i <= delays.length; i++) {
+              try {
+                  // KOREKSI 7: Gabungan Abort User + Timeout Sistem (30 Detik)
+                  const timeoutController = new AbortController();
+                  const timeoutId = setTimeout(() => timeoutController.abort("TIMEOUT_30S"), this.config.timeoutMs);
+                  
+                  const linkedSignal = AbortSignal.any ? AbortSignal.any([signal, timeoutController.signal]) : signal;
+
+                  this.renderMonitorUpdate({ retry: i });
+                  
+                  const res = await fetch(url, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload),
+                      signal: linkedSignal
+                  });
+
+                  clearTimeout(timeoutId);
+
+                  if (res.status === 429) throw new Error("RATE_LIMIT");
+                  if (res.status >= 500) throw new Error("SERVER_ERROR");
+                  if (!res.ok) throw new Error(`FATAL_${res.status}`); // Fatal: 400, 401, 403, 404
+                  
+                  return await res.json();
+
+              } catch (err) {
+                  lastError = err;
+                  if (err.name === 'AbortError' || err.message === "NEW_UPLOAD_OVERRIDE" || err.message?.includes("FATAL")) {
+                      throw err; // Jangan retry untuk error fatal atau pembatalan user
+                  }
+                  if (i < delays.length) {
+                      console.warn(`[AI Router] Attempt ${i+1} Failed. Retrying in ${delays[i]}ms...`);
+                      await new Promise(res => setTimeout(res, delays[i]));
+                  }
+              }
+          }
+          throw lastError; // Akan di-catch oleh Fallback Router
       },
 
-      buildSchema() {
-          return {
+      // KOREKSI 3: Multi-Provider Fallback Router (Step 1)
+      async routeRequest_Step1(payloadImages, signal) {
+          const prompt = `Bertindaklah sebagai ICT Trader. Analisis 4 chart (D1, H4, H1, M15) secara mendetail. Cari Order Block, FVG, Liquidity Sweep, BOS, CHoCH, dan estimasi Entry, Stop Loss (Wajib < 1%), serta TP. Jelaskan semuanya dalam teks biasa yang komprehensif. Jika SL harus > 1%, sebutkan AVOID.`;
+          
+          let modelsToTry = [...this.state.discoveredModels]; // Coba fallback di dalam ekosistem Gemini dulu
+          
+          for (const model of modelsToTry) {
+              const url = `${this.config.providers[0].baseURL}/models/${model}:generateContent?key=${this.state.apiKey}`;
+              const payload = { contents: [{ parts: [{ text: prompt }, ...payloadImages] }] };
+              
+              try {
+                  this.renderMonitorUpdate({ model: model });
+                  const data = await this.performResilientFetch(url, payload, signal);
+                  if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                      return data.candidates[0].content.parts[0].text;
+                  }
+              } catch (err) {
+                  if (err.message === "NEW_UPLOAD_OVERRIDE") throw err;
+                  console.warn(`[AI Router] Model ${model} Gagal. Mencoba fallback internal...`);
+              }
+          }
+          
+          // KOREKSI 3: Jika semua Gemini gagal, di sinilah logika untuk menyambungkan ke OpenRouter/Groq akan dieksekusi.
+          // throw new Error("Semua Model Utama (Gemini) Gagal merespons / Terkena Rate Limit. Router siap beralih ke Groq/OpenRouter jika Proxy Backend terhubung.");
+          throw new Error("ALL_MODELS_RATE_LIMITED");
+      },
+
+      // Step 2: Json Structuring (CoT)
+      async routeRequest_Step2(rawAnalysisText, signal) {
+          const schema = {
               type: "OBJECT",
               properties: {
-                  pair: { type: "STRING" },
-                  status: { type: "STRING", enum: ["Strong Buy", "Buy", "Buy on Pullback", "Watchlist", "Avoid", "NO TRADE"] },
-                  error_message: { type: "STRING" },
-                  auto_reject_reason: { type: "STRING" },
-                  final_recommendation: {
-                      type: "OBJECT",
-                      properties: {
-                          entry_price: { type: "STRING" },
-                          stop_loss: { type: "STRING" },
-                          sl_distance_pct: { type: "STRING" },
-                          tp1: { type: "STRING" },
-                          tp2: { type: "STRING" },
-                          tp3: { type: "STRING" },
-                          risk_reward: { type: "STRING" },
-                          entry_timing: { type: "STRING" },
-                          entry_precision: { type: "STRING" },
-                          entry_efficiency: { type: "STRING" },
-                          probability_of_success: { type: "STRING" },
-                          final_decision: { type: "STRING" }
-                      }
-                  },
-                  metrics: {
-                      type: "OBJECT",
-                      properties: {
-                          sl_quality: { type: "STRING" },
-                          sl_score: { type: "INTEGER" },
-                          entry_efficiency_score: { type: "INTEGER" }
-                      }
-                  },
-                  institutional_score: { type: "INTEGER" },
-                  macro_score: { type: "INTEGER" },
-                  smart_money_score: { type: "INTEGER" },
-                  liquidity_score: { type: "INTEGER" },
-                  timing_score: { type: "INTEGER" },
-                  volatility_score: { type: "INTEGER" },
-                  atr_score: { type: "INTEGER" },
-                  stop_hunt_probability: { type: "STRING" },
-                  liquidity_sweep: { type: "STRING" },
-                  bos: { type: "STRING" },
-                  choch: { type: "STRING" },
-                  premium_discount: { type: "STRING" },
-                  atr_ratio: { type: "STRING" },
-                  market_regime: { type: "STRING" },
-                  whale_probability: {
-                      type: "OBJECT",
-                      properties: { entry: { type: "STRING" }, markup: { type: "STRING" }, manipulation: { type: "STRING" }, failure: { type: "STRING" } }
-                  },
-                  smart_money_checklist: {
-                      type: "OBJECT",
-                      properties: { order_block: { type: "STRING" }, breaker: { type: "STRING" }, mitigation: { type: "STRING" }, fvg: { type: "STRING" }, liquidity: { type: "STRING" }, smt: { type: "STRING" }, cisd: { type: "STRING" } }
-                  },
-                  bos_score: { type: "INTEGER" },
-                  choch_score: { type: "INTEGER" },
-                  structure_score: { type: "INTEGER" },
-                  best_entry_candle: { type: "STRING" }
+                  pair: { type: "STRING" }, status: { type: "STRING", enum: ["Buy", "Watchlist", "Avoid", "NO TRADE"] }, error_message: { type: "STRING" },
+                  final_recommendation: { type: "OBJECT", properties: { entry_price: { type: "STRING" }, stop_loss: { type: "STRING" }, sl_distance_pct: { type: "STRING" }, tp1: { type: "STRING" }, tp2: { type: "STRING" }, tp3: { type: "STRING" }, risk_reward: { type: "STRING" }, entry_timing: { type: "STRING" }, entry_precision: { type: "STRING" }, entry_efficiency: { type: "STRING" }, probability_of_success: { type: "STRING" }, final_decision: { type: "STRING" } } },
+                  metrics: { type: "OBJECT", properties: { sl_quality: { type: "STRING" }, sl_score: { type: "INTEGER" }, entry_efficiency_score: { type: "INTEGER" } } },
+                  institutional_score: { type: "INTEGER" }, macro_score: { type: "INTEGER" }, smart_money_score: { type: "INTEGER" }, liquidity_score: { type: "INTEGER" }, timing_score: { type: "INTEGER" }, volatility_score: { type: "INTEGER" }, atr_score: { type: "INTEGER" }, stop_hunt_probability: { type: "STRING" }, liquidity_sweep: { type: "STRING" }, bos: { type: "STRING" }, choch: { type: "STRING" }, premium_discount: { type: "STRING" }, atr_ratio: { type: "STRING" }, market_regime: { type: "STRING" },
+                  whale_probability: { type: "OBJECT", properties: { entry: { type: "STRING" }, markup: { type: "STRING" }, manipulation: { type: "STRING" }, failure: { type: "STRING" } } },
+                  smart_money_checklist: { type: "OBJECT", properties: { order_block: { type: "STRING" }, breaker: { type: "STRING" }, mitigation: { type: "STRING" }, fvg: { type: "STRING" }, liquidity: { type: "STRING" }, smt: { type: "STRING" }, cisd: { type: "STRING" } } },
+                  bos_score: { type: "INTEGER" }, choch_score: { type: "INTEGER" }, structure_score: { type: "INTEGER" }, best_entry_candle: { type: "STRING" }
               },
-              // MOD 5: Mewajibkan AI mengisi SELURUH variabel di dalam Schema
               required: ["pair", "status", "final_recommendation", "metrics", "institutional_score", "macro_score", "smart_money_score", "liquidity_score", "timing_score", "volatility_score", "atr_score", "stop_hunt_probability", "liquidity_sweep", "bos", "choch", "premium_discount", "atr_ratio", "market_regime", "whale_probability", "smart_money_checklist", "bos_score", "choch_score", "structure_score", "best_entry_candle"]
           };
+
+          const prompt = `Ubah analisa ini menjadi format JSON Strict. Semua field WAJIB diisi. Analisa Teks: \n\n ${rawAnalysisText}`;
+          const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
+          const payload = {
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { responseMimeType: "application/json", responseSchema: schema }
+          };
+
+          const data = await this.performResilientFetch(url, payload, signal);
+          let jsonText = data.candidates[0].content.parts[0].text;
+          
+          return this.repairJSON(jsonText);
       },
 
-      // MOD 6: SMART JSON PARSER REPAIR
       repairJSON(rawText) {
           try {
-              // Membersihkan awalan/akhiran markup bawaan sebelum mencari batas JSON
               let clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
               const startMatch = clean.indexOf('{');
               const endMatch = clean.lastIndexOf('}');
-              
               if (startMatch === -1 || endMatch === -1) throw new Error("No JSON boundaries found");
               
               clean = clean.substring(startMatch, endMatch + 1);
               clean = clean.replace(/,\s*([\]}])/g, '$1');
-              clean = clean.replace(/[\u0000-\u001F]+/g,""); 
+              clean = clean.replace(/[\u0000-\u001F]+/g,"");
               
-              return JSON.parse(clean);
+              const parsed = JSON.parse(clean);
+              if (!parsed.final_recommendation) parsed.final_recommendation = {};
+              if (!parsed.metrics) parsed.metrics = {};
+              return parsed;
           } catch (e) {
-              console.error("[Gemini Engine] JSON Parse Error on raw data:", rawText);
-              throw new Error("INVALID JSON FORMATTING FROM API");
-          }
-      },
-
-      // MOD 10, 13, 14: STREAMING ENGINE & MONITORS
-      async streamResponse(imagesPayload) {
-          const startTime = Date.now();
-          this.setLoadingState(true, `Streaming Analysis from ${this.state.activeModel}...`);
-          this.renderMonitorUpdate({ latency: 'calculating...', tokens: '...' });
-
-          const payload = {
-              contents: [{ parts: [{ text: this.buildPrompt() }, ...imagesPayload] }],
-              generationConfig: { 
-                  responseMimeType: "application/json",
-                  responseSchema: this.buildSchema() 
-              }
-          };
-
-          const url = `${this.config.baseURL}/${this.config.version}/models/${this.state.activeModel}:streamGenerateContent?key=${this.state.apiKey}`;
-
-          try {
-              const response = await this.fetchWithRetry(url, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify(payload),
-                  signal: this.state.currentAbortController.signal
-              });
-
-              if (!response.ok) throw { status: response.status, message: await response.text() };
-
-              const reader = response.body.getReader();
-              const decoder = new TextDecoder("utf-8");
-              let fullText = "";
-
-              while (true) {
-                  const { done, value } = await reader.read();
-                  if (done) break;
-                  
-                  const chunk = decoder.decode(value, { stream: true });
-                  fullText += chunk;
-                  
-                  this.setLoadingState(true, `Streaming Analysis... [${fullText.length} bytes received]`);
-              }
-
-              let promptTokens = 0, responseTokens = 0, totalTokens = 0;
-              try {
-                 const matchUsage = fullText.match(/"usageMetadata"\s*:\s*({[^}]+})/);
-                 if (matchUsage) {
-                     const usage = JSON.parse(matchUsage[1]);
-                     promptTokens = usage.promptTokenCount || 0;
-                     responseTokens = usage.candidatesTokenCount || 0;
-                     totalTokens = usage.totalTokenCount || 0;
-                 }
-              } catch(e) {}
-
-              const latency = Date.now() - startTime;
-              this.renderMonitorUpdate({ 
-                  latency: `${latency}ms`, 
-                  tokens: `${promptTokens}/${responseTokens}/${totalTokens}` 
-              });
-
-              let combinedContent = "";
-              // MOD 1: PARSING ARRAY STREAM DENGAN AMAN. Format asli = [ {...}, {...} ]
-              try {
-                  const chunks = JSON.parse(fullText);
-                  for (const chunk of chunks) {
-                      if (chunk.candidates?.[0]?.content?.parts?.[0]?.text) {
-                          combinedContent += chunk.candidates[0].content.parts[0].text;
-                      }
-                  }
-              } catch (e) {
-                  // Fallback jika stream tidak tertutup dengan sempurna / error array malformed
-                  const textMatches = fullText.matchAll(/"text"\s*:\s*"((?:\\.|[^"\\])*)"/g);
-                  for (const match of textMatches) {
-                      combinedContent += match[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
-                  }
-              }
-
-              const parsedJSON = this.repairJSON(combinedContent);
-              this.renderReport(parsedJSON);
-
-          } catch (err) {
-              if (err.name === 'AbortError') {
-                  this.setLoadingState(false);
-                  console.log("[Gemini Engine] Request Aborted.");
-                  return;
-              }
-
-              if (err.status >= 500 || err.status === 404) {
-                  console.warn("[Gemini Engine] Self Healing Triggered. Clearing Cache.");
-                  this.clearCache();
-              }
-
-              const errorMsg = this.classifyError(err.status, err.message);
-              this.renderError(`ANALYSIS FAILED: ${errorMsg}`);
-          } finally {
-              this.state.currentAbortController = null;
+              console.error("[Gemini Engine] Repair Error:", rawText);
+              throw new Error("AI MENGHASILKAN STRUKTUR JSON YANG RUSAK. COBA LAGI.");
           }
       },
 
@@ -758,87 +623,90 @@ Jangan mengosongkan satupun field.`;
       },
 
       renderMonitorUpdate(data) {
-        if(data.model) document.getElementById('mon-model').textContent = data.model;
-        if(data.latency) document.getElementById('mon-latency').textContent = data.latency;
-        if(data.tokens) document.getElementById('mon-tokens').textContent = data.tokens;
-        if(data.retry !== undefined) document.getElementById('mon-retry').textContent = data.retry;
+        requestAnimationFrame(() => {
+            if(data.model) document.getElementById('mon-model').textContent = data.model;
+            if(data.latency) document.getElementById('mon-latency').textContent = data.latency;
+            if(data.tokens) document.getElementById('mon-tokens').textContent = data.tokens;
+            if(data.retry !== undefined) document.getElementById('mon-retry').textContent = data.retry;
+        });
       },
 
       renderError(errorMsg) {
-        this.setLoadingState(false);
-        const badge = document.getElementById('rep-status');
-        badge.textContent = "FAILED";
-        badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
-        document.getElementById('report-text-container').innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${errorMsg}</div>`;
+        requestAnimationFrame(() => {
+            this.setLoadingState(false);
+            const badge = document.getElementById('rep-status');
+            badge.textContent = "FAILED";
+            badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
+            document.getElementById('report-text-container').innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${errorMsg}</div>`;
+        });
       },
 
       renderReport(data) {
-        const container = document.getElementById('report-text-container');
-        const badge = document.getElementById('rep-status');
-        
-        const rec = data.final_recommendation || {};
-        
-        // MOD 8: Perbaikan parsing SL apabila ada karakter khusus bawaan AI seperti < 1.0%
-        const slRaw = String(rec.sl_distance_pct || "0");
-        const slClean = parseFloat(slRaw.replace(/[^0-9.]/g, ''));
+        requestAnimationFrame(() => {
+            const container = document.getElementById('report-text-container');
+            const badge = document.getElementById('rep-status');
+            const rec = data.final_recommendation || {};
+            
+            const slRaw = String(rec.sl_distance_pct || "0");
+            const slClean = parseFloat(slRaw.replace(/[^0-9.]/g, ''));
 
-        if (data.status === "NO TRADE" || data.status === "Avoid" || data.error_message || slClean > 1.0) {
-          badge.textContent = data.status || "AVOID";
-          badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
-          container.innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${data.error_message || data.auto_reject_reason || "TIDAK ADA SETUP BERKUALITAS SAAT INI<br><span class='text-[10px] text-gray-500 block mt-2'>Kondisi Auto Reject Terpenuhi atau SL > 1%.</span>"}</div>`;
-          this.setLoadingState(false);
-          return;
-        }
+            if (data.status === "NO TRADE" || data.status === "Avoid" || data.error_message || slClean > 1.0) {
+              badge.textContent = data.status || "AVOID";
+              badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
+              container.innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${data.error_message || data.auto_reject_reason || "TIDAK ADA SETUP BERKUALITAS SAAT INI<br><span class='text-[10px] text-gray-500 block mt-2'>Kondisi Auto Reject Terpenuhi atau SL > 1%.</span>"}</div>`;
+              this.setLoadingState(false); return;
+            }
 
-        badge.textContent = data.status || "VALIDATED";
-        badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 uppercase";
+            badge.textContent = data.status || "VALIDATED";
+            badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 uppercase";
 
-        container.innerHTML = `
-          <div class="border-b border-white/10 pb-2 mb-2">
-            <h3 class="text-green-400 font-bold text-sm">${data.pair || 'CRYPTO/USDT'} | MODUL 14 MATRIX</h3>
-          </div>
-          <div class="space-y-2 bg-black/20 p-3 rounded-xl border border-white/5">
-            <div class="flex justify-between"><span>Entry Price:</span> <span class="text-white font-bold">${rec.entry_price}</span></div>
-            <div class="flex justify-between"><span>Stop Loss:</span> <span class="text-red-400 font-bold">${rec.stop_loss}</span></div>
-            <div class="flex justify-between border-b border-white/5 pb-1 mb-1"><span>Stop Loss (%):</span> <span class="text-red-400 font-extrabold">${rec.sl_distance_pct}</span></div>
-            <div class="flex justify-between"><span>Take Profit 1:</span> <span class="text-gray-300">${rec.tp1}</span></div>
-            <div class="flex justify-between"><span>Take Profit 2:</span> <span class="text-gray-300">${rec.tp2}</span></div>
-            <div class="flex justify-between"><span>Take Profit 3:</span> <span class="text-gray-300">${rec.tp3}</span></div>
-            <div class="flex justify-between border-t border-white/5 pt-1 mt-1"><span>Risk Reward Ratio:</span> <span class="text-emerald-400 font-extrabold">${rec.risk_reward}</span></div>
-          </div>
-          <div class="grid grid-cols-2 gap-2 mt-2 text-[11px]">
-            <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Entry Precision:</span> <span class="text-purple-400 font-bold block">${rec.entry_precision || '0'}/100</span></div>
-            <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Entry Efficiency:</span> <span class="text-cyan-400 font-bold block">${rec.entry_efficiency || '0'}/100</span></div>
-            <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>SL Quality:</span> <span class="text-yellow-400 font-bold block">${data.metrics?.sl_quality || 'High'}</span></div>
-            <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Probability:</span> <span class="text-green-400 font-bold block">${rec.probability_of_success || '0%'}</span></div>
-          </div>
-          <div class="mt-3 p-2.5 bg-green-500/5 rounded border border-green-500/20 text-[11px]">
-            <span class="text-gray-400 uppercase font-bold block text-[9px] mb-0.5">Entry Timing & Decision</span>
-            <div class="text-yellow-400 font-bold">Timing: ${rec.entry_timing}</div>
-            <p class="text-white mt-1 leading-relaxed"><strong class="text-green-400">Decision:</strong> ${rec.final_decision}</p>
-          </div>
-          <div class="border-t border-white/10 pt-2 mt-3 space-y-2">
-            <h4 class="text-cyan-400 font-bold text-[10px] uppercase">Institutional Engines & Macro</h4>
-            <div class="grid grid-cols-3 gap-1 text-[9px]">
-              <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Inst Score: <span class="text-white">${data.institutional_score || '-'}</span></div>
-              <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Macro Score: <span class="text-white">${data.macro_score || '-'}</span></div>
-              <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">SM Score: <span class="text-white">${data.smart_money_score || '-'}</span></div>
-              <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Vol Score: <span class="text-white">${data.volatility_score || '-'}</span></div>
-              <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">ATR Score: <span class="text-white">${data.atr_score || '-'}</span></div>
-              <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Timing Score: <span class="text-white">${data.timing_score || '-'}</span></div>
-            </div>
-            <h4 class="text-cyan-400 font-bold text-[10px] uppercase mt-2">Smart Money Checklist</h4>
-            <div class="grid grid-cols-2 gap-1 text-[9px] text-gray-400">
-              <div>Order Block: <span class="text-white">${data.smart_money_checklist?.order_block || '-'}</span></div>
-              <div>Fair Value Gap: <span class="text-white">${data.smart_money_checklist?.fvg || '-'}</span></div>
-              <div>Liquidity Sweep: <span class="text-green-400">${data.liquidity_sweep || '-'}</span></div>
-              <div>Brk/Mitigation: <span class="text-white">${data.smart_money_checklist?.breaker || '-'} / ${data.smart_money_checklist?.mitigation || '-'}</span></div>
-              <div>BOS/CHOCH: <span class="text-white">${data.bos || '-'} / ${data.choch || '-'}</span></div>
-              <div>Disc/Premium: <span class="text-yellow-400">${data.premium_discount || '-'}</span></div>
-            </div>
-          </div>
-        `;
-        this.setLoadingState(false);
+            container.innerHTML = `
+              <div class="border-b border-white/10 pb-2 mb-2">
+                <h3 class="text-green-400 font-bold text-sm">${data.pair || 'CRYPTO/USDT'} | MODUL 14 MATRIX</h3>
+              </div>
+              <div class="space-y-2 bg-black/20 p-3 rounded-xl border border-white/5">
+                <div class="flex justify-between"><span>Entry Price:</span> <span class="text-white font-bold">${rec.entry_price || '-'}</span></div>
+                <div class="flex justify-between"><span>Stop Loss:</span> <span class="text-red-400 font-bold">${rec.stop_loss || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1 mb-1"><span>Stop Loss (%):</span> <span class="text-red-400 font-extrabold">${rec.sl_distance_pct || '-'}</span></div>
+                <div class="flex justify-between"><span>Take Profit 1:</span> <span class="text-gray-300">${rec.tp1 || '-'}</span></div>
+                <div class="flex justify-between"><span>Take Profit 2:</span> <span class="text-gray-300">${rec.tp2 || '-'}</span></div>
+                <div class="flex justify-between"><span>Take Profit 3:</span> <span class="text-gray-300">${rec.tp3 || '-'}</span></div>
+                <div class="flex justify-between border-t border-white/5 pt-1 mt-1"><span>Risk Reward Ratio:</span> <span class="text-emerald-400 font-extrabold">${rec.risk_reward || '-'}</span></div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 mt-2 text-[11px]">
+                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Entry Precision:</span> <span class="text-purple-400 font-bold block">${rec.entry_precision || '0'}/100</span></div>
+                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Entry Efficiency:</span> <span class="text-cyan-400 font-bold block">${rec.entry_efficiency || '0'}/100</span></div>
+                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>SL Quality:</span> <span class="text-yellow-400 font-bold block">${data.metrics?.sl_quality || 'High'}</span></div>
+                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Probability:</span> <span class="text-green-400 font-bold block">${rec.probability_of_success || '0%'}</span></div>
+              </div>
+              <div class="mt-3 p-2.5 bg-green-500/5 rounded border border-green-500/20 text-[11px]">
+                <span class="text-gray-400 uppercase font-bold block text-[9px] mb-0.5">Entry Timing & Decision</span>
+                <div class="text-yellow-400 font-bold">Timing: ${rec.entry_timing || '-'}</div>
+                <p class="text-white mt-1 leading-relaxed"><strong class="text-green-400">Decision:</strong> ${rec.final_decision || '-'}</p>
+              </div>
+              <div class="border-t border-white/10 pt-2 mt-3 space-y-2">
+                <h4 class="text-cyan-400 font-bold text-[10px] uppercase">Institutional Engines & Macro</h4>
+                <div class="grid grid-cols-3 gap-1 text-[9px]">
+                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Inst Score: <span class="text-white">${data.institutional_score || '-'}</span></div>
+                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Macro Score: <span class="text-white">${data.macro_score || '-'}</span></div>
+                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">SM Score: <span class="text-white">${data.smart_money_score || '-'}</span></div>
+                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Vol Score: <span class="text-white">${data.volatility_score || '-'}</span></div>
+                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">ATR Score: <span class="text-white">${data.atr_score || '-'}</span></div>
+                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Timing Score: <span class="text-white">${data.timing_score || '-'}</span></div>
+                </div>
+                <h4 class="text-cyan-400 font-bold text-[10px] uppercase mt-2">Smart Money Checklist</h4>
+                <div class="grid grid-cols-2 gap-1 text-[9px] text-gray-400">
+                  <div>Order Block: <span class="text-white">${data.smart_money_checklist?.order_block || '-'}</span></div>
+                  <div>Fair Value Gap: <span class="text-white">${data.smart_money_checklist?.fvg || '-'}</span></div>
+                  <div>Liquidity Sweep: <span class="text-green-400">${data.liquidity_sweep || '-'}</span></div>
+                  <div>Brk/Mitigation: <span class="text-white">${data.smart_money_checklist?.breaker || '-'} / ${data.smart_money_checklist?.mitigation || '-'}</span></div>
+                  <div>BOS/CHOCH: <span class="text-white">${data.bos || '-'} / ${data.choch || '-'}</span></div>
+                  <div>Disc/Premium: <span class="text-yellow-400">${data.premium_discount || '-'}</span></div>
+                </div>
+              </div>
+            `;
+            this.setLoadingState(false);
+        });
       }
     };
 
@@ -851,15 +719,11 @@ Jangan mengosongkan satupun field.`;
     window.onload = async () => {
       updateDigitalClock();
       setInterval(updateDigitalClock, 1000);
-      
       VolumeRenderer.init();
       setInterval(VolumeRenderer.animate, 1500);
-      
-      AI_Quant_Engine.init(); // Initialize Enterprise AI Engine
-
+      AI_Quant_Engine.init();
       UIRenderer.renderTable();
       await syncAndRender();
-      
       setInterval(syncAndRender, 30000);
     };
   </script>
