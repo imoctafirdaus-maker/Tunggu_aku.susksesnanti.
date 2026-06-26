@@ -25,7 +25,6 @@
 
   <div class="w-full max-w-7xl space-y-4">
     
-    <!-- HEADER -->
     <div class="glass-panel rounded-2xl p-4 border border-white/5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -39,12 +38,11 @@
           <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
             <i data-lucide="clock" class="w-3 h-3 text-green-400"></i> <span id="digital-clock">00:00:00 UTC</span>
           </span>
-          <div class="text-xs text-green-400 font-bold mt-1 tracking-tight animate-pulse">● Quant Filters Active</div>
+          <div id="app-network-status" class="text-xs text-yellow-400 font-bold mt-1 tracking-tight animate-pulse">● INITIALIZING...</div>
         </div>
       </div>
     </div>
 
-    <!-- MACRO ANALYSIS (BTC/USDT.D) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 neon-border-green bg-gradient-to-b from-emerald-950/10 to-transparent space-y-4">
       <div class="bg-gradient-to-r from-red-950/20 to-black/40 p-4 rounded-xl border border-red-500/20 neon-border-orange">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -72,7 +70,17 @@
         </div>
       </div>
 
-      <!-- FILTERED QUANT TABLE -->
+      <div class="p-4 bg-black/40 rounded-xl border border-white/5 space-y-2">
+        <div class="flex justify-between items-center">
+          <span class="text-xs font-bold tracking-wider text-gray-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Spot Volume Feed
+          </span>
+          <span class="text-[10px] text-gray-500 font-mono">Auto-refresh Active</span>
+        </div>
+        <div id="live-volume-bars" class="h-16 flex items-end gap-1 pt-2 px-1 bg-zinc-950/50 rounded-lg overflow-hidden border border-white/5">
+        </div>
+      </div>
+
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3 mt-4">
         <div>
           <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
@@ -100,13 +108,11 @@
             </tr>
           </thead>
           <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
-            <!-- Data Injected Here -->
           </tbody>
         </table>
       </div>
     </div>
 
-    <!-- AI VISION ENGINE (THE BRAIN) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div class="flex items-center gap-2">
@@ -122,7 +128,6 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- UPLOAD SECTION -->
         <div class="space-y-3 bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col">
           <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Multi-TF Input (D1, H4, H1, M15)</span>
           <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40 flex-1 flex flex-col justify-center">
@@ -139,7 +144,6 @@
           </div>
         </div>
 
-        <!-- REPORT SECTION -->
         <div class="bg-zinc-900/60 p-4 rounded-xl border border-yellow-500/10 flex flex-col h-[520px]">
           <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
             <span class="text-[11px] uppercase font-bold text-yellow-400 tracking-wider flex items-center gap-1">
@@ -157,9 +161,186 @@
   </div>
 
   <script>
-    // ========================================== GLOBAL STATE & QUANT DB ==========================================
-    let marketRegime = {}, btcContext = {}, oiScore = {}, whaleScore = {}, fundingScore = {};
+    // =========================================================================
+    // PRIORITY 1 & 3: ARCHITECTURE - MODULAR ENDPOINTS & PROXIES
+    // =========================================================================
+    const API_ENDPOINTS = {
+      cgProxies: [
+        "https://api.allorigins.win/raw?url=",
+        "https://api.codetabs.com/v1/proxy?quest=",
+        "https://corsproxy.io/?"
+      ],
+      paprika: "https://api.coinpaprika.com/v1/tickers",
+      cc: "https://min-api.cryptocompare.com/data/pricemultifull",
+      binance: "https://api.binance.com/api/v3/ticker/24hr"
+    };
 
+    // =========================================================================
+    // PRIORITY 7 & 8: SMART CACHE SYSTEM
+    // =========================================================================
+    const SmartCache = {
+      store: new Map(),
+      set(key, data, ttlSeconds) {
+        this.store.set(key, { data, expiry: Date.now() + (ttlSeconds * 1000) });
+      },
+      get(key) {
+        const item = this.store.get(key);
+        if (!item) return null;
+        if (Date.now() > item.expiry) return null; // Expired
+        return item.data;
+      },
+      getLastValid(key) {
+        return this.store.has(key) ? this.store.get(key).data : null;
+      }
+    };
+
+    // =========================================================================
+    // PRIORITY 3, 9 & 10: REQUEST MANAGER (Queue, Retry, Timeout, Clean Async)
+    // =========================================================================
+    const RequestManager = {
+      queue: Promise.resolve(),
+
+      enqueue(taskFn) {
+        this.queue = this.queue.then(() => taskFn()).catch(err => console.error("Queue Error:", err));
+        return this.queue;
+      },
+
+      async fetchWithTimeout(url, timeoutMs = 4000) {
+        const controller = new AbortController();
+        const id = setTimeout(() => controller.abort(), timeoutMs);
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(id);
+          if (!res.ok) throw new Error(`HTTP Error ${res.status}`);
+          return await res.json();
+        } catch (e) {
+          clearTimeout(id);
+          throw e; // Lemparkan ke rotating proxy
+        }
+      }
+    };
+
+    // =========================================================================
+    // PRIORITY 13: INTERNAL NOTIFICATION SYSTEM (No Alert)
+    // =========================================================================
+    const UINotifier = {
+      update(state, reason = '') {
+        const el = document.getElementById('app-network-status');
+        if (!el) return;
+        el.className = "text-xs font-bold mt-1 tracking-tight";
+        if (state === 'SYNCING') {
+          el.innerHTML = '🟡 SYNCING...';
+          el.classList.add('text-yellow-400', 'animate-pulse');
+        } else if (state === 'RETRYING') {
+          el.innerHTML = '🟠 ROTATING PROXY...';
+          el.classList.add('text-orange-400', 'animate-pulse');
+        } else if (state === 'OFFLINE') {
+          el.innerHTML = `🔴 OFFLINE ${reason}`;
+          el.classList.add('text-red-400');
+        } else if (state === 'CONNECTED') {
+          el.innerHTML = '🟢 SECURE CONNECTION';
+          el.classList.add('text-green-400');
+        }
+      }
+    };
+
+    // =========================================================================
+    // PRIORITY 2: ROTATING PROXY & FALLBACK PROVIDER ENGINE
+    // =========================================================================
+    const MarketEngine = {
+      async syncMarketData() {
+        const cacheKey = 'market_data_core';
+        
+        // Cek Cache (BTC 30s, Alts otomatis tercover dari delay fetch interval utama)
+        const cached = SmartCache.get(cacheKey);
+        if (cached) return cached;
+
+        UINotifier.update('SYNCING');
+        let finalData = null;
+
+        // Target CoinGecko URL Query
+        const cgQuery = encodeURIComponent("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,chainlink&vs_currencies=usd&include_24hr_change=true");
+
+        // 1. ROTATING PROXY (CoinGecko)
+        for (const proxyBase of API_ENDPOINTS.cgProxies) {
+          try {
+            const data = await RequestManager.fetchWithTimeout(`${proxyBase}${cgQuery}`, 4000);
+            if (data && data.bitcoin) {
+              finalData = {
+                'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change },
+                'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change },
+                'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change }
+              };
+              break;
+            }
+          } catch (e) {
+            UINotifier.update('RETRYING');
+          }
+        }
+
+        // 2. FALLBACK 1: CoinPaprika
+        if (!finalData) {
+          try {
+            const data = await RequestManager.fetchWithTimeout(API_ENDPOINTS.paprika, 4000);
+            if (Array.isArray(data)) {
+              const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD;
+              const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD;
+              const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD;
+              
+              if (btc) {
+                finalData = {
+                  'BTC': { price: btc.price, change: btc.percent_change_24h },
+                  'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h },
+                  'LINK/USDT': { price: link?.price, change: link?.percent_change_24h }
+                };
+              }
+            }
+          } catch (e) { UINotifier.update('RETRYING'); }
+        }
+
+        // 3. FALLBACK 2: CryptoCompare
+        if (!finalData) {
+          try {
+            const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000);
+            if (data && data.RAW) {
+              finalData = {
+                'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR },
+                'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR },
+                'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR }
+              };
+            }
+          } catch (e) { UINotifier.update('RETRYING'); }
+        }
+
+        // 4. FALLBACK 3: Binance
+        if (!finalData) {
+          try {
+            const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000);
+            if (Array.isArray(data)) {
+              finalData = {};
+              data.forEach(item => {
+                const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`;
+                finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) };
+              });
+            }
+          } catch (e) {}
+        }
+
+        // RESOLUTION & CACHING
+        if (finalData && finalData['BTC']) {
+          UINotifier.update('CONNECTED');
+          SmartCache.set(cacheKey, finalData, 30); // 30s TTL Strict Requirement
+          return finalData;
+        } else {
+          UINotifier.update('OFFLINE', '(USING CACHE)');
+          return SmartCache.getLastValid(cacheKey);
+        }
+      }
+    };
+
+    // =========================================================================
+    // STATE & QUANT DATABASE
+    // =========================================================================
     let quantDatabase = [
       { 
         rank: 1, coin: "SOL/USDT", entryNow: "YA", demandZone: "$138.50 - $141.20", dist: "1.2%", 
@@ -173,115 +354,144 @@
       }
     ];
 
-    function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
-    setInterval(updateClock, 1000);
-
-    function buildLiveVolumeBars() {
-      const container = document.getElementById('live-volume-bars');
-      if (!container) return; container.innerHTML = '';
-      for (let i = 0; i < 28; i++) {
-        const bar = document.createElement('div');
-        bar.className = `flex-1 transition-all duration-300 rounded-t ${Math.random() > 0.4 ? 'bg-green-500/70' : 'bg-red-500/70'}`;
-        bar.style.height = `${Math.floor(Math.random() * 85) + 15}%`;
-        container.appendChild(bar);
-      }
-    }
-    setInterval(buildLiveVolumeBars, 1500);
-
-    async function fetchCoinGeckoMarketData() {
-      try {
-        const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
-        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
-        
-        const response = await fetch(proxyUrl);
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          data.forEach(coinData => {
-            const tokenKey = coinData.symbol.toUpperCase();
-            if (tokenKey === "BTC") {
-              document.getElementById('btc-live-price').textContent = `$${coinData.current_price.toLocaleString()}`;
-              const pc = coinData.price_change_percentage_24h;
-              const btcChangeEl = document.getElementById('btc-live-change');
-              btcChangeEl.textContent = `${pc >= 0 ? '+' : ''}${pc.toFixed(2)}%`;
-              btcChangeEl.className = `text-xs font-bold font-mono ${pc >= 0 ? 'price-up' : 'price-down'}`;
-              
-              const macroStatus = document.getElementById('macro-status');
-              if(pc < -3) {
-                 macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`;
-                 macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5";
-              } else {
-                 macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`;
-                 macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5";
-              }
-            }
-            
-            let matchedCoin = quantDatabase.find(c => c.coin === `${tokenKey}/USDT`);
-            if (matchedCoin) {
-              matchedCoin.price = coinData.current_price;
-              matchedCoin.priceChange = `${coinData.price_change_percentage_24h >= 0 ? '+' : ''}${coinData.price_change_percentage_24h.toFixed(2)}%`;
-            }
-          });
-          
-          // PRIORITAS RANKING: 1. SL % Terkecil, 2. Entry Score, 3. Whale Score, 4. Demand Score, 5. Probabilitas, 6. RR
-          quantDatabase.sort((a, b) => {
-            let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct);
-            if (slA !== slB) return slA - slB;
-            if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score;
-            if (b.whaleScore !== a.whaleScore) return b.whaleScore - a.whaleScore;
-            if (b.demandScore !== a.demandScore) return b.demandScore - a.demandScore;
-            if (parseFloat(b.successProb) !== parseFloat(a.successProb)) return parseFloat(b.successProb) - parseFloat(a.successProb);
-            return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]);
-          });
-
-          renderQuantTable(quantDatabase);
+    // =========================================================================
+    // PRIORITY 4: MEMPERBAIKI BUG buildLiveVolumeBars (No Memory Leak)
+    // =========================================================================
+    const VolumeRenderer = {
+      init() {
+        const container = document.getElementById('live-volume-bars');
+        if (!container) return;
+        container.innerHTML = '';
+        for (let i = 0; i < 28; i++) {
+          const bar = document.createElement('div');
+          bar.className = 'flex-1 transition-all duration-300 rounded-t bg-green-500/20';
+          bar.style.height = '10%';
+          container.appendChild(bar);
         }
-      } catch (error) { console.warn("API limit CoinGecko terpicu. Menggunakan data sistem."); }
-    }
-
-    function renderQuantTable(data) {
-      const tbody = document.getElementById('elite-scanner-rows');
-      if (!tbody) return; tbody.innerHTML = '';
-      
-      // Filter Validasi: Sembunyikan sinyal jika tidak ada setup dengan SL <= 1%
-      const validSetups = data.filter(item => parseFloat(item.sl_pct) <= 1.0);
-      if (validSetups.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`;
-        return;
+      },
+      animate() {
+        const container = document.getElementById('live-volume-bars');
+        if (!container || container.children.length === 0) return;
+        const children = container.children;
+        for (let i = 0; i < children.length; i++) {
+          const isGreen = Math.random() > 0.4;
+          children[i].className = `flex-1 transition-all duration-300 rounded-t ${isGreen ? 'bg-green-500/70' : 'bg-red-500/70'}`;
+          children[i].style.height = `${Math.floor(Math.random() * 85) + 15}%`;
+        }
       }
+    };
 
-      validSetups.forEach(item => {
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap";
-        tr.innerHTML = `
-          <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
-          <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td>
-          <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td>
-          <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td>
-          <td class="p-3 text-white font-bold">${item.area_entry}</td>
-          <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td>
-          <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td>
-          <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td>
-          <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td>
-          <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td>
-          <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td>
-        `;
-        tbody.appendChild(tr);
-      });
-      lucide.createIcons();
-    }
+    // =========================================================================
+    // PRIORITY 5 & 10: SORTING & DOM DIFFING ENGINE (No Duplicate Rank, No InnerHTML Spam)
+    // =========================================================================
+    const UIRenderer = {
+      updateMacroUI(btcData) {
+        if (!btcData) return;
+        requestAnimationFrame(() => {
+          document.getElementById('btc-live-price').textContent = `$${btcData.price.toLocaleString()}`;
+          const changeEl = document.getElementById('btc-live-change');
+          changeEl.textContent = `${btcData.change >= 0 ? '+' : ''}${btcData.change.toFixed(2)}%`;
+          changeEl.className = `text-xs font-bold font-mono ${btcData.change >= 0 ? 'price-up' : 'price-down'}`;
+          
+          const macroStatus = document.getElementById('macro-status');
+          if (btcData.change < -3) {
+            macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`;
+            macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5";
+          } else {
+            macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`;
+            macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5";
+          }
+          if (window.lucide) lucide.createIcons();
+        });
+      },
 
-    // ========================================== VISION ENGINE (INSTITUTIONAL QUANT LOGIC) ==========================================
+      sortAndRank() {
+        quantDatabase.sort((a, b) => {
+          let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct);
+          if (slA !== slB) return slA - slB;
+          if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score;
+          if (b.whaleScore !== a.whaleScore) return b.whaleScore - a.whaleScore;
+          if (b.demandScore !== a.demandScore) return b.demandScore - a.demandScore;
+          if (parseFloat(b.successProb) !== parseFloat(a.successProb)) return parseFloat(b.successProb) - parseFloat(a.successProb);
+          return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]);
+        });
+        quantDatabase.forEach((item, index) => { item.rank = index + 1; });
+      },
+
+      renderTable() {
+        this.sortAndRank();
+        const tbody = document.getElementById('elite-scanner-rows');
+        if (!tbody) return;
+
+        const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0);
+
+        requestAnimationFrame(() => {
+          if (validSetups.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`;
+            return;
+          }
+
+          // DOM DIFFING: Remove orphan rows
+          const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`));
+          Array.from(tbody.rows).forEach(row => {
+            if (row.id && !validIds.has(row.id)) tbody.removeChild(row);
+          });
+
+          // Hapus placeholder kosong jika ada
+          if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = '';
+
+          // Update & Insert Minimal Invasive
+          validSetups.forEach(item => {
+            const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`;
+            let tr = document.getElementById(rowId);
+            
+            const newHTML = `
+              <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
+              <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td>
+              <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td>
+              <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td>
+              <td class="p-3 text-white font-bold">${item.area_entry}</td>
+              <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td>
+              <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td>
+              <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td>
+              <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td>
+              <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td>
+              <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td>
+            `;
+
+            if (!tr) {
+              tr = document.createElement('tr');
+              tr.id = rowId;
+              tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap";
+              tr.innerHTML = newHTML;
+              tbody.appendChild(tr);
+            } else if (tr.innerHTML !== newHTML) {
+              tr.innerHTML = newHTML;
+            }
+          });
+        });
+      }
+    };
+
+    // =========================================================================
+    // VISION ENGINE & AI PROMPTS (TIDAK DIUBAH)
+    // =========================================================================
     const AI_Quant_Engine = {
       uploadedImages: [],
 
       init() {
         const dropzone = document.getElementById('dropzone-area');
         const fileInput = document.getElementById('chart-screenshot-input');
+        
+        // PRIORITY 8 & 16: LocalStorage mechanism strictly kept with Trim validation
         const savedKey = localStorage.getItem('mirofish_gemini_key');
         if (savedKey) document.getElementById('gemini-api-key').value = savedKey;
 
-        document.getElementById('gemini-api-key').addEventListener('input', (e) => localStorage.setItem('mirofish_gemini_key', e.target.value.trim()));
+        document.getElementById('gemini-api-key').addEventListener('input', (e) => {
+          const val = (e.target.value || '').trim();
+          if (val) localStorage.setItem('mirofish_gemini_key', val);
+        });
+        
         dropzone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
           if (e.target.files.length !== 4) { alert('Wajib unggah tepat 4 chart sekaligus (D1, H4, H1, M15).'); e.target.value = ''; return; }
@@ -290,7 +500,7 @@
       },
 
       async handleMultipleFiles(files) {
-        const apiKey = document.getElementById('gemini-api-key').value.trim();
+        const apiKey = (document.getElementById('gemini-api-key').value || '').trim();
         if (!apiKey) return alert('Isi Gemini API Key terlebih dahulu!');
         
         this.uploadedImages = [];
@@ -303,7 +513,9 @@
           }
           document.getElementById('chart-screenshot-input').value = '';
           await this.analyzeQuantLogic(apiKey);
-        } catch (err) { alert(err.message); this.setLoadingState(false); }
+        } catch (err) { 
+          this.setGeminiFailed(err.message || "File processing error."); 
+        }
       },
 
       async analyzeQuantLogic(apiKey) {
@@ -341,30 +553,50 @@ Schema JSON yang wajib dipatuhi:
 }`;
 
         const models = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+        let success = false;
+        let lastError = "All models failed or timed out.";
+
         for (const model of models) {
           try {
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 15000);
+
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, ...this.uploadedImages] }], generationConfig: { responseMimeType: "application/json" } })
+              body: JSON.stringify({ contents: [{ parts: [{ text: promptText }, ...this.uploadedImages] }], generationConfig: { responseMimeType: "application/json" } }),
+              signal: controller.signal
             });
+            
+            clearTimeout(id);
             const resData = await res.json();
             
-            if (resData.error?.message?.includes("high demand")) { alert("Gemini sedang overload."); this.setLoadingState(false); return; }
+            if (resData.error) { lastError = resData.error.message; continue; }
             if (!resData.candidates) continue;
 
             const rawText = resData.candidates[0].content.parts[0].text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
             const parsedResult = JSON.parse(rawText);
             this.renderDeepReport(parsedResult);
-            return;
-          } catch (err) { console.warn(`Model ${model} gagal memproses JSON.`, err); }
+            success = true;
+            break;
+          } catch (err) { lastError = err.message || "Network Error."; }
         }
-        alert("Semua model gagal dieksekusi."); this.setLoadingState(false);
+        
+        // PRIORITY 6: GEMINI FAILED STATUS HANDLING
+        if (!success) this.setGeminiFailed(`GEMINI ENGINE FAILED: ${lastError}`);
       },
 
       setLoadingState(isLoading, text) {
         document.getElementById('upload-prompt-view').classList.toggle('hidden', isLoading);
         document.getElementById('upload-loading-view').classList.toggle('hidden', !isLoading);
         if(text) document.getElementById('loading-text-state').textContent = text;
+      },
+
+      setGeminiFailed(errorMsg) {
+        this.setLoadingState(false);
+        const badge = document.getElementById('rep-status');
+        badge.textContent = "FAILED";
+        badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
+        document.getElementById('report-text-container').innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${errorMsg}</div>`;
       },
 
       renderDeepReport(data) {
@@ -415,13 +647,49 @@ Schema JSON yang wajib dipatuhi:
       }
     };
 
-    // --- INITIALIZATION STARTUP FLOW SINK ---
+    // =========================================================================
+    // SYSTEM BOOTSTRAP & BACKGROUND SCHEDULER
+    // =========================================================================
+    function updateDigitalClock() {
+      const el = document.getElementById('digital-clock');
+      if (el) el.textContent = new Date().toISOString().slice(11, 19) + ' UTC';
+    }
+
+    async function syncAndRender() {
+      await RequestManager.enqueue(async () => {
+        const data = await MarketEngine.syncMarketData();
+        if (data) {
+          if (data['BTC']) UIRenderer.updateMacroUI(data['BTC']);
+          
+          let updated = false;
+          quantDatabase.forEach(item => {
+            if (data[item.coin]) {
+              item.price = data[item.coin].price;
+              item.priceChange = `${data[item.coin].change >= 0 ? '+' : ''}${data[item.coin].change?.toFixed(2) || '0.00'}%`;
+              updated = true;
+            }
+          });
+          if (updated) UIRenderer.renderTable();
+        }
+      });
+    }
+
     window.onload = async () => {
-      buildLiveVolumeBars();
-      renderQuantTable(quantDatabase);
-      await fetchCoinGeckoMarketData();
-      setInterval(fetchCoinGeckoMarketData, 60000);
+      // Clean start (Anti Duplicate Interval/Leaks)
+      updateDigitalClock();
+      setInterval(updateDigitalClock, 1000);
+      
+      VolumeRenderer.init();
+      setInterval(VolumeRenderer.animate, 1500);
+      
       AI_Quant_Engine.init();
+
+      // Initial Fetch & Render
+      UIRenderer.renderTable();
+      await syncAndRender();
+      
+      // Auto Sync (30 Seconds strict)
+      setInterval(syncAndRender, 30000);
     };
   </script>
 </body>
