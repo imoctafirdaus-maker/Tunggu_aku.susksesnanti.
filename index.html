@@ -25,7 +25,6 @@
 
   <div class="w-full max-w-7xl space-y-4">
     
-    <!-- HEADER -->
     <div class="glass-panel rounded-2xl p-4 border border-white/5">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
@@ -39,12 +38,11 @@
           <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
             <i data-lucide="clock" class="w-3 h-3 text-green-400"></i> <span id="digital-clock">00:00:00 UTC</span>
           </span>
-          <div id="app-network-status" class="text-xs text-green-400 font-bold mt-1 tracking-tight animate-pulse">● CONNECTED</div>
+          <div class="text-xs text-green-400 font-bold mt-1 tracking-tight animate-pulse">● Quant Filters Active</div>
         </div>
       </div>
     </div>
 
-    <!-- MACRO ANALYSIS (BTC/USDT.D) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 neon-border-green bg-gradient-to-b from-emerald-950/10 to-transparent space-y-4">
       <div class="bg-gradient-to-r from-red-950/20 to-black/40 p-4 rounded-xl border border-red-500/20 neon-border-orange">
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -72,7 +70,6 @@
         </div>
       </div>
 
-      <!-- FILTERED QUANT TABLE -->
       <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3 mt-4">
         <div>
           <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
@@ -100,13 +97,11 @@
             </tr>
           </thead>
           <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
-            <!-- Data Injected Here -->
-          </tbody>
+            </tbody>
         </table>
       </div>
     </div>
 
-    <!-- AI VISION ENGINE (THE BRAIN) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div class="flex items-center gap-2">
@@ -122,7 +117,6 @@
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <!-- UPLOAD SECTION -->
         <div class="space-y-3 bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col">
           <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Multi-TF Input (D1, H4, H1, M15)</span>
           <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40 flex-1 flex flex-col justify-center">
@@ -139,7 +133,6 @@
           </div>
         </div>
 
-        <!-- REPORT SECTION -->
         <div class="bg-zinc-900/60 p-4 rounded-xl border border-yellow-500/10 flex flex-col h-[520px]">
           <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
             <span class="text-[11px] uppercase font-bold text-yellow-400 tracking-wider flex items-center gap-1">
@@ -159,8 +152,6 @@
   <script>
     // ========================================== GLOBAL STATE & QUANT DB ==========================================
     let marketRegime = {}, btcContext = {}, oiScore = {}, whaleScore = {}, fundingScore = {};
-    let btcIntervalId = null;
-    let coinIntervalId = null;
 
     let quantDatabase = [
       { 
@@ -175,305 +166,106 @@
       }
     ];
 
-    // ========================================== CORE OPTIMIZATION LAYER ==========================================
-    
-    class CacheManager {
-      static cache = new Map();
-      static set(key, value, ttlSeconds = 30) {
-        this.cache.set(key, { value, expiry: Date.now() + (ttlSeconds * 1000) });
-      }
-      static get(key) {
-        if (!this.cache.has(key)) return null;
-        const item = this.cache.get(key);
-        if (Date.now() > item.expiry) return null;
-        return item.value;
-      }
-      static getLastValid(key) {
-        return this.cache.has(key) ? this.cache.get(key).value : null;
+    function updateClock() { document.getElementById('digital-clock').textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
+    setInterval(updateClock, 1000);
+
+    function buildLiveVolumeBars() {
+      const container = document.getElementById('live-volume-bars');
+      if (!container) return; container.innerHTML = '';
+      for (let i = 0; i < 28; i++) {
+        const bar = document.createElement('div');
+        bar.className = `flex-1 transition-all duration-300 rounded-t ${Math.random() > 0.4 ? 'bg-green-500/70' : 'bg-red-500/70'}`;
+        bar.style.height = `${Math.floor(Math.random() * 85) + 15}%`;
+        container.appendChild(bar);
       }
     }
+    setInterval(buildLiveVolumeBars, 1500);
 
-    class NotificationSystem {
-      static update(state) {
-        const el = document.getElementById('app-network-status');
-        if (!el) return;
-        el.className = "text-xs font-bold mt-1 tracking-tight";
-        if (state === 'CONNECTING') { el.innerHTML = '🟡 SYNCING...'; el.classList.add('text-yellow-400', 'animate-pulse'); }
-        else if (state === 'RETRYING') { el.innerHTML = '🟠 RETRYING...'; el.classList.add('text-orange-400', 'animate-pulse'); }
-        else if (state === 'OFFLINE') { el.innerHTML = '🔴 OFFLINE MODE (CACHE)'; el.classList.add('text-red-400'); }
-        else if (state === 'CONNECTED') { el.innerHTML = '🟢 CONNECTED'; el.classList.add('text-green-400'); }
-      }
-    }
-
-    class RequestManager {
-      static queue = Promise.resolve();
-      
-      static async fetchWithRetry(url, options = {}, retries = 3, timeoutMs = 5000) {
-        const delays = [500, 1000, 2000];
-        for (let i = 0; i < retries; i++) {
-          const controller = new AbortController();
-          const id = setTimeout(() => controller.abort(), timeoutMs);
-          try {
-            const response = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(id);
-            if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-            return await response.json();
-          } catch (err) {
-            clearTimeout(id);
-            if (i === retries - 1) throw err;
-            NotificationSystem.update('RETRYING');
-            await new Promise(res => setTimeout(res, delays[i]));
-          }
-        }
-      }
-
-      static enqueue(task) {
-        this.queue = this.queue.then(() => task()).catch(() => {});
-        return this.queue;
-      }
-    }
-
-    // ========================================== API LAYER (PROFESSIONAL FALLBACK) ==========================================
-
-    class APIProviders {
-      static async getCoinGecko(ids) {
-        const url = `https://api.coingecko.com/api/v3/simple/price?ids=${ids.join(',')}&vs_currencies=usd&include_24hr_change=true`;
-        const data = await RequestManager.fetchWithRetry(url, {}, 1, 3000); // Fail fast to fallback
-        let result = {};
-        for (const [key, val] of Object.entries(data)) {
-          result[key.toUpperCase()] = { price: val.usd, change: val.usd_24h_change };
-        }
-        return result;
-      }
-
-      static async getCryptoCompare(fsyms) {
-        const url = `https://min-api.cryptocompare.com/data/pricemultifull?fsyms=${fsyms.join(',')}&tsyms=USD`;
-        const data = await RequestManager.fetchWithRetry(url, {}, 1, 3000);
-        let result = {};
-        if(data.RAW) {
-          for (const [key, val] of Object.entries(data.RAW)) {
-            result[key] = { price: val.USD.PRICE, change: val.USD.CHANGEPCT24HOUR };
-          }
-        }
-        return result;
-      }
-
-      static async getBinance(symbols) {
-        const symStr = JSON.stringify(symbols);
-        const url = `https://api.binance.com/api/v3/ticker/24hr?symbols=${symStr}`;
-        const data = await RequestManager.fetchWithRetry(url, {}, 2, 4000);
-        let result = {};
-        data.forEach(val => {
-          let cleanKey = val.symbol.replace('USDT', '');
-          result[cleanKey] = { price: parseFloat(val.lastPrice), change: parseFloat(val.priceChangePercent) };
-        });
-        return result;
-      }
-    }
-
-    class MarketRepository {
-      static cgMap = { "BTC": "bitcoin", "SOL/USDT": "solana", "LINK/USDT": "chainlink" };
-      
-      static async fetchMarketData(symbolsRaw) {
-        const cacheKey = `market_${symbolsRaw.join('_')}`;
-        const cachedData = CacheManager.get(cacheKey);
-        if (cachedData) return cachedData;
-
-        NotificationSystem.update('CONNECTING');
-        let finalData = {};
-        let success = false;
-
-        // Clean symbols
-        const cleanSymbols = symbolsRaw.map(s => s.replace('/USDT', ''));
-        const cgIds = symbolsRaw.map(s => this.cgMap[s]).filter(Boolean);
-        const binanceSymbols = cleanSymbols.map(s => `${s}USDT`);
-
-        // Priority 1: CoinGecko
-        try {
-          if (cgIds.length > 0) {
-            const data = await APIProviders.getCoinGecko(cgIds);
-            symbolsRaw.forEach(s => {
-               let cgKey = this.cgMap[s].toUpperCase();
-               if(data[cgKey]) finalData[s] = data[cgKey];
-            });
-            success = Object.keys(finalData).length > 0;
-          }
-        } catch (e) {}
-
-        // Priority 2: CryptoCompare
-        if (!success) {
-          try {
-            const data = await APIProviders.getCryptoCompare(cleanSymbols);
-            symbolsRaw.forEach(s => {
-               let ccKey = s.replace('/USDT','');
-               if(data[ccKey]) finalData[s] = data[ccKey];
-            });
-            success = Object.keys(finalData).length > 0;
-          } catch (e) {}
-        }
-
-        // Priority 3: Binance
-        if (!success) {
-          try {
-            const data = await APIProviders.getBinance(binanceSymbols);
-            symbolsRaw.forEach(s => {
-               let bKey = s.replace('/USDT','');
-               if(data[bKey]) finalData[s] = data[bKey];
-            });
-            success = Object.keys(finalData).length > 0;
-          } catch (e) {}
-        }
-
-        // Output Handler
-        if (success) {
-          CacheManager.set(cacheKey, finalData, 30);
-          NotificationSystem.update('CONNECTED');
-          return finalData;
-        } else {
-          NotificationSystem.update('OFFLINE');
-          return CacheManager.getLastValid(cacheKey) || {};
-        }
-      }
-    }
-
-    // ========================================== RENDER OPTIMIZATION (DOM DIFFING) ==========================================
-    
-    class UIRenderer {
-      static updateBTC(data) {
-        if (!data) return;
-        requestAnimationFrame(() => {
-          document.getElementById('btc-live-price').textContent = `$${data.price.toLocaleString()}`;
-          const changeEl = document.getElementById('btc-live-change');
-          changeEl.textContent = `${data.change >= 0 ? '+' : ''}${data.change.toFixed(2)}%`;
-          changeEl.className = `text-xs font-bold font-mono ${data.change >= 0 ? 'price-up' : 'price-down'}`;
-          
-          const macroStatus = document.getElementById('macro-status');
-          if(data.change < -3) {
-             macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`;
-             macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5";
-          } else {
-             macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`;
-             macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5";
-          }
-          lucide.createIcons();
-        });
-      }
-
-      static renderTable(data) {
-        const tbody = document.getElementById('elite-scanner-rows');
-        if (!tbody) return;
-
-        const validSetups = data.filter(item => parseFloat(item.sl_pct) <= 1.0);
+    async function fetchCoinGeckoMarketData() {
+      try {
+        const targetUrl = 'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=40&page=1&sparkline=false';
+        const proxyUrl = `https://api.allorigins.win/raw?url=${encodeURIComponent(targetUrl)}`;
         
-        requestAnimationFrame(() => {
-          if (validSetups.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`;
-            return;
-          }
-
-          if (tbody.children.length === 1 && tbody.firstElementChild.innerText.includes("TIDAK ADA SETUP")) {
-            tbody.innerHTML = '';
-          }
-
-          validSetups.forEach(item => {
-            const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`;
-            let tr = document.getElementById(rowId);
-
-            if (!tr) {
-              tr = document.createElement('tr');
-              tr.id = rowId;
-              tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap";
-              tr.innerHTML = `
-                <td class="p-3 text-center text-yellow-400 font-bold rank-col">${item.rank}</td>
-                <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td>
-                <td class="p-3 text-gray-200">
-                   $<span class="price-col">${item.price ? item.price.toLocaleString() : '-'}</span> <br>
-                   <span class="change-col text-[10px] ${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'}">${item.priceChange || ''}</span>
-                </td>
-                <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td>
-                <td class="p-3 text-white font-bold">${item.area_entry}</td>
-                <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td>
-                <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td>
-                <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td>
-                <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td>
-                <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td>
-                <td class="p-3 text-right text-yellow-400 font-semibold timing-col">${item.timing}</td>
-              `;
-              tbody.appendChild(tr);
-            } else {
-              // DOM DIFFING: Update only needed text nodes (No full innerHTML overwrite)
-              tr.querySelector('.rank-col').textContent = item.rank;
-              tr.querySelector('.price-col').textContent = item.price ? item.price.toLocaleString() : '-';
+        const response = await fetch(proxyUrl);
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          data.forEach(coinData => {
+            const tokenKey = coinData.symbol.toUpperCase();
+            if (tokenKey === "BTC") {
+              document.getElementById('btc-live-price').textContent = `$${coinData.current_price.toLocaleString()}`;
+              const pc = coinData.price_change_percentage_24h;
+              const btcChangeEl = document.getElementById('btc-live-change');
+              btcChangeEl.textContent = `${pc >= 0 ? '+' : ''}${pc.toFixed(2)}%`;
+              btcChangeEl.className = `text-xs font-bold font-mono ${pc >= 0 ? 'price-up' : 'price-down'}`;
               
-              const changeEl = tr.querySelector('.change-col');
-              changeEl.textContent = item.priceChange || '';
-              changeEl.className = `change-col text-[10px] ${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'}`;
-              tr.querySelector('.timing-col').textContent = item.timing;
-              
-              // Move existing row to correct sorted position
-              tbody.appendChild(tr); 
+              const macroStatus = document.getElementById('macro-status');
+              if(pc < -3) {
+                 macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`;
+                 macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5";
+              } else {
+                 macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`;
+                 macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5";
+              }
             }
-          });
-        });
-      }
-    }
-
-    class ScannerEngine {
-      static sortDatabase() {
-        let hasChanges = false;
-        const oldOrder = quantDatabase.map(c => c.coin).join(',');
-        
-        quantDatabase.sort((a, b) => {
-          let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct);
-          if (slA !== slB) return slA - slB;
-          if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score;
-          if (b.whaleScore !== a.whaleScore) return b.whaleScore - a.whaleScore;
-          if (b.demandScore !== a.demandScore) return b.demandScore - a.demandScore;
-          if (parseFloat(b.successProb) !== parseFloat(a.successProb)) return parseFloat(b.successProb) - parseFloat(a.successProb);
-          return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]);
-        });
-
-        // HILANGKAN BUG RANK GANDA: Pastikan sinkron sesuai index baru
-        quantDatabase.forEach((item, index) => { item.rank = index + 1; });
-        
-        const newOrder = quantDatabase.map(c => c.coin).join(',');
-        if (oldOrder !== newOrder) hasChanges = true;
-        
-        return hasChanges;
-      }
-    }
-
-    // ========================================== CONTROLLER SCHEDULER ==========================================
-
-    async function updateBTCData() {
-      await RequestManager.enqueue(async () => {
-        const data = await MarketRepository.fetchMarketData(['BTC']);
-        if (data && data['BTC']) {
-          UIRenderer.updateBTC(data['BTC']);
-        }
-      });
-    }
-
-    async function updateAltcoinData() {
-      await RequestManager.enqueue(async () => {
-        const symbols = quantDatabase.map(c => c.coin);
-        const data = await MarketRepository.fetchMarketData(symbols);
-        if (data) {
-          let priceChanged = false;
-          quantDatabase.forEach(item => {
-            if (data[item.coin]) {
-              item.price = data[item.coin].price;
-              item.priceChange = `${data[item.coin].change >= 0 ? '+' : ''}${data[item.coin].change.toFixed(2)}%`;
-              priceChanged = true;
+            
+            let matchedCoin = quantDatabase.find(c => c.coin === `${tokenKey}/USDT`);
+            if (matchedCoin) {
+              matchedCoin.price = coinData.current_price;
+              matchedCoin.priceChange = `${coinData.price_change_percentage_24h >= 0 ? '+' : ''}${coinData.price_change_percentage_24h.toFixed(2)}%`;
             }
           });
           
-          if (priceChanged) {
-             ScannerEngine.sortDatabase(); // Rank otomatis terupdate
-             UIRenderer.renderTable(quantDatabase); // Render teroptimasi
-          }
+          // PRIORITAS RANKING: 1. SL % Terkecil, 2. Entry Score, 3. Whale Score, 4. Demand Score, 5. Probabilitas, 6. RR
+          quantDatabase.sort((a, b) => {
+            let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct);
+            if (slA !== slB) return slA - slB;
+            if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score;
+            if (b.whaleScore !== a.whaleScore) return b.whaleScore - a.whaleScore;
+            if (b.demandScore !== a.demandScore) return b.demandScore - a.demandScore;
+            if (parseFloat(b.successProb) !== parseFloat(a.successProb)) return parseFloat(b.successProb) - parseFloat(a.successProb);
+            return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]);
+          });
+          
+          // BUG FIX 1: UPDATE RANKING BERDASARKAN HASIL SORT TERBARU
+          quantDatabase.forEach((item, index) => { 
+            item.rank = index + 1; 
+          });
+
+          renderQuantTable(quantDatabase);
         }
+      } catch (error) { console.warn("API limit CoinGecko terpicu. Menggunakan data sistem."); }
+    }
+
+    function renderQuantTable(data) {
+      const tbody = document.getElementById('elite-scanner-rows');
+      if (!tbody) return; tbody.innerHTML = '';
+      
+      const validSetups = data.filter(item => parseFloat(item.sl_pct) <= 1.0);
+      if (validSetups.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`;
+        return;
+      }
+
+      validSetups.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap";
+        tr.innerHTML = `
+          <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td>
+          <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td>
+          <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td>
+          <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td>
+          <td class="p-3 text-white font-bold">${item.area_entry}</td>
+          <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td>
+          <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td>
+          <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td>
+          <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td>
+          <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td>
+          <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td>
+        `;
+        tbody.appendChild(tr);
       });
+      lucide.createIcons();
     }
 
     // ========================================== VISION ENGINE (INSTITUTIONAL QUANT LOGIC) ==========================================
@@ -486,12 +278,7 @@
         const savedKey = localStorage.getItem('mirofish_gemini_key');
         if (savedKey) document.getElementById('gemini-api-key').value = savedKey;
 
-        document.getElementById('gemini-api-key').addEventListener('input', (e) => {
-          // SECURITY VALIDATION
-          const val = (e.target.value || '').trim();
-          if (val) localStorage.setItem('mirofish_gemini_key', val);
-        });
-        
+        document.getElementById('gemini-api-key').addEventListener('input', (e) => localStorage.setItem('mirofish_gemini_key', e.target.value.trim()));
         dropzone.addEventListener('click', () => fileInput.click());
         fileInput.addEventListener('change', (e) => {
           if (e.target.files.length !== 4) { alert('Wajib unggah tepat 4 chart sekaligus (D1, H4, H1, M15).'); e.target.value = ''; return; }
@@ -500,7 +287,7 @@
       },
 
       async handleMultipleFiles(files) {
-        const apiKey = (document.getElementById('gemini-api-key').value || '').trim();
+        const apiKey = document.getElementById('gemini-api-key').value.trim();
         if (!apiKey) return alert('Isi Gemini API Key terlebih dahulu!');
         
         this.uploadedImages = [];
@@ -517,7 +304,7 @@
       },
 
       async analyzeQuantLogic(apiKey) {
-        // PERTAHANKAN SELURUH PROMPT LAMA
+        // TUGAS: Penambahan Prompt Lengkap (Macro, Liquidity, ATR, SM Checklist, Auto Reject, dll)
         const promptText = `Bertindaklah sebagai Institutional Quant Trader, Smart Money Analyst, ICT Trader, dan AI Crypto Screening System.
 Menganalisis 4 chart (D1, H4, H1, M15) secara ketat berdasarkan aturan MODUL 14 — ULTRA LOW RISK ENTRY & TIGHT STOP LOSS FILTER.
 Prioritas utama: Risiko ultra ketat dengan Stop Loss maksimal 1%. Jika membutuhkan SL > 1%, kembalikan status AVOID. Jika tidak ditemukan setup dengan SL <= 1%, keluarkan pesan "TIDAK ADA SETUP BERKUALITAS SAAT INI".
@@ -605,16 +392,16 @@ Schema JSON yang wajib dipatuhi:
             });
             const resData = await res.json();
             
-            if (resData.error) { NotificationSystem.update('RETRYING'); continue; }
+            if (resData.error?.message?.includes("high demand")) { alert("Gemini sedang overload."); this.setLoadingState(false); return; }
             if (!resData.candidates) continue;
 
             const rawText = resData.candidates[0].content.parts[0].text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim();
             const parsedResult = JSON.parse(rawText);
             this.renderDeepReport(parsedResult);
             return;
-          } catch (err) { console.warn(`Model ${model} fallback.`, err); }
+          } catch (err) { console.warn(`Model ${model} gagal memproses JSON.`, err); }
         }
-        alert("Semua model gagal dieksekusi. API Key mungkin limit."); this.setLoadingState(false);
+        alert("Semua model gagal dieksekusi."); this.setLoadingState(false);
       },
 
       setLoadingState(isLoading, text) {
@@ -627,6 +414,7 @@ Schema JSON yang wajib dipatuhi:
         const container = document.getElementById('report-text-container');
         const badge = document.getElementById('rep-status');
         
+        // TUGAS 13: AUTO REJECT ENGINE LOGIC VALIDATION
         if (data.status === "NO TRADE" || data.status === "Avoid" || data.error_message || (data.final_recommendation && parseFloat(data.final_recommendation.sl_distance_pct) > 1.0)) {
           badge.textContent = data.status || "AVOID";
           badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
@@ -640,6 +428,7 @@ Schema JSON yang wajib dipatuhi:
 
         const rec = data.final_recommendation || {};
         
+        // TUGAS 11, 12, 14: EXPAND JSON OUTPUT (APPENDING TO PREVIOUS HTML)
         container.innerHTML = `
           <div class="border-b border-white/10 pb-2 mb-2">
             <h3 class="text-green-400 font-bold text-sm">${data.pair || 'CRYPTO/USDT'} | MODUL 14 MATRIX</h3>
@@ -706,24 +495,12 @@ Schema JSON yang wajib dipatuhi:
       }
     };
 
-    function startBackgroundEngines() {
-      // Clear memory jika diinisialisasi ulang
-      if (btcIntervalId) clearInterval(btcIntervalId);
-      if (coinIntervalId) clearInterval(coinIntervalId);
-
-      updateBTCData();
-      updateAltcoinData();
-
-      btcIntervalId = setInterval(updateBTCData, 30000); // 30 detik
-      coinIntervalId = setInterval(updateAltcoinData, 60000); // 60 detik
-    }
-
     // --- INITIALIZATION STARTUP FLOW SINK ---
-    window.onload = () => {
+    window.onload = async () => {
       buildLiveVolumeBars();
-      ScannerEngine.sortDatabase();
-      UIRenderer.renderTable(quantDatabase);
-      startBackgroundEngines();
+      renderQuantTable(quantDatabase);
+      await fetchCoinGeckoMarketData();
+      setInterval(fetchCoinGeckoMarketData, 60000);
       AI_Quant_Engine.init();
     };
   </script>
