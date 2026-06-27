@@ -472,16 +472,20 @@
 
         } catch (error) {
             const errStr = String(error.message || error);
+            const abortReason = String(controller.signal.reason || '');
             
-            // Abort Silent Failures
-            if (error.name === 'AbortError' || errStr.includes('REPLACED') || errStr.includes('RESTARTED') || errStr.includes('REMOVED')) {
+            // Abort Silent Failures HANYA untuk aksi user (Replace, Remove, Restart)
+            const isIntentional = ['REPLACED', 'RESTARTED', 'REMOVED'].some(keyword => errStr.includes(keyword) || abortReason.includes(keyword));
+            
+            if (isIntentional) {
                 console.log(`[Aborted] Pipeline for ${tfId} cancelled dynamically.`);
             } 
             // Real Error Handler
             else {
                 console.error(`[Fatal Error] Logic Engine TF ${tfId}:`, error);
                 if (this.state.tfControllers[tfId] === controller) {
-                    const shortMsg = errStr.includes('TIMEOUT') ? 'TIMEOUT' : (error.message || 'API ERROR');
+                    const isTimeout = error.name === 'AbortError' || errStr.includes('TIMEOUT') || abortReason.includes('TIMEOUT');
+                    const shortMsg = isTimeout ? 'TIMEOUT / JARINGAN TERPUTUS' : (error.message || 'API ERROR');
                     this.updateStatus(tfId, 'Error', shortMsg);
                 }
             }
