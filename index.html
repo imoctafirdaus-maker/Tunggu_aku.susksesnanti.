@@ -136,14 +136,15 @@
         </div>
       </div>
 
-      <div id="ai-monitor-panel" class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/40 p-2 rounded-xl border border-white/5 text-[9px] font-mono text-gray-400">
-        <div>MODEL: <span id="mon-model" class="text-green-400">-</span></div>
-        <div>LATENCY: <span id="mon-latency" class="text-yellow-400">-</span></div>
-        <div>TOKENS: <span id="mon-tokens" class="text-cyan-400">Optimized</span></div>
-        <div>CACHE HIT: <span id="mon-retry" class="text-purple-400">0</span></div>
+      <div class="w-full flex justify-between items-center bg-[#0d0d12] border border-white/5 rounded-xl p-2 px-4 mb-4">
+          <div class="text-[10px] font-mono text-gray-400 flex items-center gap-4 hidden sm:flex">
+             <span id="mon-tokens" class="text-blue-400">Tokens: Optimized</span>
+             <span id="mon-latency" class="text-yellow-400">Latency: -</span>
+             <span>Cache Hits: <span id="mon-retry" class="text-purple-400">0</span></span>
+          </div>
       </div>
 
-      <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+      <div class="bg-black/30 p-4 rounded-xl border border-white/5 mb-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
           <div class="flex gap-4 font-mono text-[10px] font-bold tracking-wider" id="tf-checklists">
             <div id="check-weekly" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> WEEKLY</div>
@@ -162,10 +163,10 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="upload-grid">
-         </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="upload-grid">
+      </div>
 
-      <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-green-500/30 neon-border-green mt-4">
+      <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-green-500/30 neon-border-green mt-6">
         <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
             <span class="text-xs uppercase font-bold text-green-400 tracking-wider flex items-center gap-2">
               <i data-lucide="crosshair" class="w-4 h-4"></i> Final Institutional Report
@@ -174,7 +175,7 @@
         </div>
         
         <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono text-gray-300">
-            </div>
+        </div>
       </div>
 
     </div>
@@ -196,58 +197,12 @@
         let finalData = null; 
         const cgQuery = encodeURIComponent("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,chainlink&vs_currencies=usd&include_24hr_change=true"); 
         let usdtD = 0;
-        try {
-            const cgGlobalQuery = encodeURIComponent("https://api.coingecko.com/api/v3/global");
-            const globalRes = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cgProxies[0]}${cgGlobalQuery}`, 4000);
-            if (globalRes?.data?.market_cap_percentage?.usdt) usdtD = globalRes.data.market_cap_percentage.usdt;
-        } catch (e) {}
-
-        for (const proxyBase of API_ENDPOINTS.cgProxies) { 
-          try { 
-            const data = await RequestManager.fetchWithTimeout(`${proxyBase}${cgQuery}`, 4000); 
-            if (data && data.bitcoin) { 
-              finalData = { 
-                'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change, usdt_d: usdtD }, 
-                'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change }, 
-                'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change } 
-              }; break; 
-            } 
-          } catch (e) { UINotifier.update('RETRYING'); } 
-        } 
-        
-        if (!finalData) { 
-          try { 
-            const data = await RequestManager.fetchWithTimeout(API_ENDPOINTS.paprika, 4000); 
-            if (Array.isArray(data)) { 
-              const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD; 
-              const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD; 
-              const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD; 
-              if (btc) finalData = { 'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } }; 
-            } 
-          } catch (e) { UINotifier.update('RETRYING'); } 
-        } 
-        if (!finalData) { 
-          try { 
-            const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000); 
-            if (data && data.RAW) finalData = { 'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } }; 
-          } catch (e) { UINotifier.update('RETRYING'); } 
-        } 
-        if (!finalData) { 
-          try { 
-            const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000); 
-            if (Array.isArray(data)) { 
-              finalData = {}; 
-              data.forEach(item => { const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; }); 
-              if(finalData['BTC']) finalData['BTC'].usdt_d = usdtD;
-            } 
-          } catch (e) {} 
-        } 
-        
-        if (finalData && finalData['BTC']) { 
-          UINotifier.update('CONNECTED'); SmartCache.set(cacheKey, finalData, 30); return finalData; 
-        } else { 
-          UINotifier.update('OFFLINE', '(USING CACHE)'); return SmartCache.getLastValid(cacheKey); 
-        } 
+        try { const globalRes = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cgProxies[0]}${encodeURIComponent("https://api.coingecko.com/api/v3/global")}`, 4000); if (globalRes?.data?.market_cap_percentage?.usdt) usdtD = globalRes.data.market_cap_percentage.usdt; } catch (e) {}
+        for (const proxyBase of API_ENDPOINTS.cgProxies) { try { const data = await RequestManager.fetchWithTimeout(`${proxyBase}${cgQuery}`, 4000); if (data && data.bitcoin) { finalData = { 'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change, usdt_d: usdtD }, 'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change }, 'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change } }; break; } } catch (e) { UINotifier.update('RETRYING'); } } 
+        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(API_ENDPOINTS.paprika, 4000); if (Array.isArray(data)) { const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD; const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD; const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD; if (btc) finalData = { 'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } }; } } catch (e) { UINotifier.update('RETRYING'); } } 
+        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000); if (data && data.RAW) finalData = { 'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } }; } catch (e) { UINotifier.update('RETRYING'); } } 
+        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000); if (Array.isArray(data)) { finalData = {}; data.forEach(item => { const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; }); if(finalData['BTC']) finalData['BTC'].usdt_d = usdtD; } } catch (e) {} } 
+        if (finalData && finalData['BTC']) { UINotifier.update('CONNECTED'); SmartCache.set(cacheKey, finalData, 30); return finalData; } else { UINotifier.update('OFFLINE', '(USING CACHE)'); return SmartCache.getLastValid(cacheKey); } 
       } 
     };
     
@@ -262,46 +217,31 @@
           const changeEl = document.getElementById('btc-live-change'); 
           changeEl.textContent = `${btcData.change >= 0 ? '+' : ''}${btcData.change.toFixed(2)}%`; 
           changeEl.className = `text-xs font-bold font-mono ${btcData.change >= 0 ? 'price-up' : 'price-down'}`; 
-          
           const macroStatus = document.getElementById('macro-status'); 
           if (btcData.usdt_d) {
-              if (btcData.change < 0 && btcData.usdt_d > 4.5) { 
-                macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: USDT.D ${btcData.usdt_d.toFixed(2)}% & BTC Koreksi`; 
-                macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; 
-              } else { 
-                macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: USDT.D ${btcData.usdt_d.toFixed(2)}%`; 
-                macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; 
-              } 
+              if (btcData.change < 0 && btcData.usdt_d > 4.5) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: USDT.D ${btcData.usdt_d.toFixed(2)}% & BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: USDT.D ${btcData.usdt_d.toFixed(2)}%`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
           } else {
-              if (btcData.change < -3) { 
-                macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`; 
-                macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; 
-              } else { 
-                macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`; 
-                macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; 
-              } 
+              if (btcData.change < -3) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
           }
           if (window.lucide) lucide.createIcons(); 
         }); 
       }, 
-      sortAndRank() { quantDatabase.sort((a, b) => { let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct); if (slA !== slB) return slA - slB; if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score; if (b.whaleScore !== a.whaleScore) return b.whaleScore - a.whaleScore; if (b.demandScore !== a.demandScore) return b.demandScore - a.demandScore; if (parseFloat(b.successProb) !== parseFloat(a.successProb)) return parseFloat(b.successProb) - parseFloat(a.successProb); return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]); }); quantDatabase.forEach((item, index) => { item.rank = index + 1; }); }, renderTable() { this.sortAndRank(); const tbody = document.getElementById('elite-scanner-rows'); if (!tbody) return; const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0); requestAnimationFrame(() => { if (validSetups.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`; return; } const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`)); Array.from(tbody.rows).forEach(row => { if (row.id && !validIds.has(row.id)) tbody.removeChild(row); }); if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = ''; validSetups.forEach(item => { const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`; let tr = document.getElementById(rowId); const newHTML = ` <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td> <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td> <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td> <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td> <td class="p-3 text-white font-bold">${item.area_entry}</td> <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td> <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td> <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td> <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td> <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td> <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td> `; if (!tr) { tr = document.createElement('tr'); tr.id = rowId; tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap"; tr.innerHTML = newHTML; tbody.appendChild(tr); } else if (tr.innerHTML !== newHTML) { tr.innerHTML = newHTML; } }); }); } 
+      sortAndRank() { quantDatabase.sort((a, b) => { let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct); if (slA !== slB) return slA - slB; if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score; return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]); }); quantDatabase.forEach((item, index) => { item.rank = index + 1; }); }, renderTable() { this.sortAndRank(); const tbody = document.getElementById('elite-scanner-rows'); if (!tbody) return; const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0); requestAnimationFrame(() => { if (validSetups.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`; return; } const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`)); Array.from(tbody.rows).forEach(row => { if (row.id && !validIds.has(row.id)) tbody.removeChild(row); }); if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = ''; validSetups.forEach(item => { const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`; let tr = document.getElementById(rowId); const newHTML = ` <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td> <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td> <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td> <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td> <td class="p-3 text-white font-bold">${item.area_entry}</td> <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td> <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td> <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td> <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td> <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td> <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td> `; if (!tr) { tr = document.createElement('tr'); tr.id = rowId; tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap"; tr.innerHTML = newHTML; tbody.appendChild(tr); } else if (tr.innerHTML !== newHTML) { tr.innerHTML = newHTML; } }); }); } 
     };
 
     // =========================================================================
-    // LAYER 2: ENTERPRISE AI QUANT ENGINE (MULTI-TIMEFRAME REFACTOR)
+    // LAYER 2: ENTERPRISE AI QUANT ENGINE (AUDITED & MULTI-THREADED)
     // =========================================================================
 
     class SmartLRUCache {
         constructor(maxSize = 20, ttlMs = 15 * 60 * 1000) {
-            this.cache = new Map();
-            this.maxSize = maxSize;
-            this.ttlMs = ttlMs;
+            this.cache = new Map(); this.maxSize = maxSize; this.ttlMs = ttlMs;
         }
         get(key) {
             if (!this.cache.has(key)) return null;
             const item = this.cache.get(key);
             if (Date.now() > item.expiry) { this.cache.delete(key); return null; }
-            this.cache.delete(key); this.cache.set(key, item); // Move to end (LRU)
+            this.cache.delete(key); this.cache.set(key, item); 
             return item.value;
         }
         set(key, value) {
@@ -314,54 +254,58 @@
     const AI_Quant_Engine = {
       
       config: {
-        timeoutMs: 30000,
+        timeoutMs: 45000,
         maxImageDimension: 1200, 
         imageQuality: 0.75,
-        providers: [
-            { id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }
-        ]
+        providers: [{ id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }]
       },
 
       state: {
-        apiKey: '',
-        discoveredModels: [],
-        activeModel: null,
-        analysisLRU: new SmartLRUCache(20, 15 * 60 * 1000), 
+        apiKey: '', discoveredModels: [], activeModel: null, cacheHits: 0,
         
-        // --- MULTI-TIMEFRAME MEMORY SYSTEM ---
         timeframes: [
-            { id: 'weekly', label: '1W', title: 'Weekly' },
-            { id: 'daily', label: '1D', title: 'Daily' },
+            { id: 'weekly', label: '1W', title: 'WEEKLY' },
+            { id: 'daily', label: '1D', title: 'DAILY' },
             { id: 'h4', label: 'H4', title: 'H4' },
             { id: 'h1', label: 'H1', title: 'H1' },
             { id: 'm15', label: 'M15', title: 'M15' }
         ],
-        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null },
-        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' },
-        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null },
-        cacheHits: 0
+
+        // --- STRICT ISOLATION PER TIMEFRAME ---
+        tfImages: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Mencegah AI trigger otomatis
+        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Hasil terpisah
+        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, // Status UI Terpisah
+        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Threading & Abort terpisah
+        
+        // Cache benar-benar independen per TF
+        tfCache: { 
+            weekly: new SmartLRUCache(), daily: new SmartLRUCache(), 
+            h4: new SmartLRUCache(), h1: new SmartLRUCache(), m15: new SmartLRUCache() 
+        }
       },
 
       init() {
         const apiKeyInput = document.getElementById('gemini-api-key');
         const savedKey = sessionStorage.getItem('_sys_qt_auth');
         if (savedKey) {
-            apiKeyInput.value = atob(savedKey);
-            this.state.apiKey = atob(savedKey);
-            this.initializeRouter();
+            apiKeyInput.value = atob(savedKey); this.state.apiKey = atob(savedKey); this.initializeRouter();
         }
-
         apiKeyInput.addEventListener('input', (e) => {
           const val = (e.target.value || '').trim();
-          if (val) {
-              sessionStorage.setItem('_sys_qt_auth', btoa(val));
-              this.state.apiKey = val;
-              this.initializeRouter();
-          }
+          if (val) { sessionStorage.setItem('_sys_qt_auth', btoa(val)); this.state.apiKey = val; this.initializeRouter(); }
         });
-
-        // Initialize 5 Upload Boxes
         this.renderUploadGrid();
+      },
+
+      getTfTheme(tfId) {
+          // Menyesuaikan persis dengan gambar referensi UI
+          return {
+              weekly: { text: 'text-gray-300', btnBg: 'bg-[#0f172a]', btnBorder: 'border-blue-500/50', hover: 'hover:bg-[#1e293b]' },
+              daily: { text: 'text-gray-300', btnBg: 'bg-[#052e16]', btnBorder: 'border-green-500/50', hover: 'hover:bg-[#14532d]' },
+              h4: { text: 'text-gray-300', btnBg: 'bg-[#2e1065]', btnBorder: 'border-purple-500/50', hover: 'hover:bg-[#4c1d95]' },
+              h1: { text: 'text-gray-300', btnBg: 'bg-[#451a03]', btnBorder: 'border-orange-500/50', hover: 'hover:bg-[#78350f]' },
+              m15: { text: 'text-gray-300', btnBg: 'bg-[#083344]', btnBorder: 'border-cyan-500/50', hover: 'hover:bg-[#164e63]' }
+          }[tfId];
       },
 
       renderUploadGrid() {
@@ -369,120 +313,153 @@
         grid.innerHTML = '';
         
         this.state.timeframes.forEach(tf => {
+            const theme = this.getTfTheme(tf.id);
             grid.innerHTML += `
-                <div class="relative flex flex-col items-center justify-center p-3 border border-dashed border-white/20 bg-black/20 rounded-xl transition-all duration-200 hover:border-green-500 group min-h-[140px]" id="box-${tf.id}">
-                    <div class="absolute top-2 right-2 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider bg-zinc-800 text-gray-400 border border-white/5 transition-colors" id="badge-${tf.id}">
-                        EMPTY
+                <div class="relative flex flex-col p-4 border border-white/5 bg-black/30 rounded-xl transition-all duration-200 group h-[280px]" id="box-${tf.id}">
+                    
+                    <div class="flex justify-between items-center mb-4">
+                         <h4 class="font-bold text-gray-200 text-[11px] uppercase tracking-widest flex items-center gap-2">
+                             <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i> ${tf.title} (${tf.label})
+                         </h4>
+                         <div class="text-[8px] px-2 py-1 rounded bg-zinc-800 text-gray-500 border border-white/5 uppercase font-bold tracking-wider transition-colors z-20" id="badge-${tf.id}">EMPTY</div>
                     </div>
-                    
-                    <h4 class="font-bold text-gray-300 text-xs mb-2 uppercase tracking-widest flex items-center gap-1">
-                        <i data-lucide="line-chart" class="w-3 h-3 text-gray-500"></i> ${tf.title} (${tf.label})
-                    </h4>
-                    
-                    <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full" id="upload-label-${tf.id}">
-                        <i data-lucide="image-plus" class="w-6 h-6 text-gray-600 group-hover:text-green-400 transition-colors mb-1"></i>
-                        <span class="text-[9px] font-mono text-gray-500 text-center">Upload / Drop</span>
-                        <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
-                    </label>
 
-                    <div id="preview-container-${tf.id}" class="hidden absolute inset-0 w-full h-full group/img rounded-xl overflow-hidden border border-green-500/30">
-                        <img id="preview-img-${tf.id}" src="" class="w-full h-full object-cover opacity-80">
+                    <div class="relative w-full flex-1 mb-4 border border-dashed border-white/10 rounded-lg overflow-hidden group/upload flex items-center justify-center transition-colors hover:border-white/30" id="upload-area-${tf.id}">
                         
-                        <div id="loader-${tf.id}" class="hidden absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 backdrop-blur-sm">
-                            <div class="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                            <span class="text-[8px] text-green-400 font-mono mt-2 uppercase tracking-widest animate-pulse" id="loader-text-${tf.id}">ANALYSING</span>
-                        </div>
+                        <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full" id="upload-label-${tf.id}">
+                            <i data-lucide="image-plus" class="w-6 h-6 text-gray-500 group-hover/upload:text-gray-400 transition-colors mb-2"></i>
+                            <span class="text-[10px] font-mono text-gray-400">Upload / Drop</span>
+                            <span class="text-[8px] text-gray-600 mt-1">PNG, JPG, WEBP (Max 10MB)</span>
+                            <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+                        </label>
 
-                        <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity gap-2 z-20">
-                            <label class="cursor-pointer bg-blue-500/80 p-1.5 rounded hover:bg-blue-400" title="Replace">
-                                <i data-lucide="refresh-cw" class="w-3 h-3 text-white"></i>
-                                <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
-                            </label>
-                            <button onclick="AI_Quant_Engine.removeImage('${tf.id}')" class="bg-red-500/80 p-1.5 rounded hover:bg-red-400" title="Remove">
-                                <i data-lucide="trash-2" class="w-3 h-3 text-white"></i>
-                            </button>
+                        <div id="preview-container-${tf.id}" class="hidden absolute inset-0 w-full h-full group/img bg-black">
+                            <img id="preview-img-${tf.id}" class="w-full h-full object-cover opacity-60">
+                            
+                            <div id="loader-${tf.id}" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 backdrop-blur-[2px]">
+                                <div class="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+                            </div>
+
+                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-3 z-20 transition-opacity">
+                                <label class="cursor-pointer bg-blue-500/80 p-2 rounded-lg hover:bg-blue-500 transition-colors" title="Replace">
+                                    <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
+                                    <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+                                </label>
+                                <button onclick="AI_Quant_Engine.removeImage('${tf.id}')" class="bg-red-500/80 p-2 rounded-lg hover:bg-red-500 transition-colors" title="Remove">
+                                    <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+                                </button>
+                            </div>
                         </div>
                     </div>
+
+                    <button id="search-btn-${tf.id}" onclick="AI_Quant_Engine.handleSearch('${tf.id}')" disabled class="w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2">
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tf.title}
+                    </button>
+                    
+                    <div class="text-center mt-2 text-[9px] text-gray-600 font-mono">Analisa ${tf.label} secara mandiri</div>
                 </div>
             `;
         });
         if (window.lucide) lucide.createIcons();
       },
 
+      // TAHAP 1: Upload (HANYA menyimpan state image. Tidak memanggil AI)
       async handleUpload(event, tfId) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Reset memory spesifik TF (Isolated Replace)
-        this.resetTimeframe(tfId);
+        // Reset memory & thread TF ini tanpa mengganggu TF lain
+        if (this.state.tfControllers[tfId]) {
+            this.state.tfControllers[tfId].abort("REPLACED");
+        }
+        this.state.tfMemory[tfId] = null;
+        this.state.tfImages[tfId] = file;
         
+        document.getElementById('final-report-container').classList.add('hidden');
+
         const reader = new FileReader();
         reader.onload = async (e) => {
             const rawData = e.target.result;
             
-            // UI Update
+            // Tampilkan Preview
             document.getElementById(`upload-label-${tfId}`).classList.add('hidden');
             document.getElementById(`preview-container-${tfId}`).classList.remove('hidden');
             document.getElementById(`preview-img-${tfId}`).src = rawData;
             
+            // Ubah State Button agar siap ditekan
             this.updateStatus(tfId, 'Loaded');
-
-            // Eksekusi asinkron independen
-            await this.processTimeframe(tfId, file);
+            this.updateReadiness();
         };
         reader.readAsDataURL(file);
       },
 
-      async processTimeframe(tfId, file) {
+      // TAHAP 2: Independent Pipeline berjalan HANYA saat tombol ditekan
+      async handleSearch(tfId) {
+        const file = this.state.tfImages[tfId];
+        if (!file) return;
+        
+        // Memastikan tidak ada thread ganda pada TF ini
         if (this.state.tfControllers[tfId]) {
-            this.state.tfControllers[tfId].abort("REPLACED");
+            this.state.tfControllers[tfId].abort("RESTARTED");
         }
+
+        // Eksekusi asinkron independen (Thread terpisah)
+        await this.processTimeframe(tfId, file);
+      },
+
+      async processTimeframe(tfId, file) {
         const controller = new AbortController();
         this.state.tfControllers[tfId] = controller;
 
-        this.updateStatus(tfId, 'Processing');
+        this.updateStatus(tfId, 'Searching');
         document.getElementById(`loader-${tfId}`).classList.remove('hidden');
 
         try {
             const base64Image = await this.optimizeImage(file);
             const imageHash = await this.hashString(base64Image);
 
-            // CACHE HIT CHECK
-            const cachedData = this.state.analysisLRU.get(imageHash);
+            // CACHE HIT Pengecekan pada cache eksklusif timeframe
+            const cachedData = this.state.tfCache[tfId].get(imageHash);
+            
             if (cachedData) {
                 console.log(`[Cache Hit] Using cached logic for ${tfId}`);
                 this.state.cacheHits++;
                 document.getElementById('mon-retry').textContent = this.state.cacheHits;
                 this.state.tfMemory[tfId] = cachedData;
             } else {
-                console.log(`[API Call] Analyzing ${tfId} independently...`);
-                if(!this.state.activeModel) throw new Error("API Key Missing or Invalid");
+                console.log(`[API Request] Running Independent AI Pipeline for ${tfId}...`);
+                if(!this.state.activeModel) throw new Error("API Key Missing or Validation Error");
                 
+                // Panggil AI (Akan melempar abort error jika diganti tengah jalan)
                 const aiResult = await this.requestAITimeframe(tfId, base64Image, controller.signal);
+                
                 this.state.tfMemory[tfId] = aiResult;
-                this.state.analysisLRU.set(imageHash, aiResult); // Simpan ke memory global
+                this.state.tfCache[tfId].set(imageHash, aiResult); 
             }
 
-            this.updateStatus(tfId, 'Analysed');
-            this.updateReadiness();
+            // Jika pipeline ini tidak dibatalkan, tandai selesai
+            if (this.state.tfControllers[tfId] === controller) {
+                this.updateStatus(tfId, 'Analysed');
+            }
 
         } catch (error) {
-            if (error.name === 'AbortError' || error.message === 'REPLACED') {
-                console.log(`[Aborted] Pipeline for ${tfId} cancelled.`);
+            if (error.name === 'AbortError' || error.message === 'REPLACED' || error.message === 'RESTARTED') {
+                console.log(`[Aborted] Pipeline for ${tfId} cancelled dynamically.`);
             } else {
-                console.error(`[Error] TF ${tfId}:`, error);
-                this.updateStatus(tfId, 'Error');
-                document.getElementById(`loader-text-${tfId}`).textContent = "ERROR";
-                document.getElementById(`loader-text-${tfId}`).classList.replace('text-green-400', 'text-red-400');
+                console.error(`[Fatal Error] Logic Engine TF ${tfId}:`, error);
+                if (this.state.tfControllers[tfId] === controller) {
+                    this.updateStatus(tfId, 'Error');
+                }
             }
         } finally {
-            if (this.state.tfStatus[tfId] !== 'Processing') {
+            // Sembunyikan loader jika kontrol masih dipegang thread ini
+            if (this.state.tfControllers[tfId] === controller && this.state.tfStatus[tfId] !== 'Searching') {
                 document.getElementById(`loader-${tfId}`).classList.add('hidden');
             }
+            this.updateReadiness();
         }
       },
 
-      // Single API Call per TF, asking for structured JSON
       async requestAITimeframe(tfId, base64Image, signal) {
           const prompts = {
               'weekly': 'Analisa chart Weekly ini. Fokus pada Trend Besar, Market Structure, Order Block Makro, Liquidity, FVG, dan Premium/Discount area.',
@@ -492,16 +469,11 @@
               'm15': 'Analisa chart M15 ini. Hitung secara spesifik Precision Entry, Stop Loss (ketat), Take Profit rasional, dan validasi Smart Money Concept (SMC).'
           };
 
-          const schema = {
-              type: "OBJECT",
-              properties: {
-                  data: { type: "STRING", description: "Gabungan seluruh poin analisa yang diminta menjadi satu kalimat/paragraf deskriptif singkat." }
-              }, required: ["data"]
-          };
+          const schema = { type: "OBJECT", properties: { data: { type: "STRING" } }, required: ["data"] };
 
           const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
           const payload = {
-              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading. ${prompts[tfId]} Kembalikan hasil analisa dalam format JSON persis sesuai skema.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
+              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading. ${prompts[tfId]} Kembalikan hasil format JSON persis sesuai skema.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
               generationConfig: { responseMimeType: "application/json", responseSchema: schema }
           };
 
@@ -514,16 +486,12 @@
 
           if (!res.ok) throw new Error(`HTTP ${res.status}`);
           const data = await res.json();
-          const jsonText = data.candidates[0].content.parts[0].text;
-          
-          return JSON.parse(jsonText).data;
+          return JSON.parse(data.candidates[0].content.parts[0].text).data;
       },
 
       updateReadiness() {
         let completed = 0;
-        this.state.timeframes.forEach(tf => {
-            if (this.state.tfStatus[tf.id] === 'Analysed') completed++;
-        });
+        this.state.timeframes.forEach(tf => { if (this.state.tfStatus[tf.id] === 'Analysed') completed++; });
 
         const percentage = (completed / 5) * 100;
         const bar = document.getElementById('readiness-bar');
@@ -538,7 +506,7 @@
             bar.classList.remove('progress-bar-striped');
             bar.classList.replace('bg-green-500', 'bg-blue-500');
             text.classList.replace('text-white', 'text-blue-400');
-            this.generateFinalReport(); // Compile without re-reading images
+            this.generateFinalReport();
         } else {
             bar.classList.replace('bg-blue-500', 'bg-green-500');
             text.classList.replace('text-blue-400', 'text-white');
@@ -547,9 +515,7 @@
       },
 
       generateFinalReport() {
-        console.log("[AI Gateway] Compiling Institutional Report from Multi-TF Memory...");
         const m = this.state.tfMemory;
-        
         const container = document.getElementById('report-content');
         container.innerHTML = `
             <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
@@ -577,10 +543,10 @@
         document.getElementById('final-report-container').classList.remove('hidden');
       },
 
-      // --- UTILITIES ---
-
       removeImage(tfId) {
-        this.resetTimeframe(tfId);
+        if (this.state.tfControllers[tfId]) this.state.tfControllers[tfId].abort("REMOVED");
+        this.state.tfMemory[tfId] = null;
+        this.state.tfImages[tfId] = null;
         document.getElementById(`upload-label-${tfId}`).classList.remove('hidden');
         document.getElementById(`preview-container-${tfId}`).classList.add('hidden');
         document.getElementById(`preview-img-${tfId}`).src = '';
@@ -588,28 +554,47 @@
         this.updateReadiness();
       },
 
-      resetTimeframe(tfId) {
-        this.state.tfMemory[tfId] = null;
-        if (this.state.tfControllers[tfId]) {
-            this.state.tfControllers[tfId].abort("REPLACED");
-        }
-        document.getElementById('final-report-container').classList.add('hidden');
-      },
-
       updateStatus(tfId, status) {
         this.state.tfStatus[tfId] = status;
         const badge = document.getElementById(`badge-${tfId}`);
-        badge.innerText = status;
+        const visualStatus = status === 'Searching' ? 'SEARCHING' : status.toUpperCase();
+        badge.innerText = visualStatus;
         
-        badge.className = `absolute top-2 right-2 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider transition-colors ${
+        badge.className = `absolute top-2 right-2 text-[8px] px-2 py-1 rounded font-mono font-bold uppercase tracking-wider transition-colors z-20 ${
             status === 'Empty' ? 'bg-zinc-800 text-gray-500 border border-white/5' :
             status === 'Loaded' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50' :
-            status === 'Processing' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse' :
+            status === 'Searching' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse' :
             status === 'Analysed' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
             'bg-red-500/20 text-red-400 border border-red-500/50'
         }`;
 
-        // Checklist UI Update
+        // BUTTON STATE LOGIC (Menyesuaikan dengan Mockup UI)
+        const btn = document.getElementById(`search-btn-${tfId}`);
+        const theme = this.getTfTheme(tfId);
+        const tfLabel = this.state.timeframes.find(t=>t.id===tfId).title;
+
+        if (btn) {
+            btn.disabled = false;
+            btn.className = "w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ";
+
+            if (status === 'Empty') {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
+                btn.className += "bg-white/5 text-gray-500 border-white/10 cursor-not-allowed";
+            } else if (status === 'Loaded' || status === 'Error') {
+                btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
+                btn.className += `${theme.btnBg} ${theme.text} ${theme.btnBorder} ${theme.hover} cursor-pointer`;
+            } else if (status === 'Searching') {
+                btn.disabled = true;
+                btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SEARCHING...`;
+                btn.className += `${theme.btnBg} ${theme.text} border-white/20 cursor-not-allowed opacity-70`;
+            } else if (status === 'Analysed') {
+                btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-ANALYZE`;
+                btn.className += `bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 cursor-pointer`;
+            }
+        }
+
+        // Checklist Status Update
         const checkIcon = document.querySelector(`#check-${tfId} i`);
         if (status === 'Analysed') {
             checkIcon.setAttribute('data-lucide', 'check-circle-2');
@@ -627,49 +612,32 @@
             reader.onload = (e) => {
                 const img = new Image();
                 img.onload = () => {
-                    let w = img.width, h = img.height;
-                    const max = this.config.maxImageDimension;
-                    if (w > max || h > max) {
-                        if (w > h) { h = Math.round((h * max) / w); w = max; } 
-                        else { w = Math.round((w * max) / h); h = max; }
-                    }
-                    const canvas = document.createElement('canvas');
-                    canvas.width = w; canvas.height = h;
+                    let w = img.width, h = img.height, max = this.config.maxImageDimension;
+                    if (w > max || h > max) { if (w > h) { h = Math.round((h * max) / w); w = max; } else { w = Math.round((w * max) / h); h = max; } }
+                    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    const b64 = canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1];
-                    resolve(b64);
+                    resolve(canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1]);
                 };
-                img.onerror = reject;
-                img.src = e.target.result;
+                img.onerror = reject; img.src = e.target.result;
             };
-            reader.onerror = reject;
-            reader.readAsDataURL(file);
+            reader.onerror = reject; reader.readAsDataURL(file);
         });
       },
 
       async hashString(str) {
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = ((hash << 5) - hash) + str.charCodeAt(i);
-            hash |= 0;
-        }
-        return hash.toString();
+        let hash = 0; for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; } return hash.toString();
       },
 
       async initializeRouter() {
         try {
-            const url = `${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`;
-            const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            const res = await fetch(`${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`, { signal: AbortSignal.timeout(5000) });
             if (res.ok) {
                 const data = await res.json();
                 this.state.discoveredModels = data.models.filter(m => m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("embedding")).map(m => m.name.split('/').pop());
                 this.state.discoveredModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
                 this.state.activeModel = this.state.discoveredModels[0];
-                document.getElementById('mon-model').textContent = this.state.activeModel;
             }
-        } catch (err) {
-            console.error("API Validation Failed.");
-        }
+        } catch (err) {}
       }
     };
 
