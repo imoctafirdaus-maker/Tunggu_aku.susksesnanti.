@@ -272,12 +272,11 @@
         ],
 
         // --- STRICT ISOLATION PER TIMEFRAME ---
-        tfImages: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Mencegah AI trigger otomatis
-        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Hasil terpisah
-        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, // Status UI Terpisah
-        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Threading & Abort terpisah
+        tfImages: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
+        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
+        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, 
+        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
         
-        // Cache benar-benar independen per TF
         tfCache: { 
             weekly: new SmartLRUCache(), daily: new SmartLRUCache(), 
             h4: new SmartLRUCache(), h1: new SmartLRUCache(), m15: new SmartLRUCache() 
@@ -298,7 +297,6 @@
       },
 
       getTfTheme(tfId) {
-          // Menyesuaikan persis dengan gambar referensi UI
           return {
               weekly: { text: 'text-gray-300', btnBg: 'bg-[#0f172a]', btnBorder: 'border-blue-500/50', hover: 'hover:bg-[#1e293b]' },
               daily: { text: 'text-gray-300', btnBg: 'bg-[#052e16]', btnBorder: 'border-green-500/50', hover: 'hover:bg-[#14532d]' },
@@ -321,7 +319,7 @@
                          <h4 class="font-bold text-gray-200 text-[11px] uppercase tracking-widest flex items-center gap-2">
                              <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i> ${tf.title} (${tf.label})
                          </h4>
-                         <div class="text-[8px] px-2 py-1 rounded bg-zinc-800 text-gray-500 border border-white/5 uppercase font-bold tracking-wider transition-colors z-20" id="badge-${tf.id}">EMPTY</div>
+                         <div class="text-[8px] px-2 py-1 rounded bg-zinc-800 text-gray-500 border border-white/5 uppercase font-bold tracking-wider transition-colors z-20 cursor-default" id="badge-${tf.id}" title="">EMPTY</div>
                     </div>
 
                     <div class="relative w-full flex-1 mb-4 border border-dashed border-white/10 rounded-lg overflow-hidden group/upload flex items-center justify-center transition-colors hover:border-white/30" id="upload-area-${tf.id}">
@@ -330,7 +328,7 @@
                             <i data-lucide="image-plus" class="w-6 h-6 text-gray-500 group-hover/upload:text-gray-400 transition-colors mb-2"></i>
                             <span class="text-[10px] font-mono text-gray-400">Upload / Drop</span>
                             <span class="text-[8px] text-gray-600 mt-1">PNG, JPG, WEBP (Max 10MB)</span>
-                            <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+                            <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
                         </label>
 
                         <div id="preview-container-${tf.id}" class="hidden absolute inset-0 w-full h-full group/img bg-black">
@@ -343,7 +341,7 @@
                             <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-3 z-20 transition-opacity">
                                 <label class="cursor-pointer bg-blue-500/80 p-2 rounded-lg hover:bg-blue-500 transition-colors" title="Replace">
                                     <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
-                                    <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+                                    <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
                                 </label>
                                 <button onclick="AI_Quant_Engine.removeImage('${tf.id}')" class="bg-red-500/80 p-2 rounded-lg hover:bg-red-500 transition-colors" title="Remove">
                                     <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
@@ -363,15 +361,54 @@
         if (window.lucide) lucide.createIcons();
       },
 
-      // TAHAP 1: Upload (HANYA menyimpan state image. Tidak memanggil AI)
+      // AUDIT: FIX API DISCOVERY (Validasi model & API key)
+      async initializeRouter() {
+        try {
+            if (!this.state.apiKey || this.state.apiKey.trim() === '') {
+                throw new Error("API Key kosong");
+            }
+
+            const res = await fetch(`${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`, { 
+                signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined 
+            });
+            
+            if (!res.ok) throw new Error(`HTTP ${res.status} - Invalid API Key`);
+            
+            const data = await res.json();
+            
+            const validModels = data.models.filter(m => 
+                m.supportedGenerationMethods?.includes("generateContent") && 
+                !m.name.includes("embedding") &&
+                !m.name.includes("vision") && // Deprecated model 1.0 dibuang
+                (m.name.includes("1.5-pro") || m.name.includes("1.5-flash"))
+            ).map(m => m.name.split('/').pop());
+
+            if (validModels.length === 0) {
+                throw new Error("Tidak ditemukan model yang mendukung Image Processing.");
+            }
+
+            validModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
+            this.state.discoveredModels = validModels;
+            this.state.activeModel = validModels[0];
+            
+            console.log(`[AI Engine] Active Model Set: ${this.state.activeModel}`);
+            
+        } catch (err) {
+            console.error("[AI Engine] Discovery Failed:", err.message);
+            this.state.activeModel = null;
+            alert("AI Engine Error: " + err.message + ". Pastikan API Key valid.");
+        }
+      },
+
       async handleUpload(event, tfId) {
         const file = event.target.files[0];
         if (!file) return;
 
-        // Reset memory & thread TF ini tanpa mengganggu TF lain
+        // AUDIT: CLEAN ABORT SAAT REPLACE
         if (this.state.tfControllers[tfId]) {
             this.state.tfControllers[tfId].abort("REPLACED");
         }
+        
         this.state.tfMemory[tfId] = null;
         this.state.tfImages[tfId] = file;
         
@@ -380,33 +417,29 @@
         const reader = new FileReader();
         reader.onload = async (e) => {
             const rawData = e.target.result;
-            
-            // Tampilkan Preview
             document.getElementById(`upload-label-${tfId}`).classList.add('hidden');
             document.getElementById(`preview-container-${tfId}`).classList.remove('hidden');
             document.getElementById(`preview-img-${tfId}`).src = rawData;
             
-            // Ubah State Button agar siap ditekan
             this.updateStatus(tfId, 'Loaded');
             this.updateReadiness();
         };
         reader.readAsDataURL(file);
       },
 
-      // TAHAP 2: Independent Pipeline berjalan HANYA saat tombol ditekan
       async handleSearch(tfId) {
         const file = this.state.tfImages[tfId];
         if (!file) return;
         
-        // Memastikan tidak ada thread ganda pada TF ini
+        // AUDIT: RACE CONDITION PROTECTOR
         if (this.state.tfControllers[tfId]) {
             this.state.tfControllers[tfId].abort("RESTARTED");
         }
 
-        // Eksekusi asinkron independen (Thread terpisah)
         await this.processTimeframe(tfId, file);
       },
 
+      // AUDIT: FIX PROMISE DAN LOADER SINKRONISASI
       async processTimeframe(tfId, file) {
         const controller = new AbortController();
         this.state.tfControllers[tfId] = controller;
@@ -418,7 +451,6 @@
             const base64Image = await this.optimizeImage(file);
             const imageHash = await this.hashString(base64Image);
 
-            // CACHE HIT Pengecekan pada cache eksklusif timeframe
             const cachedData = this.state.tfCache[tfId].get(imageHash);
             
             if (cachedData) {
@@ -428,39 +460,46 @@
                 this.state.tfMemory[tfId] = cachedData;
             } else {
                 console.log(`[API Request] Running Independent AI Pipeline for ${tfId}...`);
-                if(!this.state.activeModel) throw new Error("API Key Missing or Validation Error");
-                
-                // Panggil AI (Akan melempar abort error jika diganti tengah jalan)
-                const aiResult = await this.requestAITimeframe(tfId, base64Image, controller.signal);
+                const aiResult = await this.requestAITimeframe(tfId, base64Image, controller);
                 
                 this.state.tfMemory[tfId] = aiResult;
                 this.state.tfCache[tfId].set(imageHash, aiResult); 
             }
 
-            // Jika pipeline ini tidak dibatalkan, tandai selesai
             if (this.state.tfControllers[tfId] === controller) {
                 this.updateStatus(tfId, 'Analysed');
             }
 
         } catch (error) {
-            if (error.name === 'AbortError' || error.message === 'REPLACED' || error.message === 'RESTARTED') {
+            const errStr = String(error.message || error);
+            
+            // Abort Silent Failures
+            if (error.name === 'AbortError' || errStr.includes('REPLACED') || errStr.includes('RESTARTED') || errStr.includes('REMOVED')) {
                 console.log(`[Aborted] Pipeline for ${tfId} cancelled dynamically.`);
-            } else {
+            } 
+            // Real Error Handler
+            else {
                 console.error(`[Fatal Error] Logic Engine TF ${tfId}:`, error);
                 if (this.state.tfControllers[tfId] === controller) {
-                    this.updateStatus(tfId, 'Error');
+                    const shortMsg = errStr.includes('TIMEOUT') ? 'TIMEOUT' : (error.message || 'API ERROR');
+                    this.updateStatus(tfId, 'Error', shortMsg);
                 }
             }
         } finally {
-            // Sembunyikan loader jika kontrol masih dipegang thread ini
-            if (this.state.tfControllers[tfId] === controller && this.state.tfStatus[tfId] !== 'Searching') {
+            // AUDIT: Jaminan loader pasti hilang jika state masih dipegang thread ini
+            if (this.state.tfControllers[tfId] === controller) {
                 document.getElementById(`loader-${tfId}`).classList.add('hidden');
+                this.updateReadiness();
             }
-            this.updateReadiness();
         }
       },
 
-      async requestAITimeframe(tfId, base64Image, signal) {
+      // AUDIT: DEADLOCK TIMEOUT & ERROR MESSAGE FIX
+      async requestAITimeframe(tfId, base64Image, controller) {
+          if (!this.state.activeModel || this.state.activeModel === 'null' || this.state.activeModel === 'undefined') {
+              throw new Error("Model belum siap / API Key salah");
+          }
+
           const prompts = {
               'weekly': 'Analisa chart Weekly ini. Fokus pada Trend Besar, Market Structure, Order Block Makro, Liquidity, FVG, dan Premium/Discount area.',
               'daily': 'Analisa chart Daily ini. Fokus pada Trend Menengah, Break of Structure (BOS), Change of Character (CHOCH), Liquidity Sweep, dan FVG Daily.',
@@ -470,23 +509,57 @@
           };
 
           const schema = { type: "OBJECT", properties: { data: { type: "STRING" } }, required: ["data"] };
-
           const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
           const payload = {
               contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading. ${prompts[tfId]} Kembalikan hasil format JSON persis sesuai skema.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
               generationConfig: { responseMimeType: "application/json", responseSchema: schema }
           };
 
-          const timeoutController = new AbortController();
-          const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeoutMs);
-          const linkedSignal = AbortSignal.any ? AbortSignal.any([signal, timeoutController.signal]) : signal;
+          // Pengganti AbortSignal.any yang bermasalah. Murni native JS timer abort.
+          const timeoutId = setTimeout(() => {
+              controller.abort("TIMEOUT");
+          }, this.config.timeoutMs);
 
-          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: linkedSignal });
-          clearTimeout(timeoutId);
+          try {
+              const res = await fetch(url, { 
+                  method: 'POST', 
+                  headers: { 'Content-Type': 'application/json' }, 
+                  body: JSON.stringify(payload), 
+                  signal: controller.signal 
+              });
+              
+              clearTimeout(timeoutId);
 
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          const data = await res.json();
-          return JSON.parse(data.candidates[0].content.parts[0].text).data;
+              // Mapping Status Code spesifik
+              if (!res.ok) {
+                  if (res.status === 400) throw new Error("HTTP 400: Bad Request (Image/Prompt Invalid)");
+                  if (res.status === 401) throw new Error("HTTP 401: API Key Invalid");
+                  if (res.status === 403) throw new Error("HTTP 403: Forbidden");
+                  if (res.status === 404) throw new Error("HTTP 404: Model Not Found");
+                  if (res.status === 429) throw new Error("HTTP 429: Rate Limit Exceeded");
+                  if (res.status >= 500) throw new Error(`HTTP ${res.status}: Internal Server Error`);
+                  throw new Error(`HTTP ${res.status}: Network Error`);
+              }
+
+              const data = await res.json();
+              if (!data.candidates || !data.candidates[0].content) {
+                  throw new Error("Gemini Response Invalid: Empty content");
+              }
+
+              let textRes = data.candidates[0].content.parts[0].text;
+              
+              // Prevent Markdown JSON Parse Error
+              textRes = textRes.replace(/```json/g, '').replace(/```/g, '').trim();
+              
+              try {
+                  return JSON.parse(textRes).data;
+              } catch (parseErr) {
+                  throw new Error("JSON Parse Failed: Data korup");
+              }
+          } catch (err) {
+              clearTimeout(timeoutId);
+              throw err;
+          }
       },
 
       updateReadiness() {
@@ -544,7 +617,10 @@
       },
 
       removeImage(tfId) {
-        if (this.state.tfControllers[tfId]) this.state.tfControllers[tfId].abort("REMOVED");
+        if (this.state.tfControllers[tfId]) {
+            this.state.tfControllers[tfId].abort("REMOVED");
+            this.state.tfControllers[tfId] = null;
+        }
         this.state.tfMemory[tfId] = null;
         this.state.tfImages[tfId] = null;
         document.getElementById(`upload-label-${tfId}`).classList.remove('hidden');
@@ -554,47 +630,55 @@
         this.updateReadiness();
       },
 
-      updateStatus(tfId, status) {
+      // AUDIT: FIXED BUTTON LOGIC (Mencegah Deadlock Button Disabled)
+      updateStatus(tfId, status, errorMsg = '') {
         this.state.tfStatus[tfId] = status;
         const badge = document.getElementById(`badge-${tfId}`);
-        const visualStatus = status === 'Searching' ? 'SEARCHING' : status.toUpperCase();
-        badge.innerText = visualStatus;
-        
-        badge.className = `absolute top-2 right-2 text-[8px] px-2 py-1 rounded font-mono font-bold uppercase tracking-wider transition-colors z-20 ${
-            status === 'Empty' ? 'bg-zinc-800 text-gray-500 border border-white/5' :
-            status === 'Loaded' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50' :
-            status === 'Searching' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse' :
-            status === 'Analysed' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
-            'bg-red-500/20 text-red-400 border border-red-500/50'
-        }`;
-
-        // BUTTON STATE LOGIC (Menyesuaikan dengan Mockup UI)
         const btn = document.getElementById(`search-btn-${tfId}`);
         const theme = this.getTfTheme(tfId);
         const tfLabel = this.state.timeframes.find(t=>t.id===tfId).title;
+        
+        // Reset Base Badge Class
+        badge.className = `absolute top-2 right-2 text-[8px] px-2 py-1 rounded font-mono font-bold uppercase tracking-wider transition-colors z-20 cursor-default`;
+        badge.title = errorMsg; // Inject error string untuk dibaca user saat hover
 
-        if (btn) {
+        if (status === 'Empty') {
+            badge.innerText = 'EMPTY';
+            badge.className += ' bg-zinc-800 text-gray-500 border border-white/5';
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
+            btn.className = "w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-500 border-white/10 cursor-not-allowed";
+        } 
+        else if (status === 'Loaded') {
+            badge.innerText = 'LOADED';
+            badge.className += ' bg-yellow-500/20 text-yellow-500 border border-yellow-500/50';
             btn.disabled = false;
-            btn.className = "w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ";
-
-            if (status === 'Empty') {
-                btn.disabled = true;
-                btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
-                btn.className += "bg-white/5 text-gray-500 border-white/10 cursor-not-allowed";
-            } else if (status === 'Loaded' || status === 'Error') {
-                btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
-                btn.className += `${theme.btnBg} ${theme.text} ${theme.btnBorder} ${theme.hover} cursor-pointer`;
-            } else if (status === 'Searching') {
-                btn.disabled = true;
-                btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SEARCHING...`;
-                btn.className += `${theme.btnBg} ${theme.text} border-white/20 cursor-not-allowed opacity-70`;
-            } else if (status === 'Analysed') {
-                btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-ANALYZE`;
-                btn.className += `bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 cursor-pointer`;
-            }
+            btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
+            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} ${theme.btnBorder} ${theme.hover} cursor-pointer`;
+        } 
+        else if (status === 'Searching') {
+            badge.innerText = 'SEARCHING';
+            badge.className += ' bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse';
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SEARCHING...`;
+            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} border-white/20 cursor-not-allowed opacity-70`;
+        } 
+        else if (status === 'Analysed') {
+            badge.innerText = 'ANALYSED';
+            badge.className += ' bg-green-500/20 text-green-400 border border-green-500/50';
+            btn.disabled = false;
+            btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-ANALYZE`;
+            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 cursor-pointer`;
+        }
+        else if (status === 'Error') {
+            badge.innerText = 'ERROR';
+            badge.className += ' bg-red-500/20 text-red-400 border border-red-500/50';
+            btn.disabled = false; // Tombol diaktifkan kembali agar user bisa Retry
+            btn.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> RETRY ${tfLabel}`;
+            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-red-950/50 text-red-400 border-red-500/50 hover:bg-red-900/60 cursor-pointer`;
         }
 
-        // Checklist Status Update
+        // Checklist Status Sync
         const checkIcon = document.querySelector(`#check-${tfId} i`);
         if (status === 'Analysed') {
             checkIcon.setAttribute('data-lucide', 'check-circle-2');
@@ -603,11 +687,17 @@
             checkIcon.setAttribute('data-lucide', 'circle');
             document.querySelector(`#check-${tfId}`).classList.replace('text-green-400', 'text-gray-600');
         }
+        
         if (window.lucide) lucide.createIcons();
       },
 
+      // AUDIT: VALIDASI IMAGE (Strict Format & Base64 check)
       async optimizeImage(file) {
         return new Promise((resolve, reject) => {
+            if (!file || !file.type.match(/image\/(jpeg|png|webp)/)) {
+                return reject(new Error("Image Invalid: Format tidak didukung (Gunakan JPG, PNG, WEBP)"));
+            }
+            
             const reader = new FileReader();
             reader.onload = (e) => {
                 const img = new Image();
@@ -616,28 +706,26 @@
                     if (w > max || h > max) { if (w > h) { h = Math.round((h * max) / w); w = max; } else { w = Math.round((w * max) / h); h = max; } }
                     const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    resolve(canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1]);
+                    
+                    const base64Data = canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1];
+                    if (!base64Data || base64Data.trim() === '') return reject(new Error("Image Conversion Failed: Base64 kosong"));
+                    
+                    resolve(base64Data);
                 };
-                img.onerror = reject; img.src = e.target.result;
+                img.onerror = () => reject(new Error("Image Invalid: File korup atau rusak")); 
+                img.src = e.target.result;
             };
-            reader.onerror = reject; reader.readAsDataURL(file);
+            reader.onerror = () => reject(new Error("Image Invalid: Gagal membaca file"));
+            reader.readAsDataURL(file);
         });
       },
 
+      // AUDIT: SAFE HASHING
       async hashString(str) {
-        let hash = 0; for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; } return hash.toString();
-      },
-
-      async initializeRouter() {
-        try {
-            const res = await fetch(`${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`, { signal: AbortSignal.timeout(5000) });
-            if (res.ok) {
-                const data = await res.json();
-                this.state.discoveredModels = data.models.filter(m => m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("embedding")).map(m => m.name.split('/').pop());
-                this.state.discoveredModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
-                this.state.activeModel = this.state.discoveredModels[0];
-            }
-        } catch (err) {}
+        if (!str || str.length === 0) return "null_hash_000";
+        let hash = 0; 
+        for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; } 
+        return hash.toString();
       }
     };
 
