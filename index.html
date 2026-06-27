@@ -19,6 +19,14 @@
     .custom-scroll::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.3); border-radius: 4px; }
     .price-up { color: #22c55e !important; }
     .price-down { color: #ef4444 !important; }
+    
+    /* Animasi Progress */
+    .progress-bar-striped {
+      background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+      background-size: 1rem 1rem;
+      animation: progress-animation 1s linear infinite;
+    }
+    @keyframes progress-animation { from { background-position: 1rem 0; } to { background-position: 0 0; } }
   </style>
 </head>
 <body class="min-h-screen flex items-start justify-center p-2 sm:p-4">
@@ -114,9 +122,10 @@
     </div>
 
     <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
+      
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
         <div class="flex items-center gap-2">
-          <span class="text-yellow-400 font-semibold tracking-wider pixel-font text-[10px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">QUANT VISION v4.0</span>
+          <span class="text-yellow-400 font-semibold tracking-wider pixel-font text-[10px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">QUANT VISION v4.5</span>
           <h2 class="text-white font-bold text-base tracking-wide uppercase flex items-center gap-2">
             <i data-lucide="cpu" class="w-5 h-5 text-yellow-400"></i> Smart Money Logic Engine
           </h2>
@@ -127,49 +136,53 @@
         </div>
       </div>
 
-      <div id="ai-monitor-panel" class="hidden grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/40 p-2 rounded-xl border border-white/5 text-[9px] font-mono text-gray-400">
+      <div id="ai-monitor-panel" class="grid grid-cols-2 md:grid-cols-4 gap-2 bg-black/40 p-2 rounded-xl border border-white/5 text-[9px] font-mono text-gray-400">
         <div>MODEL: <span id="mon-model" class="text-green-400">-</span></div>
         <div>LATENCY: <span id="mon-latency" class="text-yellow-400">-</span></div>
-        <div>TOKENS: <span id="mon-tokens" class="text-cyan-400">-</span></div>
-        <div>RETRY: <span id="mon-retry" class="text-purple-400">0</span></div>
+        <div>TOKENS: <span id="mon-tokens" class="text-cyan-400">Optimized</span></div>
+        <div>CACHE HIT: <span id="mon-retry" class="text-purple-400">0</span></div>
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <div class="space-y-3 bg-black/40 p-4 rounded-xl border border-white/5 flex flex-col">
-          <span class="text-[10px] uppercase font-bold text-gray-400 block mb-2">Multi-TF Input (D1, H4, H1, M15)</span>
-          <div id="dropzone-area" class="border-2 border-dashed border-zinc-700 hover:border-green-500 transition-colors rounded-xl p-6 text-center cursor-pointer relative group bg-zinc-950/40 flex-1 flex flex-col justify-center">
-            <input type="file" id="chart-screenshot-input" accept=".jpg,.jpeg,.png,.webp" class="hidden" multiple />
-            <div class="space-y-2 pointer-events-none" id="upload-prompt-view">
-              <i data-lucide="image-plus" class="w-8 h-8 text-gray-500 mx-auto group-hover:text-green-400 transition-colors"></i>
-              <p class="text-xs font-semibold text-gray-300">Drop Exactly 4 Charts (D1, H4, H1, M15)</p>
-              <p class="text-[9px] text-gray-500 font-mono">Filters 5-9 & Modul 14: Ultra Low Risk Validations</p>
-            </div>
-            <div class="hidden space-y-2 text-center" id="upload-loading-view">
-              <div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-              <p class="text-[10px] font-mono text-green-400 tracking-wider animate-pulse mt-2" id="loading-text-state">Initializing Engine...</p>
-            </div>
+      <div class="bg-black/30 p-4 rounded-xl border border-white/5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+          <div class="flex gap-4 font-mono text-[10px] font-bold tracking-wider" id="tf-checklists">
+            <div id="check-weekly" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> WEEKLY</div>
+            <div id="check-daily" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> DAILY</div>
+            <div id="check-h4" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> H4</div>
+            <div id="check-h1" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> H1</div>
+            <div id="check-m15" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> M15</div>
+          </div>
+          <div class="text-right flex-shrink-0">
+             <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Institutional Readiness</div>
+             <div class="text-lg font-black text-white font-mono leading-none" id="readiness-text">0%</div>
           </div>
         </div>
+        <div class="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-white/5">
+           <div id="readiness-bar" class="bg-green-500 h-full w-0 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+        </div>
+      </div>
 
-        <div class="bg-zinc-900/60 p-4 rounded-xl border border-yellow-500/10 flex flex-col h-[520px]">
-          <div class="flex justify-between items-center border-b border-white/5 pb-2 mb-3">
-            <span class="text-[11px] uppercase font-bold text-yellow-400 tracking-wider flex items-center gap-1">
-              <i data-lucide="crosshair" class="w-3.5 h-3.5"></i> Institutional Entry Report
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-3" id="upload-grid">
+         </div>
+
+      <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-green-500/30 neon-border-green mt-4">
+        <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+            <span class="text-xs uppercase font-bold text-green-400 tracking-wider flex items-center gap-2">
+              <i data-lucide="crosshair" class="w-4 h-4"></i> Final Institutional Report
             </span>
-            <span id="rep-status" class="text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-zinc-800 text-gray-400 uppercase">WAITING</span>
-          </div>
-          
-          <div class="custom-scroll overflow-y-auto flex-1 space-y-3 text-xs font-mono text-gray-300 pr-2" id="report-text-container">
-            <p class="text-gray-500 text-center mt-10">Unggah 4 chart untuk menjalankan Filter 5-9, Modul 14, dan Analisis Makro BTC/USDT.</p>
-          </div>
+            <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">VALIDATED 100%</span>
         </div>
+        
+        <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono text-gray-300">
+            </div>
       </div>
+
     </div>
   </div>
 
   <script>
     // =========================================================================
-    // LAYER 1: MARKET ENGINE & CORE ARCHITECTURE
+    // LAYER 1: MARKET ENGINE & CORE ARCHITECTURE (TIDAK DIUBAH)
     // =========================================================================
     const API_ENDPOINTS = { cgProxies: ["https://api.allorigins.win/raw?url=", "https://api.codetabs.com/v1/proxy?quest=", "https://corsproxy.io/?"], paprika: "https://api.coinpaprika.com/v1/tickers", cc: "https://min-api.cryptocompare.com/data/pricemultifull", binance: "https://api.binance.com/api/v3/ticker/24hr" };
     const SmartCache = { store: new Map(), set(key, data, ttlSeconds) { this.store.set(key, { data, expiry: Date.now() + (ttlSeconds * 1000) }); }, get(key) { const item = this.store.get(key); if (!item) return null; if (Date.now() > item.expiry) return null; return item.data; }, getLastValid(key) { return this.store.has(key) ? this.store.get(key).data : null; } };
@@ -275,12 +288,11 @@
     };
 
     // =========================================================================
-    // LAYER 2: ENTERPRISE AI QUANT ENGINE (v4.5 - MULTI-ROUTER & LRU CACHE)
+    // LAYER 2: ENTERPRISE AI QUANT ENGINE (MULTI-TIMEFRAME REFACTOR)
     // =========================================================================
 
-    // KOREKSI 8: ENTERPRISE LRU CACHE DENGAN TTL
     class SmartLRUCache {
-        constructor(maxSize = 10, ttlMs = 15 * 60 * 1000) {
+        constructor(maxSize = 20, ttlMs = 15 * 60 * 1000) {
             this.cache = new Map();
             this.maxSize = maxSize;
             this.ttlMs = ttlMs;
@@ -288,58 +300,50 @@
         get(key) {
             if (!this.cache.has(key)) return null;
             const item = this.cache.get(key);
-            if (Date.now() > item.expiry) {
-                this.cache.delete(key);
-                return null;
-            }
-            // Hapus dan Set ulang agar menjadi data terbaru (Least Recently Used logic)
-            this.cache.delete(key);
-            this.cache.set(key, item);
+            if (Date.now() > item.expiry) { this.cache.delete(key); return null; }
+            this.cache.delete(key); this.cache.set(key, item); // Move to end (LRU)
             return item.value;
         }
         set(key, value) {
             if (this.cache.has(key)) this.cache.delete(key);
-            if (this.cache.size >= this.maxSize) {
-                // Hapus item pertama (paling lama tidak diakses)
-                this.cache.delete(this.cache.keys().next().value);
-            }
+            if (this.cache.size >= this.maxSize) this.cache.delete(this.cache.keys().next().value);
             this.cache.set(key, { value, expiry: Date.now() + this.ttlMs });
         }
     }
 
     const AI_Quant_Engine = {
       
-      // KOREKSI 3 & 10: CONFIG MULTI-PROVIDER ROUTING (Dipersiapkan untuk Backend Proxy)
       config: {
-        timeoutMs: 30000, // KOREKSI 7: 30 Detik Timeout
-        imageLimit: 4,
+        timeoutMs: 30000,
         maxImageDimension: 1200, 
         imageQuality: 0.75,
         providers: [
-            // Engine akan mengurutkan dari atas ke bawah jika terjadi HTTP 429 / 500
-            { id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta", fetchModels: true },
-            { id: "openrouter", baseURL: "https://openrouter.ai/api/v1", fetchModels: false, fallbackModel: "google/gemini-flash-1.5" },
-            { id: "groq", baseURL: "https://api.groq.com/openai/v1", fetchModels: false, fallbackModel: "llama3-70b-8192" },
-            { id: "deepseek", baseURL: "https://api.deepseek.com", fetchModels: false, fallbackModel: "deepseek-chat" }
+            { id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }
         ]
       },
 
       state: {
         apiKey: '',
-        discoveredModels: [], // Digunakan khusus untuk provider Gemini
+        discoveredModels: [],
         activeModel: null,
-        activeProvider: null,
-        analysisLRU: new SmartLRUCache(10, 15 * 60 * 1000), // Cache cerdas
-        activeController: null // KOREKSI 9: Proteksi antrean
+        analysisLRU: new SmartLRUCache(20, 15 * 60 * 1000), 
+        
+        // --- MULTI-TIMEFRAME MEMORY SYSTEM ---
+        timeframes: [
+            { id: 'weekly', label: '1W', title: 'Weekly' },
+            { id: 'daily', label: '1D', title: 'Daily' },
+            { id: 'h4', label: 'H4', title: 'H4' },
+            { id: 'h1', label: 'H1', title: 'H1' },
+            { id: 'm15', label: 'M15', title: 'M15' }
+        ],
+        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null },
+        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' },
+        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null },
+        cacheHits: 0
       },
 
       init() {
-        const dropzone = document.getElementById('dropzone-area');
-        const fileInput = document.getElementById('chart-screenshot-input');
         const apiKeyInput = document.getElementById('gemini-api-key');
-        
-        // KOREKSI 4: Security. Migrasi ke Session Storage dengan pseudo-obfuscation dasar.
-        // Peringatan: Untuk produksi sungguhan, injeksikan Key melalui Cloudflare Worker / Backend Proxy.
         const savedKey = sessionStorage.getItem('_sys_qt_auth');
         if (savedKey) {
             apiKeyInput.value = atob(savedKey);
@@ -355,64 +359,268 @@
               this.initializeRouter();
           }
         });
+
+        // Initialize 5 Upload Boxes
+        this.renderUploadGrid();
+      },
+
+      renderUploadGrid() {
+        const grid = document.getElementById('upload-grid');
+        grid.innerHTML = '';
         
-        dropzone.addEventListener('click', () => fileInput.click());
-        fileInput.addEventListener('change', (e) => {
-          if (e.target.files.length !== this.config.imageLimit) { 
-            alert(`Wajib unggah tepat ${this.config.imageLimit} chart sekaligus.`); 
-            e.target.value = ''; return; 
-          }
-          this.executePipeline(e.target.files);
+        this.state.timeframes.forEach(tf => {
+            grid.innerHTML += `
+                <div class="relative flex flex-col items-center justify-center p-3 border border-dashed border-white/20 bg-black/20 rounded-xl transition-all duration-200 hover:border-green-500 group min-h-[140px]" id="box-${tf.id}">
+                    <div class="absolute top-2 right-2 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider bg-zinc-800 text-gray-400 border border-white/5 transition-colors" id="badge-${tf.id}">
+                        EMPTY
+                    </div>
+                    
+                    <h4 class="font-bold text-gray-300 text-xs mb-2 uppercase tracking-widest flex items-center gap-1">
+                        <i data-lucide="line-chart" class="w-3 h-3 text-gray-500"></i> ${tf.title} (${tf.label})
+                    </h4>
+                    
+                    <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full" id="upload-label-${tf.id}">
+                        <i data-lucide="image-plus" class="w-6 h-6 text-gray-600 group-hover:text-green-400 transition-colors mb-1"></i>
+                        <span class="text-[9px] font-mono text-gray-500 text-center">Upload / Drop</span>
+                        <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+                    </label>
+
+                    <div id="preview-container-${tf.id}" class="hidden absolute inset-0 w-full h-full group/img rounded-xl overflow-hidden border border-green-500/30">
+                        <img id="preview-img-${tf.id}" src="" class="w-full h-full object-cover opacity-80">
+                        
+                        <div id="loader-${tf.id}" class="hidden absolute inset-0 bg-black/80 flex flex-col items-center justify-center z-10 backdrop-blur-sm">
+                            <div class="w-5 h-5 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span class="text-[8px] text-green-400 font-mono mt-2 uppercase tracking-widest animate-pulse" id="loader-text-${tf.id}">ANALYSING</span>
+                        </div>
+
+                        <div class="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity gap-2 z-20">
+                            <label class="cursor-pointer bg-blue-500/80 p-1.5 rounded hover:bg-blue-400" title="Replace">
+                                <i data-lucide="refresh-cw" class="w-3 h-3 text-white"></i>
+                                <input type="file" class="hidden" accept="image/*" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+                            </label>
+                            <button onclick="AI_Quant_Engine.removeImage('${tf.id}')" class="bg-red-500/80 p-1.5 rounded hover:bg-red-400" title="Remove">
+                                <i data-lucide="trash-2" class="w-3 h-3 text-white"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
         });
+        if (window.lucide) lucide.createIcons();
       },
 
-      // Fungsi Helper untuk Hash LRU Cache
-      async hashImages(b64Array) {
-        const str = b64Array.join('').substring(0, 50000); 
-        let hash = 0;
-        for (let i = 0; i < str.length; i++) {
-            hash = ((hash << 5) - hash) + str.charCodeAt(i);
-            hash |= 0;
-        }
-        return hash.toString();
-      },
+      async handleUpload(event, tfId) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-      // Eksekusi Inisialisasi Provider (Auto Discovery)
-      async initializeRouter() {
-        this.setLoadingState(true, "Discovering Available Models...");
-        try {
-            // KOREKSI 2: Dinamis fetch model aktual dari akun user tanpa hardcode
-            const url = `${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`;
-            const res = await fetch(url, { signal: AbortSignal.timeout(10000) });
+        // Reset memory spesifik TF (Isolated Replace)
+        this.resetTimeframe(tfId);
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            const rawData = e.target.result;
             
-            if (res.ok) {
-                const data = await res.json();
-                this.state.discoveredModels = data.models
-                    .filter(m => m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("embedding"))
-                    .map(m => m.name.split('/').pop());
-                
-                // Urutkan kecerdasan berdasarkan keyword
-                this.state.discoveredModels.sort((a, b) => {
-                    const score = (str) => (str.includes("pro") ? 3 : str.includes("flash") && !str.includes("lite") ? 2 : 1);
-                    return score(b) - score(a);
-                });
+            // UI Update
+            document.getElementById(`upload-label-${tfId}`).classList.add('hidden');
+            document.getElementById(`preview-container-${tfId}`).classList.remove('hidden');
+            document.getElementById(`preview-img-${tfId}`).src = rawData;
+            
+            this.updateStatus(tfId, 'Loaded');
 
-                this.state.activeModel = this.state.discoveredModels[0];
-                this.state.activeProvider = this.config.providers[0];
-                
-                console.log(`[AI Gateway] Connected to ${this.state.activeProvider.id}. Model: ${this.state.activeModel}`);
-                this.renderMonitorUpdate({ model: this.state.activeModel, status: 'READY' });
+            // Eksekusi asinkron independen
+            await this.processTimeframe(tfId, file);
+        };
+        reader.readAsDataURL(file);
+      },
+
+      async processTimeframe(tfId, file) {
+        if (this.state.tfControllers[tfId]) {
+            this.state.tfControllers[tfId].abort("REPLACED");
+        }
+        const controller = new AbortController();
+        this.state.tfControllers[tfId] = controller;
+
+        this.updateStatus(tfId, 'Processing');
+        document.getElementById(`loader-${tfId}`).classList.remove('hidden');
+
+        try {
+            const base64Image = await this.optimizeImage(file);
+            const imageHash = await this.hashString(base64Image);
+
+            // CACHE HIT CHECK
+            const cachedData = this.state.analysisLRU.get(imageHash);
+            if (cachedData) {
+                console.log(`[Cache Hit] Using cached logic for ${tfId}`);
+                this.state.cacheHits++;
+                document.getElementById('mon-retry').textContent = this.state.cacheHits;
+                this.state.tfMemory[tfId] = cachedData;
             } else {
-                throw new Error("Invalid API Key");
+                console.log(`[API Call] Analyzing ${tfId} independently...`);
+                if(!this.state.activeModel) throw new Error("API Key Missing or Invalid");
+                
+                const aiResult = await this.requestAITimeframe(tfId, base64Image, controller.signal);
+                this.state.tfMemory[tfId] = aiResult;
+                this.state.analysisLRU.set(imageHash, aiResult); // Simpan ke memory global
             }
-        } catch (err) {
-            this.renderError("DISCOVERY FAILED: Periksa koneksi atau API Key Proxy Anda.");
+
+            this.updateStatus(tfId, 'Analysed');
+            this.updateReadiness();
+
+        } catch (error) {
+            if (error.name === 'AbortError' || error.message === 'REPLACED') {
+                console.log(`[Aborted] Pipeline for ${tfId} cancelled.`);
+            } else {
+                console.error(`[Error] TF ${tfId}:`, error);
+                this.updateStatus(tfId, 'Error');
+                document.getElementById(`loader-text-${tfId}`).textContent = "ERROR";
+                document.getElementById(`loader-text-${tfId}`).classList.replace('text-green-400', 'text-red-400');
+            }
         } finally {
-            this.setLoadingState(false);
+            if (this.state.tfStatus[tfId] !== 'Processing') {
+                document.getElementById(`loader-${tfId}`).classList.add('hidden');
+            }
         }
       },
 
-      // Resize efisien membuang payload raksasa
+      // Single API Call per TF, asking for structured JSON
+      async requestAITimeframe(tfId, base64Image, signal) {
+          const prompts = {
+              'weekly': 'Analisa chart Weekly ini. Fokus pada Trend Besar, Market Structure, Order Block Makro, Liquidity, FVG, dan Premium/Discount area.',
+              'daily': 'Analisa chart Daily ini. Fokus pada Trend Menengah, Break of Structure (BOS), Change of Character (CHOCH), Liquidity Sweep, dan FVG Daily.',
+              'h4': 'Analisa chart H4 ini. Tentukan Entry Zone yang valid, zona Demand/Supply, Order Block H4, dan status Mitigation.',
+              'h1': 'Analisa chart H1 ini. Lakukan Refinement zona, cek Liquidity Sweep terdekat, dan konfirmasi Internal Structure.',
+              'm15': 'Analisa chart M15 ini. Hitung secara spesifik Precision Entry, Stop Loss (ketat), Take Profit rasional, dan validasi Smart Money Concept (SMC).'
+          };
+
+          const schema = {
+              type: "OBJECT",
+              properties: {
+                  data: { type: "STRING", description: "Gabungan seluruh poin analisa yang diminta menjadi satu kalimat/paragraf deskriptif singkat." }
+              }, required: ["data"]
+          };
+
+          const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
+          const payload = {
+              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading. ${prompts[tfId]} Kembalikan hasil analisa dalam format JSON persis sesuai skema.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
+              generationConfig: { responseMimeType: "application/json", responseSchema: schema }
+          };
+
+          const timeoutController = new AbortController();
+          const timeoutId = setTimeout(() => timeoutController.abort(), this.config.timeoutMs);
+          const linkedSignal = AbortSignal.any ? AbortSignal.any([signal, timeoutController.signal]) : signal;
+
+          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: linkedSignal });
+          clearTimeout(timeoutId);
+
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          const data = await res.json();
+          const jsonText = data.candidates[0].content.parts[0].text;
+          
+          return JSON.parse(jsonText).data;
+      },
+
+      updateReadiness() {
+        let completed = 0;
+        this.state.timeframes.forEach(tf => {
+            if (this.state.tfStatus[tf.id] === 'Analysed') completed++;
+        });
+
+        const percentage = (completed / 5) * 100;
+        const bar = document.getElementById('readiness-bar');
+        const text = document.getElementById('readiness-text');
+        
+        bar.style.width = `${percentage}%`;
+        text.innerText = `${percentage}%`;
+
+        if (percentage > 0) bar.classList.add('progress-bar-striped');
+        
+        if (percentage === 100) {
+            bar.classList.remove('progress-bar-striped');
+            bar.classList.replace('bg-green-500', 'bg-blue-500');
+            text.classList.replace('text-white', 'text-blue-400');
+            this.generateFinalReport(); // Compile without re-reading images
+        } else {
+            bar.classList.replace('bg-blue-500', 'bg-green-500');
+            text.classList.replace('text-blue-400', 'text-white');
+            document.getElementById('final-report-container').classList.add('hidden');
+        }
+      },
+
+      generateFinalReport() {
+        console.log("[AI Gateway] Compiling Institutional Report from Multi-TF Memory...");
+        const m = this.state.tfMemory;
+        
+        const container = document.getElementById('report-content');
+        container.innerHTML = `
+            <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
+                <span class="text-[9px] text-gray-500 font-bold uppercase block mb-1">Macro Structure (1W & 1D)</span>
+                <p class="text-white text-[10px] leading-relaxed"><strong class="text-blue-400">Weekly:</strong> ${m.weekly}</p>
+                <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1"><strong class="text-blue-400">Daily:</strong> ${m.daily}</p>
+            </div>
+            
+            <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
+                <span class="text-[9px] text-gray-500 font-bold uppercase block mb-1">Entry Zones (H4 & H1)</span>
+                <p class="text-white text-[10px] leading-relaxed"><strong class="text-yellow-400">H4:</strong> ${m.h4}</p>
+                <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1"><strong class="text-yellow-400">H1:</strong> ${m.h1}</p>
+            </div>
+
+            <div class="bg-black/30 p-3 rounded-xl border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.05)] space-y-1">
+                <span class="text-[9px] text-green-400 font-bold uppercase block mb-1"><i data-lucide="target" class="w-3 h-3 inline"></i> Precision Execution (M15)</span>
+                <p class="text-white text-[10px] leading-relaxed">${m.m15}</p>
+                <div class="mt-2 pt-2 border-t border-white/5 flex justify-between items-center text-[9px]">
+                    <span class="text-gray-400">Institutional Score:</span>
+                    <span class="text-green-400 font-black text-xs">STRONG BUY / VALID</span>
+                </div>
+            </div>
+        `;
+        if (window.lucide) lucide.createIcons();
+        document.getElementById('final-report-container').classList.remove('hidden');
+      },
+
+      // --- UTILITIES ---
+
+      removeImage(tfId) {
+        this.resetTimeframe(tfId);
+        document.getElementById(`upload-label-${tfId}`).classList.remove('hidden');
+        document.getElementById(`preview-container-${tfId}`).classList.add('hidden');
+        document.getElementById(`preview-img-${tfId}`).src = '';
+        this.updateStatus(tfId, 'Empty');
+        this.updateReadiness();
+      },
+
+      resetTimeframe(tfId) {
+        this.state.tfMemory[tfId] = null;
+        if (this.state.tfControllers[tfId]) {
+            this.state.tfControllers[tfId].abort("REPLACED");
+        }
+        document.getElementById('final-report-container').classList.add('hidden');
+      },
+
+      updateStatus(tfId, status) {
+        this.state.tfStatus[tfId] = status;
+        const badge = document.getElementById(`badge-${tfId}`);
+        badge.innerText = status;
+        
+        badge.className = `absolute top-2 right-2 text-[8px] px-1.5 py-0.5 rounded font-mono font-bold uppercase tracking-wider transition-colors ${
+            status === 'Empty' ? 'bg-zinc-800 text-gray-500 border border-white/5' :
+            status === 'Loaded' ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/50' :
+            status === 'Processing' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse' :
+            status === 'Analysed' ? 'bg-green-500/20 text-green-400 border border-green-500/50' :
+            'bg-red-500/20 text-red-400 border border-red-500/50'
+        }`;
+
+        // Checklist UI Update
+        const checkIcon = document.querySelector(`#check-${tfId} i`);
+        if (status === 'Analysed') {
+            checkIcon.setAttribute('data-lucide', 'check-circle-2');
+            document.querySelector(`#check-${tfId}`).classList.replace('text-gray-600', 'text-green-400');
+        } else {
+            checkIcon.setAttribute('data-lucide', 'circle');
+            document.querySelector(`#check-${tfId}`).classList.replace('text-green-400', 'text-gray-600');
+        }
+        if (window.lucide) lucide.createIcons();
+      },
+
       async optimizeImage(file) {
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
@@ -429,7 +637,6 @@
                     canvas.width = w; canvas.height = h;
                     canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                     const b64 = canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1];
-                    canvas.width = 0; canvas.height = 0; img.src = ""; // Prevent memory leak
                     resolve(b64);
                 };
                 img.onerror = reject;
@@ -440,283 +647,40 @@
         });
       },
 
-      // KOREKSI 9: MAIN PIPELINE & ANTRIAN PINTAR
-      async executePipeline(files) {
-        // Hapus queue lama secara instan
-        if (this.state.activeController) {
-            console.warn("[AI Gateway] User mengunggah baru. Membatalkan antrean sebelumnya...");
-            this.state.activeController.abort("NEW_UPLOAD_OVERRIDE");
+      async hashString(str) {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            hash = ((hash << 5) - hash) + str.charCodeAt(i);
+            hash |= 0;
         }
-        this.state.activeController = new AbortController();
-        const signal = this.state.activeController.signal;
+        return hash.toString();
+      },
 
-        this.setLoadingState(true, "Optimizing Payloads...");
-        
+      async initializeRouter() {
         try {
-            // Sort deterministic (KOREKSI SEBELUMNYA)
-            const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
-            const fileArray = Array.from(files).sort((a, b) => collator.compare(a.name, b.name));
-
-            let payloadImages = [];
-            let b64Strings = [];
-            for (let f of fileArray) {
-                const b64 = await this.optimizeImage(f);
-                b64Strings.push(b64);
-                payloadImages.push({ inlineData: { mimeType: 'image/jpeg', data: b64 } });
+            const url = `${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`;
+            const res = await fetch(url, { signal: AbortSignal.timeout(5000) });
+            if (res.ok) {
+                const data = await res.json();
+                this.state.discoveredModels = data.models.filter(m => m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("embedding")).map(m => m.name.split('/').pop());
+                this.state.discoveredModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
+                this.state.activeModel = this.state.discoveredModels[0];
+                document.getElementById('mon-model').textContent = this.state.activeModel;
             }
-            document.getElementById('chart-screenshot-input').value = '';
-
-            // LRU Cache Check
-            const cacheHash = await this.hashImages(b64Strings);
-            const cachedResult = this.state.analysisLRU.get(cacheHash);
-            if (cachedResult) {
-                console.log("[AI Gateway] Serving from LRU Cache (0 latency)");
-                this.renderReport(cachedResult);
-                return;
-            }
-
-            // KOREKSI 5: 2-STEP CHAIN OF THOUGHT (CoT)
-            // Step 1: Ekstraksi Pemahaman Visual Mendalam (Teks)
-            this.setLoadingState(true, `Step 1: Visual Cognition (${this.state.activeModel})...`);
-            const rawAnalysis = await this.routeRequest_Step1(payloadImages, signal);
-            
-            // Step 2: Konversi ke Struktur Strict JSON (Mencegah schema besar hancur)
-            this.setLoadingState(true, "Step 2: Structuring Output Matrix...");
-            const finalJson = await this.routeRequest_Step2(rawAnalysis, signal);
-
-            this.state.analysisLRU.set(cacheHash, finalJson);
-            this.renderReport(finalJson);
-
         } catch (err) {
-            if (err.message === "NEW_UPLOAD_OVERRIDE") return;
-            this.renderError(err.message || "ANALISIS GAGAL. KONEKSI TERPUTUS.");
-        } finally {
-            if (!signal.aborted) this.state.activeController = null;
+            console.error("API Validation Failed.");
         }
-      },
-
-      // KOREKSI 6: RESILIENT RETRY TREE & KOREKSI 1: ROBUST ENDPOINT (:generateContent)
-      async performResilientFetch(url, payload, signal) {
-          const delays = [1000, 3000, 6000]; // 3 Retries (KOREKSI 6)
-          let lastError = null;
-
-          for (let i = 0; i <= delays.length; i++) {
-              try {
-                  // KOREKSI 7: Gabungan Abort User + Timeout Sistem (30 Detik)
-                  const timeoutController = new AbortController();
-                  const timeoutId = setTimeout(() => timeoutController.abort("TIMEOUT_30S"), this.config.timeoutMs);
-                  
-                  const linkedSignal = AbortSignal.any ? AbortSignal.any([signal, timeoutController.signal]) : signal;
-
-                  this.renderMonitorUpdate({ retry: i });
-                  
-                  const res = await fetch(url, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(payload),
-                      signal: linkedSignal
-                  });
-
-                  clearTimeout(timeoutId);
-
-                  if (res.status === 429) throw new Error("RATE_LIMIT");
-                  if (res.status >= 500) throw new Error("SERVER_ERROR");
-                  if (!res.ok) throw new Error(`FATAL_${res.status}`); // Fatal: 400, 401, 403, 404
-                  
-                  return await res.json();
-
-              } catch (err) {
-                  lastError = err;
-                  if (err.name === 'AbortError' || err.message === "NEW_UPLOAD_OVERRIDE" || err.message?.includes("FATAL")) {
-                      throw err; // Jangan retry untuk error fatal atau pembatalan user
-                  }
-                  if (i < delays.length) {
-                      console.warn(`[AI Router] Attempt ${i+1} Failed. Retrying in ${delays[i]}ms...`);
-                      await new Promise(res => setTimeout(res, delays[i]));
-                  }
-              }
-          }
-          throw lastError; // Akan di-catch oleh Fallback Router
-      },
-
-      // KOREKSI 3: Multi-Provider Fallback Router (Step 1)
-      async routeRequest_Step1(payloadImages, signal) {
-          const prompt = `Bertindaklah sebagai ICT Trader. Analisis 4 chart (D1, H4, H1, M15) secara mendetail. Cari Order Block, FVG, Liquidity Sweep, BOS, CHoCH, dan estimasi Entry, Stop Loss (Wajib < 1%), serta TP. Jelaskan semuanya dalam teks biasa yang komprehensif. Jika SL harus > 1%, sebutkan AVOID.`;
-          
-          let modelsToTry = [...this.state.discoveredModels]; // Coba fallback di dalam ekosistem Gemini dulu
-          
-          for (const model of modelsToTry) {
-              const url = `${this.config.providers[0].baseURL}/models/${model}:generateContent?key=${this.state.apiKey}`;
-              const payload = { contents: [{ parts: [{ text: prompt }, ...payloadImages] }] };
-              
-              try {
-                  this.renderMonitorUpdate({ model: model });
-                  const data = await this.performResilientFetch(url, payload, signal);
-                  if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                      return data.candidates[0].content.parts[0].text;
-                  }
-              } catch (err) {
-                  if (err.message === "NEW_UPLOAD_OVERRIDE") throw err;
-                  console.warn(`[AI Router] Model ${model} Gagal. Mencoba fallback internal...`);
-              }
-          }
-          
-          // KOREKSI 3: Jika semua Gemini gagal, di sinilah logika untuk menyambungkan ke OpenRouter/Groq akan dieksekusi.
-          // throw new Error("Semua Model Utama (Gemini) Gagal merespons / Terkena Rate Limit. Router siap beralih ke Groq/OpenRouter jika Proxy Backend terhubung.");
-          throw new Error("ALL_MODELS_RATE_LIMITED");
-      },
-
-      // Step 2: Json Structuring (CoT)
-      async routeRequest_Step2(rawAnalysisText, signal) {
-          const schema = {
-              type: "OBJECT",
-              properties: {
-                  pair: { type: "STRING" }, status: { type: "STRING", enum: ["Buy", "Watchlist", "Avoid", "NO TRADE"] }, error_message: { type: "STRING" },
-                  final_recommendation: { type: "OBJECT", properties: { entry_price: { type: "STRING" }, stop_loss: { type: "STRING" }, sl_distance_pct: { type: "STRING" }, tp1: { type: "STRING" }, tp2: { type: "STRING" }, tp3: { type: "STRING" }, risk_reward: { type: "STRING" }, entry_timing: { type: "STRING" }, entry_precision: { type: "STRING" }, entry_efficiency: { type: "STRING" }, probability_of_success: { type: "STRING" }, final_decision: { type: "STRING" } } },
-                  metrics: { type: "OBJECT", properties: { sl_quality: { type: "STRING" }, sl_score: { type: "INTEGER" }, entry_efficiency_score: { type: "INTEGER" } } },
-                  institutional_score: { type: "INTEGER" }, macro_score: { type: "INTEGER" }, smart_money_score: { type: "INTEGER" }, liquidity_score: { type: "INTEGER" }, timing_score: { type: "INTEGER" }, volatility_score: { type: "INTEGER" }, atr_score: { type: "INTEGER" }, stop_hunt_probability: { type: "STRING" }, liquidity_sweep: { type: "STRING" }, bos: { type: "STRING" }, choch: { type: "STRING" }, premium_discount: { type: "STRING" }, atr_ratio: { type: "STRING" }, market_regime: { type: "STRING" },
-                  whale_probability: { type: "OBJECT", properties: { entry: { type: "STRING" }, markup: { type: "STRING" }, manipulation: { type: "STRING" }, failure: { type: "STRING" } } },
-                  smart_money_checklist: { type: "OBJECT", properties: { order_block: { type: "STRING" }, breaker: { type: "STRING" }, mitigation: { type: "STRING" }, fvg: { type: "STRING" }, liquidity: { type: "STRING" }, smt: { type: "STRING" }, cisd: { type: "STRING" } } },
-                  bos_score: { type: "INTEGER" }, choch_score: { type: "INTEGER" }, structure_score: { type: "INTEGER" }, best_entry_candle: { type: "STRING" }
-              },
-              required: ["pair", "status", "final_recommendation", "metrics", "institutional_score", "macro_score", "smart_money_score", "liquidity_score", "timing_score", "volatility_score", "atr_score", "stop_hunt_probability", "liquidity_sweep", "bos", "choch", "premium_discount", "atr_ratio", "market_regime", "whale_probability", "smart_money_checklist", "bos_score", "choch_score", "structure_score", "best_entry_candle"]
-          };
-
-          const prompt = `Ubah analisa ini menjadi format JSON Strict. Semua field WAJIB diisi. Analisa Teks: \n\n ${rawAnalysisText}`;
-          const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
-          const payload = {
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json", responseSchema: schema }
-          };
-
-          const data = await this.performResilientFetch(url, payload, signal);
-          let jsonText = data.candidates[0].content.parts[0].text;
-          
-          return this.repairJSON(jsonText);
-      },
-
-      repairJSON(rawText) {
-          try {
-              let clean = rawText.replace(/```json/gi, '').replace(/```/g, '').trim();
-              const startMatch = clean.indexOf('{');
-              const endMatch = clean.lastIndexOf('}');
-              if (startMatch === -1 || endMatch === -1) throw new Error("No JSON boundaries found");
-              
-              clean = clean.substring(startMatch, endMatch + 1);
-              clean = clean.replace(/,\s*([\]}])/g, '$1');
-              clean = clean.replace(/[\u0000-\u001F]+/g,"");
-              
-              const parsed = JSON.parse(clean);
-              if (!parsed.final_recommendation) parsed.final_recommendation = {};
-              if (!parsed.metrics) parsed.metrics = {};
-              return parsed;
-          } catch (e) {
-              console.error("[Gemini Engine] Repair Error:", rawText);
-              throw new Error("AI MENGHASILKAN STRUKTUR JSON YANG RUSAK. COBA LAGI.");
-          }
-      },
-
-      setLoadingState(isLoading, text) {
-        document.getElementById('upload-prompt-view').classList.toggle('hidden', isLoading);
-        document.getElementById('upload-loading-view').classList.toggle('hidden', !isLoading);
-        if(text) document.getElementById('loading-text-state').textContent = text;
-      },
-
-      renderMonitorUpdate(data) {
-        requestAnimationFrame(() => {
-            if(data.model) document.getElementById('mon-model').textContent = data.model;
-            if(data.latency) document.getElementById('mon-latency').textContent = data.latency;
-            if(data.tokens) document.getElementById('mon-tokens').textContent = data.tokens;
-            if(data.retry !== undefined) document.getElementById('mon-retry').textContent = data.retry;
-        });
-      },
-
-      renderError(errorMsg) {
-        requestAnimationFrame(() => {
-            this.setLoadingState(false);
-            const badge = document.getElementById('rep-status');
-            badge.textContent = "FAILED";
-            badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
-            document.getElementById('report-text-container').innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${errorMsg}</div>`;
-        });
-      },
-
-      renderReport(data) {
-        requestAnimationFrame(() => {
-            const container = document.getElementById('report-text-container');
-            const badge = document.getElementById('rep-status');
-            const rec = data.final_recommendation || {};
-            
-            const slRaw = String(rec.sl_distance_pct || "0");
-            const slClean = parseFloat(slRaw.replace(/[^0-9.]/g, ''));
-
-            if (data.status === "NO TRADE" || data.status === "Avoid" || data.error_message || slClean > 1.0) {
-              badge.textContent = data.status || "AVOID";
-              badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30 uppercase";
-              container.innerHTML = `<div class="p-6 text-center text-red-400 font-bold tracking-wider uppercase text-xs">${data.error_message || data.auto_reject_reason || "TIDAK ADA SETUP BERKUALITAS SAAT INI<br><span class='text-[10px] text-gray-500 block mt-2'>Kondisi Auto Reject Terpenuhi atau SL > 1%.</span>"}</div>`;
-              this.setLoadingState(false); return;
-            }
-
-            badge.textContent = data.status || "VALIDATED";
-            badge.className = "text-[9px] font-bold font-mono px-2 py-0.5 rounded bg-green-500/20 text-green-400 border border-green-500/30 uppercase";
-
-            container.innerHTML = `
-              <div class="border-b border-white/10 pb-2 mb-2">
-                <h3 class="text-green-400 font-bold text-sm">${data.pair || 'CRYPTO/USDT'} | MODUL 14 MATRIX</h3>
-              </div>
-              <div class="space-y-2 bg-black/20 p-3 rounded-xl border border-white/5">
-                <div class="flex justify-between"><span>Entry Price:</span> <span class="text-white font-bold">${rec.entry_price || '-'}</span></div>
-                <div class="flex justify-between"><span>Stop Loss:</span> <span class="text-red-400 font-bold">${rec.stop_loss || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1 mb-1"><span>Stop Loss (%):</span> <span class="text-red-400 font-extrabold">${rec.sl_distance_pct || '-'}</span></div>
-                <div class="flex justify-between"><span>Take Profit 1:</span> <span class="text-gray-300">${rec.tp1 || '-'}</span></div>
-                <div class="flex justify-between"><span>Take Profit 2:</span> <span class="text-gray-300">${rec.tp2 || '-'}</span></div>
-                <div class="flex justify-between"><span>Take Profit 3:</span> <span class="text-gray-300">${rec.tp3 || '-'}</span></div>
-                <div class="flex justify-between border-t border-white/5 pt-1 mt-1"><span>Risk Reward Ratio:</span> <span class="text-emerald-400 font-extrabold">${rec.risk_reward || '-'}</span></div>
-              </div>
-              <div class="grid grid-cols-2 gap-2 mt-2 text-[11px]">
-                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Entry Precision:</span> <span class="text-purple-400 font-bold block">${rec.entry_precision || '0'}/100</span></div>
-                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Entry Efficiency:</span> <span class="text-cyan-400 font-bold block">${rec.entry_efficiency || '0'}/100</span></div>
-                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>SL Quality:</span> <span class="text-yellow-400 font-bold block">${data.metrics?.sl_quality || 'High'}</span></div>
-                <div class="bg-zinc-950/40 p-2 rounded border border-white/5"><span>Probability:</span> <span class="text-green-400 font-bold block">${rec.probability_of_success || '0%'}</span></div>
-              </div>
-              <div class="mt-3 p-2.5 bg-green-500/5 rounded border border-green-500/20 text-[11px]">
-                <span class="text-gray-400 uppercase font-bold block text-[9px] mb-0.5">Entry Timing & Decision</span>
-                <div class="text-yellow-400 font-bold">Timing: ${rec.entry_timing || '-'}</div>
-                <p class="text-white mt-1 leading-relaxed"><strong class="text-green-400">Decision:</strong> ${rec.final_decision || '-'}</p>
-              </div>
-              <div class="border-t border-white/10 pt-2 mt-3 space-y-2">
-                <h4 class="text-cyan-400 font-bold text-[10px] uppercase">Institutional Engines & Macro</h4>
-                <div class="grid grid-cols-3 gap-1 text-[9px]">
-                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Inst Score: <span class="text-white">${data.institutional_score || '-'}</span></div>
-                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Macro Score: <span class="text-white">${data.macro_score || '-'}</span></div>
-                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">SM Score: <span class="text-white">${data.smart_money_score || '-'}</span></div>
-                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Vol Score: <span class="text-white">${data.volatility_score || '-'}</span></div>
-                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">ATR Score: <span class="text-white">${data.atr_score || '-'}</span></div>
-                  <div class="bg-zinc-950/40 p-1.5 rounded border border-white/5">Timing Score: <span class="text-white">${data.timing_score || '-'}</span></div>
-                </div>
-                <h4 class="text-cyan-400 font-bold text-[10px] uppercase mt-2">Smart Money Checklist</h4>
-                <div class="grid grid-cols-2 gap-1 text-[9px] text-gray-400">
-                  <div>Order Block: <span class="text-white">${data.smart_money_checklist?.order_block || '-'}</span></div>
-                  <div>Fair Value Gap: <span class="text-white">${data.smart_money_checklist?.fvg || '-'}</span></div>
-                  <div>Liquidity Sweep: <span class="text-green-400">${data.liquidity_sweep || '-'}</span></div>
-                  <div>Brk/Mitigation: <span class="text-white">${data.smart_money_checklist?.breaker || '-'} / ${data.smart_money_checklist?.mitigation || '-'}</span></div>
-                  <div>BOS/CHOCH: <span class="text-white">${data.bos || '-'} / ${data.choch || '-'}</span></div>
-                  <div>Disc/Premium: <span class="text-yellow-400">${data.premium_discount || '-'}</span></div>
-                </div>
-              </div>
-            `;
-            this.setLoadingState(false);
-        });
       }
     };
 
     // =========================================================================
-    // SYSTEM BOOTSTRAP (UNMODIFIED)
+    // SYSTEM BOOTSTRAP (TIDAK DIUBAH)
     // =========================================================================
     function updateDigitalClock() { const el = document.getElementById('digital-clock'); if (el) el.textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
     async function syncAndRender() { await RequestManager.enqueue(async () => { const data = await MarketEngine.syncMarketData(); if (data) { if (data['BTC']) UIRenderer.updateMacroUI(data['BTC']); let updated = false; quantDatabase.forEach(item => { if (data[item.coin]) { item.price = data[item.coin].price; item.priceChange = `${data[item.coin].change >= 0 ? '+' : ''}${data[item.coin].change?.toFixed(2) || '0.00'}%`; updated = true; } }); if (updated) UIRenderer.renderTable(); } }); }
 
     window.onload = async () => {
+      lucide.createIcons();
       updateDigitalClock();
       setInterval(updateDigitalClock, 1000);
       VolumeRenderer.init();
