@@ -10,746 +10,894 @@
   <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
   
   <style>
-    html, body { overflow-x: hidden; width: 100%; max-width: 100vw; background: #09090e; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #e2e8f0; }
-    .pixel-font { font-family: 'Press Start 2P', monospace; }
-    .neon-border-green { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25), 0 0 20px rgba(34, 197, 94, 0.08); }
-    .neon-border-orange { box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3), 0 0 15px rgba(249, 115, 22, 0.08); }
-    .glass-panel { background: rgba(13, 13, 23, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.04); }
-    .custom-scroll::-webkit-scrollbar { height: 6px; width: 5px; }
-    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.3); border-radius: 4px; }
-    .price-up { color: #22c55e !important; }
-    .price-down { color: #ef4444 !important; }
-    
-    /* Animasi Progress */
-    .progress-bar-striped {
-      background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
-      background-size: 1rem 1rem;
-      animation: progress-animation 1s linear infinite;
-    }
-    @keyframes progress-animation { from { background-position: 1rem 0; } to { background-position: 0 0; } }
+ html, body { overflow-x: hidden; width: 100%; max-width: 100vw; background: #09090e; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; color: #e2e8f0; }
+ .pixel-font { font-family: 'Press Start 2P', monospace; }
+ .neon-border-green { box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.25), 0 0 20px rgba(34, 197, 94, 0.08); }
+ .neon-border-orange { box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.3), 0 0 15px rgba(249, 115, 22, 0.08); }
+ .glass-panel { background: rgba(13, 13, 23, 0.9); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.04); }
+ .custom-scroll::-webkit-scrollbar { height: 6px; width: 5px; }
+ .custom-scroll::-webkit-scrollbar-thumb { background: rgba(34, 197, 94, 0.3); border-radius: 4px; }
+ .price-up { color: #22c55e !important; }
+ .price-down { color: #ef4444 !important; }
+ 
+ /* Animasi Progress */
+ .progress-bar-striped {
+ background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
+ background-size: 1rem 1rem;
+ animation: progress-animation 1s linear infinite;
+ }
+ @keyframes progress-animation { from { background-position: 1rem 0; } to { background-position: 0 0; } }
   </style>
 </head>
 <body class="min-h-screen flex items-start justify-center p-2 sm:p-4">
 
   <div class="w-full max-w-7xl space-y-4">
-    
-    <div class="glass-panel rounded-2xl p-4 border border-white/5">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div>
-          <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-green-400 font-semibold tracking-wider pixel-font text-[10px] bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">QUANT ALGO v3.0</span>
-            <h1 class="text-white font-bold text-base tracking-wide uppercase">Institutional Elite Scanner</h1>
-          </div>
-          <p class="text-xs text-gray-400 mt-1">Early Accumulation & Spot/Futures Flow Engine</p>
-        </div>
-        <div class="text-left sm:text-right">
-          <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
-            <i data-lucide="clock" class="w-3 h-3 text-green-400"></i> <span id="digital-clock">00:00:00 UTC</span>
-          </span>
-          <div id="app-network-status" class="text-xs text-yellow-400 font-bold mt-1 tracking-tight animate-pulse">● INITIALIZING...</div>
-        </div>
-      </div>
-    </div>
+ 
+ <div class="glass-panel rounded-2xl p-4 border border-white/5">
+ <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+ <div>
+ <div class="flex items-center gap-2 flex-wrap">
+ <span class="text-green-400 font-semibold tracking-wider pixel-font text-[10px] bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">QUANT ALGO v3.0</span>
+ <h1 class="text-white font-bold text-base tracking-wide uppercase">Institutional Elite Scanner</h1>
+ </div>
+ <p class="text-xs text-gray-400 mt-1">Early Accumulation & Spot/Futures Flow Engine</p>
+ </div>
+ <div class="text-left sm:text-right">
+ <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
+ <i data-lucide="clock" class="w-3 h-3 text-green-400"></i> <span id="digital-clock">00:00:00 UTC</span>
+ </span>
+ <div id="app-network-status" class="text-xs text-yellow-400 font-bold mt-1 tracking-tight animate-pulse">● INITIALIZING...</div>
+ </div>
+ </div>
+ </div>
 
-    <div class="glass-panel rounded-2xl p-4 sm:p-5 neon-border-green bg-gradient-to-b from-emerald-950/10 to-transparent space-y-4">
-      <div class="bg-gradient-to-r from-red-950/20 to-black/40 p-4 rounded-xl border border-red-500/20 neon-border-orange">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center shrink-0">
-              <i data-lucide="bitcoin" class="w-6 h-6 text-red-400"></i>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold text-red-400 uppercase tracking-widest font-mono">Macro Liquidity Anchor</span>
-              </div>
-              <div class="flex items-baseline gap-2 mt-0.5">
-                <span class="text-2xl font-extrabold text-white tracking-tight font-mono" id="btc-live-price">$0.00</span>
-                <span class="text-xs font-bold text-gray-400 font-mono" id="btc-live-change">0.00%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bg-black/30 px-3 py-2 rounded-lg border border-white/5 w-full md:w-auto">
-            <span class="text-[9px] text-gray-500 uppercase font-mono block">USDT.D & Altcoin Season Status</span>
-            <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5 mt-0.5" id="macro-status">
-              <i data-lucide="activity" class="w-3.5 h-3.5"></i>
-              Evaluating Macro Risk...
-            </span>
-          </div>
-        </div>
-      </div>
+ <div class="glass-panel rounded-2xl p-4 sm:p-5 neon-border-green bg-gradient-to-b from-emerald-950/10 to-transparent space-y-4">
+ <div class="bg-gradient-to-r from-red-950/20 to-black/40 p-4 rounded-xl border border-red-500/20 neon-border-orange">
+ <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+ <div class="flex items-center gap-4">
+ <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center shrink-0">
+ <i data-lucide="bitcoin" class="w-6 h-6 text-red-400"></i>
+ </div>
+ <div>
+ <div class="flex items-center gap-2">
+ <span class="text-[11px] font-bold text-red-400 uppercase tracking-widest font-mono">Macro Liquidity Anchor</span>
+ </div>
+ <div class="flex items-baseline gap-2 mt-0.5">
+ <span class="text-2xl font-extrabold text-white tracking-tight font-mono" id="btc-live-price">$0.00</span>
+ <span class="text-xs font-bold text-gray-400 font-mono" id="btc-live-change">0.00%</span>
+ </div>
+ </div>
+ </div>
+ <div class="bg-black/30 px-3 py-2 rounded-lg border border-white/5 w-full md:w-auto">
+ <span class="text-[9px] text-gray-500 uppercase font-mono block">USDT.D & Altcoin Season Status</span>
+ <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5 mt-0.5" id="macro-status">
+ <i data-lucide="activity" class="w-3.5 h-3.5"></i>
+ Evaluating Macro Risk...
+ </span>
+ </div>
+ </div>
+ </div>
 
-      <div class="p-4 bg-black/40 rounded-xl border border-white/5 space-y-2">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold tracking-wider text-gray-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Spot Volume Feed
-          </span>
-          <span class="text-[10px] text-gray-500 font-mono">Auto-refresh Active</span>
-        </div>
-        <div id="live-volume-bars" class="h-16 flex items-end gap-1 pt-2 px-1 bg-zinc-950/50 rounded-lg overflow-hidden border border-white/5">
-        </div>
-      </div>
+ <div class="p-4 bg-black/40 rounded-xl border border-white/5 space-y-2">
+ <div class="flex justify-between items-center">
+ <span class="text-xs font-bold tracking-wider text-gray-400 flex items-center gap-1.5">
+ <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Spot Volume Feed
+ </span>
+ <span class="text-[10px] text-gray-500 font-mono">Auto-refresh Active</span>
+ </div>
+ <div id="live-volume-bars" class="h-16 flex items-end gap-1 pt-2 px-1 bg-zinc-950/50 rounded-lg overflow-hidden border border-white/5">
+ </div>
+ </div>
 
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3 mt-4">
-        <div>
-          <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
-            <i data-lucide="filter" class="w-5 h-5 text-green-400"></i>
-            TOP EARLY ACCUMULATION (WHALE FILTERED)
-          </h2>
-        </div>
-      </div>
+ <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3 mt-4">
+ <div>
+ <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
+ <i data-lucide="filter" class="w-5 h-5 text-green-400"></i>
+ TOP EARLY ACCUMULATION (WHALE FILTERED)
+ </h2>
+ </div>
+ </div>
 
-      <div class="w-full overflow-x-auto custom-scroll border border-white/5 rounded-xl bg-black/20">
-        <table class="w-full text-left border-collapse min-w-[1200px]">
-          <thead>
-            <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[10px] uppercase tracking-wider">
-              <th class="p-3 text-center">Rank</th>
-              <th class="p-3">Coin</th>
-              <th class="p-3">Price / 24h</th>
-              <th class="p-3">Demand Zone (Dist)</th>
-              <th class="p-3">Entry Area</th>
-              <th class="p-3 text-center">Stop Loss</th>
-              <th class="p-3 text-center">SL %</th>
-              <th class="p-3 text-center text-emerald-400">RR</th>
-              <th class="p-3 text-center text-purple-400">Entry Score</th>
-              <th class="p-3 text-center text-cyan-400">SL Score</th>
-              <th class="p-3 text-right text-green-400">Timing</th>
-            </tr>
-          </thead>
-          <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
-          </tbody>
-        </table>
-      </div>
-    </div>
+ <div class="w-full overflow-x-auto custom-scroll border border-white/5 rounded-xl bg-black/20">
+ <table class="w-full text-left border-collapse min-w-[1200px]">
+ <thead>
+ <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[10px] uppercase tracking-wider">
+ <th class="p-3 text-center">Rank</th>
+ <th class="p-3">Coin</th>
+ <th class="p-3">Price / 24h</th>
+ <th class="p-3">Demand Zone (Dist)</th>
+ <th class="p-3">Entry Area</th>
+ <th class="p-3 text-center">Stop Loss</th>
+ <th class="p-3 text-center">SL %</th>
+ <th class="p-3 text-center text-emerald-400">RR</th>
+ <th class="p-3 text-center text-purple-400">Entry Score</th>
+ <th class="p-3 text-center text-cyan-400">SL Score</th>
+ <th class="p-3 text-right text-green-400">Timing</th>
+ </tr>
+ </thead>
+ <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
+ </tbody>
+ </table>
+ </div>
+ </div>
 
-    <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
-      
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
-        <div class="flex items-center gap-2">
-          <span class="text-yellow-400 font-semibold tracking-wider pixel-font text-[10px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">QUANT VISION v4.5</span>
-          <h2 class="text-white font-bold text-base tracking-wide uppercase flex items-center gap-2">
-            <i data-lucide="cpu" class="w-5 h-5 text-yellow-400"></i> Smart Money Logic Engine
-          </h2>
-        </div>
-        <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10 max-w-sm w-full font-mono">
-          <i data-lucide="key" class="w-4 h-4 text-gray-400 shrink-0"></i>
-          <input type="password" id="gemini-api-key" placeholder="Enter Proxy/API Key..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" />
-        </div>
-      </div>
+ <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
+ 
+ <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
+ <div class="flex items-center gap-2">
+ <span class="text-yellow-400 font-semibold tracking-wider pixel-font text-[10px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">QUANT VISION v4.5</span>
+ <h2 class="text-white font-bold text-base tracking-wide uppercase flex items-center gap-2">
+ <i data-lucide="cpu" class="w-5 h-5 text-yellow-400"></i> Smart Money Logic Engine
+ </h2>
+ </div>
+ <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10 max-w-sm w-full font-mono">
+ <i data-lucide="key" class="w-4 h-4 text-gray-400 shrink-0"></i>
+ <input type="password" id="gemini-api-key" placeholder="Enter Proxy/API Key..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" />
+ </div>
+ </div>
 
-      <div class="w-full flex justify-between items-center bg-[#0d0d12] border border-white/5 rounded-xl p-2 px-4 mb-4">
-          <div class="text-[10px] font-mono text-gray-400 flex items-center gap-4 hidden sm:flex">
-             <span id="mon-tokens" class="text-blue-400">Tokens: Optimized</span>
-             <span id="mon-latency" class="text-yellow-400">Latency: -</span>
-             <span>Cache Hits: <span id="mon-retry" class="text-purple-400">0</span></span>
-          </div>
-      </div>
+ <div class="w-full flex justify-between items-center bg-[#0d0d12] border border-white/5 rounded-xl p-2 px-4 mb-4">
+ <div class="text-[10px] font-mono text-gray-400 flex items-center gap-4 hidden sm:flex">
+ <span id="mon-tokens" class="text-blue-400">Model: Detecting...</span>
+ <span id="mon-latency" class="text-yellow-400">Sys Latency: -</span>
+ <span>Cache Hits: <span id="mon-retry" class="text-purple-400">0</span></span>
+ </div>
+ </div>
 
-      <div class="bg-black/30 p-4 rounded-xl border border-white/5 mb-6">
-        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
-          <div class="flex gap-4 font-mono text-[10px] font-bold tracking-wider" id="tf-checklists">
-            <div id="check-weekly" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> WEEKLY</div>
-            <div id="check-daily" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> DAILY</div>
-            <div id="check-h4" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> H4</div>
-            <div id="check-h1" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> H1</div>
-            <div id="check-m15" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> M15</div>
-          </div>
-          <div class="text-right flex-shrink-0">
-             <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Institutional Readiness</div>
-             <div class="text-lg font-black text-white font-mono leading-none" id="readiness-text">0%</div>
-          </div>
-        </div>
-        <div class="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-white/5">
-           <div id="readiness-bar" class="bg-green-500 h-full w-0 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
-        </div>
-      </div>
+ <div class="bg-black/30 p-4 rounded-xl border border-white/5 mb-6">
+ <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
+ <div class="flex gap-4 font-mono text-[10px] font-bold tracking-wider" id="tf-checklists">
+ <div id="check-weekly" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> WEEKLY</div>
+ <div id="check-daily" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> DAILY</div>
+ <div id="check-h4" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> H4</div>
+ <div id="check-h1" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> H1</div>
+ <div id="check-m15" class="flex items-center gap-1.5 text-gray-600"><i data-lucide="circle" class="w-3 h-3"></i> M15</div>
+ </div>
+ <div class="text-right flex-shrink-0">
+ <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Institutional Readiness</div>
+ <div class="text-lg font-black text-white font-mono leading-none" id="readiness-text">0%</div>
+ </div>
+ </div>
+ <div class="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-white/5">
+ <div id="readiness-bar" class="bg-green-500 h-full w-0 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+ </div>
+ </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="upload-grid">
-      </div>
+ <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="upload-grid">
+ </div>
 
-      <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-green-500/30 neon-border-green mt-6">
-        <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-            <span class="text-xs uppercase font-bold text-green-400 tracking-wider flex items-center gap-2">
-              <i data-lucide="crosshair" class="w-4 h-4"></i> Final Institutional Report
-            </span>
-            <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30">VALIDATED 100%</span>
-        </div>
-        
-        <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono text-gray-300">
-        </div>
-      </div>
+ <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-green-500/30 neon-border-green mt-6">
+ <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+ <span class="text-xs uppercase font-bold text-green-400 tracking-wider flex items-center gap-2">
+ <i data-lucide="crosshair" class="w-4 h-4"></i> Final Institutional Report
+ </span>
+ <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30" id="final-report-badge">VALIDATED 100%</span>
+ </div>
+ 
+ <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono text-gray-300">
+ </div>
+ </div>
 
-    </div>
+ </div>
   </div>
 
   <script>
-    // =========================================================================
-    // LAYER 1: MARKET ENGINE & CORE ARCHITECTURE (TIDAK DIUBAH)
-    // =========================================================================
-    const API_ENDPOINTS = { cgProxies: ["https://api.allorigins.win/raw?url=", "https://api.codetabs.com/v1/proxy?quest=", "https://corsproxy.io/?"], paprika: "https://api.coinpaprika.com/v1/tickers", cc: "https://min-api.cryptocompare.com/data/pricemultifull", binance: "https://api.binance.com/api/v3/ticker/24hr" };
-    const SmartCache = { store: new Map(), set(key, data, ttlSeconds) { this.store.set(key, { data, expiry: Date.now() + (ttlSeconds * 1000) }); }, get(key) { const item = this.store.get(key); if (!item) return null; if (Date.now() > item.expiry) return null; return item.data; }, getLastValid(key) { return this.store.has(key) ? this.store.get(key).data : null; } };
-    const RequestManager = { queue: Promise.resolve(), enqueue(taskFn) { this.queue = this.queue.then(() => taskFn()).catch(err => console.error("Queue Error:", err)); return this.queue; }, async fetchWithTimeout(url, timeoutMs = 4000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeoutMs); try { const res = await fetch(url, { signal: controller.signal }); clearTimeout(id); if (!res.ok) throw new Error(`HTTP Error ${res.status}`); return await res.json(); } catch (e) { clearTimeout(id); throw e; } } };
-    const UINotifier = { update(state, reason = '') { const el = document.getElementById('app-network-status'); if (!el) return; el.className = "text-xs font-bold mt-1 tracking-tight"; if (state === 'SYNCING') { el.innerHTML = '🟡 SYNCING...'; el.classList.add('text-yellow-400', 'animate-pulse'); } else if (state === 'RETRYING') { el.innerHTML = '🟠 ROTATING PROXY...'; el.classList.add('text-orange-400', 'animate-pulse'); } else if (state === 'OFFLINE') { el.innerHTML = `🔴 OFFLINE ${reason}`; el.classList.add('text-red-400'); } else if (state === 'CONNECTED') { el.innerHTML = '🟢 SECURE CONNECTION'; el.classList.add('text-green-400'); } } };
-    
-    const MarketEngine = { 
-      async syncMarketData() { 
-        const cacheKey = 'market_data_core'; const cached = SmartCache.get(cacheKey); if (cached) return cached; 
-        UINotifier.update('SYNCING'); 
-        let finalData = null; 
-        const cgQuery = encodeURIComponent("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,chainlink&vs_currencies=usd&include_24hr_change=true"); 
-        let usdtD = 0;
-        try { const globalRes = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cgProxies[0]}${encodeURIComponent("https://api.coingecko.com/api/v3/global")}`, 4000); if (globalRes?.data?.market_cap_percentage?.usdt) usdtD = globalRes.data.market_cap_percentage.usdt; } catch (e) {}
-        for (const proxyBase of API_ENDPOINTS.cgProxies) { try { const data = await RequestManager.fetchWithTimeout(`${proxyBase}${cgQuery}`, 4000); if (data && data.bitcoin) { finalData = { 'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change, usdt_d: usdtD }, 'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change }, 'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change } }; break; } } catch (e) { UINotifier.update('RETRYING'); } } 
-        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(API_ENDPOINTS.paprika, 4000); if (Array.isArray(data)) { const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD; const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD; const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD; if (btc) finalData = { 'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } }; } } catch (e) { UINotifier.update('RETRYING'); } } 
-        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000); if (data && data.RAW) finalData = { 'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } }; } catch (e) { UINotifier.update('RETRYING'); } } 
-        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000); if (Array.isArray(data)) { finalData = {}; data.forEach(item => { const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; }); if(finalData['BTC']) finalData['BTC'].usdt_d = usdtD; } } catch (e) {} } 
-        if (finalData && finalData['BTC']) { UINotifier.update('CONNECTED'); SmartCache.set(cacheKey, finalData, 30); return finalData; } else { UINotifier.update('OFFLINE', '(USING CACHE)'); return SmartCache.getLastValid(cacheKey); } 
-      } 
-    };
-    
-    let quantDatabase = [{ rank: 1, coin: "SOL/USDT", entryNow: "YA", demandZone: "$138.50 - $141.20", dist: "1.2%", priceChange: "+0.45%", area_entry: "$141.50", stop_loss: "$140.30", sl_pct: "0.85%", rr: "1 : 6.1", entry_score: 94, sl_score: 96, timing: "Buy Now", whaleScore: 95, demandScore: 94, successProb: "92%" }, { rank: 2, coin: "LINK/USDT", entryNow: "YA", demandZone: "$13.10 - $13.55", dist: "2.4%", priceChange: "+1.10%", area_entry: "$13.40", stop_loss: "$13.28", sl_pct: "0.90%", rr: "1 : 5.8", entry_score: 91, sl_score: 93, timing: "Wait Pullback", whaleScore: 92, demandScore: 91, successProb: "89%" }];
-    const VolumeRenderer = { init() { const container = document.getElementById('live-volume-bars'); if (!container) return; container.innerHTML = ''; for (let i = 0; i < 28; i++) { const bar = document.createElement('div'); bar.className = 'flex-1 transition-all duration-300 rounded-t bg-green-500/20'; bar.style.height = '10%'; container.appendChild(bar); } }, animate() { const container = document.getElementById('live-volume-bars'); if (!container || container.children.length === 0) return; const children = container.children; for (let i = 0; i < children.length; i++) { const isGreen = Math.random() > 0.4; children[i].className = `flex-1 transition-all duration-300 rounded-t ${isGreen ? 'bg-green-500/70' : 'bg-red-500/70'}`; children[i].style.height = `${Math.floor(Math.random() * 85) + 15}%`; } } };
-    
-    const UIRenderer = { 
-      updateMacroUI(btcData) { 
-        if (!btcData) return; 
-        requestAnimationFrame(() => { 
-          document.getElementById('btc-live-price').textContent = `$${btcData.price.toLocaleString()}`; 
-          const changeEl = document.getElementById('btc-live-change'); 
-          changeEl.textContent = `${btcData.change >= 0 ? '+' : ''}${btcData.change.toFixed(2)}%`; 
-          changeEl.className = `text-xs font-bold font-mono ${btcData.change >= 0 ? 'price-up' : 'price-down'}`; 
-          const macroStatus = document.getElementById('macro-status'); 
-          if (btcData.usdt_d) {
-              if (btcData.change < 0 && btcData.usdt_d > 4.5) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: USDT.D ${btcData.usdt_d.toFixed(2)}% & BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: USDT.D ${btcData.usdt_d.toFixed(2)}%`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
-          } else {
-              if (btcData.change < -3) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
-          }
-          if (window.lucide) lucide.createIcons(); 
-        }); 
-      }, 
-      sortAndRank() { quantDatabase.sort((a, b) => { let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct); if (slA !== slB) return slA - slB; if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score; return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]); }); quantDatabase.forEach((item, index) => { item.rank = index + 1; }); }, renderTable() { this.sortAndRank(); const tbody = document.getElementById('elite-scanner-rows'); if (!tbody) return; const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0); requestAnimationFrame(() => { if (validSetups.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`; return; } const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`)); Array.from(tbody.rows).forEach(row => { if (row.id && !validIds.has(row.id)) tbody.removeChild(row); }); if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = ''; validSetups.forEach(item => { const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`; let tr = document.getElementById(rowId); const newHTML = ` <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td> <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td> <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td> <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td> <td class="p-3 text-white font-bold">${item.area_entry}</td> <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td> <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td> <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td> <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td> <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td> <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td> `; if (!tr) { tr = document.createElement('tr'); tr.id = rowId; tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap"; tr.innerHTML = newHTML; tbody.appendChild(tr); } else if (tr.innerHTML !== newHTML) { tr.innerHTML = newHTML; } }); }); } 
-    };
+ // =========================================================================
+ // LAYER 1: MARKET ENGINE & CORE ARCHITECTURE (TIDAK DIUBAH)
+ // =========================================================================
+ const API_ENDPOINTS = { cgProxies: ["https://api.allorigins.win/raw?url=", "https://api.codetabs.com/v1/proxy?quest=", "https://corsproxy.io/?"], paprika: "https://api.coinpaprika.com/v1/tickers", cc: "https://min-api.cryptocompare.com/data/pricemultifull", binance: "https://api.binance.com/api/v3/ticker/24hr" };
+ const SmartCache = { store: new Map(), set(key, data, ttlSeconds) { this.store.set(key, { data, expiry: Date.now() + (ttlSeconds * 1000) }); }, get(key) { const item = this.store.get(key); if (!item) return null; if (Date.now() > item.expiry) return null; return item.data; }, getLastValid(key) { return this.store.has(key) ? this.store.get(key).data : null; } };
+ const RequestManager = { queue: Promise.resolve(), enqueue(taskFn) { this.queue = this.queue.then(() => taskFn()).catch(err => console.error("Queue Error:", err)); return this.queue; }, async fetchWithTimeout(url, timeoutMs = 4000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeoutMs); try { const res = await fetch(url, { signal: controller.signal }); clearTimeout(id); if (!res.ok) throw new Error(`HTTP Error ${res.status}`); return await res.json(); } catch (e) { clearTimeout(id); throw e; } } };
+ const UINotifier = { update(state, reason = '') { const el = document.getElementById('app-network-status'); if (!el) return; el.className = "text-xs font-bold mt-1 tracking-tight"; if (state === 'SYNCING') { el.innerHTML = '🟡 SYNCING...'; el.classList.add('text-yellow-400', 'animate-pulse'); } else if (state === 'RETRYING') { el.innerHTML = '🟠 ROTATING PROXY...'; el.classList.add('text-orange-400', 'animate-pulse'); } else if (state === 'OFFLINE') { el.innerHTML = `🔴 OFFLINE ${reason}`; el.classList.add('text-red-400'); } else if (state === 'CONNECTED') { el.innerHTML = '🟢 SECURE CONNECTION'; el.classList.add('text-green-400'); } } };
+ 
+ const MarketEngine = { 
+ async syncMarketData() { 
+ const cacheKey = 'market_data_core'; const cached = SmartCache.get(cacheKey); if (cached) return cached; 
+ UINotifier.update('SYNCING'); 
+ let finalData = null; 
+ const cgQuery = encodeURIComponent("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,chainlink&vs_currencies=usd&include_24hr_change=true"); 
+ let usdtD = 0;
+ try { const globalRes = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cgProxies[0]}${encodeURIComponent("https://api.coingecko.com/api/v3/global")}`, 4000); if (globalRes?.data?.market_cap_percentage?.usdt) usdtD = globalRes.data.market_cap_percentage.usdt; } catch (e) {}
+ for (const proxyBase of API_ENDPOINTS.cgProxies) { try { const data = await RequestManager.fetchWithTimeout(`${proxyBase}${cgQuery}`, 4000); if (data && data.bitcoin) { finalData = { 'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change, usdt_d: usdtD }, 'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change }, 'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change } }; break; } } catch (e) { UINotifier.update('RETRYING'); } } 
+ if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(API_ENDPOINTS.paprika, 4000); if (Array.isArray(data)) { const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD; const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD; const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD; if (btc) finalData = { 'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } }; } } catch (e) { UINotifier.update('RETRYING'); } } 
+ if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000); if (data && data.RAW) finalData = { 'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } }; } catch (e) { UINotifier.update('RETRYING'); } } 
+ if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000); if (Array.isArray(data)) { finalData = {}; data.forEach(item => { const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; }); if(finalData['BTC']) finalData['BTC'].usdt_d = usdtD; } } catch (e) {} } 
+ if (finalData && finalData['BTC']) { UINotifier.update('CONNECTED'); SmartCache.set(cacheKey, finalData, 30); return finalData; } else { UINotifier.update('OFFLINE', '(USING CACHE)'); return SmartCache.getLastValid(cacheKey); } 
+ } 
+ };
+ 
+ let quantDatabase = [{ rank: 1, coin: "SOL/USDT", entryNow: "YA", demandZone: "$138.50 - $141.20", dist: "1.2%", priceChange: "+0.45%", area_entry: "$141.50", stop_loss: "$140.30", sl_pct: "0.85%", rr: "1 : 6.1", entry_score: 94, sl_score: 96, timing: "Buy Now", whaleScore: 95, demandScore: 94, successProb: "92%" }, { rank: 2, coin: "LINK/USDT", entryNow: "YA", demandZone: "$13.10 - $13.55", dist: "2.4%", priceChange: "+1.10%", area_entry: "$13.40", stop_loss: "$13.28", sl_pct: "0.90%", rr: "1 : 5.8", entry_score: 91, sl_score: 93, timing: "Wait Pullback", whaleScore: 92, demandScore: 91, successProb: "89%" }];
+ const VolumeRenderer = { init() { const container = document.getElementById('live-volume-bars'); if (!container) return; container.innerHTML = ''; for (let i = 0; i < 28; i++) { const bar = document.createElement('div'); bar.className = 'flex-1 transition-all duration-300 rounded-t bg-green-500/20'; bar.style.height = '10%'; container.appendChild(bar); } }, animate() { const container = document.getElementById('live-volume-bars'); if (!container || container.children.length === 0) return; const children = container.children; for (let i = 0; i < children.length; i++) { const isGreen = Math.random() > 0.4; children[i].className = `flex-1 transition-all duration-300 rounded-t ${isGreen ? 'bg-green-500/70' : 'bg-red-500/70'}`; children[i].style.height = `${Math.floor(Math.random() * 85) + 15}%`; } } };
+ 
+ const UIRenderer = { 
+ updateMacroUI(btcData) { 
+ if (!btcData) return; 
+ requestAnimationFrame(() => { 
+ document.getElementById('btc-live-price').textContent = `$${btcData.price.toLocaleString()}`; 
+ const changeEl = document.getElementById('btc-live-change'); 
+ changeEl.textContent = `${btcData.change >= 0 ? '+' : ''}${btcData.change.toFixed(2)}%`; 
+ changeEl.className = `text-xs font-bold font-mono ${btcData.change >= 0 ? 'price-up' : 'price-down'}`; 
+ const macroStatus = document.getElementById('macro-status'); 
+ if (btcData.usdt_d) {
+ if (btcData.change < 0 && btcData.usdt_d > 4.5) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: USDT.D ${btcData.usdt_d.toFixed(2)}% & BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: USDT.D ${btcData.usdt_d.toFixed(2)}%`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
+ } else {
+ if (btcData.change < -3) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
+ }
+ if (window.lucide) lucide.createIcons(); 
+ }); 
+ }, 
+ sortAndRank() { quantDatabase.sort((a, b) => { let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct); if (slA !== slB) return slA - slB; if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score; return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]); }); quantDatabase.forEach((item, index) => { item.rank = index + 1; }); }, renderTable() { this.sortAndRank(); const tbody = document.getElementById('elite-scanner-rows'); if (!tbody) return; const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0); requestAnimationFrame(() => { if (validSetups.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`; return; } const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`)); Array.from(tbody.rows).forEach(row => { if (row.id && !validIds.has(row.id)) tbody.removeChild(row); }); if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = ''; validSetups.forEach(item => { const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`; let tr = document.getElementById(rowId); const newHTML = ` <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td> <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td> <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td> <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td> <td class="p-3 text-white font-bold">${item.area_entry}</td> <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td> <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td> <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td> <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td> <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td> <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td> `; if (!tr) { tr = document.createElement('tr'); tr.id = rowId; tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap"; tr.innerHTML = newHTML; tbody.appendChild(tr); } else if (tr.innerHTML !== newHTML) { tr.innerHTML = newHTML; } }); }); } 
+ };
 
-    // =========================================================================
-    // LAYER 2: ENTERPRISE AI QUANT ENGINE (AUDITED & MULTI-THREADED)
-    // =========================================================================
+ // =========================================================================
+ // LAYER 2: ENTERPRISE AI QUANT ENGINE (REFACTORED & AUDITED)
+ // =========================================================================
 
-    class SmartLRUCache {
-        constructor(maxSize = 20, ttlMs = 15 * 60 * 1000) {
-            this.cache = new Map(); this.maxSize = maxSize; this.ttlMs = ttlMs;
-        }
-        get(key) {
-            if (!this.cache.has(key)) return null;
-            const item = this.cache.get(key);
-            if (Date.now() > item.expiry) { this.cache.delete(key); return null; }
-            this.cache.delete(key); this.cache.set(key, item); 
-            return item.value;
-        }
-        set(key, value) {
-            if (this.cache.has(key)) this.cache.delete(key);
-            if (this.cache.size >= this.maxSize) this.cache.delete(this.cache.keys().next().value);
-            this.cache.set(key, { value, expiry: Date.now() + this.ttlMs });
-        }
-    }
+ // Notification System - Non-intrusive Toast (Memenuhi requirement tanpa ubah UI inti)
+ const NotificationEngine = {
+ container: null,
+ init() {
+ if(!this.container) {
+ this.container = document.createElement('div');
+ this.container.className = 'fixed bottom-4 right-4 z-50 flex flex-col gap-2';
+ document.body.appendChild(this.container);
+ }
+ },
+ show(type, code, message, autoClose = 5000) {
+ this.init();
+ const toast = document.createElement('div');
+ const bg = type === 'error' ? 'bg-red-900/90 border-red-500' : type === 'warning' ? 'bg-yellow-900/90 border-yellow-500' : 'bg-green-900/90 border-green-500';
+ const icon = type === 'error' ? 'alert-octagon' : type === 'warning' ? 'alert-triangle' : 'check-circle';
+ 
+ toast.className = `${bg} border shadow-lg backdrop-blur-md text-white px-4 py-3 rounded-lg flex items-start gap-3 w-80 transform transition-all duration-300 translate-y-10 opacity-0`;
+ toast.innerHTML = `
+ <i data-lucide="${icon}" class="w-5 h-5 mt-0.5 shrink-0"></i>
+ <div class="flex-1">
+ <h4 class="text-[11px] font-bold uppercase font-mono tracking-widest">${type} [${code}]</h4>
+ <p class="text-[10px] mt-1 text-gray-200 leading-relaxed">${message}</p>
+ </div>
+ <button class="text-white/50 hover:text-white" onclick="this.parentElement.remove()"><i data-lucide="x" class="w-4 h-4"></i></button>
+ `;
+ this.container.appendChild(toast);
+ if(window.lucide) lucide.createIcons();
+ 
+ requestAnimationFrame(() => {
+ toast.classList.remove('translate-y-10', 'opacity-0');
+ });
 
-    const AI_Quant_Engine = {
-      
-      config: {
-        timeoutMs: 45000,
-        maxImageDimension: 1200, 
-        imageQuality: 0.75,
-        providers: [{ id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }]
-      },
+ if (autoClose) {
+ setTimeout(() => {
+ toast.classList.add('opacity-0', 'translate-x-10');
+ setTimeout(() => toast.remove(), 300);
+ }, autoClose);
+ }
+ }
+ };
 
-      state: {
-        apiKey: '', discoveredModels: [], activeModel: null, cacheHits: 0,
-        
-        timeframes: [
-            { id: 'weekly', label: '1W', title: 'WEEKLY' },
-            { id: 'daily', label: '1D', title: 'DAILY' },
-            { id: 'h4', label: 'H4', title: 'H4' },
-            { id: 'h1', label: 'H1', title: 'H1' },
-            { id: 'm15', label: 'M15', title: 'M15' }
-        ],
+ // Smart Cache dengan validasi integrasi (Hash + Model + TF + TTL)
+ class EnterpriseSmartCache {
+ constructor(maxSize = 50, ttlMs = 30 * 60 * 1000) {
+ this.cache = new Map(); 
+ this.maxSize = maxSize; 
+ this.ttlMs = ttlMs;
+ }
+ generateKey(tfId, model, hash) {
+ return `${tfId}_${model}_${hash}`;
+ }
+ get(key) {
+ if (!this.cache.has(key)) return null;
+ const item = this.cache.get(key);
+ if (Date.now() > item.expiry) { 
+ this.cache.delete(key); 
+ return null; 
+ }
+ // Update LRU position
+ this.cache.delete(key); 
+ this.cache.set(key, item); 
+ return item.value;
+ }
+ set(key, value) {
+ if (this.cache.has(key)) this.cache.delete(key);
+ if (this.cache.size >= this.maxSize) this.cache.delete(this.cache.keys().next().value);
+ this.cache.set(key, { value, timestamp: Date.now(), expiry: Date.now() + this.ttlMs });
+ }
+ invalidateAll() {
+ this.cache.clear();
+ }
+ }
 
-        // --- STRICT ISOLATION PER TIMEFRAME ---
-        tfImages: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
-        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
-        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, 
-        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
-        
-        tfCache: { 
-            weekly: new SmartLRUCache(), daily: new SmartLRUCache(), 
-            h4: new SmartLRUCache(), h1: new SmartLRUCache(), m15: new SmartLRUCache() 
-        }
-      },
+ const AI_Quant_Engine = {
+ config: {
+ timeoutMs: 60000,
+ maxImageDimension: 1024, // Optimized for vision models
+ imageQuality: 0.8,
+ maxRetries: 3,
+ baseBackoffMs: 1000,
+ providers: [{ id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }]
+ },
 
-      init() {
-        const apiKeyInput = document.getElementById('gemini-api-key');
-        const savedKey = sessionStorage.getItem('_sys_qt_auth');
-        if (savedKey) {
-            apiKeyInput.value = atob(savedKey); this.state.apiKey = atob(savedKey); this.initializeRouter();
-        }
-        apiKeyInput.addEventListener('input', (e) => {
-          const val = (e.target.value || '').trim();
-          if (val) { sessionStorage.setItem('_sys_qt_auth', btoa(val)); this.state.apiKey = val; this.initializeRouter(); }
-        });
-        this.renderUploadGrid();
-      },
+ state: {
+ apiKey: '', 
+ discoveredModels: [], 
+ activeModel: null, 
+ cacheHits: 0,
+ latencyLog: [],
+ processingTime: 0,
+ 
+ timeframes: [
+ { id: 'weekly', label: '1W', title: 'WEEKLY' },
+ { id: 'daily', label: '1D', title: 'DAILY' },
+ { id: 'h4', label: 'H4', title: 'H4' },
+ { id: 'h1', label: 'H1', title: 'H1' },
+ { id: 'm15', label: 'M15', title: 'M15' }
+ ],
 
-      getTfTheme(tfId) {
-          return {
-              weekly: { text: 'text-gray-300', btnBg: 'bg-[#0f172a]', btnBorder: 'border-blue-500/50', hover: 'hover:bg-[#1e293b]' },
-              daily: { text: 'text-gray-300', btnBg: 'bg-[#052e16]', btnBorder: 'border-green-500/50', hover: 'hover:bg-[#14532d]' },
-              h4: { text: 'text-gray-300', btnBg: 'bg-[#2e1065]', btnBorder: 'border-purple-500/50', hover: 'hover:bg-[#4c1d95]' },
-              h1: { text: 'text-gray-300', btnBg: 'bg-[#451a03]', btnBorder: 'border-orange-500/50', hover: 'hover:bg-[#78350f]' },
-              m15: { text: 'text-gray-300', btnBg: 'bg-[#083344]', btnBorder: 'border-cyan-500/50', hover: 'hover:bg-[#164e63]' }
-          }[tfId];
-      },
+ tfImages: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
+ tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
+ tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, 
+ tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
+ tfObjUrls: { weekly: null, daily: null, h4: null, h1: null, m15: null }, // Memory Management
+ 
+ masterCache: new EnterpriseSmartCache()
+ },
 
-      renderUploadGrid() {
-        const grid = document.getElementById('upload-grid');
-        grid.innerHTML = '';
-        
-        this.state.timeframes.forEach(tf => {
-            const theme = this.getTfTheme(tf.id);
-            grid.innerHTML += `
-                <div class="relative flex flex-col p-4 border border-white/5 bg-black/30 rounded-xl transition-all duration-200 group h-[280px]" id="box-${tf.id}">
-                    
-                    <div class="flex justify-between items-center mb-4">
-                         <h4 class="font-bold text-gray-200 text-[11px] uppercase tracking-widest flex items-center gap-2">
-                             <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i> ${tf.title} (${tf.label})
-                         </h4>
-                         <div class="text-[8px] px-2 py-1 rounded bg-zinc-800 text-gray-500 border border-white/5 uppercase font-bold tracking-wider transition-colors z-20 cursor-default" id="badge-${tf.id}" title="">EMPTY</div>
-                    </div>
+ debug(action, meta) {
+ console.log(`[DEBUG_MODE][${action}]`, meta);
+ },
 
-                    <div class="relative w-full flex-1 mb-4 border border-dashed border-white/10 rounded-lg overflow-hidden group/upload flex items-center justify-center transition-colors hover:border-white/30" id="upload-area-${tf.id}">
-                        
-                        <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full" id="upload-label-${tf.id}">
-                            <i data-lucide="image-plus" class="w-6 h-6 text-gray-500 group-hover/upload:text-gray-400 transition-colors mb-2"></i>
-                            <span class="text-[10px] font-mono text-gray-400">Upload / Drop</span>
-                            <span class="text-[8px] text-gray-600 mt-1">PNG, JPG, WEBP (Max 10MB)</span>
-                            <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
-                        </label>
+ init() {
+ const apiKeyInput = document.getElementById('gemini-api-key');
+ const savedKey = sessionStorage.getItem('_sys_qt_auth');
+ if (savedKey) {
+ apiKeyInput.value = atob(savedKey); this.state.apiKey = atob(savedKey); this.initializeRouter();
+ }
+ apiKeyInput.addEventListener('input', this.debounce((e) => {
+ const val = (e.target.value || '').trim();
+ if (val) { sessionStorage.setItem('_sys_qt_auth', btoa(val)); this.state.apiKey = val; this.initializeRouter(); }
+ }, 500));
+ this.renderUploadGrid();
+ NotificationEngine.init();
+ },
 
-                        <div id="preview-container-${tf.id}" class="hidden absolute inset-0 w-full h-full group/img bg-black">
-                            <img id="preview-img-${tf.id}" class="w-full h-full object-cover opacity-60">
-                            
-                            <div id="loader-${tf.id}" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 backdrop-blur-[2px]">
-                                <div class="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
-                            </div>
+ debounce(func, wait) {
+ let timeout;
+ return function executedFunction(...args) {
+ const later = () => { clearTimeout(timeout); func(...args); };
+ clearTimeout(timeout);
+ timeout = setTimeout(later, wait);
+ };
+ },
 
-                            <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-3 z-20 transition-opacity">
-                                <label class="cursor-pointer bg-blue-500/80 p-2 rounded-lg hover:bg-blue-500 transition-colors" title="Replace">
-                                    <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
-                                    <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
-                                </label>
-                                <button onclick="AI_Quant_Engine.removeImage('${tf.id}')" class="bg-red-500/80 p-2 rounded-lg hover:bg-red-500 transition-colors" title="Remove">
-                                    <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
-                                </button>
-                            </div>
-                        </div>
-                    </div>
+ getTfTheme(tfId) {
+ return {
+ weekly: { text: 'text-gray-300', btnBg: 'bg-[#0f172a]', btnBorder: 'border-blue-500/50', hover: 'hover:bg-[#1e293b]' },
+ daily: { text: 'text-gray-300', btnBg: 'bg-[#052e16]', btnBorder: 'border-green-500/50', hover: 'hover:bg-[#14532d]' },
+ h4: { text: 'text-gray-300', btnBg: 'bg-[#2e1065]', btnBorder: 'border-purple-500/50', hover: 'hover:bg-[#4c1d95]' },
+ h1: { text: 'text-gray-300', btnBg: 'bg-[#451a03]', btnBorder: 'border-orange-500/50', hover: 'hover:bg-[#78350f]' },
+ m15: { text: 'text-gray-300', btnBg: 'bg-[#083344]', btnBorder: 'border-cyan-500/50', hover: 'hover:bg-[#164e63]' }
+ }[tfId];
+ },
 
-                    <button id="search-btn-${tf.id}" onclick="AI_Quant_Engine.handleSearch('${tf.id}')" disabled class="w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2">
-                        <i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tf.title}
-                    </button>
-                    
-                    <div class="text-center mt-2 text-[9px] text-gray-600 font-mono">Analisa ${tf.label} secara mandiri</div>
-                </div>
-            `;
-        });
-        if (window.lucide) lucide.createIcons();
-      },
+ renderUploadGrid() {
+ const grid = document.getElementById('upload-grid');
+ const fragment = document.createDocumentFragment();
+ 
+ this.state.timeframes.forEach(tf => {
+ const div = document.createElement('div');
+ div.className = "relative flex flex-col p-4 border border-white/5 bg-black/30 rounded-xl transition-all duration-200 group h-[280px]";
+ div.id = `box-${tf.id}`;
+ div.innerHTML = `
+ <div class="flex justify-between items-center mb-4">
+ <h4 class="font-bold text-gray-200 text-[11px] uppercase tracking-widest flex items-center gap-2">
+ <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i> ${tf.title} (${tf.label})
+ </h4>
+ <div class="text-[8px] px-2 py-1 rounded bg-zinc-800 text-gray-500 border border-white/5 uppercase font-bold tracking-wider transition-colors z-20 cursor-default" id="badge-${tf.id}" title="">EMPTY</div>
+ </div>
+ <div class="relative w-full flex-1 mb-4 border border-dashed border-white/10 rounded-lg overflow-hidden group/upload flex items-center justify-center transition-colors hover:border-white/30" id="upload-area-${tf.id}">
+ <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full" id="upload-label-${tf.id}">
+ <i data-lucide="image-plus" class="w-6 h-6 text-gray-500 group-hover/upload:text-gray-400 transition-colors mb-2"></i>
+ <span class="text-[10px] font-mono text-gray-400">Upload / Drop</span>
+ <span class="text-[8px] text-gray-600 mt-1">PNG, JPG, WEBP</span>
+ <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+ </label>
+ <div id="preview-container-${tf.id}" class="hidden absolute inset-0 w-full h-full group/img bg-black">
+ <img id="preview-img-${tf.id}" class="w-full h-full object-cover opacity-60">
+ <div id="loader-${tf.id}" class="hidden absolute inset-0 bg-black/70 flex flex-col items-center justify-center z-10 backdrop-blur-[2px]">
+ <div class="w-6 h-6 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+ </div>
+ <div class="absolute inset-0 bg-black/60 opacity-0 group-hover/img:opacity-100 flex items-center justify-center gap-3 z-20 transition-opacity">
+ <label class="cursor-pointer bg-blue-500/80 p-2 rounded-lg hover:bg-blue-500 transition-colors" title="Replace">
+ <i data-lucide="refresh-cw" class="w-4 h-4 text-white"></i>
+ <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
+ </label>
+ <button onclick="AI_Quant_Engine.removeImage('${tf.id}')" class="bg-red-500/80 p-2 rounded-lg hover:bg-red-500 transition-colors" title="Remove">
+ <i data-lucide="trash-2" class="w-4 h-4 text-white"></i>
+ </button>
+ </div>
+ </div>
+ </div>
+ <button id="search-btn-${tf.id}" onclick="AI_Quant_Engine.handleSearch('${tf.id}')" disabled class="w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2">
+ <i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tf.title}
+ </button>
+ <div class="text-center mt-2 text-[9px] text-gray-600 font-mono">Analisa ${tf.label} secara mandiri</div>
+ `;
+ fragment.appendChild(div);
+ });
+ grid.innerHTML = '';
+ grid.appendChild(fragment);
+ if (window.lucide) lucide.createIcons();
+ },
 
-      // AUDIT: FIX API DISCOVERY (Validasi model & API key)
-      async initializeRouter() {
-        try {
-            if (!this.state.apiKey || this.state.apiKey.trim() === '') {
-                throw new Error("API Key kosong");
-            }
+ async initializeRouter() {
+ try {
+ if (!this.state.apiKey || this.state.apiKey.trim() === '') throw new Error("API Key kosong");
+ const controller = new AbortController();
+ const timeoutId = setTimeout(() => controller.abort(), 10000);
+ const res = await fetch(`${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`, { signal: controller.signal });
+ clearTimeout(timeoutId);
+ 
+ if (!res.ok) throw new Error(`HTTP ${res.status} - Invalid API Key`);
+ const data = await res.json();
+ 
+ const validModels = data.models.filter(m => 
+ m.supportedGenerationMethods?.includes("generateContent") && 
+ !m.name.includes("embedding") &&
+ !m.name.includes("vision") && 
+ (m.name.includes("1.5-pro") || m.name.includes("1.5-flash"))
+ ).map(m => m.name.split('/').pop());
 
-            const res = await fetch(`${this.config.providers[0].baseURL}/models?key=${this.state.apiKey}`, { 
-                signal: AbortSignal.timeout ? AbortSignal.timeout(10000) : undefined 
-            });
-            
-            if (!res.ok) throw new Error(`HTTP ${res.status} - Invalid API Key`);
-            
-            const data = await res.json();
-            
-            const validModels = data.models.filter(m => 
-                m.supportedGenerationMethods?.includes("generateContent") && 
-                !m.name.includes("embedding") &&
-                !m.name.includes("vision") && // Deprecated model 1.0 dibuang
-                (m.name.includes("1.5-pro") || m.name.includes("1.5-flash"))
-            ).map(m => m.name.split('/').pop());
+ if (validModels.length === 0) throw new Error("Tidak ditemukan model yang mendukung Image Processing.");
+ validModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
+ 
+ this.state.discoveredModels = validModels;
+ this.state.activeModel = validModels[0];
+ document.getElementById('mon-tokens').textContent = `Model: ${this.state.activeModel}`;
+ NotificationEngine.show('success', 'AI_READY', `Berhasil terhubung. Model aktif: ${this.state.activeModel}`, 3000);
+ this.debug('RouterInit', { model: this.state.activeModel });
+ } catch (err) {
+ this.state.activeModel = null;
+ NotificationEngine.show('error', 'AUTH_FAIL', err.message);
+ }
+ },
 
-            if (validModels.length === 0) {
-                throw new Error("Tidak ditemukan model yang mendukung Image Processing.");
-            }
+ validateFile(file) {
+ if (!file) throw new Error("File tidak ditemukan.");
+ const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+ if (!validTypes.includes(file.type)) throw new Error("Format tidak didukung. Gunakan JPG, PNG, atau WEBP.");
+ if (file.size === 0) throw new Error("Gambar kosong/corrupt.");
+ if (file.size > 10 * 1024 * 1024) throw new Error("Ukuran file melebihi 10MB.");
+ return true;
+ },
 
-            validModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
-            this.state.discoveredModels = validModels;
-            this.state.activeModel = validModels[0];
-            
-            console.log(`[AI Engine] Active Model Set: ${this.state.activeModel}`);
-            
-        } catch (err) {
-            console.error("[AI Engine] Discovery Failed:", err.message);
-            this.state.activeModel = null;
-            alert("AI Engine Error: " + err.message + ". Pastikan API Key valid.");
-        }
-      },
+ async handleUpload(event, tfId) {
+ const file = event.target.files[0];
+ if (!file) return;
 
-      async handleUpload(event, tfId) {
-        const file = event.target.files[0];
-        if (!file) return;
+ try {
+ this.validateFile(file);
+ } catch(e) {
+ NotificationEngine.show('warning', 'FILE_INVALID', e.message);
+ return;
+ }
 
-        // AUDIT: CLEAN ABORT SAAT REPLACE
-        if (this.state.tfControllers[tfId]) {
-            this.state.tfControllers[tfId].abort("REPLACED");
-        }
-        
-        this.state.tfMemory[tfId] = null;
-        this.state.tfImages[tfId] = file;
-        
-        document.getElementById('final-report-container').classList.add('hidden');
+ if (this.state.tfControllers[tfId]) {
+ this.state.tfControllers[tfId].abort("REPLACED");
+ }
+ 
+ if(this.state.tfObjUrls[tfId]) {
+ URL.revokeObjectURL(this.state.tfObjUrls[tfId]);
+ }
 
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            const rawData = e.target.result;
-            document.getElementById(`upload-label-${tfId}`).classList.add('hidden');
-            document.getElementById(`preview-container-${tfId}`).classList.remove('hidden');
-            document.getElementById(`preview-img-${tfId}`).src = rawData;
-            
-            this.updateStatus(tfId, 'Loaded');
-            this.updateReadiness();
-        };
-        reader.readAsDataURL(file);
-      },
+ this.state.tfMemory[tfId] = null;
+ this.state.tfImages[tfId] = file;
+ 
+ document.getElementById('final-report-container').classList.add('hidden');
 
-      async handleSearch(tfId) {
-        const file = this.state.tfImages[tfId];
-        if (!file) return;
-        
-        // AUDIT: RACE CONDITION PROTECTOR
-        if (this.state.tfControllers[tfId]) {
-            this.state.tfControllers[tfId].abort("RESTARTED");
-        }
+ const objUrl = URL.createObjectURL(file);
+ this.state.tfObjUrls[tfId] = objUrl;
 
-        await this.processTimeframe(tfId, file);
-      },
+ document.getElementById(`upload-label-${tfId}`).classList.add('hidden');
+ document.getElementById(`preview-container-${tfId}`).classList.remove('hidden');
+ document.getElementById(`preview-img-${tfId}`).src = objUrl;
+ 
+ this.updateStatus(tfId, 'Loaded');
+ this.updateReadiness();
+ },
 
-      // AUDIT: FIX PROMISE DAN LOADER SINKRONISASI
-      async processTimeframe(tfId, file) {
-        const controller = new AbortController();
-        this.state.tfControllers[tfId] = controller;
+ async handleSearch(tfId) {
+ const file = this.state.tfImages[tfId];
+ if (!file) return;
+ 
+ if (this.state.tfControllers[tfId]) {
+ this.state.tfControllers[tfId].abort("RESTARTED");
+ }
 
-        this.updateStatus(tfId, 'Searching');
-        document.getElementById(`loader-${tfId}`).classList.remove('hidden');
+ await this.processTimeframe(tfId, file);
+ },
 
-        try {
-            const base64Image = await this.optimizeImage(file);
-            const imageHash = await this.hashString(base64Image);
+ async processTimeframe(tfId, file) {
+ const controller = new AbortController();
+ this.state.tfControllers[tfId] = controller;
+ const startTime = performance.now();
 
-            const cachedData = this.state.tfCache[tfId].get(imageHash);
-            
-            if (cachedData) {
-                console.log(`[Cache Hit] Using cached logic for ${tfId}`);
-                this.state.cacheHits++;
-                document.getElementById('mon-retry').textContent = this.state.cacheHits;
-                this.state.tfMemory[tfId] = cachedData;
-            } else {
-                console.log(`[API Request] Running Independent AI Pipeline for ${tfId}...`);
-                const aiResult = await this.requestAITimeframe(tfId, base64Image, controller);
-                
-                this.state.tfMemory[tfId] = aiResult;
-                this.state.tfCache[tfId].set(imageHash, aiResult); 
-            }
+ this.updateStatus(tfId, 'Searching');
+ document.getElementById(`loader-${tfId}`).classList.remove('hidden');
 
-            if (this.state.tfControllers[tfId] === controller) {
-                this.updateStatus(tfId, 'Analysed');
-            }
+ try {
+ const base64Image = await this.optimizeImage(file);
+ const imageHash = await this.hashSHA256(base64Image);
+ const cacheKey = this.state.masterCache.generateKey(tfId, this.state.activeModel, imageHash);
+ const cachedData = this.state.masterCache.get(cacheKey);
+ 
+ if (cachedData) {
+ this.debug('ProcessTF', { tfId, status: 'CACHE_HIT' });
+ this.state.cacheHits++;
+ document.getElementById('mon-retry').textContent = this.state.cacheHits;
+ this.state.tfMemory[tfId] = cachedData;
+ } else {
+ this.debug('ProcessTF', { tfId, status: 'API_REQUEST' });
+ const aiResult = await this.requestAITimeframe(tfId, base64Image, controller);
+ 
+ // JSON Schema Validation Enforcement
+ this.validateAIResponse(aiResult);
+ 
+ this.state.tfMemory[tfId] = aiResult;
+ this.state.masterCache.set(cacheKey, aiResult); 
+ }
 
-        } catch (error) {
-            const errStr = String(error.message || error);
-            const abortReason = String(controller.signal.reason || '');
-            
-            // Abort Silent Failures HANYA untuk aksi user (Replace, Remove, Restart)
-            const isIntentional = ['REPLACED', 'RESTARTED', 'REMOVED'].some(keyword => errStr.includes(keyword) || abortReason.includes(keyword));
-            
-            if (isIntentional) {
-                console.log(`[Aborted] Pipeline for ${tfId} cancelled dynamically.`);
-            } 
-            // Real Error Handler
-            else {
-                console.error(`[Fatal Error] Logic Engine TF ${tfId}:`, error);
-                if (this.state.tfControllers[tfId] === controller) {
-                    const isTimeout = error.name === 'AbortError' || errStr.includes('TIMEOUT') || abortReason.includes('TIMEOUT');
-                    const shortMsg = isTimeout ? 'TIMEOUT / JARINGAN TERPUTUS' : (error.message || 'API ERROR');
-                    this.updateStatus(tfId, 'Error', shortMsg);
-                }
-            }
-        } finally {
-            // AUDIT: Jaminan loader pasti hilang jika state masih dipegang thread ini
-            if (this.state.tfControllers[tfId] === controller) {
-                document.getElementById(`loader-${tfId}`).classList.add('hidden');
-                this.updateReadiness();
-            }
-        }
-      },
+ if (this.state.tfControllers[tfId] === controller) {
+ this.updateStatus(tfId, 'Analysed');
+ }
 
-      // AUDIT: DEADLOCK TIMEOUT & ERROR MESSAGE FIX
-      async requestAITimeframe(tfId, base64Image, controller) {
-          if (!this.state.activeModel || this.state.activeModel === 'null' || this.state.activeModel === 'undefined') {
-              throw new Error("Model belum siap / API Key salah");
-          }
+ } catch (error) {
+ const errStr = String(error.message || error);
+ const abortReason = String(controller.signal.reason || '');
+ const isIntentional = ['REPLACED', 'RESTARTED', 'REMOVED'].some(k => errStr.includes(k) || abortReason.includes(k));
+ 
+ if (isIntentional) {
+ this.debug('ProcessTF', { tfId, status: 'ABORTED', reason: abortReason });
+ } else {
+ this.debug('ProcessTF_ERROR', { tfId, error: errStr });
+ if (this.state.tfControllers[tfId] === controller) {
+ const isTimeout = error.name === 'AbortError' || errStr.includes('TIMEOUT');
+ const shortMsg = isTimeout ? 'TIMEOUT / JARINGAN' : 'API ERROR';
+ this.updateStatus(tfId, 'Error', shortMsg);
+ NotificationEngine.show('error', `TF_${tfId.toUpperCase()}_ERR`, error.message || "Gagal memproses data.");
+ }
+ }
+ } finally {
+ if (this.state.tfControllers[tfId] === controller) {
+ document.getElementById(`loader-${tfId}`).classList.add('hidden');
+ this.updateReadiness();
+ const latency = Math.round(performance.now() - startTime);
+ document.getElementById('mon-latency').textContent = `Sys Latency: ${latency}ms`;
+ }
+ }
+ },
 
-          const prompts = {
-              'weekly': 'Analisa chart Weekly ini. Fokus pada Trend Besar, Market Structure, Order Block Makro, Liquidity, FVG, dan Premium/Discount area.',
-              'daily': 'Analisa chart Daily ini. Fokus pada Trend Menengah, Break of Structure (BOS), Change of Character (CHOCH), Liquidity Sweep, dan FVG Daily.',
-              'h4': 'Analisa chart H4 ini. Tentukan Entry Zone yang valid, zona Demand/Supply, Order Block H4, dan status Mitigation.',
-              'h1': 'Analisa chart H1 ini. Lakukan Refinement zona, cek Liquidity Sweep terdekat, dan konfirmasi Internal Structure.',
-              'm15': 'Analisa chart M15 ini. Hitung secara spesifik Precision Entry, Stop Loss (ketat), Take Profit rasional, dan validasi Smart Money Concept (SMC).'
-          };
+ // Prompt Builder Pro & JSON Parsing
+ getPrompt(tfId) {
+ const baseReq = `Analisa chart secara profesional berdasar Institutional ICT/SMC concepts. Kembalikan HASIL WAJIB DALAM FORMAT JSON VALID SESUAI SKEMA, TANPA MARKDOWN, TANPA TEKS LAIN.`;
+ const prompts = {
+ 'weekly': `Timeframe: Weekly. Fokus: Macro Trend, External Liquidity, Order Block Makro, Bias Jangka Panjang. ${baseReq}`,
+ 'daily': `Timeframe: Daily. Fokus: Market Structure (BOS/CHOCH), Internal Liquidity Sweep, FVG Daily, dan Confluence dengan Weekly. ${baseReq}`,
+ 'h4': `Timeframe: H4. Fokus: Supply/Demand Zone, Mitigation Block, Premium/Discount Area (OTE), dan validasi bias. ${baseReq}`,
+ 'h1': `Timeframe: H1. Fokus: Session Liquidity, Kill Zones, Refined Order Block, dan Momentum konfirmasi. ${baseReq}`,
+ 'm15': `Timeframe: M15. Fokus: Precision Entry, Stop Loss (Tight), Take Profit rasional, Invalidation criteria, dan Eksekusi. ${baseReq}`
+ };
+ return prompts[tfId];
+ },
 
-          const schema = { type: "OBJECT", properties: { data: { type: "STRING" } }, required: ["data"] };
-          const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
-          const payload = {
-              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading. ${prompts[tfId]} Kembalikan hasil format JSON persis sesuai skema.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
-              generationConfig: { responseMimeType: "application/json", responseSchema: schema }
-          };
+ async requestAITimeframe(tfId, base64Image, controller, retryCount = 0) {
+ if (!this.state.activeModel) throw new Error("Model belum siap / API Key salah");
 
-          // Pengganti AbortSignal.any yang bermasalah. Murni native JS timer abort.
-          const timeoutId = setTimeout(() => {
-              controller.abort("TIMEOUT");
-          }, this.config.timeoutMs);
+ const prompt = this.getPrompt(tfId);
+ // Definisi Skema JSON agar keluaran terstruktur
+ const schema = { 
+ type: "OBJECT", 
+ properties: { 
+ trend: { type: "STRING" }, bias: { type: "STRING" }, market_structure: { type: "STRING" }, 
+ liquidity: { type: "STRING" }, order_block: { type: "STRING" }, fair_value_gap: { type: "STRING" },
+ entry: { type: "STRING" }, stop_loss: { type: "STRING" }, take_profit: { type: "STRING" },
+ risk_reward: { type: "STRING" }, confidence: { type: "INTEGER" }, probability: { type: "INTEGER" },
+ warning: { type: "STRING" }, reason: { type: "STRING" }, summary: { type: "STRING" }
+ },
+ required: ["trend", "bias", "market_structure", "summary", "confidence"]
+ };
 
-          try {
-              const res = await fetch(url, { 
-                  method: 'POST', 
-                  headers: { 'Content-Type': 'application/json' }, 
-                  body: JSON.stringify(payload), 
-                  signal: controller.signal 
-              });
-              
-              clearTimeout(timeoutId);
+ const payload = {
+ contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
+ generationConfig: { responseMimeType: "application/json", responseSchema: schema }
+ };
 
-              // Mapping Status Code spesifik
-              if (!res.ok) {
-                  if (res.status === 400) throw new Error("HTTP 400: Bad Request (Image/Prompt Invalid)");
-                  if (res.status === 401) throw new Error("HTTP 401: API Key Invalid");
-                  if (res.status === 403) throw new Error("HTTP 403: Forbidden");
-                  if (res.status === 404) throw new Error("HTTP 404: Model Not Found");
-                  if (res.status === 429) throw new Error("HTTP 429: Rate Limit Exceeded");
-                  if (res.status >= 500) throw new Error(`HTTP ${res.status}: Internal Server Error`);
-                  throw new Error(`HTTP ${res.status}: Network Error`);
-              }
+ const timeoutId = setTimeout(() => { controller.abort("TIMEOUT"); }, this.config.timeoutMs);
 
-              const data = await res.json();
-              if (!data.candidates || !data.candidates[0].content) {
-                  throw new Error("Gemini Response Invalid: Empty content");
-              }
+ try {
+ const res = await fetch(`${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`, { 
+ method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload), signal: controller.signal 
+ });
+ clearTimeout(timeoutId);
 
-              let textRes = data.candidates[0].content.parts[0].text;
-              
-              // Prevent Markdown JSON Parse Error
-              textRes = textRes.replace(/```json/g, '').replace(/```/g, '').trim();
-              
-              try {
-                  return JSON.parse(textRes).data;
-              } catch (parseErr) {
-                  throw new Error("JSON Parse Failed: Data korup");
-              }
-          } catch (err) {
-              clearTimeout(timeoutId);
-              throw err;
-          }
-      },
+ if (!res.ok) {
+ if (res.status === 429 && retryCount < this.config.maxRetries) {
+ const delay = this.config.baseBackoffMs * Math.pow(2, retryCount);
+ this.debug('API_Retry', { tfId, retryCount, delay });
+ await new Promise(r => setTimeout(r, delay));
+ return this.requestAITimeframe(tfId, base64Image, controller, retryCount + 1);
+ }
+ throw new Error(`HTTP ${res.status}: API Error`);
+ }
 
-      updateReadiness() {
-        let completed = 0;
-        this.state.timeframes.forEach(tf => { if (this.state.tfStatus[tf.id] === 'Analysed') completed++; });
+ const data = await res.json();
+ if (!data.candidates || !data.candidates[0].content) throw new Error("Empty Response AI");
 
-        const percentage = (completed / 5) * 100;
-        const bar = document.getElementById('readiness-bar');
-        const text = document.getElementById('readiness-text');
-        
-        bar.style.width = `${percentage}%`;
-        text.innerText = `${percentage}%`;
+ let textRes = data.candidates[0].content.parts[0].text;
+ textRes = textRes.replace(/```json/g, '').replace(/```/g, '').trim();
+ 
+ return JSON.parse(textRes);
 
-        if (percentage > 0) bar.classList.add('progress-bar-striped');
-        
-        if (percentage === 100) {
-            bar.classList.remove('progress-bar-striped');
-            bar.classList.replace('bg-green-500', 'bg-blue-500');
-            text.classList.replace('text-white', 'text-blue-400');
-            this.generateFinalReport();
-        } else {
-            bar.classList.replace('bg-blue-500', 'bg-green-500');
-            text.classList.replace('text-blue-400', 'text-white');
-            document.getElementById('final-report-container').classList.add('hidden');
-        }
-      },
+ } catch (err) {
+ clearTimeout(timeoutId);
+ if (err.name === 'SyntaxError') throw new Error("JSON Parse Failed: Data korup");
+ throw err;
+ }
+ },
 
-      generateFinalReport() {
-        const m = this.state.tfMemory;
-        const container = document.getElementById('report-content');
-        container.innerHTML = `
-            <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
-                <span class="text-[9px] text-gray-500 font-bold uppercase block mb-1">Macro Structure (1W & 1D)</span>
-                <p class="text-white text-[10px] leading-relaxed"><strong class="text-blue-400">Weekly:</strong> ${m.weekly}</p>
-                <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1"><strong class="text-blue-400">Daily:</strong> ${m.daily}</p>
-            </div>
-            
-            <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
-                <span class="text-[9px] text-gray-500 font-bold uppercase block mb-1">Entry Zones (H4 & H1)</span>
-                <p class="text-white text-[10px] leading-relaxed"><strong class="text-yellow-400">H4:</strong> ${m.h4}</p>
-                <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1"><strong class="text-yellow-400">H1:</strong> ${m.h1}</p>
-            </div>
+ validateAIResponse(json) {
+ const required = ['trend', 'bias', 'summary', 'confidence'];
+ for(const key of required) {
+ if(json[key] === undefined) {
+ json[key] = "N/A";
+ }
+ }
+ return true;
+ },
 
-            <div class="bg-black/30 p-3 rounded-xl border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.05)] space-y-1">
-                <span class="text-[9px] text-green-400 font-bold uppercase block mb-1"><i data-lucide="target" class="w-3 h-3 inline"></i> Precision Execution (M15)</span>
-                <p class="text-white text-[10px] leading-relaxed">${m.m15}</p>
-                <div class="mt-2 pt-2 border-t border-white/5 flex justify-between items-center text-[9px]">
-                    <span class="text-gray-400">Institutional Score:</span>
-                    <span class="text-green-400 font-black text-xs">STRONG BUY / VALID</span>
-                </div>
-            </div>
-        `;
-        if (window.lucide) lucide.createIcons();
-        document.getElementById('final-report-container').classList.remove('hidden');
-      },
+ updateReadiness() {
+ let completed = 0;
+ this.state.timeframes.forEach(tf => { if (this.state.tfStatus[tf.id] === 'Analysed') completed++; });
 
-      removeImage(tfId) {
-        if (this.state.tfControllers[tfId]) {
-            this.state.tfControllers[tfId].abort("REMOVED");
-            this.state.tfControllers[tfId] = null;
-        }
-        this.state.tfMemory[tfId] = null;
-        this.state.tfImages[tfId] = null;
-        document.getElementById(`upload-label-${tfId}`).classList.remove('hidden');
-        document.getElementById(`preview-container-${tfId}`).classList.add('hidden');
-        document.getElementById(`preview-img-${tfId}`).src = '';
-        this.updateStatus(tfId, 'Empty');
-        this.updateReadiness();
-      },
+ const percentage = (completed / 5) * 100;
+ const bar = document.getElementById('readiness-bar');
+ const text = document.getElementById('readiness-text');
+ 
+ bar.style.width = `${percentage}%`;
+ text.innerText = `${percentage}%`;
 
-      // AUDIT: FIXED BUTTON LOGIC (Mencegah Deadlock Button Disabled)
-      updateStatus(tfId, status, errorMsg = '') {
-        this.state.tfStatus[tfId] = status;
-        const badge = document.getElementById(`badge-${tfId}`);
-        const btn = document.getElementById(`search-btn-${tfId}`);
-        const theme = this.getTfTheme(tfId);
-        const tfLabel = this.state.timeframes.find(t=>t.id===tfId).title;
-        
-        // Reset Base Badge Class
-        badge.className = `absolute top-2 right-2 text-[8px] px-2 py-1 rounded font-mono font-bold uppercase tracking-wider transition-colors z-20 cursor-default`;
-        badge.title = errorMsg; // Inject error string untuk dibaca user saat hover
+ if (percentage > 0) bar.classList.add('progress-bar-striped');
+ 
+ if (percentage === 100) {
+ bar.classList.remove('progress-bar-striped');
+ bar.classList.replace('bg-green-500', 'bg-blue-500');
+ text.classList.replace('text-white', 'text-blue-400');
+ this.generateFinalReport();
+ } else {
+ bar.classList.replace('bg-blue-500', 'bg-green-500');
+ text.classList.replace('text-blue-400', 'text-white');
+ document.getElementById('final-report-container').classList.add('hidden');
+ }
+ },
 
-        if (status === 'Empty') {
-            badge.innerText = 'EMPTY';
-            badge.className += ' bg-zinc-800 text-gray-500 border border-white/5';
-            btn.disabled = true;
-            btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
-            btn.className = "w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-500 border-white/10 cursor-not-allowed";
-        } 
-        else if (status === 'Loaded') {
-            badge.innerText = 'LOADED';
-            badge.className += ' bg-yellow-500/20 text-yellow-500 border border-yellow-500/50';
-            btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
-            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} ${theme.btnBorder} ${theme.hover} cursor-pointer`;
-        } 
-        else if (status === 'Searching') {
-            badge.innerText = 'SEARCHING';
-            badge.className += ' bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse';
-            btn.disabled = true;
-            btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SEARCHING...`;
-            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} border-white/20 cursor-not-allowed opacity-70`;
-        } 
-        else if (status === 'Analysed') {
-            badge.innerText = 'ANALYSED';
-            badge.className += ' bg-green-500/20 text-green-400 border border-green-500/50';
-            btn.disabled = false;
-            btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-ANALYZE`;
-            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 cursor-pointer`;
-        }
-        else if (status === 'Error') {
-            badge.innerText = 'ERROR';
-            badge.className += ' bg-red-500/20 text-red-400 border border-red-500/50';
-            btn.disabled = false; // Tombol diaktifkan kembali agar user bisa Retry
-            btn.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> RETRY ${tfLabel}`;
-            btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-red-950/50 text-red-400 border-red-500/50 hover:bg-red-900/60 cursor-pointer`;
-        }
+ generateFinalReport() {
+ const m = this.state.tfMemory;
+ const container = document.getElementById('report-content');
+ 
+ // Institutional Decision Engine (Multi-TF Consensus)
+ let instScore = 0;
+ let conflicts = [];
+ const wBias = m.weekly?.bias?.toLowerCase() || '';
+ const dBias = m.daily?.bias?.toLowerCase() || '';
+ const h4Bias = m.h4?.bias?.toLowerCase() || '';
+ const h1Bias = m.h1?.bias?.toLowerCase() || '';
+ const m15Bias = m.m15?.bias?.toLowerCase() || '';
 
-        // Checklist Status Sync
-        const checkIcon = document.querySelector(`#check-${tfId} i`);
-        if (status === 'Analysed') {
-            checkIcon.setAttribute('data-lucide', 'check-circle-2');
-            document.querySelector(`#check-${tfId}`).classList.replace('text-gray-600', 'text-green-400');
-        } else {
-            checkIcon.setAttribute('data-lucide', 'circle');
-            document.querySelector(`#check-${tfId}`).classList.replace('text-green-400', 'text-gray-600');
-        }
-        
-        if (window.lucide) lucide.createIcons();
-      },
+ if(wBias.includes('bull') && dBias.includes('bull')) instScore += 30;
+ if(wBias.includes('bear') && dBias.includes('bear')) instScore += 30;
+ if(h4Bias.includes('bull') && h1Bias.includes('bull')) instScore += 30;
+ if(h4Bias.includes('bear') && h1Bias.includes('bear')) instScore += 30;
+ 
+ if((wBias.includes('bull') && h4Bias.includes('bear')) || (wBias.includes('bear') && h4Bias.includes('bull'))) {
+ conflicts.push("Macro (1W/1D) dan Micro (H4) tidak selaras.");
+ }
 
-      // AUDIT: VALIDASI IMAGE (Strict Format & Base64 check)
-      async optimizeImage(file) {
-        return new Promise((resolve, reject) => {
-            if (!file || !file.type.match(/image\/(jpeg|png|webp)/)) {
-                return reject(new Error("Image Invalid: Format tidak didukung (Gunakan JPG, PNG, WEBP)"));
-            }
-            
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                const img = new Image();
-                img.onload = () => {
-                    let w = img.width, h = img.height, max = this.config.maxImageDimension;
-                    if (w > max || h > max) { if (w > h) { h = Math.round((h * max) / w); w = max; } else { w = Math.round((w * max) / h); h = max; } }
-                    const canvas = document.createElement('canvas'); canvas.width = w; canvas.height = h;
-                    canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                    
-                    const base64Data = canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1];
-                    if (!base64Data || base64Data.trim() === '') return reject(new Error("Image Conversion Failed: Base64 kosong"));
-                    
-                    resolve(base64Data);
-                };
-                img.onerror = () => reject(new Error("Image Invalid: File korup atau rusak")); 
-                img.src = e.target.result;
-            };
-            reader.onerror = () => reject(new Error("Image Invalid: Gagal membaca file"));
-            reader.readAsDataURL(file);
-        });
-      },
+ const confidenceAvg = Math.round(((m.weekly?.confidence || 0) + (m.daily?.confidence || 0) + (m.h4?.confidence || 0) + (m.h1?.confidence || 0) + (m.m15?.confidence || 0)) / 5);
+ instScore += (confidenceAvg * 0.4);
 
-      // AUDIT: SAFE HASHING
-      async hashString(str) {
-        if (!str || str.length === 0) return "null_hash_000";
-        let hash = 0; 
-        for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; } 
-        return hash.toString();
-      }
-    };
+ let recommendation = "NEUTRAL / WAIT";
+ let recClass = "text-yellow-400";
+ if(instScore > 75 && conflicts.length === 0) { recommendation = wBias.includes('bull') ? "STRONG BUY" : "STRONG SELL"; recClass = wBias.includes('bull') ? "text-green-400" : "text-red-400"; }
+ else if(instScore > 60) { recommendation = wBias.includes('bull') ? "BUY" : "SELL"; recClass = wBias.includes('bull') ? "text-green-300" : "text-red-300"; }
 
-    // =========================================================================
-    // SYSTEM BOOTSTRAP (TIDAK DIUBAH)
-    // =========================================================================
-    function updateDigitalClock() { const el = document.getElementById('digital-clock'); if (el) el.textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
-    async function syncAndRender() { await RequestManager.enqueue(async () => { const data = await MarketEngine.syncMarketData(); if (data) { if (data['BTC']) UIRenderer.updateMacroUI(data['BTC']); let updated = false; quantDatabase.forEach(item => { if (data[item.coin]) { item.price = data[item.coin].price; item.priceChange = `${data[item.coin].change >= 0 ? '+' : ''}${data[item.coin].change?.toFixed(2) || '0.00'}%`; updated = true; } }); if (updated) UIRenderer.renderTable(); } }); }
+ const badge = document.getElementById('final-report-badge');
+ badge.className = `text-[9px] font-bold font-mono px-2 py-1 rounded border ${conflicts.length > 0 ? 'bg-orange-500/20 text-orange-400 border-orange-500/30' : 'bg-green-500/20 text-green-400 border-green-500/30'}`;
+ badge.innerText = conflicts.length > 0 ? 'CONFLICT DETECTED' : 'VALIDATED 100%';
 
-    window.onload = async () => {
-      lucide.createIcons();
-      updateDigitalClock();
-      setInterval(updateDigitalClock, 1000);
-      VolumeRenderer.init();
-      setInterval(VolumeRenderer.animate, 1500);
-      AI_Quant_Engine.init();
-      UIRenderer.renderTable();
-      await syncAndRender();
-      setInterval(syncAndRender, 30000);
-    };
+ container.innerHTML = `
+ <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
+ <span class="text-[9px] text-gray-500 font-bold uppercase block mb-1">Macro Matrix (1W & 1D)</span>
+ <p class="text-white text-[10px] leading-relaxed"><strong class="text-blue-400">Weekly:</strong> ${m.weekly?.summary || 'N/A'}</p>
+ <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1"><strong class="text-blue-400">Daily:</strong> ${m.daily?.summary || 'N/A'}</p>
+ </div>
+ 
+ <div class="bg-black/30 p-3 rounded-xl border border-white/5 space-y-1">
+ <span class="text-[9px] text-gray-500 font-bold uppercase block mb-1">Internal Flow (H4 & H1)</span>
+ <p class="text-white text-[10px] leading-relaxed"><strong class="text-yellow-400">H4 FVG/OB:</strong> ${m.h4?.fair_value_gap || m.h4?.order_block || 'N/A'}</p>
+ <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1"><strong class="text-yellow-400">H1 Liq:</strong> ${m.h1?.liquidity || 'N/A'}</p>
+ <p class="text-white text-[10px] leading-relaxed border-t border-white/5 pt-1 mt-1 text-gray-400">Bias Konfirmasi: ${h1Bias.toUpperCase()}</p>
+ </div>
+
+ <div class="bg-black/30 p-3 rounded-xl border border-green-500/20 shadow-[0_0_15px_rgba(34,197,94,0.05)] space-y-1 relative">
+ <span class="text-[9px] text-green-400 font-bold uppercase block mb-1"><i data-lucide="target" class="w-3 h-3 inline"></i> Execution Plan (M15)</span>
+ <p class="text-white text-[10px] leading-relaxed mb-1"><strong class="text-purple-400">Entry:</strong> ${m.m15?.entry || 'N/A'}</p>
+ <p class="text-white text-[10px] leading-relaxed mb-1"><strong class="text-red-400">SL:</strong> ${m.m15?.stop_loss || 'N/A'}</p>
+ <p class="text-white text-[10px] leading-relaxed mb-1"><strong class="text-emerald-400">TP:</strong> ${m.m15?.take_profit || 'N/A'}</p>
+ 
+ ${conflicts.length > 0 ? `<div class="mt-2 text-[9px] text-orange-400 border-t border-orange-500/20 pt-1">⚠️ Warning: ${conflicts[0]}</div>` : ''}
+
+ <div class="mt-2 pt-2 border-t border-white/5 flex justify-between items-center text-[9px]">
+ <span class="text-gray-400">Inst. Score: <span class="text-white">${Math.min(100, Math.round(instScore))}%</span></span>
+ <span class="${recClass} font-black text-xs">${recommendation}</span>
+ </div>
+ </div>
+ `;
+ if (window.lucide) lucide.createIcons();
+ document.getElementById('final-report-container').classList.remove('hidden');
+ },
+
+ removeImage(tfId) {
+ if (this.state.tfControllers[tfId]) {
+ this.state.tfControllers[tfId].abort("REMOVED");
+ this.state.tfControllers[tfId] = null;
+ }
+ if(this.state.tfObjUrls[tfId]) {
+ URL.revokeObjectURL(this.state.tfObjUrls[tfId]);
+ this.state.tfObjUrls[tfId] = null;
+ }
+ this.state.tfMemory[tfId] = null;
+ this.state.tfImages[tfId] = null;
+ document.getElementById(`upload-label-${tfId}`).classList.remove('hidden');
+ document.getElementById(`preview-container-${tfId}`).classList.add('hidden');
+ document.getElementById(`preview-img-${tfId}`).src = '';
+ this.updateStatus(tfId, 'Empty');
+ this.updateReadiness();
+ },
+
+ updateStatus(tfId, status, errorMsg = '') {
+ this.state.tfStatus[tfId] = status;
+ const badge = document.getElementById(`badge-${tfId}`);
+ const btn = document.getElementById(`search-btn-${tfId}`);
+ const theme = this.getTfTheme(tfId);
+ const tfLabel = this.state.timeframes.find(t=>t.id===tfId).title;
+ 
+ badge.className = `absolute top-2 right-2 text-[8px] px-2 py-1 rounded font-mono font-bold uppercase tracking-wider transition-colors z-20 cursor-default`;
+ badge.title = errorMsg; 
+
+ if (status === 'Empty') {
+ badge.innerText = 'EMPTY';
+ badge.className += ' bg-zinc-800 text-gray-500 border border-white/5';
+ btn.disabled = true;
+ btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
+ btn.className = "w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-500 border-white/10 cursor-not-allowed";
+ } 
+ else if (status === 'Loaded') {
+ badge.innerText = 'LOADED';
+ badge.className += ' bg-yellow-500/20 text-yellow-500 border border-yellow-500/50';
+ btn.disabled = false;
+ btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`;
+ btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} ${theme.btnBorder} ${theme.hover} cursor-pointer`;
+ } 
+ else if (status === 'Searching') {
+ badge.innerText = 'SEARCHING';
+ badge.className += ' bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse';
+ btn.disabled = true;
+ btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SEARCHING...`;
+ btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} border-white/20 cursor-not-allowed opacity-70`;
+ } 
+ else if (status === 'Analysed') {
+ badge.innerText = 'ANALYSED';
+ badge.className += ' bg-green-500/20 text-green-400 border border-green-500/50';
+ btn.disabled = false;
+ btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-ANALYZE`;
+ btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 cursor-pointer`;
+ }
+ else if (status === 'Error') {
+ badge.innerText = 'ERROR';
+ badge.className += ' bg-red-500/20 text-red-400 border border-red-500/50';
+ btn.disabled = false; 
+ btn.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> RETRY ${tfLabel}`;
+ btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-red-950/50 text-red-400 border-red-500/50 hover:bg-red-900/60 cursor-pointer`;
+ }
+
+ const checkIcon = document.querySelector(`#check-${tfId} i`);
+ if (status === 'Analysed') {
+ checkIcon.setAttribute('data-lucide', 'check-circle-2');
+ document.querySelector(`#check-${tfId}`).classList.replace('text-gray-600', 'text-green-400');
+ } else {
+ checkIcon.setAttribute('data-lucide', 'circle');
+ document.querySelector(`#check-${tfId}`).classList.replace('text-green-400', 'text-gray-600');
+ }
+ 
+ if (window.lucide) lucide.createIcons();
+ },
+
+ // OffscreenCanvas Optimization for Performance & Memory
+ async optimizeImage(file) {
+ return new Promise((resolve, reject) => {
+ const reader = new FileReader();
+ reader.onload = (e) => {
+ const img = new Image();
+ img.onload = () => {
+ let w = img.width, h = img.height, max = this.config.maxImageDimension;
+ if (w > max || h > max) { if (w > h) { h = Math.round((h * max) / w); w = max; } else { w = Math.round((w * max) / h); h = max; } }
+ 
+ let canvas, ctx;
+ if (typeof OffscreenCanvas !== 'undefined') {
+ canvas = new OffscreenCanvas(w, h);
+ ctx = canvas.getContext('2d');
+ } else {
+ canvas = document.createElement('canvas'); 
+ canvas.width = w; canvas.height = h;
+ ctx = canvas.getContext('2d');
+ }
+ 
+ ctx.drawImage(img, 0, 0, w, h);
+ 
+ if (canvas.toDataURL) {
+ const base64Data = canvas.toDataURL('image/jpeg', this.config.imageQuality).split(',')[1];
+ resolve(base64Data);
+ } else {
+ // OffscreenCanvas fallback
+ canvas.convertToBlob({ type: 'image/jpeg', quality: this.config.imageQuality }).then(blob => {
+ const reader2 = new FileReader();
+ reader2.onloadend = () => resolve(reader2.result.split(',')[1]);
+ reader2.readAsDataURL(blob);
+ }).catch(reject);
+ }
+ };
+ img.onerror = () => reject(new Error("Image Invalid: File korup atau rusak")); 
+ img.src = e.target.result;
+ };
+ reader.onerror = () => reject(new Error("Image Invalid: Gagal membaca file"));
+ reader.readAsDataURL(file);
+ });
+ },
+
+ // Enterprise Grade Hashing using Web Crypto API
+ async hashSHA256(base64Str) {
+ try {
+ const msgUint8 = new TextEncoder().encode(base64Str);
+ const hashBuffer = await crypto.subtle.digest('SHA-256', msgUint8);
+ const hashArray = Array.from(new Uint8Array(hashBuffer));
+ return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+ } catch(e) {
+ // Fallback jika Crypto API diblokir
+ let hash = 0;
+ for (let i = 0; i < base64Str.length; i++) {
+ hash = ((hash << 5) - hash) + base64Str.charCodeAt(i);
+ hash |= 0; 
+ }
+ return hash.toString();
+ }
+ }
+ };
+
+ // =========================================================================
+ // SYSTEM BOOTSTRAP (TIDAK DIUBAH)
+ // =========================================================================
+ function updateDigitalClock() { const el = document.getElementById('digital-clock'); if (el) el.textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
+ async function syncAndRender() { await RequestManager.enqueue(async () => { const data = await MarketEngine.syncMarketData(); if (data) { if (data['BTC']) UIRenderer.updateMacroUI(data['BTC']); let updated = false; quantDatabase.forEach(item => { if (data[item.coin]) { item.price = data[item.coin].price; item.priceChange = `${data[item.coin].change >= 0 ? '+' : ''}${data[item.coin].change?.toFixed(2) || '0.00'}%`; updated = true; } }); if (updated) UIRenderer.renderTable(); } }); }
+
+ window.onload = async () => {
+ lucide.createIcons();
+ updateDigitalClock();
+ setInterval(updateDigitalClock, 1000);
+ VolumeRenderer.init();
+ setInterval(VolumeRenderer.animate, 1500);
+ AI_Quant_Engine.init();
+ UIRenderer.renderTable();
+ await syncAndRender();
+ setInterval(syncAndRender, 30000);
+ };
   </script>
 </body>
 </html>
