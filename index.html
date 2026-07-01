@@ -151,7 +151,7 @@
 
       <div class="w-full flex justify-between items-center bg-[#0d0d12] border border-white/5 rounded-xl p-2 px-4 mb-4">
           <div class="text-[10px] font-mono text-gray-400 flex items-center gap-4 hidden sm:flex">
-             <span id="mon-tokens" class="text-blue-400">Tokens: Optimized</span>
+             <span id="mon-tokens" class="text-blue-400">Tokens: Max Optimized</span>
              <span id="mon-latency" class="text-yellow-400">Latency: <span id="mon-latency-val">-</span></span>
              <span>Cache Hits: <span id="mon-retry" class="text-purple-400">0</span></span>
              <span id="mon-rapidapi" class="text-gray-500"><i data-lucide="wifi-off" class="w-3 h-3 inline"></i> TV Realtime</span>
@@ -347,10 +347,11 @@ Timestamp     : ${new Date().toISOString()}
 
     const AI_Quant_Engine = {
       
+      // PERUBAHAN 1: Menurunkan batas dimensi gambar & kualitas untuk mencegah 429
       config: {
         timeoutMs: 45000,
-        maxImageDimension: 1200, 
-        imageQuality: 0.75,
+        maxImageDimension: 800, // Turun dari 1200
+        imageQuality: 0.6,      // Turun dari 0.75
         providers: [{ id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }]
       },
 
@@ -474,8 +475,16 @@ Timestamp     : ${new Date().toISOString()}
             const data = await res.json();
             const validModels = data.models.filter(m => m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("embedding") && (m.name.includes("gemini-1.5") || m.name.includes("gemini-2"))).map(m => m.name.split('/').pop());
             if (validModels.length === 0) throw new Error("Tidak ditemukan model yang mendukung Image Processing.");
-            validModels.sort((a, b) => (b.includes("pro") ? 3 : b.includes("flash") ? 2 : 1) - (a.includes("pro") ? 3 : a.includes("flash") ? 2 : 1));
-            this.state.discoveredModels = validModels; this.state.activeModel = validModels[0];
+            
+            // PERUBAHAN 2: Pemaksaan Model (Flash diletakkan di urutan paling atas)
+            validModels.sort((a, b) => {
+                const scoreA = a.includes("flash") ? 3 : a.includes("pro") ? 1 : 2;
+                const scoreB = b.includes("flash") ? 3 : b.includes("pro") ? 1 : 2;
+                return scoreB - scoreA;
+            });
+
+            this.state.discoveredModels = validModels; 
+            this.state.activeModel = validModels[0]; // Memastikan 1.5-flash otomatis terpilih jika ada
         } catch (err) {
             this.state.activeModel = null; alert(`AI Engine Error: ${err.message}. Pastikan API Key valid.`);
         }
@@ -568,26 +577,27 @@ Timestamp     : ${new Date().toISOString()}
       async requestAITimeframe(tfId, base64Image, realtimeData, controller) {
           if (!this.state.activeModel) throw new Error("Model AI belum siap / API Key salah");
 
-          const baseSMC = "Gunakan Smart Money Concept (SMC) & ICT Concept. Analisis struktur pasar (BOS, CHOCH), Liquidity (Sweep, EQH, EQL), Order Block, Mitigation Block, Fair Value Gap (FVG), Premium/Discount, Supply/Demand.";
+          // PERUBAHAN 3: Optimalisasi Prompt (Fokus padat pada SMC & ICT)
+          const baseSMC = "Gunakan Smart Money Concept (SMC) & ICT Concept. Identifikasi: Struktur (BOS/CHOCH), Liquidity (Sweep/EQH/EQL), Order Block, dan FVG.";
           
           let dynamicContext = "";
           if (realtimeData) {
-              dynamicContext = `\n\nANDA MENERIMA 2 SUMBER INFORMASI KEPUTUSAN:\n1. SCREENSHOT CHART (Visual Structure)\n2. DATA PASAR REAL-TIME: \n${realtimeData}\n\nINSTRUKSI KHUSUS:\nGunakan keduanya bersamaan secara cerdas. Apabila terdapat perbedaan harga antara screenshot dan data real-time, PRIORITASKAN DATA PASAR REAL-TIME terbaru untuk memvalidasi Last Price, Entry, SL, TP. Namun tetap gunakan struktur visual pada gambar screenshot untuk menentukan Trend, Market Structure, BOS, CHOCH, Liquidity, Block, dll. Hitung Probabilitas keberhasilan dan Risk Reward berdasarkan gabungan kedua data ini.`;
+              dynamicContext = `\nPrioritaskan harga dari data pasar real-time ini: \n${realtimeData}\nGabungkan dengan struktur visual pada screenshot. Output padat dan jelas.`;
           } else {
-              dynamicContext = `\n\nLakukan analisa deskriptif murni berdasarkan struktur visual pada screenshot chart yang diberikan.`;
+              dynamicContext = `\nLakukan analisa deskriptif padat berdasarkan struktur visual pada screenshot chart.`;
           }
 
           const prompts = {
-              'weekly': `Analisa chart Weekly ini. ${baseSMC} Fokus pada Makro Trend, arah institusi besar, dan liquidity pool utama.${dynamicContext}`,
-              'daily': `Analisa chart Daily ini. ${baseSMC} Fokus pada Market Structure harian, Liquidity Sweep terbaru, dan area akumulasi/distribusi.${dynamicContext}`,
-              'h4': `Analisa chart H4 ini. ${baseSMC} Tentukan Entry Zone valid, validasi Order Block H4, dan status mitigasi.${dynamicContext}`,
-              'h1': `Analisa chart H1 ini. ${baseSMC} Lakukan Refinement zona, cek Internal Structure, dan induksi (Inducement).${dynamicContext}`,
-              'm15': `Analisa chart M15 ini. ${baseSMC} Hitung secara spesifik Setup Precision Entry, Stop Loss rasional, dan eksekusi. Konfirmasi Momentum. Berikan alasan teknis.${dynamicContext}`
+              'weekly': `Analisa timeframe Weekly. ${baseSMC} Tentukan bias arah makro dan target likuiditas utama.${dynamicContext}`,
+              'daily': `Analisa timeframe Daily. ${baseSMC} Petakan area akumulasi/distribusi dan narasi pergerakan harga harian.${dynamicContext}`,
+              'h4': `Analisa timeframe H4. ${baseSMC} Validasi zona POI (Point of Interest) dan kesiapan mitigasi.${dynamicContext}`,
+              'h1': `Analisa timeframe H1. ${baseSMC} Lakukan Refinement pada POI, temukan inducement, dan konfirmasi momentum.${dynamicContext}`,
+              'm15': `Analisa timeframe M15. ${baseSMC} Susun parameter eksekusi spesifik: Entry Zone, Stop Loss rasional, TP, dan probabilitas keberhasilan.${dynamicContext}`
           };
 
           const schema = { type: "OBJECT", properties: { data: { type: "STRING", description: "Hasil analisa komprehensif dalam bahasa Indonesia" } }, required: ["data"] };
           const payload = {
-              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading Specialist. ${prompts[tfId]} Kembalikan HANYA format JSON persis sesuai skema.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
+              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading Specialist. ${prompts[tfId]} Kembalikan HANYA format JSON persis sesuai skema tanpa basa-basi.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
               generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.1 }
           };
 
@@ -734,7 +744,6 @@ Timestamp     : ${new Date().toISOString()}
           btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-red-950/50 text-red-400 border-red-500/50 hover:bg-red-900/60 cursor-pointer`; 
         }
 
-        // PERBAIKAN UTAMA: Konstruksi ulang elemen wrapper agar kompatibel dengan Lucide SVG mutation
         const checkWrapper = document.getElementById(`check-${tfId}`);
         if (checkWrapper) {
           const isAnalysed = (status === 'Analysed');
