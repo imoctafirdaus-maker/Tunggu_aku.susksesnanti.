@@ -191,6 +191,26 @@
         <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono text-gray-300">
         </div>
       </div>
+      
+      <div id="nano-banana-wrapper" class="hidden bg-zinc-950 p-5 rounded-xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] mt-6 transition-all duration-500 opacity-0 transform translate-y-4 relative">
+          <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+              <span class="text-xs uppercase font-bold text-blue-400 tracking-wider flex items-center gap-2">
+                <i data-lucide="pen-tool" class="w-4 h-4"></i> AI Chart Annotation (Nano Banana)
+              </span>
+              <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">M15 RENDERED</span>
+          </div>
+          
+          <div class="relative w-full rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-black" id="nb-canvas-container" style="min-height: 400px;">
+              <img id="nb-base-img" class="w-full h-auto block" alt="M15 Chart Base" />
+              <canvas id="nb-overlay" class="absolute top-0 left-0 w-full h-full pointer-events-none z-10"></canvas>
+              
+              <div id="nb-kesimpulan-panel" class="absolute top-4 right-4 bg-[#09090e]/90 backdrop-blur-md border border-white/10 rounded p-3 z-20 shadow-xl hidden font-mono text-[9px] text-gray-300 w-[200px]">
+                  <div class="border-b border-white/10 pb-2 mb-2 font-bold text-white tracking-widest uppercase">Summary M15</div>
+                  <div class="space-y-1.5" id="nb-panel-content">
+                      </div>
+              </div>
+          </div>
+      </div>
 
     </div>
   </div>
@@ -243,105 +263,256 @@
       sortAndRank() { quantDatabase.sort((a, b) => { let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct); if (slA !== slB) return slA - slB; if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score; return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]); }); quantDatabase.forEach((item, index) => { item.rank = index + 1; }); }, renderTable() { this.sortAndRank(); const tbody = document.getElementById('elite-scanner-rows'); if (!tbody) return; const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0); requestAnimationFrame(() => { if (validSetups.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`; return; } const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`)); Array.from(tbody.rows).forEach(row => { if (row.id && !validIds.has(row.id)) tbody.removeChild(row); }); if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = ''; validSetups.forEach(item => { const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`; let tr = document.getElementById(rowId); const newHTML = ` <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td> <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td> <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td> <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td> <td class="p-3 text-white font-bold">${item.area_entry}</td> <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td> <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td> <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td> <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td> <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td> <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td> `; if (!tr) { tr = document.createElement('tr'); tr.id = rowId; tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap"; tr.innerHTML = newHTML; tbody.appendChild(tr); } else if (tr.innerHTML !== newHTML) { tr.innerHTML = newHTML; } }); }); } 
     };
 
-    // =========================================================================
-    // LAYER 2: ENTERPRISE AI QUANT ENGINE (MULTIMODAL & DATA LAYER)
-    // =========================================================================
-
     class SmartLRUCache {
-        constructor(maxSize = 20, ttlMs = 15 * 60 * 1000) {
-            this.cache = new Map(); this.maxSize = maxSize; this.ttlMs = ttlMs;
-        }
-        get(key) {
-            if (!this.cache.has(key)) return null;
-            const item = this.cache.get(key);
-            if (Date.now() > item.expiry) { this.cache.delete(key); return null; }
-            this.cache.delete(key); this.cache.set(key, item); 
-            return item.value;
-        }
-        set(key, value) {
-            if (this.cache.has(key)) this.cache.delete(key);
-            if (this.cache.size >= this.maxSize) this.cache.delete(this.cache.keys().next().value);
-            this.cache.set(key, { value, expiry: Date.now() + this.ttlMs });
-        }
+        constructor(maxSize = 20, ttlMs = 15 * 60 * 1000) { this.cache = new Map(); this.maxSize = maxSize; this.ttlMs = ttlMs; }
+        get(key) { if (!this.cache.has(key)) return null; const item = this.cache.get(key); if (Date.now() > item.expiry) { this.cache.delete(key); return null; } this.cache.delete(key); this.cache.set(key, item); return item.value; }
+        set(key, value) { if (this.cache.has(key)) this.cache.delete(key); if (this.cache.size >= this.maxSize) this.cache.delete(this.cache.keys().next().value); this.cache.set(key, { value, expiry: Date.now() + this.ttlMs }); }
     }
 
     const MarketConfirmationEngine = {
         cache: new SmartLRUCache(50, 60 * 1000), 
-        
         async getRealtimeData(symbol, rapidApiKey) {
             if (!rapidApiKey || !symbol) return null;
-            
-            const cleanSymbol = symbol.trim().toUpperCase();
-            const cacheKey = `tv_data_${cleanSymbol}`;
-            const cached = this.cache.get(cacheKey);
-            
-            if (cached) {
-                console.log("[Market Engine] Real-time TV Data served from Cache");
-                this.updateUIStatus(true, true);
-                return cached;
-            }
-
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); 
-
+            const cleanSymbol = symbol.trim().toUpperCase(); const cacheKey = `tv_data_${cleanSymbol}`; const cached = this.cache.get(cacheKey);
+            if (cached) { this.updateUIStatus(true, true); return cached; }
+            const controller = new AbortController(); const timeoutId = setTimeout(() => controller.abort(), 10000); 
             try {
                 const url = `https://tradingview-data1.p.rapidapi.com/api/price/${cleanSymbol}?timeframe=1&range=10`;
-                const response = await fetch(url, {
-                    method: 'GET',
-                    headers: {
-                        'x-rapidapi-host': 'tradingview-data1.p.rapidapi.com',
-                        'x-rapidapi-key': rapidApiKey.trim()
-                    },
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                if (!response.ok) {
-                    throw new Error(`RapidAPI Error HTTP ${response.status}`);
-                }
-                
-                const data = await response.json();
-                const formatted = this.formatData(cleanSymbol, data);
-                this.cache.set(cacheKey, formatted);
-                
-                this.updateUIStatus(true, false);
-                return formatted;
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                console.warn("[Market Engine] Real-time fetch failed (Graceful Fallback Active). AI will use image only.", error.message);
-                this.updateUIStatus(false, false);
-                return null; 
+                const response = await fetch(url, { method: 'GET', headers: { 'x-rapidapi-host': 'tradingview-data1.p.rapidapi.com', 'x-rapidapi-key': rapidApiKey.trim() }, signal: controller.signal });
+                clearTimeout(timeoutId); if (!response.ok) throw new Error(`RapidAPI Error HTTP ${response.status}`);
+                const data = await response.json(); const formatted = this.formatData(cleanSymbol, data); this.cache.set(cacheKey, formatted);
+                this.updateUIStatus(true, false); return formatted;
+            } catch (error) { clearTimeout(timeoutId); this.updateUIStatus(false, false); return null; }
+        },
+        formatData(requestSymbol, data) { const price = data.price !== undefined ? data.price : 'N/A'; const change = data.change !== undefined ? data.change : 'N/A'; return `=== TRADINGVIEW REAL-TIME MARKET DATA ===\nTarget Asset  : ${data.symbol || requestSymbol}\nCurrent Price : ${price}\nPrice Change  : ${change}\nTimestamp     : ${new Date().toISOString()}\n=========================================`; },
+        updateUIStatus(isSuccess, isCached) { const el = document.getElementById('mon-rapidapi'); if (!el) return; if (isSuccess) { el.innerHTML = `<i data-lucide="zap" class="w-3 h-3 inline text-yellow-400"></i> TV Realtime: ${isCached ? 'CACHED' : 'LIVE'}`; el.className = "text-green-400 font-bold"; } else { el.innerHTML = `<i data-lucide="wifi-off" class="w-3 h-3 inline"></i> TV Realtime: FAILED`; el.className = "text-red-400"; } if(window.lucide) lucide.createIcons(); }
+    };
+
+    // =========================================================================
+    // LAYER 3: NANO BANANA ANNOTATION ENGINE
+    // =========================================================================
+    const NanoBananaEngine = {
+        config: {
+            colors: {
+                buyArea: 'rgba(34, 197, 94, 0.15)', // Hijau (Entry)
+                buyLine: 'rgba(34, 197, 94, 0.8)',
+                slArea: 'rgba(239, 68, 68, 0.15)',  // Merah (Stop Loss)
+                slLine: 'rgba(239, 68, 68, 0.8)',
+                targetArea: 'rgba(59, 130, 246, 0.15)', // Biru (Target)
+                targetLine: 'rgba(59, 130, 246, 0.8)',
+                liquidity: 'rgba(234, 179, 8, 0.4)', // Kuning
+                orderBlock: 'rgba(168, 85, 247, 0.25)', // Ungu
+                fvg: 'rgba(249, 115, 22, 0.25)', // Oranye
+                text: 'rgba(255, 255, 255, 0.9)'
             }
         },
-        
-        formatData(requestSymbol, data) {
-            const price = data.price !== undefined ? data.price : 'N/A';
-            const change = data.change !== undefined ? data.change : 'N/A';
-            const symbolResponse = data.symbol || requestSymbol;
 
-            return `
-=== TRADINGVIEW REAL-TIME MARKET DATA ===
-Target Asset  : ${symbolResponse}
-Current Price : ${price}
-Price Change  : ${change}
-Timestamp     : ${new Date().toISOString()}
-=========================================
-`;
+        parsePriceStr(str) {
+            if(!str) return null;
+            const matches = str.match(/[\d,.]+/);
+            return matches ? parseFloat(matches[0].replace(/,/g, '')) : null;
         },
 
-        updateUIStatus(isSuccess, isCached) {
-            const el = document.getElementById('mon-rapidapi');
-            if (!el) return;
-            if (isSuccess) {
-                el.innerHTML = `<i data-lucide="zap" class="w-3 h-3 inline text-yellow-400"></i> TV Realtime: ${isCached ? 'CACHED' : 'LIVE'}`;
-                el.className = "text-green-400 font-bold";
-            } else {
-                el.innerHTML = `<i data-lucide="wifi-off" class="w-3 h-3 inline"></i> TV Realtime: FAILED`;
-                el.className = "text-red-400";
+        async processAndRender(m15File, finalData, m15AnalysisText) {
+            // Evaluasi status - Apakah Valid?
+            const s = (finalData.summary?.status || "").toUpperCase();
+            if(!s.includes("BUY") && !s.includes("SELL") && !s.includes("WAIT")) return; // Tidak valid
+
+            const wrapper = document.getElementById('nano-banana-wrapper');
+            const imgEl = document.getElementById('nb-base-img');
+            const canvas = document.getElementById('nb-overlay');
+            const panel = document.getElementById('nb-kesimpulan-panel');
+            const panelContent = document.getElementById('nb-panel-content');
+
+            // 1. Tampilkan Wrapper
+            wrapper.classList.remove('hidden');
+            setTimeout(() => wrapper.classList.remove('opacity-0', 'translate-y-4'), 50);
+            
+            // 2. Load M15 Image
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                imgEl.onload = () => {
+                    // Set canvas size match to image size exactly
+                    canvas.width = imgEl.clientWidth;
+                    canvas.height = imgEl.clientHeight;
+                    
+                    // 3. Draw Annotations
+                    this.drawAnnotations(canvas, finalData, imgEl.clientWidth, imgEl.clientHeight);
+                    
+                    // 4. Update Kesimpulan Panel
+                    this.updatePanel(panel, panelContent, finalData);
+                };
+                imgEl.src = e.target.result;
+            };
+            reader.readAsDataURL(m15File);
+        },
+
+        drawAnnotations(canvas, data, width, height) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, width, height);
+
+            // Ekstrak harga untuk mapping Y-Axis relative (Pseudo-Mapping V1)
+            const entryStr = data.summary?.entry;
+            const slStr = data.summary?.sl;
+            const tp1Str = data.summary?.tp1;
+            const tp2Str = data.summary?.tp2;
+            const tp3Str = data.summary?.tp3;
+
+            const entryP = this.parsePriceStr(entryStr);
+            const slP = this.parsePriceStr(slStr);
+            let tpP = this.parsePriceStr(tp3Str) || this.parsePriceStr(tp2Str) || this.parsePriceStr(tp1Str);
+            
+            if(!entryP || !slP || !tpP) return; // Jika gagal parsing, skip gambar struktural
+
+            const isBuy = entryP > slP;
+            
+            // Define visual bounds mapping
+            const padding = height * 0.15; // 15% margin
+            const drawingH = height - (padding * 2);
+
+            let maxP = isBuy ? tpP : slP;
+            let minP = isBuy ? slP : tpP;
+
+            // Math Map Function
+            const getY = (price) => {
+                if(price > maxP) price = maxP;
+                if(price < minP) price = minP;
+                const ratio = (price - minP) / (maxP - minP);
+                return (height - padding) - (ratio * drawingH); // Y terbalik (0 di atas)
+            };
+
+            const yEntry = getY(entryP);
+            const ySL = getY(slP);
+            const yTP1 = this.parsePriceStr(tp1Str) ? getY(this.parsePriceStr(tp1Str)) : null;
+            const yTP2 = this.parsePriceStr(tp2Str) ? getY(this.parsePriceStr(tp2Str)) : null;
+            const yTP3 = this.parsePriceStr(tp3Str) ? getY(this.parsePriceStr(tp3Str)) : null;
+
+            // Start Drawing
+            ctx.lineWidth = 1;
+            ctx.font = "bold 10px 'Plus Jakarta Sans', monospace";
+            ctx.textAlign = "right";
+            
+            // Draw RR Box First (Background transparan)
+            if(yTP1) {
+                // Profit Box (Biru)
+                ctx.fillStyle = this.config.colors.targetArea;
+                ctx.fillRect(width * 0.1, isBuy ? yTP3 : yEntry, width * 0.8, Math.abs(yEntry - (isBuy ? yTP3 : yEntry)));
+                // Loss Box (Merah)
+                ctx.fillStyle = this.config.colors.slArea;
+                ctx.fillRect(width * 0.1, isBuy ? yEntry : ySL, width * 0.8, Math.abs(ySL - yEntry));
             }
-            if(window.lucide) lucide.createIcons();
+
+            // Function Helper
+            const drawDashLine = (y, color, label, align="right") => {
+                ctx.beginPath();
+                ctx.setLineDash([5, 5]);
+                ctx.moveTo(0, y);
+                ctx.lineTo(width, y);
+                ctx.strokeStyle = color;
+                ctx.stroke();
+                
+                ctx.fillStyle = color;
+                const txtW = ctx.measureText(label).width;
+                const bgW = txtW + 10;
+                const xPos = align === "right" ? width - bgW - 10 : 10;
+                
+                ctx.fillRect(xPos, y - 8, bgW, 16);
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = "center";
+                ctx.fillText(label, xPos + (bgW/2), y + 3);
+            };
+
+            const drawBox = (yCenter, hBox, color, label, wPercent=0.2) => {
+                ctx.fillStyle = color;
+                const bx = width * (1-wPercent - 0.05);
+                const by = yCenter - (hBox/2);
+                const bw = width * wPercent;
+                ctx.fillRect(bx, by, bw, hBox);
+                
+                ctx.strokeStyle = color.replace(/[\d.]+\)$/g, '0.8)');
+                ctx.setLineDash([]);
+                ctx.strokeRect(bx, by, bw, hBox);
+
+                ctx.fillStyle = '#fff';
+                ctx.textAlign = "center";
+                ctx.fillText(label, bx + (bw/2), by + (hBox/2) + 3);
+            };
+
+            // 1. Draw Target Lines
+            if(yTP3) drawDashLine(yTP3, this.config.colors.targetLine, "TP3");
+            if(yTP2) drawDashLine(yTP2, this.config.colors.targetLine, "TP2");
+            if(yTP1) drawDashLine(yTP1, this.config.colors.targetLine, "TP1");
+
+            // 2. Draw Entry & SL
+            drawDashLine(yEntry, this.config.colors.buyLine, "ENTRY");
+            drawDashLine(ySL, this.config.colors.slLine, "STOP LOSS");
+
+            // 3. Draw Order Block & FVG (Visual Placement Approximation)
+            // OB biasanya di dekat SL
+            const yOB = isBuy ? ySL - (Math.abs(yEntry - ySL) * 0.2) : ySL + (Math.abs(yEntry - ySL) * 0.2);
+            drawBox(yOB, 25, this.config.colors.orderBlock, "OB", 0.15);
+
+            // FVG biasanya antara Entry dan OB
+            const yFVG = yEntry + ((yOB - yEntry) / 2);
+            drawBox(yFVG, 20, this.config.colors.fvg, "FVG", 0.12);
+
+            // Liquidity Sweep (Garis Solid Kuning dekat SL)
+            ctx.beginPath();
+            ctx.setLineDash([]);
+            ctx.moveTo(width * 0.5, ySL);
+            ctx.lineTo(width * 0.9, ySL);
+            ctx.strokeStyle = this.config.colors.liquidity;
+            ctx.lineWidth = 2;
+            ctx.stroke();
+            ctx.fillStyle = '#fff';
+            ctx.textAlign = "right";
+            ctx.fillText("LIQUIDITY SWEEP", width * 0.9, ySL - 5);
+
+            // 4. Arah Panah Pergerakan
+            const arrowX = width * 0.2;
+            ctx.beginPath();
+            ctx.moveTo(arrowX, yEntry);
+            ctx.lineTo(arrowX, isBuy ? yTP1 : ySL); // Arah ke target
+            ctx.strokeStyle = this.config.colors.buyLine;
+            ctx.lineWidth = 3;
+            // Arrow Head
+            ctx.lineTo(arrowX - 5, (isBuy ? yTP1 : ySL) + (isBuy ? 10 : -10));
+            ctx.moveTo(arrowX, isBuy ? yTP1 : ySL);
+            ctx.lineTo(arrowX + 5, (isBuy ? yTP1 : ySL) + (isBuy ? 10 : -10));
+            ctx.stroke();
+            
+            // Main Label (BUY / SELL)
+            ctx.fillStyle = isBuy ? this.config.colors.buyLine : this.config.colors.slLine;
+            ctx.font = "bold 14px 'Plus Jakarta Sans', monospace";
+            ctx.textAlign = "left";
+            ctx.fillText(data.summary.status, 20, 30);
+            
+            // Watermark
+            ctx.fillStyle = 'rgba(255,255,255,0.1)';
+            ctx.font = "bold 30px 'Plus Jakarta Sans', monospace";
+            ctx.textAlign = "center";
+            ctx.fillText("NANO BANANA AI", width/2, height/2);
+        },
+
+        updatePanel(panel, contentEl, data) {
+            panel.classList.remove('hidden');
+            const s = data.summary;
+            let statusColor = s.status?.includes("BUY") ? "text-green-400" : s.status?.includes("SELL") ? "text-red-400" : "text-yellow-400";
+            
+            contentEl.innerHTML = `
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Trend:</span> <span class="font-bold text-white">${s.trend || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Bias:</span> <span class="font-bold text-white truncate max-w-[100px] text-right" title="${s.bias}">${s.bias || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Entry:</span> <span class="font-bold text-green-400">${s.entry || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">SL:</span> <span class="font-bold text-red-400">${s.sl || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP1:</span> <span class="font-bold text-blue-400">${s.tp1 || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP2:</span> <span class="font-bold text-blue-400">${s.tp2 || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP3:</span> <span class="font-bold text-blue-400">${s.tp3 || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">RR:</span> <span class="font-bold text-white">${s.rr || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Prob:</span> <span class="font-bold text-blue-400">${s.prob || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Conf:</span> <span class="font-bold text-blue-400">${s.conf || '-'}</span></div>
+                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Score:</span> <span class="font-bold text-blue-400">${s.score || '-'}/100</span></div>
+                <div class="flex justify-between pt-1"><span class="text-gray-500">Status:</span> <span class="font-black ${statusColor}">${s.status || '-'}</span></div>
+            `;
         }
     };
 
@@ -370,7 +541,7 @@ Timestamp     : ${new Date().toISOString()}
         tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, 
         tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
         tfCache: { weekly: new SmartLRUCache(), daily: new SmartLRUCache(), h4: new SmartLRUCache(), h1: new SmartLRUCache(), m15: new SmartLRUCache() },
-        isGeneratingFinal: false // State baru untuk mengontrol sintesis final
+        isGeneratingFinal: false
       },
 
       init() {
@@ -661,6 +832,9 @@ Timestamp     : ${new Date().toISOString()}
           this.state.isGeneratingFinal = false;
           const container = document.getElementById('final-report-container');
           container.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => container.classList.add('hidden'), 300);
+          
+          const nbWrapper = document.getElementById('nano-banana-wrapper');
+          if(nbWrapper) { nbWrapper.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => nbWrapper.classList.add('hidden'), 300); }
       },
 
       async generateFinalReport() {
@@ -872,6 +1046,16 @@ Jawab HANYA menggunakan format JSON persis sesuai skema tanpa komentar tambahan.
           
           this.state.isGeneratingFinal = false;
           if(window.lucide) lucide.createIcons();
+
+          // =================================================================================
+          // TRIGGER NANO BANANA DI SINI - Menjaga sistem utama tetap asli (Tanpa Modifikasi)
+          // =================================================================================
+          if (typeof NanoBananaEngine !== 'undefined') {
+              const m15File = this.state.tfImages['m15'];
+              if (m15File) {
+                  NanoBananaEngine.processAndRender(m15File, data, this.state.tfMemory['m15']);
+              }
+          }
       },
 
       removeImage(tfId) {
