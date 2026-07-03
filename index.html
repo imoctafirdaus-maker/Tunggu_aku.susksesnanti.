@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>INSTITUTIONAL QUANT B-SCANNER PRO</title>
+  <title>HARMONIC PATTERN SCANNER PRO</title>
   
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -20,7 +20,6 @@
     .price-up { color: #22c55e !important; }
     .price-down { color: #ef4444 !important; }
     
-    /* Animasi Progress */
     .progress-bar-striped {
       background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.15) 25%, transparent 25%, transparent 50%, rgba(255, 255, 255, 0.15) 50%, rgba(255, 255, 255, 0.15) 75%, transparent 75%, transparent);
       background-size: 1rem 1rem;
@@ -37,103 +36,34 @@
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
           <div class="flex items-center gap-2 flex-wrap">
-            <span class="text-green-400 font-semibold tracking-wider pixel-font text-[10px] bg-green-500/10 px-2 py-0.5 rounded border border-green-500/20">QUANT ALGO v3.0</span>
-            <h1 class="text-white font-bold text-base tracking-wide uppercase">Institutional Elite Scanner</h1>
+            <span class="text-blue-400 font-semibold tracking-wider pixel-font text-[10px] bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">HARMONIC ALGO v1.0</span>
+            <h1 class="text-white font-bold text-base tracking-wide uppercase">Harmonic Pattern Scanner</h1>
           </div>
-          <p class="text-xs text-gray-400 mt-1">Early Accumulation & Spot/Futures Flow Engine</p>
+          <p class="text-xs text-gray-400 mt-1">Exclusive Gartley & Bat (M30) PRZ Identifier</p>
         </div>
         <div class="text-left sm:text-right">
           <span class="text-[11px] text-gray-500 font-mono flex items-center sm:justify-end gap-1">
-            <i data-lucide="clock" class="w-3 h-3 text-green-400"></i> <span id="digital-clock">00:00:00 UTC</span>
+            <i data-lucide="clock" class="w-3 h-3 text-blue-400"></i> <span id="digital-clock">00:00:00 UTC</span>
           </span>
           <div id="app-network-status" class="text-xs text-yellow-400 font-bold mt-1 tracking-tight animate-pulse">● INITIALIZING...</div>
         </div>
       </div>
     </div>
 
-    <div class="glass-panel rounded-2xl p-4 sm:p-5 neon-border-green bg-gradient-to-b from-emerald-950/10 to-transparent space-y-4">
-      <div class="bg-gradient-to-r from-red-950/20 to-black/40 p-4 rounded-xl border border-red-500/20 neon-border-orange">
-        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div class="flex items-center gap-4">
-            <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-center shrink-0">
-              <i data-lucide="bitcoin" class="w-6 h-6 text-red-400"></i>
-            </div>
-            <div>
-              <div class="flex items-center gap-2">
-                <span class="text-[11px] font-bold text-red-400 uppercase tracking-widest font-mono">Macro Liquidity Anchor</span>
-              </div>
-              <div class="flex items-baseline gap-2 mt-0.5">
-                <span class="text-2xl font-extrabold text-white tracking-tight font-mono" id="btc-live-price">$0.00</span>
-                <span class="text-xs font-bold text-gray-400 font-mono" id="btc-live-change">0.00%</span>
-              </div>
-            </div>
-          </div>
-          <div class="bg-black/30 px-3 py-2 rounded-lg border border-white/5 w-full md:w-auto">
-            <span class="text-[9px] text-gray-500 uppercase font-mono block">USDT.D & Altcoin Season Status</span>
-            <span class="text-xs font-bold text-yellow-400 flex items-center gap-1.5 mt-0.5" id="macro-status">
-              <i data-lucide="activity" class="w-3.5 h-3.5"></i>
-              Evaluating Macro Risk...
-            </span>
-          </div>
-        </div>
-      </div>
-
-      <div class="p-4 bg-black/40 rounded-xl border border-white/5 space-y-2">
-        <div class="flex justify-between items-center">
-          <span class="text-xs font-bold tracking-wider text-gray-400 flex items-center gap-1.5">
-            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Spot Volume Feed
-          </span>
-          <span class="text-[10px] text-gray-500 font-mono">Auto-refresh Active</span>
-        </div>
-        <div id="live-volume-bars" class="h-16 flex items-end gap-1 pt-2 px-1 bg-zinc-950/50 rounded-lg overflow-hidden border border-white/5">
-        </div>
-      </div>
-
-      <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 border-b border-white/10 pb-3 mt-4">
-        <div>
-          <h2 class="text-green-400 font-bold text-sm sm:text-base tracking-wide flex items-center gap-2">
-            <i data-lucide="filter" class="w-5 h-5 text-green-400"></i>
-            TOP EARLY ACCUMULATION (WHALE FILTERED)
-          </h2>
-        </div>
-      </div>
-
-      <div class="w-full overflow-x-auto custom-scroll border border-white/5 rounded-xl bg-black/20">
-        <table class="w-full text-left border-collapse min-w-[1200px]">
-          <thead>
-            <tr class="border-b border-white/10 bg-white/[0.02] text-gray-400 font-mono text-[10px] uppercase tracking-wider">
-              <th class="p-3 text-center">Rank</th>
-              <th class="p-3">Coin</th>
-              <th class="p-3">Price / 24h</th>
-              <th class="p-3">Demand Zone (Dist)</th>
-              <th class="p-3">Entry Area</th>
-              <th class="p-3 text-center">Stop Loss</th>
-              <th class="p-3 text-center">SL %</th>
-              <th class="p-3 text-center text-emerald-400">RR</th>
-              <th class="p-3 text-center text-purple-400">Entry Score</th>
-              <th class="p-3 text-center text-cyan-400">SL Score</th>
-              <th class="p-3 text-right text-green-400">Timing</th>
-            </tr>
-          </thead>
-          <tbody id="elite-scanner-rows" class="text-xs font-mono divide-y divide-white/5 text-gray-300">
-          </tbody>
-        </table>
-      </div>
-    </div>
-
+    <!-- AI QUANT ENGINE (HARMONIC M30) -->
     <div class="glass-panel rounded-2xl p-4 sm:p-5 border border-white/5 space-y-4">
       
       <div class="flex flex-col md:flex-row md:items-start justify-between gap-4 border-b border-white/10 pb-4">
         <div class="flex items-center gap-2 mt-2">
-          <span class="text-yellow-400 font-semibold tracking-wider pixel-font text-[10px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">QUANT VISION v5.1</span>
+          <span class="text-yellow-400 font-semibold tracking-wider pixel-font text-[10px] bg-yellow-500/10 px-2 py-0.5 rounded border border-yellow-500/20">VISION M30</span>
           <h2 class="text-white font-bold text-base tracking-wide uppercase flex items-center gap-2">
-            <i data-lucide="cpu" class="w-5 h-5 text-yellow-400"></i> AI Multimodal Engine
+            <i data-lucide="hexagon" class="w-5 h-5 text-yellow-400"></i> AI Harmonic Engine
           </h2>
         </div>
         
         <div class="flex flex-col gap-2 max-w-sm w-full font-mono">
-            <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10 transition-colors focus-within:border-green-500/50">
-              <i data-lucide="key" class="w-4 h-4 text-green-400 shrink-0"></i>
+            <div class="flex items-center gap-2 bg-black/60 px-3 py-1.5 rounded-xl border border-white/10 transition-colors focus-within:border-blue-500/50">
+              <i data-lucide="key" class="w-4 h-4 text-blue-400 shrink-0"></i>
               <input type="password" id="gemini-api-key" placeholder="Gemini/Proxy API Key..." class="bg-transparent text-xs text-white focus:outline-none w-full placeholder-gray-500" />
             </div>
             <div class="flex gap-2 w-full">
@@ -151,9 +81,8 @@
 
       <div class="w-full flex justify-between items-center bg-[#0d0d12] border border-white/5 rounded-xl p-2 px-4 mb-4">
           <div class="text-[10px] font-mono text-gray-400 flex items-center gap-4 hidden sm:flex">
-             <span id="mon-tokens" class="text-blue-400">Tokens: Max Optimized</span>
+             <span id="mon-tokens" class="text-blue-400">Mode: Strict Harmonic</span>
              <span id="mon-latency" class="text-yellow-400">Latency: <span id="mon-latency-val">-</span></span>
-             <span>Cache Hits: <span id="mon-retry" class="text-purple-400">0</span></span>
              <span id="mon-rapidapi" class="text-gray-500"><i data-lucide="wifi-off" class="w-3 h-3 inline"></i> TV Realtime</span>
           </div>
       </div>
@@ -161,55 +90,33 @@
       <div class="bg-black/30 p-4 rounded-xl border border-white/5 mb-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-3">
           <div class="flex gap-4 font-mono text-[10px] font-bold tracking-wider flex-wrap" id="tf-checklists">
-            <div id="check-weekly" class="flex items-center gap-1.5 text-gray-600 transition-colors"><i data-lucide="circle" class="w-3 h-3"></i> WEEKLY</div>
-            <div id="check-daily" class="flex items-center gap-1.5 text-gray-600 transition-colors"><i data-lucide="circle" class="w-3 h-3"></i> DAILY</div>
-            <div id="check-h4" class="flex items-center gap-1.5 text-gray-600 transition-colors"><i data-lucide="circle" class="w-3 h-3"></i> H4</div>
-            <div id="check-h1" class="flex items-center gap-1.5 text-gray-600 transition-colors"><i data-lucide="circle" class="w-3 h-3"></i> H1</div>
-            <div id="check-m15" class="flex items-center gap-1.5 text-gray-600 transition-colors"><i data-lucide="circle" class="w-3 h-3"></i> M15</div>
+            <div id="check-m30" class="flex items-center gap-1.5 text-gray-600 transition-colors"><i data-lucide="circle" class="w-3 h-3"></i> M30 CHART</div>
           </div>
           <div class="text-left md:text-right flex-shrink-0">
-             <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Institutional Readiness</div>
+             <div class="text-[9px] text-gray-500 uppercase tracking-widest mb-1">Scanner Readiness</div>
              <div class="text-lg font-black text-white font-mono leading-none transition-colors" id="readiness-text">0%</div>
           </div>
         </div>
         <div class="w-full bg-zinc-900 h-2 rounded-full overflow-hidden border border-white/5">
-           <div id="readiness-bar" class="bg-green-500 h-full w-0 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(34,197,94,0.5)]"></div>
+           <div id="readiness-bar" class="bg-blue-500 h-full w-0 transition-all duration-700 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"></div>
         </div>
       </div>
 
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4" id="upload-grid">
+      <!-- SINGLE UPLOAD GRID FOR M30 -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="upload-grid">
       </div>
 
-      <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-green-500/30 neon-border-green mt-6 transition-all duration-500 opacity-0 transform translate-y-4">
+      <!-- FINAL REPORT CONTAINER -->
+      <div id="final-report-container" class="hidden bg-zinc-900/80 p-5 rounded-xl border border-blue-500/30 neon-border-green mt-6 transition-all duration-500 opacity-0 transform translate-y-4">
         <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-            <span class="text-xs uppercase font-bold text-green-400 tracking-wider flex items-center gap-2">
-              <i data-lucide="crosshair" class="w-4 h-4"></i> Final Institutional Report
+            <span class="text-xs uppercase font-bold text-blue-400 tracking-wider flex items-center gap-2">
+              <i data-lucide="scan-line" class="w-4 h-4"></i> Harmonic Validation Report
             </span>
-            <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-green-500/20 text-green-400 border border-green-500/30 shadow-[0_0_10px_rgba(34,197,94,0.3)]">VALIDATED 100%</span>
+            <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">M30 ANALYZED</span>
         </div>
         
-        <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 text-xs font-mono text-gray-300">
+        <div id="report-content" class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono text-gray-300">
         </div>
-      </div>
-      
-      <div id="nano-banana-wrapper" class="hidden bg-zinc-950 p-5 rounded-xl border border-blue-500/30 shadow-[0_0_15px_rgba(59,130,246,0.15)] mt-6 transition-all duration-500 opacity-0 transform translate-y-4 relative">
-          <div class="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-              <span class="text-xs uppercase font-bold text-blue-400 tracking-wider flex items-center gap-2">
-                <i data-lucide="pen-tool" class="w-4 h-4"></i> AI Chart Annotation (Nano Banana)
-              </span>
-              <span class="text-[9px] font-bold font-mono px-2 py-1 rounded bg-blue-500/20 text-blue-400 border border-blue-500/30">M15 RENDERED</span>
-          </div>
-          
-          <div class="relative w-full rounded-lg overflow-hidden border border-white/10 shadow-2xl bg-black" id="nb-canvas-container" style="min-height: 400px;">
-              <img id="nb-base-img" class="w-full h-auto block" alt="M15 Chart Base" />
-              <canvas id="nb-overlay" class="absolute top-0 left-0 w-full h-full pointer-events-none z-10"></canvas>
-              
-              <div id="nb-kesimpulan-panel" class="absolute top-4 right-4 bg-[#09090e]/90 backdrop-blur-md border border-white/10 rounded p-3 z-20 shadow-xl hidden font-mono text-[9px] text-gray-300 w-[200px]">
-                  <div class="border-b border-white/10 pb-2 mb-2 font-bold text-white tracking-widest uppercase">Summary M15</div>
-                  <div class="space-y-1.5" id="nb-panel-content">
-                      </div>
-              </div>
-          </div>
       </div>
 
     </div>
@@ -217,52 +124,8 @@
 
   <script>
     // =========================================================================
-    // LAYER 1: MARKET ENGINE & CORE ARCHITECTURE 
+    // SYSTEM CORE 
     // =========================================================================
-    const API_ENDPOINTS = { cgProxies: ["https://api.allorigins.win/raw?url=", "https://api.codetabs.com/v1/proxy?quest=", "https://corsproxy.io/?"], paprika: "https://api.coinpaprika.com/v1/tickers", cc: "https://min-api.cryptocompare.com/data/pricemultifull", binance: "https://api.binance.com/api/v3/ticker/24hr" };
-    const SmartCache = { store: new Map(), set(key, data, ttlSeconds) { this.store.set(key, { data, expiry: Date.now() + (ttlSeconds * 1000) }); }, get(key) { const item = this.store.get(key); if (!item) return null; if (Date.now() > item.expiry) return null; return item.data; }, getLastValid(key) { return this.store.has(key) ? this.store.get(key).data : null; } };
-    const RequestManager = { queue: Promise.resolve(), enqueue(taskFn) { this.queue = this.queue.then(() => taskFn()).catch(err => console.error("Queue Error:", err)); return this.queue; }, async fetchWithTimeout(url, timeoutMs = 4000) { const controller = new AbortController(); const id = setTimeout(() => controller.abort(), timeoutMs); try { const res = await fetch(url, { signal: controller.signal }); clearTimeout(id); if (!res.ok) throw new Error(`HTTP Error ${res.status}`); return await res.json(); } catch (e) { clearTimeout(id); throw e; } } };
-    const UINotifier = { update(state, reason = '') { const el = document.getElementById('app-network-status'); if (!el) return; el.className = "text-xs font-bold mt-1 tracking-tight"; if (state === 'SYNCING') { el.innerHTML = '🟡 SYNCING...'; el.classList.add('text-yellow-400', 'animate-pulse'); } else if (state === 'RETRYING') { el.innerHTML = '🟠 ROTATING PROXY...'; el.classList.add('text-orange-400', 'animate-pulse'); } else if (state === 'OFFLINE') { el.innerHTML = `🔴 OFFLINE ${reason}`; el.classList.add('text-red-400'); } else if (state === 'CONNECTED') { el.innerHTML = '🟢 SECURE CONNECTION'; el.classList.add('text-green-400'); } } };
-    
-    const MarketEngine = { 
-      async syncMarketData() { 
-        const cacheKey = 'market_data_core'; const cached = SmartCache.get(cacheKey); if (cached) return cached; 
-        UINotifier.update('SYNCING'); 
-        let finalData = null; 
-        const cgQuery = encodeURIComponent("https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,solana,chainlink&vs_currencies=usd&include_24hr_change=true"); 
-        let usdtD = 0;
-        try { const globalRes = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cgProxies[0]}${encodeURIComponent("https://api.coingecko.com/api/v3/global")}`, 4000); if (globalRes?.data?.market_cap_percentage?.usdt) usdtD = globalRes.data.market_cap_percentage.usdt; } catch (e) {}
-        for (const proxyBase of API_ENDPOINTS.cgProxies) { try { const data = await RequestManager.fetchWithTimeout(`${proxyBase}${cgQuery}`, 4000); if (data && data.bitcoin) { finalData = { 'BTC': { price: data.bitcoin.usd, change: data.bitcoin.usd_24h_change, usdt_d: usdtD }, 'SOL/USDT': { price: data.solana?.usd, change: data.solana?.usd_24h_change }, 'LINK/USDT': { price: data.chainlink?.usd, change: data.chainlink?.usd_24h_change } }; break; } } catch (e) { UINotifier.update('RETRYING'); } } 
-        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(API_ENDPOINTS.paprika, 4000); if (Array.isArray(data)) { const btc = data.find(c => c.id === 'btc-bitcoin')?.quotes?.USD; const sol = data.find(c => c.id === 'sol-solana')?.quotes?.USD; const link = data.find(c => c.id === 'link-chainlink')?.quotes?.USD; if (btc) finalData = { 'BTC': { price: btc.price, change: btc.percent_change_24h, usdt_d: usdtD }, 'SOL/USDT': { price: sol?.price, change: sol?.percent_change_24h }, 'LINK/USDT': { price: link?.price, change: link?.percent_change_24h } }; } } catch (e) { UINotifier.update('RETRYING'); } } 
-        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.cc}?fsyms=BTC,SOL,LINK&tsyms=USD`, 4000); if (data && data.RAW) finalData = { 'BTC': { price: data.RAW.BTC?.USD?.PRICE, change: data.RAW.BTC?.USD?.CHANGEPCT24HOUR, usdt_d: usdtD }, 'SOL/USDT': { price: data.RAW.SOL?.USD?.PRICE, change: data.RAW.SOL?.USD?.CHANGEPCT24HOUR }, 'LINK/USDT': { price: data.RAW.LINK?.USD?.PRICE, change: data.RAW.LINK?.USD?.CHANGEPCT24HOUR } }; } catch (e) { UINotifier.update('RETRYING'); } } 
-        if (!finalData) { try { const data = await RequestManager.fetchWithTimeout(`${API_ENDPOINTS.binance}?symbols=["BTCUSDT","SOLUSDT","LINKUSDT"]`, 4000); if (Array.isArray(data)) { finalData = {}; data.forEach(item => { const cleanKey = item.symbol === 'BTCUSDT' ? 'BTC' : `${item.symbol.replace('USDT', '')}/USDT`; finalData[cleanKey] = { price: parseFloat(item.lastPrice), change: parseFloat(item.priceChangePercent) }; }); if(finalData['BTC']) finalData['BTC'].usdt_d = usdtD; } } catch (e) {} } 
-        if (finalData && finalData['BTC']) { UINotifier.update('CONNECTED'); SmartCache.set(cacheKey, finalData, 30); return finalData; } else { UINotifier.update('OFFLINE', '(USING CACHE)'); return SmartCache.getLastValid(cacheKey); } 
-      } 
-    };
-    
-    let quantDatabase = [{ rank: 1, coin: "SOL/USDT", entryNow: "YA", demandZone: "$138.50 - $141.20", dist: "1.2%", priceChange: "+0.45%", area_entry: "$141.50", stop_loss: "$140.30", sl_pct: "0.85%", rr: "1 : 6.1", entry_score: 94, sl_score: 96, timing: "Buy Now", whaleScore: 95, demandScore: 94, successProb: "92%" }, { rank: 2, coin: "LINK/USDT", entryNow: "YA", demandZone: "$13.10 - $13.55", dist: "2.4%", priceChange: "+1.10%", area_entry: "$13.40", stop_loss: "$13.28", sl_pct: "0.90%", rr: "1 : 5.8", entry_score: 91, sl_score: 93, timing: "Wait Pullback", whaleScore: 92, demandScore: 91, successProb: "89%" }];
-    const VolumeRenderer = { init() { const container = document.getElementById('live-volume-bars'); if (!container) return; container.innerHTML = ''; for (let i = 0; i < 28; i++) { const bar = document.createElement('div'); bar.className = 'flex-1 transition-all duration-300 rounded-t bg-green-500/20'; bar.style.height = '10%'; container.appendChild(bar); } }, animate() { const container = document.getElementById('live-volume-bars'); if (!container || container.children.length === 0) return; const children = container.children; for (let i = 0; i < children.length; i++) { const isGreen = Math.random() > 0.4; children[i].className = `flex-1 transition-all duration-300 rounded-t ${isGreen ? 'bg-green-500/70' : 'bg-red-500/70'}`; children[i].style.height = `${Math.floor(Math.random() * 85) + 15}%`; } } };
-    
-    const UIRenderer = { 
-      updateMacroUI(btcData) { 
-        if (!btcData) return; 
-        requestAnimationFrame(() => { 
-          document.getElementById('btc-live-price').textContent = `$${btcData.price.toLocaleString()}`; 
-          const changeEl = document.getElementById('btc-live-change'); 
-          changeEl.textContent = `${btcData.change >= 0 ? '+' : ''}${btcData.change.toFixed(2)}%`; 
-          changeEl.className = `text-xs font-bold font-mono ${btcData.change >= 0 ? 'price-up' : 'price-down'}`; 
-          const macroStatus = document.getElementById('macro-status'); 
-          if (btcData.usdt_d) {
-              if (btcData.change < 0 && btcData.usdt_d > 4.5) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: USDT.D ${btcData.usdt_d.toFixed(2)}% & BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: USDT.D ${btcData.usdt_d.toFixed(2)}%`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
-          } else {
-              if (btcData.change < -3) { macroStatus.innerHTML = `<i data-lucide="alert-triangle" class="w-3.5 h-3.5 text-red-500"></i> Market Risk Off: BTC Koreksi`; macroStatus.className = "text-xs font-bold text-red-400 flex items-center gap-1.5 mt-0.5"; } else { macroStatus.innerHTML = `<i data-lucide="check-circle" class="w-3.5 h-3.5 text-green-500"></i> Market Risk On: Early Acc Valid`; macroStatus.className = "text-xs font-bold text-green-400 flex items-center gap-1.5 mt-0.5"; } 
-          }
-          if (window.lucide) lucide.createIcons(); 
-        }); 
-      }, 
-      sortAndRank() { quantDatabase.sort((a, b) => { let slA = parseFloat(a.sl_pct), slB = parseFloat(b.sl_pct); if (slA !== slB) return slA - slB; if (b.entry_score !== a.entry_score) return b.entry_score - a.entry_score; return parseFloat(b.rr.split(':')[1]) - parseFloat(a.rr.split(':')[1]); }); quantDatabase.forEach((item, index) => { item.rank = index + 1; }); }, renderTable() { this.sortAndRank(); const tbody = document.getElementById('elite-scanner-rows'); if (!tbody) return; const validSetups = quantDatabase.filter(item => parseFloat(item.sl_pct) <= 1.0); requestAnimationFrame(() => { if (validSetups.length === 0) { tbody.innerHTML = `<tr><td colspan="11" class="p-8 text-center text-red-400 font-bold tracking-widest uppercase">TIDAK ADA SETUP BERKUALITAS SAAT INI</td></tr>`; return; } const validIds = new Set(validSetups.map(c => `row-${c.coin.replace(/[^a-zA-Z0-9]/g, '')}`)); Array.from(tbody.rows).forEach(row => { if (row.id && !validIds.has(row.id)) tbody.removeChild(row); }); if (tbody.rows.length === 1 && !tbody.rows[0].id) tbody.innerHTML = ''; validSetups.forEach(item => { const rowId = `row-${item.coin.replace(/[^a-zA-Z0-9]/g, '')}`; let tr = document.getElementById(rowId); const newHTML = ` <td class="p-3 text-center text-yellow-400 font-bold">${item.rank}</td> <td class="p-3"><div class="text-white font-bold">${item.coin}</div></td> <td class="p-3 text-gray-200">$${item.price ? item.price.toLocaleString() : '-'} <br><span class="${item.priceChange?.includes('+') ? 'text-green-400' : 'text-red-400'} text-[10px]">${item.priceChange || ''}</span></td> <td class="p-3 text-cyan-200">${item.demandZone} <br><span class="text-gray-500 text-[10px]">Dist: ${item.dist}</span></td> <td class="p-3 text-white font-bold">${item.area_entry}</td> <td class="p-3 text-center text-red-400 font-bold">${item.stop_loss}</td> <td class="p-3 text-center text-red-400 font-medium">${item.sl_pct}</td> <td class="p-3 text-center text-emerald-400 font-extrabold">${item.rr}</td> <td class="p-3 text-center text-purple-400 font-bold">${item.entry_score}</td> <td class="p-3 text-center text-cyan-400 font-bold">${item.sl_score}</td> <td class="p-3 text-right text-yellow-400 font-semibold">${item.timing}</td> `; if (!tr) { tr = document.createElement('tr'); tr.id = rowId; tr.className = "hover:bg-green-500/[0.03] transition-colors border-b border-white/5 whitespace-nowrap"; tr.innerHTML = newHTML; tbody.appendChild(tr); } else if (tr.innerHTML !== newHTML) { tr.innerHTML = newHTML; } }); }); } 
-    };
-
     class SmartLRUCache {
         constructor(maxSize = 20, ttlMs = 15 * 60 * 1000) { this.cache = new Map(); this.maxSize = maxSize; this.ttlMs = ttlMs; }
         get(key) { if (!this.cache.has(key)) return null; const item = this.cache.get(key); if (Date.now() > item.expiry) { this.cache.delete(key); return null; } this.cache.delete(key); this.cache.set(key, item); return item.value; }
@@ -279,269 +142,33 @@
             try {
                 const url = `https://tradingview-data1.p.rapidapi.com/api/price/${cleanSymbol}?timeframe=1&range=10`;
                 const response = await fetch(url, { method: 'GET', headers: { 'x-rapidapi-host': 'tradingview-data1.p.rapidapi.com', 'x-rapidapi-key': rapidApiKey.trim() }, signal: controller.signal });
-                clearTimeout(timeoutId); if (!response.ok) throw new Error(`RapidAPI Error HTTP ${response.status}`);
+                clearTimeout(timeoutId); if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const data = await response.json(); const formatted = this.formatData(cleanSymbol, data); this.cache.set(cacheKey, formatted);
                 this.updateUIStatus(true, false); return formatted;
             } catch (error) { clearTimeout(timeoutId); this.updateUIStatus(false, false); return null; }
         },
-        formatData(requestSymbol, data) { const price = data.price !== undefined ? data.price : 'N/A'; const change = data.change !== undefined ? data.change : 'N/A'; return `=== TRADINGVIEW REAL-TIME MARKET DATA ===\nTarget Asset  : ${data.symbol || requestSymbol}\nCurrent Price : ${price}\nPrice Change  : ${change}\nTimestamp     : ${new Date().toISOString()}\n=========================================`; },
+        formatData(requestSymbol, data) { const price = data.price !== undefined ? data.price : 'N/A'; return `=== TRADINGVIEW REAL-TIME MARKET DATA ===\nTarget Asset  : ${data.symbol || requestSymbol}\nCurrent Price : ${price}\n=========================================`; },
         updateUIStatus(isSuccess, isCached) { const el = document.getElementById('mon-rapidapi'); if (!el) return; if (isSuccess) { el.innerHTML = `<i data-lucide="zap" class="w-3 h-3 inline text-yellow-400"></i> TV Realtime: ${isCached ? 'CACHED' : 'LIVE'}`; el.className = "text-green-400 font-bold"; } else { el.innerHTML = `<i data-lucide="wifi-off" class="w-3 h-3 inline"></i> TV Realtime: FAILED`; el.className = "text-red-400"; } if(window.lucide) lucide.createIcons(); }
     };
 
     // =========================================================================
-    // LAYER 3: NANO BANANA ANNOTATION ENGINE
+    // HARMONIC AI ENGINE
     // =========================================================================
-    const NanoBananaEngine = {
-        config: {
-            colors: {
-                buyArea: 'rgba(34, 197, 94, 0.15)', // Hijau (Entry)
-                buyLine: 'rgba(34, 197, 94, 0.8)',
-                slArea: 'rgba(239, 68, 68, 0.15)',  // Merah (Stop Loss)
-                slLine: 'rgba(239, 68, 68, 0.8)',
-                targetArea: 'rgba(59, 130, 246, 0.15)', // Biru (Target)
-                targetLine: 'rgba(59, 130, 246, 0.8)',
-                liquidity: 'rgba(234, 179, 8, 0.4)', // Kuning
-                orderBlock: 'rgba(168, 85, 247, 0.25)', // Ungu
-                fvg: 'rgba(249, 115, 22, 0.25)', // Oranye
-                text: 'rgba(255, 255, 255, 0.9)'
-            }
-        },
-
-        parsePriceStr(str) {
-            if(!str) return null;
-            const matches = str.match(/[\d,.]+/);
-            return matches ? parseFloat(matches[0].replace(/,/g, '')) : null;
-        },
-
-        async processAndRender(m15File, finalData, m15AnalysisText) {
-            // Evaluasi status - Apakah Valid?
-            const s = (finalData.summary?.status || "").toUpperCase();
-            if(!s.includes("BUY") && !s.includes("SELL") && !s.includes("WAIT")) return; // Tidak valid
-
-            const wrapper = document.getElementById('nano-banana-wrapper');
-            const imgEl = document.getElementById('nb-base-img');
-            const canvas = document.getElementById('nb-overlay');
-            const panel = document.getElementById('nb-kesimpulan-panel');
-            const panelContent = document.getElementById('nb-panel-content');
-
-            // 1. Tampilkan Wrapper
-            wrapper.classList.remove('hidden');
-            setTimeout(() => wrapper.classList.remove('opacity-0', 'translate-y-4'), 50);
-            
-            // 2. Load M15 Image
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                imgEl.onload = () => {
-                    // Set canvas size match to image size exactly
-                    canvas.width = imgEl.clientWidth;
-                    canvas.height = imgEl.clientHeight;
-                    
-                    // 3. Draw Annotations
-                    this.drawAnnotations(canvas, finalData, imgEl.clientWidth, imgEl.clientHeight);
-                    
-                    // 4. Update Kesimpulan Panel
-                    this.updatePanel(panel, panelContent, finalData);
-                };
-                imgEl.src = e.target.result;
-            };
-            reader.readAsDataURL(m15File);
-        },
-
-        drawAnnotations(canvas, data, width, height) {
-            const ctx = canvas.getContext('2d');
-            ctx.clearRect(0, 0, width, height);
-
-            // Ekstrak harga untuk mapping Y-Axis relative (Pseudo-Mapping V1)
-            const entryStr = data.summary?.entry;
-            const slStr = data.summary?.sl;
-            const tp1Str = data.summary?.tp1;
-            const tp2Str = data.summary?.tp2;
-            const tp3Str = data.summary?.tp3;
-
-            const entryP = this.parsePriceStr(entryStr);
-            const slP = this.parsePriceStr(slStr);
-            let tpP = this.parsePriceStr(tp3Str) || this.parsePriceStr(tp2Str) || this.parsePriceStr(tp1Str);
-            
-            if(!entryP || !slP || !tpP) return; // Jika gagal parsing, skip gambar struktural
-
-            const isBuy = entryP > slP;
-            
-            // Define visual bounds mapping
-            const padding = height * 0.15; // 15% margin
-            const drawingH = height - (padding * 2);
-
-            let maxP = isBuy ? tpP : slP;
-            let minP = isBuy ? slP : tpP;
-
-            // Math Map Function
-            const getY = (price) => {
-                if(price > maxP) price = maxP;
-                if(price < minP) price = minP;
-                const ratio = (price - minP) / (maxP - minP);
-                return (height - padding) - (ratio * drawingH); // Y terbalik (0 di atas)
-            };
-
-            const yEntry = getY(entryP);
-            const ySL = getY(slP);
-            const yTP1 = this.parsePriceStr(tp1Str) ? getY(this.parsePriceStr(tp1Str)) : null;
-            const yTP2 = this.parsePriceStr(tp2Str) ? getY(this.parsePriceStr(tp2Str)) : null;
-            const yTP3 = this.parsePriceStr(tp3Str) ? getY(this.parsePriceStr(tp3Str)) : null;
-
-            // Start Drawing
-            ctx.lineWidth = 1;
-            ctx.font = "bold 10px 'Plus Jakarta Sans', monospace";
-            ctx.textAlign = "right";
-            
-            // Draw RR Box First (Background transparan)
-            if(yTP1) {
-                // Profit Box (Biru)
-                ctx.fillStyle = this.config.colors.targetArea;
-                ctx.fillRect(width * 0.1, isBuy ? yTP3 : yEntry, width * 0.8, Math.abs(yEntry - (isBuy ? yTP3 : yEntry)));
-                // Loss Box (Merah)
-                ctx.fillStyle = this.config.colors.slArea;
-                ctx.fillRect(width * 0.1, isBuy ? yEntry : ySL, width * 0.8, Math.abs(ySL - yEntry));
-            }
-
-            // Function Helper
-            const drawDashLine = (y, color, label, align="right") => {
-                ctx.beginPath();
-                ctx.setLineDash([5, 5]);
-                ctx.moveTo(0, y);
-                ctx.lineTo(width, y);
-                ctx.strokeStyle = color;
-                ctx.stroke();
-                
-                ctx.fillStyle = color;
-                const txtW = ctx.measureText(label).width;
-                const bgW = txtW + 10;
-                const xPos = align === "right" ? width - bgW - 10 : 10;
-                
-                ctx.fillRect(xPos, y - 8, bgW, 16);
-                ctx.fillStyle = '#fff';
-                ctx.textAlign = "center";
-                ctx.fillText(label, xPos + (bgW/2), y + 3);
-            };
-
-            const drawBox = (yCenter, hBox, color, label, wPercent=0.2) => {
-                ctx.fillStyle = color;
-                const bx = width * (1-wPercent - 0.05);
-                const by = yCenter - (hBox/2);
-                const bw = width * wPercent;
-                ctx.fillRect(bx, by, bw, hBox);
-                
-                ctx.strokeStyle = color.replace(/[\d.]+\)$/g, '0.8)');
-                ctx.setLineDash([]);
-                ctx.strokeRect(bx, by, bw, hBox);
-
-                ctx.fillStyle = '#fff';
-                ctx.textAlign = "center";
-                ctx.fillText(label, bx + (bw/2), by + (hBox/2) + 3);
-            };
-
-            // 1. Draw Target Lines
-            if(yTP3) drawDashLine(yTP3, this.config.colors.targetLine, "TP3");
-            if(yTP2) drawDashLine(yTP2, this.config.colors.targetLine, "TP2");
-            if(yTP1) drawDashLine(yTP1, this.config.colors.targetLine, "TP1");
-
-            // 2. Draw Entry & SL
-            drawDashLine(yEntry, this.config.colors.buyLine, "ENTRY");
-            drawDashLine(ySL, this.config.colors.slLine, "STOP LOSS");
-
-            // 3. Draw Order Block & FVG (Visual Placement Approximation)
-            // OB biasanya di dekat SL
-            const yOB = isBuy ? ySL - (Math.abs(yEntry - ySL) * 0.2) : ySL + (Math.abs(yEntry - ySL) * 0.2);
-            drawBox(yOB, 25, this.config.colors.orderBlock, "OB", 0.15);
-
-            // FVG biasanya antara Entry dan OB
-            const yFVG = yEntry + ((yOB - yEntry) / 2);
-            drawBox(yFVG, 20, this.config.colors.fvg, "FVG", 0.12);
-
-            // Liquidity Sweep (Garis Solid Kuning dekat SL)
-            ctx.beginPath();
-            ctx.setLineDash([]);
-            ctx.moveTo(width * 0.5, ySL);
-            ctx.lineTo(width * 0.9, ySL);
-            ctx.strokeStyle = this.config.colors.liquidity;
-            ctx.lineWidth = 2;
-            ctx.stroke();
-            ctx.fillStyle = '#fff';
-            ctx.textAlign = "right";
-            ctx.fillText("LIQUIDITY SWEEP", width * 0.9, ySL - 5);
-
-            // 4. Arah Panah Pergerakan
-            const arrowX = width * 0.2;
-            ctx.beginPath();
-            ctx.moveTo(arrowX, yEntry);
-            ctx.lineTo(arrowX, isBuy ? yTP1 : ySL); // Arah ke target
-            ctx.strokeStyle = this.config.colors.buyLine;
-            ctx.lineWidth = 3;
-            // Arrow Head
-            ctx.lineTo(arrowX - 5, (isBuy ? yTP1 : ySL) + (isBuy ? 10 : -10));
-            ctx.moveTo(arrowX, isBuy ? yTP1 : ySL);
-            ctx.lineTo(arrowX + 5, (isBuy ? yTP1 : ySL) + (isBuy ? 10 : -10));
-            ctx.stroke();
-            
-            // Main Label (BUY / SELL)
-            ctx.fillStyle = isBuy ? this.config.colors.buyLine : this.config.colors.slLine;
-            ctx.font = "bold 14px 'Plus Jakarta Sans', monospace";
-            ctx.textAlign = "left";
-            ctx.fillText(data.summary.status, 20, 30);
-            
-            // Watermark
-            ctx.fillStyle = 'rgba(255,255,255,0.1)';
-            ctx.font = "bold 30px 'Plus Jakarta Sans', monospace";
-            ctx.textAlign = "center";
-            ctx.fillText("NANO BANANA AI", width/2, height/2);
-        },
-
-        updatePanel(panel, contentEl, data) {
-            panel.classList.remove('hidden');
-            const s = data.summary;
-            let statusColor = s.status?.includes("BUY") ? "text-green-400" : s.status?.includes("SELL") ? "text-red-400" : "text-yellow-400";
-            
-            contentEl.innerHTML = `
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Trend:</span> <span class="font-bold text-white">${s.trend || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Bias:</span> <span class="font-bold text-white truncate max-w-[100px] text-right" title="${s.bias}">${s.bias || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Entry:</span> <span class="font-bold text-green-400">${s.entry || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">SL:</span> <span class="font-bold text-red-400">${s.sl || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP1:</span> <span class="font-bold text-blue-400">${s.tp1 || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP2:</span> <span class="font-bold text-blue-400">${s.tp2 || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP3:</span> <span class="font-bold text-blue-400">${s.tp3 || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">RR:</span> <span class="font-bold text-white">${s.rr || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Prob:</span> <span class="font-bold text-blue-400">${s.prob || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Conf:</span> <span class="font-bold text-blue-400">${s.conf || '-'}</span></div>
-                <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Score:</span> <span class="font-bold text-blue-400">${s.score || '-'}/100</span></div>
-                <div class="flex justify-between pt-1"><span class="text-gray-500">Status:</span> <span class="font-black ${statusColor}">${s.status || '-'}</span></div>
-            `;
-        }
-    };
-
     const AI_Quant_Engine = {
-      
       config: {
         timeoutMs: 45000,
-        maxImageDimension: 800,
-        imageQuality: 0.6,
+        maxImageDimension: 1200,
+        imageQuality: 0.8,
         providers: [{ id: "gemini", baseURL: "https://generativelanguage.googleapis.com/v1beta" }]
       },
 
       state: {
-        apiKey: '', rapidApiKey: '', targetSymbol: 'BINANCE:BTCUSDT', discoveredModels: [], activeModel: null, cacheHits: 0,
-        
-        timeframes: [
-            { id: 'weekly', label: '1W', title: 'WEEKLY' },
-            { id: 'daily', label: '1D', title: 'DAILY' },
-            { id: 'h4', label: 'H4', title: 'H4' },
-            { id: 'h1', label: 'H1', title: 'H1' },
-            { id: 'm15', label: 'M15', title: 'M15' }
-        ],
-
-        tfImages: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
-        tfMemory: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
-        tfStatus: { weekly: 'Empty', daily: 'Empty', h4: 'Empty', h1: 'Empty', m15: 'Empty' }, 
-        tfControllers: { weekly: null, daily: null, h4: null, h1: null, m15: null }, 
-        tfCache: { weekly: new SmartLRUCache(), daily: new SmartLRUCache(), h4: new SmartLRUCache(), h1: new SmartLRUCache(), m15: new SmartLRUCache() },
-        isGeneratingFinal: false
+        apiKey: '', rapidApiKey: '', targetSymbol: 'BINANCE:BTCUSDT', activeModel: null,
+        timeframes: [ { id: 'm30', label: 'M30', title: 'M30 TIMEFRAME' } ],
+        tfImages: { m30: null }, 
+        tfMemory: { m30: null }, 
+        tfStatus: { m30: 'Empty' }, 
+        tfControllers: { m30: null }
       },
 
       init() {
@@ -580,11 +207,7 @@
 
       getTfTheme(tfId) {
           return {
-              weekly: { text: 'text-gray-300', btnBg: 'bg-[#0f172a]', btnBorder: 'border-blue-500/50', hover: 'hover:bg-[#1e293b]' },
-              daily: { text: 'text-gray-300', btnBg: 'bg-[#052e16]', btnBorder: 'border-green-500/50', hover: 'hover:bg-[#14532d]' },
-              h4: { text: 'text-gray-300', btnBg: 'bg-[#2e1065]', btnBorder: 'border-purple-500/50', hover: 'hover:bg-[#4c1d95]' },
-              h1: { text: 'text-gray-300', btnBg: 'bg-[#451a03]', btnBorder: 'border-orange-500/50', hover: 'hover:bg-[#78350f]' },
-              m15: { text: 'text-gray-300', btnBg: 'bg-[#083344]', btnBorder: 'border-cyan-500/50', hover: 'hover:bg-[#164e63]' }
+              m30: { text: 'text-gray-300', btnBg: 'bg-[#083344]', btnBorder: 'border-cyan-500/50', hover: 'hover:bg-[#164e63]' }
           }[tfId];
       },
 
@@ -597,14 +220,14 @@
                 <div class="relative flex flex-col p-4 border border-white/5 bg-black/30 rounded-xl transition-all duration-200 group h-[280px]" id="box-${tf.id}">
                     <div class="flex justify-between items-center mb-4">
                          <h4 class="font-bold text-gray-200 text-[11px] uppercase tracking-widest flex items-center gap-2">
-                             <i data-lucide="activity" class="w-4 h-4 text-gray-500"></i> ${tf.title} (${tf.label})
+                             <i data-lucide="hexagon" class="w-4 h-4 text-blue-500"></i> ${tf.title}
                          </h4>
                          <div class="text-[8px] px-2 py-1 rounded bg-zinc-800 text-gray-500 border border-white/5 uppercase font-bold tracking-wider transition-colors z-20 cursor-default" id="badge-${tf.id}" title="">EMPTY</div>
                     </div>
                     <div class="relative w-full flex-1 mb-4 border border-dashed border-white/10 rounded-lg overflow-hidden group/upload flex items-center justify-center transition-all duration-300 hover:border-white/30" id="upload-area-${tf.id}">
                         <label class="cursor-pointer flex flex-col items-center justify-center w-full h-full z-10" id="upload-label-${tf.id}" ondragover="AI_Quant_Engine.handleDragOver(event, '${tf.id}')" ondragleave="AI_Quant_Engine.handleDragLeave(event, '${tf.id}')" ondrop="AI_Quant_Engine.handleDrop(event, '${tf.id}')">
                             <i data-lucide="image-plus" class="w-6 h-6 text-gray-500 group-hover/upload:text-gray-400 transition-colors mb-2 pointer-events-none"></i>
-                            <span class="text-[10px] font-mono text-gray-400 pointer-events-none">Upload / Drop</span>
+                            <span class="text-[10px] font-mono text-gray-400 pointer-events-none">Upload / Drop M30 Chart</span>
                             <span class="text-[8px] text-gray-600 mt-1 pointer-events-none">PNG, JPG, WEBP (Max 10MB)</span>
                             <input type="file" class="hidden" accept="image/jpeg, image/png, image/webp" onchange="AI_Quant_Engine.handleUpload(event, '${tf.id}')">
                         </label>
@@ -625,17 +248,17 @@
                         </div>
                     </div>
                     <button id="search-btn-${tf.id}" onclick="AI_Quant_Engine.handleSearch('${tf.id}')" disabled class="w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 bg-white/5 text-gray-500 border border-white/10 cursor-not-allowed flex items-center justify-center gap-2">
-                        <i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tf.title}
+                        <i data-lucide="search" class="w-3.5 h-3.5"></i> SCAN HARMONIC
                     </button>
-                    <div class="text-center mt-2 text-[9px] text-gray-600 font-mono" id="error-msg-${tf.id}">Analisa ${tf.label} secara mandiri</div>
+                    <div class="text-center mt-2 text-[9px] text-gray-600 font-mono" id="error-msg-${tf.id}">Analisis murni rasio Fibonacci</div>
                 </div>
             `;
         });
         if (window.lucide) lucide.createIcons();
       },
 
-      handleDragOver(event, tfId) { event.preventDefault(); event.stopPropagation(); document.getElementById(`upload-area-${tfId}`).classList.add('border-green-500', 'bg-green-500/10'); },
-      handleDragLeave(event, tfId) { event.preventDefault(); event.stopPropagation(); document.getElementById(`upload-area-${tfId}`).classList.remove('border-green-500', 'bg-green-500/10'); },
+      handleDragOver(event, tfId) { event.preventDefault(); event.stopPropagation(); document.getElementById(`upload-area-${tfId}`).classList.add('border-blue-500', 'bg-blue-500/10'); },
+      handleDragLeave(event, tfId) { event.preventDefault(); event.stopPropagation(); document.getElementById(`upload-area-${tfId}`).classList.remove('border-blue-500', 'bg-blue-500/10'); },
       handleDrop(event, tfId) { event.preventDefault(); event.stopPropagation(); this.handleDragLeave(event, tfId); if (event.dataTransfer.files && event.dataTransfer.files.length > 0) this.processFile(event.dataTransfer.files[0], tfId); },
 
       async initializeRouter() {
@@ -653,7 +276,6 @@
                 return scoreB - scoreA;
             });
 
-            this.state.discoveredModels = validModels; 
             this.state.activeModel = validModels[0];
         } catch (err) {
             this.state.activeModel = null; alert(`AI Engine Error: ${err.message}. Pastikan API Key valid.`);
@@ -663,7 +285,7 @@
       handleUpload(event, tfId) { if (!event.target.files || event.target.files.length === 0) return; this.processFile(event.target.files[0], tfId); event.target.value = ''; },
 
       processFile(file, tfId) {
-        document.getElementById(`error-msg-${tfId}`).innerHTML = `Analisa ${this.state.timeframes.find(t=>t.id===tfId).label} secara mandiri`;
+        document.getElementById(`error-msg-${tfId}`).innerHTML = `Mengekstrak rasio Fibonacci...`;
         if (!file.type.match(/image\/(jpeg|png|webp)/)) { this.showError(tfId, "Format Invalid: Gunakan JPG/PNG/WEBP"); return; }
         if (file.size > 10 * 1024 * 1024) { this.showError(tfId, "Size Limit: Maksimal 10MB"); return; }
         if (this.state.tfControllers[tfId]) this.state.tfControllers[tfId].abort("REPLACED");
@@ -705,18 +327,8 @@
                 MarketConfirmationEngine.getRealtimeData(sym, rapidKey)
             ]);
 
-            const imageHash = await this.hashString(base64Image);
-            const cachedData = this.state.tfCache[tfId].get(imageHash);
-            
-            if (cachedData) {
-                this.state.cacheHits++;
-                document.getElementById('mon-retry').textContent = this.state.cacheHits;
-                this.state.tfMemory[tfId] = cachedData;
-            } else {
-                const aiResult = await this.requestAITimeframe(tfId, base64Image, realtimeData, controller);
-                this.state.tfMemory[tfId] = aiResult;
-                this.state.tfCache[tfId].set(imageHash, aiResult); 
-            }
+            const aiResult = await this.requestAITimeframe(tfId, base64Image, realtimeData, controller);
+            this.state.tfMemory[tfId] = aiResult;
 
             if (this.state.tfControllers[tfId] === controller) {
                 const latency = ((performance.now() - startTimer) / 1000).toFixed(1);
@@ -747,26 +359,50 @@
       async requestAITimeframe(tfId, base64Image, realtimeData, controller) {
           if (!this.state.activeModel) throw new Error("Model AI belum siap / API Key salah");
 
-          const baseSMC = "Gunakan Smart Money Concept (SMC) & ICT Concept. Identifikasi: Struktur (BOS/CHOCH), Liquidity (Sweep/EQH/EQL), Order Block, dan FVG.";
+          let prompt = `Bertindaklah sebagai AI Harmonic Pattern Scanner khusus timeframe M30.\n\n`;
+          prompt += `TUGAS UTAMA: Analisis HANYA pola Bullish Gartley, Bearish Gartley, Bullish Bat, dan Bearish Bat.\n`;
+          prompt += `ATURAN KERAS: DILARANG melakukan analisis Support & Resistance, Trendline, SMC, ICT, Elliott Wave, Order Block, Supply & Demand, dan Entry Trading Umum.\n\n`;
+          prompt += `LANGKAH ANALISIS:\n`;
+          prompt += `1. Identifikasi Swing: Cari titik X -> A -> B -> C -> D yang paling logis dan bersih. JANGAN MENGARANG SWING.\n`;
+          prompt += `2. Validasi Titik B: Gartley (B ~ 0.618 XA ±3%), Bat (B ~ 0.382-0.50 XA ±3%). Jika di luar rasio, nyatakan INVALID.\n`;
+          prompt += `3. Validasi Titik C: C harus berada pada kisaran 0.382 - 0.786 AB. Jika di luar toleransi, nyatakan INVALID.\n`;
+          prompt += `4. Tentukan PRZ & Titik D: Gartley (D ~ 0.786 XA, BC Proj 1.27-1.618), Bat (D ~ 0.886 XA, BC Proj 1.618-2.618).\n`;
+          prompt += `5. Jika ada SATU syarat yang gagal, Status = INVALID. Jika semua terpenuhi, Status = VALID.\n\n`;
           
-          let dynamicContext = "";
           if (realtimeData) {
-              dynamicContext = `\nPrioritaskan harga dari data pasar real-time ini: \n${realtimeData}\nGabungkan dengan struktur visual pada screenshot. Output padat dan jelas.`;
-          } else {
-              dynamicContext = `\nLakukan analisa deskriptif padat berdasarkan struktur visual pada screenshot chart.`;
+              prompt += `Data Harga Realtime: \n${realtimeData}\nGunakan harga ini sebagai referensi konfirmasi harga terakhir terhadap area PRZ.\n\n`;
           }
 
-          const prompts = {
-              'weekly': `Analisa timeframe Weekly. ${baseSMC} Tentukan bias arah makro dan target likuiditas utama.${dynamicContext}`,
-              'daily': `Analisa timeframe Daily. ${baseSMC} Petakan area akumulasi/distribusi dan narasi pergerakan harga harian.${dynamicContext}`,
-              'h4': `Analisa timeframe H4. ${baseSMC} Validasi zona POI (Point of Interest) dan kesiapan mitigasi.${dynamicContext}`,
-              'h1': `Analisa timeframe H1. ${baseSMC} Lakukan Refinement pada POI, temukan inducement, dan konfirmasi momentum.${dynamicContext}`,
-              'm15': `Analisa timeframe M15. ${baseSMC} Susun parameter eksekusi spesifik: Entry Zone, Stop Loss rasional, TP, dan probabilitas keberhasilan.${dynamicContext}`
+          prompt += `KEMBALIKAN OUTPUT HANYA DALAM FORMAT JSON SESUAI SKEMA, TANPA BASA-BASI.`;
+
+          const schema = { 
+              type: "OBJECT", 
+              properties: { 
+                  jenisPattern: { type: "STRING", description: "Gartley / Bat / None" },
+                  arah: { type: "STRING", description: "Bullish / Bearish / None" },
+                  validitas: { type: "STRING", description: "VALID / INVALID" },
+                  titikX: { type: "STRING", description: "Harga/Area X" },
+                  titikA: { type: "STRING", description: "Harga/Area A" },
+                  titikB: { type: "STRING", description: "Harga/Area B" },
+                  titikC: { type: "STRING", description: "Harga/Area C" },
+                  estimasiD: { type: "STRING", description: "Harga/Area D" },
+                  zonaPRZ: { type: "STRING", description: "Rentang harga PRZ" },
+                  rasioFibonacci: {
+                      type: "OBJECT",
+                      properties: {
+                          XA: { type: "STRING", description: "Rasio retracement B terhadap XA" },
+                          AB: { type: "STRING", description: "Rasio retracement C terhadap AB" },
+                          BC: { type: "STRING", description: "Proyeksi BC (BC Projection)" },
+                          CD: { type: "STRING", description: "Rasio retracement D terhadap XA" }
+                      }
+                  },
+                  alasan: { type: "STRING", description: "Alasan teknis mengapa pattern valid atau invalid berdasarkan hitungan rasio" }
+              },
+              required: ["jenisPattern", "arah", "validitas", "titikX", "titikA", "titikB", "titikC", "estimasiD", "zonaPRZ", "rasioFibonacci", "alasan"]
           };
 
-          const schema = { type: "OBJECT", properties: { data: { type: "STRING", description: "Hasil analisa komprehensif dalam bahasa Indonesia" } }, required: ["data"] };
           const payload = {
-              contents: [{ parts: [{ text: `Anda adalah AI Institutional Trading Specialist. ${prompts[tfId]} Kembalikan HANYA format JSON persis sesuai skema tanpa basa-basi.` }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
+              contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: 'image/jpeg', data: base64Image } }] }],
               generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.1 }
           };
 
@@ -782,7 +418,6 @@
                   if (!res.ok) {
                       if (res.status === 401 || res.status === 403) throw new Error("API Key Invalid / Forbidden");
                       if (res.status === 429) throw new Error("Rate Limit / Quota Habis (429)");
-                      if (res.status >= 500) throw new Error(`Internal Server Error (${res.status})`);
                       throw new Error(`HTTP ${res.status}: Network Error`);
                   }
 
@@ -792,15 +427,15 @@
                   let textRes = data.candidates[0].content.parts[0].text;
                   textRes = textRes.replace(/```json/gi, '').replace(/```/g, '').trim();
                   
-                  try { success = true; return JSON.parse(textRes).data; } 
+                  try { success = true; return JSON.parse(textRes); } 
                   catch (parseErr) {
                       const match = textRes.match(/\{[\s\S]*\}/);
-                      if (match) return JSON.parse(match[0]).data;
-                      throw new Error("JSON Parse Failed: Data AI Korup");
+                      if (match) return JSON.parse(match[0]);
+                      throw new Error("JSON Parse Failed");
                   }
               } catch (err) {
                   clearTimeout(timeoutId); attempt++; lastError = err;
-                  if (err.name === 'AbortError' || err.message.includes("API Key") || err.message.includes("Quota") || err.message.includes("REPLACED")) throw err; 
+                  if (err.name === 'AbortError' || err.message.includes("API Key") || err.message.includes("REPLACED")) throw err; 
                   if (attempt < 3) await new Promise(r => setTimeout(r, 2000 * attempt)); 
               }
           }
@@ -810,259 +445,98 @@
       updateReadiness() {
         let completed = 0;
         this.state.timeframes.forEach(tf => { if (this.state.tfStatus[tf.id] === 'Analysed') completed++; });
-        const percentage = (completed / 5) * 100;
+        const percentage = (completed / 1) * 100;
         const bar = document.getElementById('readiness-bar'); const text = document.getElementById('readiness-text');
         
         bar.style.width = `${percentage}%`; text.innerText = `${percentage}%`;
-        if (percentage > 0 && percentage < 100) bar.classList.add('progress-bar-striped');
         
         if (percentage === 100) {
-            bar.classList.remove('progress-bar-striped'); bar.classList.replace('bg-green-500', 'bg-blue-500'); text.classList.replace('text-white', 'text-blue-400');
-            // Memicu modul FINAL INSTITUTIONAL EXECUTIVE SUMMARY
-            if (!this.state.isGeneratingFinal) {
-                this.generateFinalReport();
-            }
+            bar.classList.replace('bg-blue-500', 'bg-green-500'); text.classList.replace('text-white', 'text-green-400');
+            this.renderFinalReportUI();
         } else {
-            bar.classList.replace('bg-blue-500', 'bg-green-500'); text.classList.replace('text-blue-400', 'text-white');
+            bar.classList.replace('bg-green-500', 'bg-blue-500'); text.classList.replace('text-green-400', 'text-white');
             this.resetFinalReport();
         }
       },
       
       resetFinalReport() {
-          this.state.isGeneratingFinal = false;
           const container = document.getElementById('final-report-container');
           container.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => container.classList.add('hidden'), 300);
-          
-          const nbWrapper = document.getElementById('nano-banana-wrapper');
-          if(nbWrapper) { nbWrapper.classList.add('opacity-0', 'translate-y-4'); setTimeout(() => nbWrapper.classList.add('hidden'), 300); }
       },
 
-      async generateFinalReport() {
-        if (this.state.isGeneratingFinal) return;
-        this.state.isGeneratingFinal = true;
-        
-        const container = document.getElementById('final-report-container');
-        const content = document.getElementById('report-content');
-        
-        container.classList.remove('hidden');
-        if (window.lucide) lucide.createIcons();
-        setTimeout(() => container.classList.remove('opacity-0', 'translate-y-4'), 50);
+      renderFinalReportUI() {
+          const data = this.state.tfMemory['m30'];
+          if (!data) return;
 
-        // UI Loading State untuk Master Synthesis
-        content.innerHTML = `
-            <div class="col-span-full flex flex-col items-center justify-center p-10 border border-green-500/20 bg-green-950/10 rounded-xl space-y-4">
-                <div class="w-10 h-10 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin"></div>
-                <div class="text-green-400 font-mono text-xs font-bold tracking-widest animate-pulse text-center">
-                    SYNTHESIZING MULTI-TIMEFRAME DATA<br>
-                    <span class="text-gray-500 text-[10px]">Evaluating Weekly, Daily, H4, H1, M15 + Real-time Flow...</span>
-                </div>
-            </div>
-        `;
-
-        try {
-            const finalData = await this.requestFinalSynthesis();
-            this.renderFinalReportUI(finalData);
-        } catch (error) {
-            content.innerHTML = `
-                <div class="col-span-full text-red-400 text-center font-mono text-xs p-8 border border-red-500/20 bg-red-950/20 rounded-xl">
-                    <i data-lucide="alert-circle" class="w-8 h-8 mx-auto mb-2 text-red-500"></i>
-                    SYNTHESIS FAILED: ${error.message}<br>
-                    <button onclick="AI_Quant_Engine.state.isGeneratingFinal = false; AI_Quant_Engine.generateFinalReport()" class="mt-4 px-4 py-2 bg-red-500/20 rounded border border-red-500/50 hover:bg-red-500/40 transition-colors font-bold tracking-widest uppercase">RETRY SYNTHESIS</button>
-                </div>
-            `;
-            if (window.lucide) lucide.createIcons();
-        }
-      },
-
-      async requestFinalSynthesis() {
-          const m = this.state.tfMemory;
-          const sym = this.state.targetSymbol;
-          const rapidKey = this.state.rapidApiKey;
-          const realtimeData = await MarketConfirmationEngine.getRealtimeData(sym, rapidKey);
-
-          const prompt = `Anda adalah Master AI Institutional Trading Specialist. 
-Tugas Anda adalah membuat FINAL INSTITUTIONAL EXECUTIVE SUMMARY dengan MENGGABUNGKAN hasil analisa 5 timeframe berikut:
-- WEEKLY: ${m.weekly}
-- DAILY: ${m.daily}
-- H4: ${m.h4}
-- H1: ${m.h1}
-- M15: ${m.m15}
-${realtimeData ? `- REALTIME DATA: ${realtimeData}` : ''}
-
-Anda WAJIB menghasilkan SATU kesimpulan akhir (Actionable Insight) yang mencakup:
-1. Trend Besar (Bullish/Bearish/Sideways/Transitional) beserta alasannya.
-2. Market Structure (BOS, CHOCH, MSS, Internal Structure).
-3. Smart Money Analysis (OB, FVG, Liquidity Pool, Premium/Discount, Inducement).
-4. Liquidity (Lokasi likuiditas, tindakan institusi akumulasi/distribusi, sweep liquidity).
-5. Institutional Bias (STRONG BUY / BUY / WAIT / SELL / STRONG SELL) beserta alasan logis.
-6. Probability (Setup Validity persentase, Confidence, Risk level).
-7. Entry Plan sangat rinci (Area Entry, Confirmation, Limit/Market).
-8. Stop Loss (SL level pasti, Invalidation level, persentase SL%).
-9. Take Profit (TP1, TP2, TP3, TP4, rasio Risk Reward pasti).
-10. Execution (Entry sekarang, atau tunggu retrace/BOS/CHOCH/Sweep).
-11. Warning (Jika setup tidak valid/berbahaya, ketik persis "TIDAK DISARANKAN ENTRY" beserta alasan. Jika aman kosongkan atau beri pesan aman).
-12. Confluence Score (Total hitungan skoring Institusional 0-100).
-13. Risk Management (Max Risk %, Recommended Position Size, SL Distance, Capital Recommendation).
-
-Jawab HANYA menggunakan format JSON persis sesuai skema tanpa komentar tambahan.`;
-
-          const schema = {
-              type: "OBJECT",
-              properties: {
-                  trendBesar: { type: "STRING" },
-                  marketStructure: { type: "STRING" },
-                  smartMoneyAnalysis: { type: "STRING" },
-                  liquidity: { type: "STRING" },
-                  probability: { type: "STRING" },
-                  entryPlan: { type: "STRING" },
-                  execution: { type: "STRING" },
-                  warning: { type: "STRING" },
-                  riskManagement: { type: "STRING" },
-                  summary: {
-                      type: "OBJECT",
-                      properties: {
-                          trend: { type: "STRING" },
-                          bias: { type: "STRING" },
-                          entry: { type: "STRING" },
-                          sl: { type: "STRING" },
-                          tp1: { type: "STRING" },
-                          tp2: { type: "STRING" },
-                          tp3: { type: "STRING" },
-                          rr: { type: "STRING" },
-                          prob: { type: "STRING" },
-                          conf: { type: "STRING" },
-                          score: { type: "STRING" },
-                          status: { type: "STRING" } // Wajib: STRONG BUY, BUY, WAIT, SELL, STRONG SELL
-                      }
-                  }
-              }
-          };
-
-          const payload = {
-              contents: [{ parts: [{ text: prompt }] }],
-              generationConfig: { responseMimeType: "application/json", responseSchema: schema, temperature: 0.1 }
-          };
-
-          const url = `${this.config.providers[0].baseURL}/models/${this.state.activeModel}:generateContent?key=${this.state.apiKey}`;
-          const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          if (!res.ok) throw new Error("API Error during Master Synthesis");
-          const data = await res.json();
-          let textRes = data.candidates[0].content.parts[0].text;
-          textRes = textRes.replace(/```json/gi, '').replace(/```/g, '').trim();
-          return JSON.parse(textRes);
-      },
-
-      renderFinalReportUI(data) {
           const container = document.getElementById('report-content');
-          
-          let statusColor = "text-gray-400";
-          let statusBg = "bg-gray-500/20";
-          let statusBorder = "border-gray-500/30";
-          let statusIcon = "⚪";
-          
-          const s = (data.summary.status || "").toUpperCase();
-          if(s.includes("BUY")) { 
-              statusColor = "text-green-400"; statusBg = "bg-green-500/20"; statusBorder = "border-green-500/30"; statusIcon = "🟢"; 
-          } else if(s.includes("SELL")) { 
-              statusColor = "text-red-400"; statusBg = "bg-red-500/20"; statusBorder = "border-red-500/30"; statusIcon = "🔴"; 
-          } else if(s.includes("WAIT")) { 
-              statusColor = "text-yellow-400"; statusBg = "bg-yellow-500/20"; statusBorder = "border-yellow-500/30"; statusIcon = "🟡"; 
-          }
+          const isValid = data.validitas.toUpperCase() === 'VALID';
+          const validColor = isValid ? "text-green-400" : "text-red-400";
+          const validBorder = isValid ? "border-green-500/30" : "border-red-500/30";
+          const validBg = isValid ? "bg-green-500/10" : "bg-red-500/10";
 
           container.innerHTML = `
               <div class="col-span-full border border-white/10 bg-black/40 rounded-xl p-5 space-y-4 mb-2 shadow-2xl">
-                  <h3 class="text-center font-bold text-base sm:text-lg text-white uppercase tracking-widest pixel-font mb-4">FINAL EXECUTIVE SUMMARY</h3>
+                  <div class="flex justify-between items-center mb-2">
+                      <h3 class="font-bold text-base sm:text-lg text-white uppercase tracking-widest pixel-font">PATTERN RESULT</h3>
+                      <div class="${validBg} px-3 py-1 rounded border ${validBorder} font-black ${validColor} tracking-widest text-sm uppercase shadow-sm">
+                          ${data.validitas}
+                      </div>
+                  </div>
                   
-                  <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                  <div class="grid grid-cols-2 gap-4 mb-4">
                       <div class="bg-white/5 p-3 rounded-lg border border-white/5 shadow-inner">
-                          <span class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Trend</span>
-                          <div class="font-bold text-white text-sm mt-1">${data.summary.trend}</div>
+                          <span class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Pattern Type</span>
+                          <div class="font-bold text-blue-400 text-sm mt-1">${data.jenisPattern}</div>
                       </div>
                       <div class="bg-white/5 p-3 rounded-lg border border-white/5 shadow-inner">
-                          <span class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Bias</span>
-                          <div class="font-bold text-white text-sm mt-1">${data.summary.bias}</div>
-                      </div>
-                      <div class="bg-white/5 p-3 rounded-lg border border-white/5 shadow-inner">
-                          <span class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Inst. Score / Prob</span>
-                          <div class="font-bold text-blue-400 text-sm mt-1">${data.summary.score}/100 <span class="text-gray-600">|</span> ${data.summary.prob}</div>
-                      </div>
-                      <div class="${statusBg} p-3 rounded-lg border ${statusBorder} flex flex-col items-center justify-center">
-                          <span class="text-[9px] text-white/70 uppercase font-bold tracking-wider">Execution Status</span>
-                          <div class="font-black ${statusColor} text-sm mt-1 whitespace-nowrap">${statusIcon} ${data.summary.status}</div>
+                          <span class="text-[9px] text-gray-500 uppercase font-bold tracking-wider">Direction</span>
+                          <div class="font-bold text-white text-sm mt-1">${data.arah}</div>
                       </div>
                   </div>
 
-                  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs font-mono bg-black/50 p-4 rounded-lg border border-white/5">
-                      <div class="space-y-2">
-                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Entry:</span><span class="text-green-400 font-bold">${data.summary.entry}</span></div>
-                          <div class="flex justify-between"><span class="text-gray-500">Stop Loss:</span><span class="text-red-400 font-bold">${data.summary.sl}</span></div>
+                  <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono bg-black/50 p-4 rounded-lg border border-white/5">
+                      <!-- Structural Points -->
+                      <div class="space-y-2 border-r border-white/5 pr-4">
+                          <span class="text-[10px] text-blue-400 font-bold uppercase block pb-2 border-b border-blue-400/20 mb-3"><i data-lucide="git-commit" class="w-3 h-3 inline mr-1"></i> Structure Points</span>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Point X:</span><span class="text-gray-200 font-bold">${data.titikX}</span></div>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Point A:</span><span class="text-gray-200 font-bold">${data.titikA}</span></div>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Point B:</span><span class="text-gray-200 font-bold">${data.titikB}</span></div>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Point C:</span><span class="text-gray-200 font-bold">${data.titikC}</span></div>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Estimated D:</span><span class="text-yellow-400 font-bold">${data.estimasiD}</span></div>
+                          <div class="flex justify-between pt-1"><span class="text-gray-500">PRZ Zone:</span><span class="text-emerald-400 font-bold">${data.zonaPRZ}</span></div>
                       </div>
-                      <div class="space-y-2">
-                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP 1:</span><span class="text-yellow-400 font-bold">${data.summary.tp1}</span></div>
-                          <div class="flex justify-between"><span class="text-gray-500">TP 2:</span><span class="text-yellow-400 font-bold">${data.summary.tp2}</span></div>
-                      </div>
-                      <div class="space-y-2">
-                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">TP 3:</span><span class="text-emerald-400 font-bold">${data.summary.tp3}</span></div>
-                          <div class="flex justify-between"><span class="text-gray-500">Risk/Reward:</span><span class="text-emerald-400 font-bold">${data.summary.rr}</span></div>
-                      </div>
-                      <div class="space-y-2">
-                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">Confidence:</span><span class="text-blue-400 font-bold">${data.summary.conf}</span></div>
+
+                      <!-- Fibonacci Ratios -->
+                      <div class="space-y-2 pl-2">
+                          <span class="text-[10px] text-purple-400 font-bold uppercase block pb-2 border-b border-purple-400/20 mb-3"><i data-lucide="activity" class="w-3 h-3 inline mr-1"></i> Fibonacci Ratios</span>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">XA Retracement:</span><span class="text-white font-bold">${data.rasioFibonacci.XA}</span></div>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">AB Retracement:</span><span class="text-white font-bold">${data.rasioFibonacci.AB}</span></div>
+                          <div class="flex justify-between border-b border-white/5 pb-1"><span class="text-gray-500">BC Projection:</span><span class="text-white font-bold">${data.rasioFibonacci.BC}</span></div>
+                          <div class="flex justify-between pt-1"><span class="text-gray-500">CD / D Point:</span><span class="text-white font-bold">${data.rasioFibonacci.CD}</span></div>
                       </div>
                   </div>
               </div>
 
-              <div class="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3 col-span-1 lg:col-span-1 hover:border-blue-500/30 transition-colors">
-                  <span class="text-[10px] text-blue-400 font-bold uppercase block pb-2 border-b border-blue-400/20"><i data-lucide="bar-chart-2" class="w-3 h-3 inline mr-1"></i> 1. Macro & Market Structure</span>
-                  <div class="text-gray-300 space-y-1"><strong class="text-white">Trend:</strong> ${data.trendBesar}</div>
-                  <div class="text-gray-300 space-y-1 mt-2 pt-2 border-t border-white/5"><strong class="text-white">Structure:</strong> ${data.marketStructure}</div>
-              </div>
-
-              <div class="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3 col-span-1 lg:col-span-1 hover:border-purple-500/30 transition-colors">
-                  <span class="text-[10px] text-purple-400 font-bold uppercase block pb-2 border-b border-purple-400/20"><i data-lucide="droplet" class="w-3 h-3 inline mr-1"></i> 2. Smart Money & Liquidity</span>
-                  <div class="text-gray-300 space-y-1"><strong class="text-white">SMC:</strong> ${data.smartMoneyAnalysis}</div>
-                  <div class="text-gray-300 space-y-1 mt-2 pt-2 border-t border-white/5"><strong class="text-white">Liquidity:</strong> ${data.liquidity}</div>
-              </div>
-              
-              <div class="bg-black/30 p-4 rounded-xl border border-white/5 space-y-3 col-span-1 lg:col-span-1 hover:border-yellow-500/30 transition-colors">
-                  <span class="text-[10px] text-yellow-400 font-bold uppercase block pb-2 border-b border-yellow-400/20"><i data-lucide="crosshair" class="w-3 h-3 inline mr-1"></i> 3. Execution & Risk</span>
-                  <div class="text-gray-300 space-y-1"><strong class="text-white">Execution:</strong> ${data.execution}</div>
-                  <div class="text-gray-300 space-y-1 mt-2 pt-2 border-t border-white/5"><strong class="text-white">Plan:</strong> ${data.entryPlan}</div>
-                  <div class="text-gray-300 space-y-1 mt-2 pt-2 border-t border-white/5"><strong class="text-white">Risk:</strong> ${data.riskManagement}</div>
-              </div>
-
-              <div class="col-span-full mt-2 bg-red-500/5 border border-red-500/20 p-4 rounded-xl flex items-start gap-4">
-                  <div class="bg-red-500/20 p-2 rounded-lg shrink-0 mt-0.5">
-                      <i data-lucide="alert-triangle" class="w-5 h-5 text-red-400"></i>
-                  </div>
+              <!-- AI Logical Reasoning -->
+              <div class="col-span-full mt-2 ${validBg} border ${validBorder} p-4 rounded-xl flex items-start gap-4">
                   <div class="w-full">
-                      <span class="text-[10px] text-red-400 font-bold uppercase block mb-1">Institutional Warning & Probability Check</span>
-                      <p class="text-gray-200 font-medium leading-relaxed">${data.warning}</p>
-                      <div class="mt-3 pt-3 border-t border-red-500/20 flex flex-wrap gap-4 text-[10px] text-gray-400">
-                          <span>${data.probability}</span>
-                      </div>
+                      <span class="text-[10px] ${validColor} font-bold uppercase block mb-1">Harmonic Reasoning & Validation</span>
+                      <p class="text-gray-200 font-medium leading-relaxed">${data.alasan}</p>
                   </div>
               </div>
           `;
           
-          this.state.isGeneratingFinal = false;
-          if(window.lucide) lucide.createIcons();
-
-          // =================================================================================
-          // TRIGGER NANO BANANA DI SINI - Menjaga sistem utama tetap asli (Tanpa Modifikasi)
-          // =================================================================================
-          if (typeof NanoBananaEngine !== 'undefined') {
-              const m15File = this.state.tfImages['m15'];
-              if (m15File) {
-                  NanoBananaEngine.processAndRender(m15File, data, this.state.tfMemory['m15']);
-              }
-          }
+          const repContainer = document.getElementById('final-report-container');
+          repContainer.classList.remove('hidden');
+          if (window.lucide) lucide.createIcons();
+          setTimeout(() => repContainer.classList.remove('opacity-0', 'translate-y-4'), 50);
       },
 
       removeImage(tfId) {
         if (this.state.tfControllers[tfId]) { this.state.tfControllers[tfId].abort("REMOVED"); this.state.tfControllers[tfId] = null; }
         this.state.tfMemory[tfId] = null; this.state.tfImages[tfId] = null;
         document.getElementById(`upload-label-${tfId}`).classList.remove('hidden'); document.getElementById(`preview-container-${tfId}`).classList.add('hidden'); document.getElementById(`preview-img-${tfId}`).src = '';
-        document.getElementById(`error-msg-${tfId}`).innerHTML = `Analisa ${this.state.timeframes.find(t=>t.id===tfId).label} secara mandiri`;
+        document.getElementById(`error-msg-${tfId}`).innerHTML = `Analisis murni rasio Fibonacci`;
         this.updateStatus(tfId, 'Empty'); this.updateReadiness();
       },
 
@@ -1071,7 +545,6 @@ Jawab HANYA menggunakan format JSON persis sesuai skema tanpa komentar tambahan.
         const badge = document.getElementById(`badge-${tfId}`); 
         const btn = document.getElementById(`search-btn-${tfId}`); 
         const theme = this.getTfTheme(tfId); 
-        const tfLabel = this.state.timeframes.find(t=>t.id===tfId).title;
         
         badge.className = `absolute top-2 right-2 text-[8px] px-2 py-1 rounded font-mono font-bold uppercase tracking-wider transition-colors z-20 cursor-default`; badge.title = errorMsg; 
 
@@ -1079,35 +552,35 @@ Jawab HANYA menggunakan format JSON persis sesuai skema tanpa komentar tambahan.
           badge.innerText = 'EMPTY'; 
           badge.className += ' bg-zinc-800 text-gray-500 border border-white/5'; 
           btn.disabled = true; 
-          btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`; 
+          btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SCAN HARMONIC`; 
           btn.className = "w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-500 border-white/10 cursor-not-allowed"; 
         } 
         else if (status === 'Loaded') { 
           badge.innerText = 'LOADED'; 
           badge.className += ' bg-yellow-500/20 text-yellow-500 border border-yellow-500/50'; 
           btn.disabled = false; 
-          btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SEARCH ${tfLabel}`; 
+          btn.innerHTML = `<i data-lucide="search" class="w-3.5 h-3.5"></i> SCAN HARMONIC`; 
           btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} ${theme.btnBorder} ${theme.hover} cursor-pointer`; 
         } 
         else if (status === 'Searching') { 
-          badge.innerText = 'SEARCHING'; 
+          badge.innerText = 'SCANNING'; 
           badge.className += ' bg-blue-500/20 text-blue-400 border border-blue-500/50 animate-pulse'; 
           btn.disabled = true; 
-          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> SEARCHING...`; 
+          btn.innerHTML = `<i data-lucide="loader-2" class="w-3.5 h-3.5 animate-spin"></i> CALCULATING FIBONACCI...`; 
           btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border ${theme.btnBg} ${theme.text} border-white/20 cursor-not-allowed opacity-70`; 
         } 
         else if (status === 'Analysed') { 
-          badge.innerText = 'ANALYSED'; 
+          badge.innerText = 'SCANNED'; 
           badge.className += ' bg-green-500/20 text-green-400 border border-green-500/50'; 
           btn.disabled = false; 
-          btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-ANALYZE`; 
+          btn.innerHTML = `<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> RE-SCAN`; 
           btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-white/5 text-gray-300 border-white/20 hover:bg-white/10 cursor-pointer`; 
         }
         else if (status === 'Error') { 
           badge.innerText = 'ERROR'; 
           badge.className += ' bg-red-500/20 text-red-400 border border-red-500/50'; 
           btn.disabled = false; 
-          btn.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> RETRY ${tfLabel}`; 
+          btn.innerHTML = `<i data-lucide="alert-circle" class="w-3.5 h-3.5"></i> RETRY SCAN`; 
           btn.className = `w-full py-2.5 rounded font-bold text-[10px] uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-2 border bg-red-950/50 text-red-400 border-red-500/50 hover:bg-red-900/60 cursor-pointer`; 
         }
 
@@ -1115,14 +588,13 @@ Jawab HANYA menggunakan format JSON persis sesuai skema tanpa komentar tambahan.
         if (checkWrapper) {
           const isAnalysed = (status === 'Analysed');
           const iconName = isAnalysed ? 'check-circle-2' : 'circle';
-          checkWrapper.innerHTML = `<i data-lucide="${iconName}" class="w-3 h-3"></i> ${tfId.toUpperCase()}`;
+          checkWrapper.innerHTML = `<i data-lucide="${iconName}" class="w-3 h-3"></i> M30 CHART`;
           if (isAnalysed) {
-            checkWrapper.className = "flex items-center gap-1.5 text-green-400 transition-colors";
+            checkWrapper.className = "flex items-center gap-1.5 text-blue-400 transition-colors";
           } else {
             checkWrapper.className = "flex items-center gap-1.5 text-gray-600 transition-colors";
           }
         }
-        
         if (window.lucide) lucide.createIcons();
       },
 
@@ -1144,23 +616,15 @@ Jawab HANYA menggunakan format JSON persis sesuai skema tanpa komentar tambahan.
             };
             reader.onerror = () => reject(new Error("Gagal membaca file")); reader.readAsDataURL(file);
         });
-      },
-
-      async hashString(str) { if (!str || str.length === 0) return "null_hash"; let hash = 0; for (let i = 0; i < str.length; i++) { hash = ((hash << 5) - hash) + str.charCodeAt(i); hash |= 0; } return hash.toString(); }
+      }
     };
 
-    // =========================================================================
-    // SYSTEM BOOTSTRAP 
-    // =========================================================================
     function updateDigitalClock() { const el = document.getElementById('digital-clock'); if (el) el.textContent = new Date().toISOString().slice(11, 19) + ' UTC'; }
-    async function syncAndRender() { await RequestManager.enqueue(async () => { const data = await MarketEngine.syncMarketData(); if (data) { if (data['BTC']) UIRenderer.updateMacroUI(data['BTC']); let updated = false; quantDatabase.forEach(item => { if (data[item.coin]) { item.price = data[item.coin].price; item.priceChange = `${data[item.coin].change >= 0 ? '+' : ''}${data[item.coin].change?.toFixed(2) || '0.00'}%`; updated = true; } }); if (updated) UIRenderer.renderTable(); } }); }
-
+    
     window.onload = async () => {
       lucide.createIcons();
       updateDigitalClock(); setInterval(updateDigitalClock, 1000);
-      VolumeRenderer.init(); setInterval(VolumeRenderer.animate, 1500);
-      AI_Quant_Engine.init(); UIRenderer.renderTable();
-      await syncAndRender(); setInterval(syncAndRender, 30000);
+      AI_Quant_Engine.init();
     };
   </script>
 </body>
