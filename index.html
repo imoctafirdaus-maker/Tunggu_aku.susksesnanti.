@@ -1,1802 +1,1749 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
-
-  <title>Solana Anti-Rug Radar Pro</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solana Anti-Rug Live Radar</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
-        rel="stylesheet" />
 
   <style>
-    html, body {
-      overflow-x: hidden;
-      width: 100%;
-      max-width: 100vw;
-      background: #09090e;
-      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
-      color: #e2e8f0;
+    body {
+      background: #070b14;
+      color: #e5e7eb;
+      font-family: Arial, sans-serif;
     }
 
-    .glass-panel {
-      background: rgba(13, 13, 23, .92);
-      backdrop-filter: blur(10px);
-      border: 1px solid rgba(255,255,255,.07);
+    .panel {
+      background: #101827;
+      border: 1px solid #243047;
+      border-radius: 14px;
     }
 
-    .field {
+    .input {
       width: 100%;
-      background: rgba(0,0,0,.65);
-      border: 1px solid rgba(255,255,255,.12);
+      padding: 10px;
+      background: #080f1c;
+      border: 1px solid #334155;
       border-radius: 8px;
-      padding: 9px 10px;
-      font-size: 12px;
-      color: white;
+      color: #e5e7eb;
       outline: none;
     }
 
-    .field:focus {
-      border-color: rgba(59,130,246,.8);
+    .input:focus {
+      border-color: #38bdf8;
     }
 
-    .label {
-      font-size: 10px;
-      color: #9ca3af;
-      text-transform: uppercase;
-      letter-spacing: .08em;
-      margin-bottom: 5px;
-      display: block;
-    }
-
-    .coin-card {
-      transition: border-color .2s, transform .2s;
-    }
-
-    .coin-card:hover {
-      border-color: rgba(59,130,246,.6);
-      transform: translateY(-2px);
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      border-radius: 5px;
-      padding: 4px 7px;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: .04em;
-    }
-
-    .badge-green {
-      color: #4ade80;
-      background: rgba(34,197,94,.12);
-      border: 1px solid rgba(34,197,94,.3);
-    }
-
-    .badge-yellow {
-      color: #facc15;
-      background: rgba(234,179,8,.12);
-      border: 1px solid rgba(234,179,8,.3);
-    }
-
-    .badge-red {
-      color: #f87171;
-      background: rgba(239,68,68,.12);
-      border: 1px solid rgba(239,68,68,.3);
-    }
-
-    .badge-gray {
-      color: #cbd5e1;
-      background: rgba(148,163,184,.1);
-      border: 1px solid rgba(148,163,184,.2);
-    }
-
-    .metric {
-      background: rgba(0,0,0,.35);
-      border: 1px solid rgba(255,255,255,.06);
+    .btn {
+      padding: 10px 15px;
       border-radius: 8px;
-      padding: 10px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .btn-primary {
+      background: #0ea5e9;
+      color: #00111c;
+    }
+
+    .btn-secondary {
+      background: #253247;
+      color: white;
+    }
+
+    .token-card {
+      background: #0c1422;
+      border: 1px solid #273449;
+      border-radius: 12px;
+      padding: 16px;
       min-width: 0;
     }
 
-    .metric-value {
-      display: block;
-      margin-top: 5px;
-      font-size: 12px;
+    .muted {
+      color: #94a3b8;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
       font-weight: 800;
-      color: white;
-      overflow-wrap: anywhere;
     }
 
-    .small-label {
-      font-size: 9px;
-      color: #9ca3af;
-      text-transform: uppercase;
+    .pass {
+      color: #86efac;
+      background: #123322;
     }
 
-    .log-line {
-      overflow-wrap: anywhere;
-      line-height: 1.6;
+    .warning {
+      color: #fde68a;
+      background: #3b2e0a;
+    }
+
+    .reject {
+      color: #fca5a5;
+      background: #431717;
+    }
+
+    .unknown {
+      color: #cbd5e1;
+      background: #293548;
+    }
+
+    .score-bar {
+      height: 6px;
+      border-radius: 10px;
+      background: #273449;
+      overflow: hidden;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: #38bdf8;
+    }
+
+    a {
+      color: #7dd3fc;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .small {
+      font-size: 12px;
+    }
+
+    .stat-number {
+      font-size: 24px;
+      font-weight: 800;
     }
 
     button:disabled {
-      opacity: .55;
+      opacity: 0.5;
       cursor: not-allowed;
     }
   </style>
 </head>
 
-<body class="min-h-screen p-2 sm:p-4">
+<body>
+  <div class="max-w-7xl mx-auto px-4 py-6">
 
-<div class="max-w-7xl mx-auto space-y-4">
+    <!-- HEADER -->
+    <header class="mb-6">
+      <div class="flex flex-col md:flex-row md:items-center
+                  md:justify-between gap-4">
 
-  <!-- HEADER -->
-  <header class="glass-panel rounded-2xl p-4 sm:p-5">
-    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+        <div>
+          <div class="text-sky-400 text-sm font-bold tracking-widest">
+            SOLANA ECOSYSTEM
+          </div>
 
-      <div>
-        <div class="flex items-center gap-2 flex-wrap">
-          <span class="badge badge-green">LIVE SCANNER</span>
-          <span class="badge badge-gray">SOLANA</span>
+          <h1 class="text-3xl md:text-4xl font-extrabold mt-2">
+            Anti-Rug Live Radar
+          </h1>
+
+          <p class="muted mt-2">
+            Pemantauan token baru, likuiditas, aktivitas transaksi,
+            dan indikator risiko.
+          </p>
         </div>
 
-        <h1 class="text-lg sm:text-xl font-extrabold text-white mt-3">
-          SOLANA ANTI-RUG RADAR
-        </h1>
+        <div class="panel p-4">
+          <div class="text-sm muted">Status scanner</div>
+          <div class="flex items-center gap-2 mt-2">
+            <span id="statusDot"
+                  class="inline-block w-3 h-3 rounded-full bg-yellow-400">
+            </span>
 
-        <p class="text-xs text-gray-400 mt-2">
-          New-token discovery, market analysis and risk screening.
+            <span id="scannerStatus" class="font-bold">
+              Menunggu
+            </span>
+          </div>
+
+          <div id="lastScan" class="text-xs muted mt-2">
+            Belum ada pemindaian
+          </div>
+        </div>
+
+      </div>
+    </header>
+
+    <!-- STATS -->
+    <section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+
+      <div class="panel p-4">
+        <div class="muted text-sm">Token ditemukan</div>
+        <div id="statFound" class="stat-number mt-2">0</div>
+      </div>
+
+      <div class="panel p-4">
+        <div class="muted text-sm">Lolos filter</div>
+        <div id="statPassed" class="stat-number mt-2 text-green-400">0</div>
+      </div>
+
+      <div class="panel p-4">
+        <div class="muted text-sm">Risiko ditolak</div>
+        <div id="statRejected" class="stat-number mt-2 text-red-400">0</div>
+      </div>
+
+      <div class="panel p-4">
+        <div class="muted text-sm">Belum diketahui</div>
+        <div id="statUnknown" class="stat-number mt-2 text-yellow-300">0</div>
+      </div>
+
+    </section>
+
+    <!-- FILTERS -->
+    <section class="panel p-5 mb-6">
+
+      <div class="flex flex-col md:flex-row
+                  md:items-center md:justify-between gap-3 mb-5">
+
+        <div>
+          <h2 class="text-xl font-bold">Pengaturan Filter</h2>
+          <p class="text-sm muted mt-1">
+            Atur kriteria token yang ingin dipantau.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+          <button id="scanButton"
+                  class="btn btn-primary"
+                  onclick="scanNow()">
+            Scan Sekarang
+          </button>
+
+          <button id="autoButton"
+                  class="btn btn-secondary"
+                  onclick="toggleAutoScan()">
+            Aktifkan Auto Scan
+          </button>
+        </div>
+
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        <div>
+          <label for="maxAge" class="block text-sm mb-2">
+            Umur maksimum token
+          </label>
+
+          <select id="maxAge" class="input">
+            <option value="5">5 menit</option>
+            <option value="15">15 menit</option>
+            <option value="30">30 menit</option>
+            <option value="60" selected>1 jam</option>
+            <option value="180">3 jam</option>
+            <option value="360">6 jam</option>
+            <option value="720">12 jam</option>
+            <option value="1440">24 jam</option>
+          </select>
+
+          <p class="text-xs muted mt-2">
+            Token dengan waktu pembuatan yang tidak diketahui
+            tidak lolos filter umur.
+          </p>
+        </div>
+
+        <div>
+          <label for="minLiquidity" class="block text-sm mb-2">
+            Likuiditas minimum (USD)
+          </label>
+
+          <input id="minLiquidity"
+                 class="input"
+                 type="number"
+                 min="0"
+                 value="5000">
+        </div>
+
+        <div>
+          <label for="minVolume" class="block text-sm mb-2">
+            Volume 24 jam minimum (USD)
+          </label>
+
+          <input id="minVolume"
+                 class="input"
+                 type="number"
+                 min="0"
+                 value="0">
+        </div>
+
+        <div>
+          <label for="minBuys" class="block text-sm mb-2">
+            Jumlah pembelian minimum
+          </label>
+
+          <input id="minBuys"
+                 class="input"
+                 type="number"
+                 min="0"
+                 value="0">
+
+          <p class="text-xs muted mt-2">
+            Menggunakan jumlah pembelian yang dilaporkan DexScreener
+            untuk periode 24 jam.
+          </p>
+        </div>
+
+        <div>
+          <label for="maxHolder" class="block text-sm mb-2">
+            Holder terbesar maksimum (%)
+          </label>
+
+          <input id="maxHolder"
+                 class="input"
+                 type="number"
+                 min="0"
+                 max="100"
+                 value="20">
+
+          <p class="text-xs muted mt-2">
+            Menggunakan data holder RugCheck jika tersedia.
+          </p>
+        </div>
+
+        <div>
+          <label for="minScore" class="block text-sm mb-2">
+            Skor kualitas minimum
+          </label>
+
+          <input id="minScore"
+                 class="input"
+                 type="number"
+                 min="0"
+                 max="100"
+                 value="40">
+        </div>
+
+        <div>
+          <label for="maxScan" class="block text-sm mb-2">
+            Maksimum token per pemindaian
+          </label>
+
+          <select id="maxScan" class="input">
+            <option value="10">10 token</option>
+            <option value="20" selected>20 token</option>
+            <option value="30">30 token</option>
+            <option value="50">50 token</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="securityMode" class="block text-sm mb-2">
+            Kebijakan pemeriksaan keamanan
+          </label>
+
+          <select id="securityMode" class="input">
+            <option value="strict" selected>
+              Ketat — wajib ada laporan
+            </option>
+
+            <option value="balanced">
+              Seimbang — tampilkan UNKNOWN
+            </option>
+          </select>
+        </div>
+
+      </div>
+
+      <div class="mt-5 p-4 rounded-lg bg-slate-950 border border-slate-800">
+        <div class="font-bold text-sm mb-2">
+          Cara kerja filter 5 menit
+        </div>
+
+        <p class="text-sm muted leading-6">
+          Scanner membaca waktu pembuatan pasangan trading dari
+          DexScreener, kemudian menghitung umur token berdasarkan
+          waktu saat ini. Jika umurnya lebih dari 5 menit, token
+          tidak ditampilkan ketika filter 5 menit dipilih.
+          Token yang waktu pembuatannya tidak tersedia akan dilewati.
         </p>
       </div>
 
-      <div class="sm:text-right">
-        <div id="network-status"
-             class="text-xs text-yellow-400 font-bold">
-          ● READY TO SCAN
+    </section>
+
+    <!-- RESULTS -->
+    <section>
+
+      <div class="flex flex-col md:flex-row
+                  md:items-center md:justify-between gap-3 mb-4">
+
+        <div>
+          <h2 class="text-2xl font-bold">Hasil Pemindaian</h2>
+          <p class="muted text-sm mt-1">
+            Token yang memenuhi filter ditampilkan di bawah ini.
+          </p>
         </div>
 
-        <div id="last-updated"
-             class="text-[10px] text-gray-500 mt-2">
-          Belum ada pemindaian
+        <div class="flex flex-wrap gap-2">
+
+          <select id="resultFilter"
+                  class="input"
+                  style="width:auto"
+                  onchange="renderResults()">
+
+            <option value="ALL">Semua status</option>
+            <option value="PASS">PASS</option>
+            <option value="WARNING">WARNING</option>
+            <option value="REJECT">REJECT</option>
+            <option value="UNKNOWN">UNKNOWN</option>
+
+          </select>
+
+          <button class="btn btn-secondary"
+                  onclick="clearResults()">
+            Bersihkan hasil
+          </button>
+
         </div>
+
       </div>
 
-    </div>
-  </header>
-
-
-  <!-- FILTERS -->
-  <section class="glass-panel rounded-2xl p-4 sm:p-5">
-
-    <h2 class="text-sm font-bold text-white mb-4">
-      Filter & Scanner Settings
-    </h2>
-
-    <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-
-      <div>
-        <label class="label" for="chain-select">Jaringan</label>
-        <select id="chain-select" class="field">
-          <option value="solana">Solana</option>
-          <option value="base">Base</option>
-        </select>
+      <div id="message"
+           class="panel p-5 mb-4 text-sm muted">
+        Tekan "Scan Sekarang" untuk memulai.
       </div>
 
-      <div>
-        <label class="label" for="age-filter">Usia Pair</label>
-        <select id="age-filter" class="field">
-          <option value="5">0–5 menit</option>
-          <option value="15">0–15 menit</option>
-          <option value="60" selected>0–1 jam</option>
-          <option value="360">0–6 jam</option>
-          <option value="1440">0–24 jam</option>
-          <option value="10080">0–7 hari</option>
-          <option value="all">Semua usia</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="label" for="min-liquidity">
-          Min. Likuiditas USD
-        </label>
-        <input id="min-liquidity"
-               class="field"
-               type="number"
-               min="0"
-               value="5000" />
-      </div>
-
-      <div>
-        <label class="label" for="min-volume">
-          Min. Volume 24 jam USD
-        </label>
-        <input id="min-volume"
-               class="field"
-               type="number"
-               min="0"
-               value="0" />
-      </div>
-
-      <div>
-        <label class="label" for="max-top-holder">
-          Maks. Top Holder (%)
-        </label>
-        <input id="max-top-holder"
-               class="field"
-               type="number"
-               min="0"
-               max="100"
-               value="50" />
-      </div>
-
-      <div>
-        <label class="label" for="min-buys">
-          Min. Transaksi Beli 24 jam
-        </label>
-        <input id="min-buys"
-               class="field"
-               type="number"
-               min="0"
-               value="0" />
-      </div>
-
-      <div>
-        <label class="label" for="min-score">
-          Min. Quality Score
-        </label>
-        <select id="min-score" class="field">
-          <option value="0">0 — Tampilkan semua</option>
-          <option value="40">40 — Longgar</option>
-          <option value="55" selected>55 — Seimbang</option>
-          <option value="70">70 — Selektif</option>
-        </select>
-      </div>
-
-      <div>
-        <label class="label" for="scan-limit">
-          Maks. Pair Dianalisis
-        </label>
-        <select id="scan-limit" class="field">
-          <option value="10">10 pair</option>
-          <option value="20" selected>20 pair</option>
-          <option value="30">30 pair</option>
-          <option value="50">50 pair</option>
-        </select>
-      </div>
-
-    </div>
-
-    <div class="flex flex-col sm:flex-row gap-2 mt-5">
-
-      <button id="btn-scan"
-              class="flex-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-extrabold rounded-lg px-4 py-3 flex items-center justify-center gap-2">
-        <i data-lucide="scan-line" class="w-4 h-4"></i>
-        MULAI LIVE SCAN
-      </button>
-
-      <button id="btn-reset"
-              class="bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-xs font-bold rounded-lg px-4 py-3">
-        RESET HASIL
-      </button>
-
-    </div>
-
-    <p class="text-[10px] text-gray-500 mt-3 leading-relaxed">
-      Filter usia menggunakan waktu pembuatan pair jika tersedia.
-      Pair yang tidak memiliki timestamp valid tidak dianggap sebagai
-      pair baru. Skor kualitas bukan jaminan keuntungan.
-    </p>
-
-  </section>
-
-
-  <!-- SUMMARY -->
-  <section class="grid grid-cols-2 md:grid-cols-4 gap-3">
-
-    <div class="glass-panel rounded-xl p-4">
-      <span class="small-label">Pair Ditemukan</span>
-      <div id="stat-found" class="text-xl font-extrabold mt-2">0</div>
-    </div>
-
-    <div class="glass-panel rounded-xl p-4">
-      <span class="small-label">Lolos Filter Pasar</span>
-      <div id="stat-market" class="text-xl font-extrabold text-blue-400 mt-2">0</div>
-    </div>
-
-    <div class="glass-panel rounded-xl p-4">
-      <span class="small-label">Risiko Kritis</span>
-      <div id="stat-rejected" class="text-xl font-extrabold text-red-400 mt-2">0</div>
-    </div>
-
-    <div class="glass-panel rounded-xl p-4">
-      <span class="small-label">Kandidat Ditampilkan</span>
-      <div id="stat-shown" class="text-xl font-extrabold text-green-400 mt-2">0</div>
-    </div>
-
-  </section>
-
-
-  <!-- SCAN PROGRESS -->
-  <section id="progress-panel"
-           class="glass-panel rounded-xl p-4 hidden">
-
-    <div class="flex justify-between gap-3 text-xs mb-3">
-      <span id="scan-step-text" class="text-gray-300">
-        Menyiapkan scanner...
-      </span>
-      <span id="scan-stats" class="text-gray-400">
-        0 / 0
-      </span>
-    </div>
-
-    <div class="h-2 bg-black rounded-full overflow-hidden">
-      <div id="progress-bar"
-           class="h-full bg-blue-500 transition-all"
-           style="width:0%">
-      </div>
-    </div>
-
-    <div id="scan-log"
-         class="mt-3 max-h-40 overflow-y-auto text-[10px] font-mono space-y-1">
-    </div>
-
-  </section>
-
-
-  <!-- ERROR -->
-  <section id="error-panel"
-           class="hidden glass-panel rounded-xl p-4 border border-red-500/30">
-
-    <div class="text-red-400 font-bold text-sm">
-      Scanner Notice
-    </div>
-
-    <p id="error-message"
-       class="text-xs text-gray-300 mt-2 break-words">
-    </p>
-
-  </section>
-
-
-  <!-- RESULTS HEADER -->
-  <section class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
-
-    <div>
-      <h2 class="text-white font-extrabold text-lg">
-        Hasil Pemindaian
-      </h2>
-
-      <p class="text-xs text-gray-500 mt-1">
-        Kandidat diurutkan berdasarkan quality score.
-      </p>
-    </div>
-
-    <div>
-      <select id="sort-filter" class="field">
-        <option value="score">Urutkan: Quality Score</option>
-        <option value="liquidity">Urutkan: Likuiditas</option>
-        <option value="volume">Urutkan: Volume</option>
-        <option value="age">Urutkan: Paling Baru</option>
-      </select>
-    </div>
-
-  </section>
-
-
-  <!-- RESULTS -->
-  <section id="coin-list"
+      <div id="results"
            class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-  </section>
+      </div>
 
+    </section>
 
-  <!-- FOOTER -->
-  <footer class="glass-panel rounded-xl p-4 text-[10px] text-gray-500 leading-relaxed">
-    <strong class="text-yellow-400">Peringatan risiko:</strong>
-    Token baru memiliki risiko ekstrem. Tidak ditemukannya indikator honeypot
-    bukan bukti bahwa token bebas dari honeypot. Data API yang gagal atau
-    tidak lengkap tidak pernah dianggap sebagai hasil pemeriksaan aman.
-    Lakukan verifikasi mandiri sebelum mengambil keputusan.
-  </footer>
+    <!-- FOOTER -->
+    <footer class="mt-10 pt-5 border-t border-slate-800 text-xs muted leading-6">
+      Data token dan pasar: DexScreener.
+      Indikator keamanan: RugCheck jika tersedia.
+      <br>
+      Hasil scanner bukan jaminan keamanan dan bukan saran investasi.
+      API publik dapat mengalami keterlambatan, pembatasan permintaan,
+      atau kegagalan akses.
+    </footer>
 
-</div>
-
+  </div>
 
 <script>
 "use strict";
 
-const Radar = {
+/* =========================================================
+   SOLANA ANTI-RUG LIVE RADAR
+   ========================================================= */
 
-  state: {
-    isLoading: false,
-    results: [],
-    requestTimeout: 15000,
-    maxConcurrent: 3
-  },
+const CONFIG = {
+  dexBase: "https://api.dexscreener.com",
+  rugBase: "https://api.rugcheck.xyz/v1",
+  autoIntervalMs: 15000,
+  requestTimeoutMs: 12000,
+  securityConcurrency: 4
+};
 
-  init() {
-    document.getElementById("btn-scan")
-      .addEventListener("click", () => this.runScanner());
+const state = {
+  running: false,
+  timer: null,
+  scanning: false,
 
-    document.getElementById("btn-reset")
-      .addEventListener("click", () => this.reset());
+  // Hasil terbaru berdasarkan alamat pasangan trading.
+  results: new Map(),
 
-    document.getElementById("sort-filter")
-      .addEventListener("change", () => this.renderCoins());
+  // Pasangan yang sudah pernah ditemukan.
+  seenPairs: new Set(),
 
-    document.getElementById("chain-select")
-      .addEventListener("change", () => {
-        const isSolana =
-          document.getElementById("chain-select").value === "solana";
+  counters: {
+    found: 0,
+    passed: 0,
+    rejected: 0,
+    unknown: 0
+  }
+};
 
-        if (!isSolana) {
-          this.showError(
-            "Pemeriksaan keamanan khusus Base belum dikonfigurasi. " +
-            "Data Base tidak akan dinyatakan aman oleh scanner ini."
-          );
-        } else {
-          this.hideError();
-        }
-      });
 
-    if (window.lucide) {
-      lucide.createIcons();
+/* =========================
+   UTILITIES
+   ========================= */
+
+function el(id) {
+  return document.getElementById(id);
+}
+
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
+function numberValue(id, fallback = 0) {
+  const n = Number(el(id).value);
+  return Number.isFinite(n) ? Math.max(0, n) : fallback;
+}
+
+function escapeHTML(value) {
+  return String(value ?? "").replace(/[&<>"']/g, char => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[char]);
+}
+
+function shortenAddress(address) {
+  if (!address) return "Tidak tersedia";
+  if (address.length <= 15) return address;
+
+  return address.slice(0, 6) + "..." + address.slice(-5);
+}
+
+function formatUSD(value) {
+  const n = Number(value);
+
+  if (!Number.isFinite(n)) return "N/A";
+
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: n < 1 ? 6 : 2
+  }).format(n);
+}
+
+function formatNumber(value) {
+  const n = Number(value);
+
+  if (!Number.isFinite(n)) return "N/A";
+
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2
+  }).format(n);
+}
+
+function formatAge(minutes) {
+  if (!Number.isFinite(minutes) || minutes < 0) {
+    return "Umur tidak diketahui";
+  }
+
+  if (minutes < 1) {
+    return Math.round(minutes * 60) + " detik";
+  }
+
+  if (minutes < 60) {
+    return minutes.toFixed(1) + " menit";
+  }
+
+  if (minutes < 1440) {
+    return (minutes / 60).toFixed(1) + " jam";
+  }
+
+  return (minutes / 1440).toFixed(1) + " hari";
+}
+
+function safeExternalURL(value) {
+  try {
+    const url = new URL(value);
+
+    if (url.protocol !== "https:") return "#";
+
+    return url.href;
+  } catch {
+    return "#";
+  }
+}
+
+function updateStatus(text, color = "green") {
+  el("scannerStatus").textContent = text;
+
+  const colors = {
+    green: "bg-green-400",
+    yellow: "bg-yellow-400",
+    red: "bg-red-400"
+  };
+
+  el("statusDot").className =
+    "inline-block w-3 h-3 rounded-full " +
+    (colors[color] || colors.yellow);
+}
+
+function setMessage(text) {
+  el("message").textContent = text;
+}
+
+function updateCounters() {
+  el("statFound").textContent = state.counters.found;
+  el("statPassed").textContent = state.counters.passed;
+  el("statRejected").textContent = state.counters.rejected;
+  el("statUnknown").textContent = state.counters.unknown;
+}
+
+
+/* =========================
+   API FETCH WITH TIMEOUT
+   ========================= */
+
+async function fetchJSON(url, timeoutMs = CONFIG.requestTimeoutMs) {
+  const controller = new AbortController();
+
+  const timeout = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
+
+  try {
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json"
+      },
+      signal: controller.signal
+    });
+
+    if (!response.ok) {
+      throw new Error("HTTP " + response.status);
     }
-  },
+
+    return await response.json();
+
+  } finally {
+    clearTimeout(timeout);
+  }
+}
 
 
-  async fetchJSON(url) {
-    const controller = new AbortController();
+/* =========================
+   TOKEN DISCOVERY
+   ========================= */
 
-    const timeout = setTimeout(
-      () => controller.abort(),
-      this.state.requestTimeout
-    );
+/*
+  Sumber penemuan:
+  1. Profil token terbaru dari DexScreener.
+  2. Pencarian pasangan Solana menggunakan kata kunci umum.
 
-    try {
-      const response = await fetch(url, {
-        method: "GET",
-        headers: { "Accept": "application/json" },
-        signal: controller.signal
-      });
+  Penting:
+  Endpoint profil bukan daftar lengkap semua pasangan baru.
+  Ini adalah mekanisme discovery, bukan pemantauan on-chain penuh.
+*/
 
-      if (!response.ok) {
-        throw new Error("HTTP " + response.status);
-      }
+async function discoverSolanaTokens() {
+  const tokenAddresses = new Set();
 
-      return await response.json();
+  const profileURL =
+    CONFIG.dexBase + "/token-profiles/latest/v1";
 
-    } finally {
-      clearTimeout(timeout);
-    }
-  },
+  try {
+    const profiles = await fetchJSON(profileURL);
 
-
-  async runScanner() {
-    if (this.state.isLoading) return;
-
-    this.state.isLoading = true;
-    this.setLoading(true);
-    this.hideError();
-    this.clearLog();
-
-    const chain =
-      document.getElementById("chain-select").value;
-
-    const maxAge =
-      document.getElementById("age-filter").value;
-
-    const minLiquidity =
-      this.getNumber("min-liquidity");
-
-    const minVolume =
-      this.getNumber("min-volume");
-
-    const maxTopHolder =
-      Math.min(100, this.getNumber("max-top-holder"));
-
-    const minBuys =
-      this.getNumber("min-buys");
-
-    const minScore =
-      this.getNumber("min-score");
-
-    const scanLimit =
-      this.getNumber("scan-limit");
-
-    try {
-
-      if (chain !== "solana") {
-        throw new Error(
-          "Jaringan Base belum memiliki implementasi pemeriksaan " +
-          "keamanan khusus. Pilih Solana untuk menjalankan scanner ini."
-        );
-      }
-
-      this.log("[SYSTEM] Memulai pencarian pair Solana.");
-
-      this.updateProgress(
-        "Mengambil daftar pasangan perdagangan baru...",
-        5,
-        0,
-        0
-      );
-
-      /*
-       * DexScreener token-profiles adalah sumber penemuan kandidat.
-       * Endpoint ini bukan jaminan bahwa setiap token baru ditemukan.
-       */
-      const profilesURL =
-        "https://api.dexscreener.com/token-profiles/latest/v1";
-
-      const profiles = await this.fetchJSON(profilesURL);
-
-      if (!Array.isArray(profiles)) {
-        throw new Error("Format data token profiles tidak sesuai.");
-      }
-
-      let addresses = [
-        ...new Set(
-          profiles
-            .filter(item =>
-              item.chainId === "solana" &&
-              typeof item.tokenAddress === "string"
-            )
-            .map(item => item.tokenAddress)
-        )
-      ];
-
-      this.log(
-        "[DISCOVERY] Ditemukan " +
-        addresses.length +
-        " alamat token dari token profiles."
-      );
-
-      /*
-       * Ambil data pair berdasarkan alamat token.
-       * Satu token bisa memiliki lebih dari satu pair.
-       */
-      let pairs = [];
-
-      for (
-        let start = 0;
-        start < addresses.length;
-        start += 30
-      ) {
-        const batch = addresses.slice(start, start + 30);
-
-        try {
-          const url =
-            "https://api.dexscreener.com/tokens/v1/solana/" +
-            batch.join(",");
-
-          const data = await this.fetchJSON(url);
-
-          if (Array.isArray(data)) {
-            pairs.push(...data);
-          }
-
-        } catch (error) {
-          this.log(
-            "[WARNING] Batch pair gagal: " + error.message,
-            "text-yellow-400"
-          );
-        }
-
-        this.updateProgress(
-          "Mengambil detail pasar...",
-          10 + Math.min(
-            20,
-            ((start + batch.length) / Math.max(addresses.length, 1)) * 20
-          ),
-          Math.min(start + batch.length, addresses.length),
-          addresses.length
-        );
-
-        await this.sleep(150);
-      }
-
-      /*
-       * Deduplicate berdasarkan pairAddress.
-       */
-      const uniquePairs = new Map();
-
-      for (const pair of pairs) {
+    if (Array.isArray(profiles)) {
+      for (const profile of profiles) {
         if (
-          pair.chainId !== "solana" ||
-          !pair.pairAddress ||
-          !pair.baseToken
-        ) continue;
-
-        uniquePairs.set(pair.pairAddress, pair);
-      }
-
-      pairs = [...uniquePairs.values()];
-
-      document.getElementById("stat-found").textContent =
-        pairs.length;
-
-      this.log(
-        "[MARKET] Total pair unik: " + pairs.length
-      );
-
-      const now = Date.now();
-
-      /*
-       * Filter pasar dan usia.
-       */
-      let candidates = pairs.filter(pair => {
-
-        const liquidity =
-          Number(pair.liquidity?.usd || 0);
-
-        const volume =
-          Number(pair.volume?.h24 || 0);
-
-        const buys =
-          Number(pair.txns?.h24?.buys || 0);
-
-        const created =
-          Number(pair.pairCreatedAt || 0);
-
-        if (liquidity < minLiquidity) return false;
-
-        if (volume < minVolume) return false;
-
-        if (buys < minBuys) return false;
-
-        if (
-          !Number.isFinite(created) ||
-          created <= 0 ||
-          created > now
+          profile &&
+          profile.chainId === "solana" &&
+          typeof profile.tokenAddress === "string"
         ) {
-          return maxAge === "all";
+          tokenAddresses.add(profile.tokenAddress);
         }
-
-        const ageMinutes =
-          (now - created) / 60000;
-
-        if (
-          maxAge !== "all" &&
-          ageMinutes > Number(maxAge)
-        ) {
-          return false;
-        }
-
-        return true;
-      });
-
-      /*
-       * Urutkan kandidat berdasarkan kombinasi aktivitas,
-       * likuiditas dan volume, bukan hanya satu metrik.
-       */
-      candidates.sort((a, b) => {
-        const scoreA =
-          Number(a.liquidity?.usd || 0) +
-          Number(a.volume?.h24 || 0) * 0.2;
-
-        const scoreB =
-          Number(b.liquidity?.usd || 0) +
-          Number(b.volume?.h24 || 0) * 0.2;
-
-        return scoreB - scoreA;
-      });
-
-      document.getElementById("stat-market").textContent =
-        candidates.length;
-
-      this.log(
-        "[FILTER] Kandidat setelah filter pasar: " +
-        candidates.length
-      );
-
-      if (candidates.length === 0) {
-        throw new Error(
-          "Tidak ada pair yang memenuhi filter. Coba kurangi " +
-          "likuiditas minimum atau perluas rentang usia."
-        );
-      }
-
-      /*
-       * Batasi jumlah pemeriksaan per pemindaian.
-       */
-      candidates = candidates.slice(0, scanLimit);
-
-      const checked = [];
-
-      let rejected = 0;
-
-      for (let i = 0; i < candidates.length; i++) {
-
-        const pair = candidates[i];
-
-        const progress =
-          30 + ((i + 1) / candidates.length) * 65;
-
-        this.updateProgress(
-          "Memeriksa risiko token...",
-          progress,
-          i + 1,
-          candidates.length
-        );
-
-        const symbol =
-          pair.baseToken?.symbol || "UNKNOWN";
-
-        this.log(
-          "[CHECK] " + symbol + " — " +
-          pair.baseToken.address.slice(0, 8) + "..."
-        );
-
-        const report = await this.fetchSecurityReport(
-          pair.baseToken.address
-        );
-
-        const metrics = this.getMarketMetrics(pair);
-
-        const analysis = this.analyzeProject(
-          pair,
-          report,
-          metrics
-        );
-
-        pair.radar = {
-          report,
-          metrics,
-          analysis
-        };
-
-        /*
-         * Risiko kritis yang terkonfirmasi tidak ditampilkan
-         * sebagai kandidat biasa.
-         */
-        if (analysis.status === "REJECT") {
-          rejected++;
-
-          this.log(
-            "[REJECT] " + symbol +
-            ": risiko kritis terdeteksi.",
-            "text-red-400"
-          );
-
-          continue;
-        }
-
-        /*
-         * Konsentrasi holder hanya diterapkan bila datanya valid.
-         * Jika data tidak tersedia, token tidak otomatis ditolak.
-         */
-        if (
-          report.topHolderPct !== null &&
-          report.topHolderPct > maxTopHolder
-        ) {
-          this.log(
-            "[WARNING] " + symbol +
-            ": konsentrasi top holder tinggi.",
-            "text-yellow-400"
-          );
-
-          /*
-           * Tidak langsung dibuang karena batas holder adalah
-           * filter kualitas yang bisa disesuaikan.
-           * Skor tetap mempertimbangkan risikonya.
-           */
-        }
-
-        if (analysis.score < minScore) {
-          this.log(
-            "[FILTER] " + symbol +
-            ": skor di bawah ambang minimum.",
-            "text-gray-500"
-          );
-
-          continue;
-        }
-
-        checked.push(pair);
-
-        this.log(
-          "[RESULT] " + symbol +
-          " — Score " + analysis.score +
-          "/100 — " + analysis.status,
-          analysis.status === "PASS"
-            ? "text-green-400"
-            : "text-yellow-400"
-        );
-
-        await this.sleep(180);
-      }
-
-      this.state.results = checked;
-
-      document.getElementById("stat-rejected").textContent =
-        rejected;
-
-      document.getElementById("stat-shown").textContent =
-        checked.length;
-
-      this.renderCoins();
-
-      this.updateProgress(
-        "Pemindaian selesai.",
-        100,
-        candidates.length,
-        candidates.length
-      );
-
-      document.getElementById("network-status").textContent =
-        "● SCAN COMPLETE";
-
-      document.getElementById("network-status").className =
-        "text-xs text-green-400 font-bold";
-
-      document.getElementById("last-updated").textContent =
-        "Pembaruan: " + new Date().toLocaleTimeString("id-ID");
-
-      if (checked.length === 0) {
-        this.showError(
-          "Pemindaian selesai, tetapi tidak ada kandidat yang " +
-          "memenuhi ambang skor. Coba turunkan minimum quality score."
-        );
-      }
-
-    } catch (error) {
-
-      console.error(error);
-
-      this.showError(error.message || "Terjadi kesalahan scanner.");
-
-      this.log(
-        "[ERROR] " + (error.message || "Unknown error"),
-        "text-red-400"
-      );
-
-      document.getElementById("network-status").textContent =
-        "● SCAN ERROR";
-
-      document.getElementById("network-status").className =
-        "text-xs text-red-400 font-bold";
-
-    } finally {
-
-      this.state.isLoading = false;
-      this.setLoading(false);
-
-      if (window.lucide) {
-        lucide.createIcons();
       }
     }
-  },
+  } catch (error) {
+    console.warn("Gagal mengambil profil terbaru:", error.message);
+  }
 
+  /*
+    Pencarian tambahan meningkatkan peluang menemukan pasangan,
+    tetapi bukan jaminan menemukan seluruh token baru.
+  */
 
-  async fetchSecurityReport(mintAddress) {
+  const queries = ["SOL", "pump", "USDC"];
 
-    try {
-
+  const searchResults = await Promise.allSettled(
+    queries.map(query => {
       const url =
-        "https://api.rugcheck.xyz/v1/tokens/" +
-        encodeURIComponent(mintAddress) +
-        "/report";
+        CONFIG.dexBase +
+        "/latest/dex/search?q=" +
+        encodeURIComponent(query);
 
-      const data = await this.fetchJSON(url);
+      return fetchJSON(url);
+    })
+  );
 
-      if (!data || typeof data !== "object") {
-        return {
-          available: false,
-          verified: false,
-          criticalRisk: false,
-          topHolderPct: null,
-          risks: [],
-          authorities: null,
-          error: "Invalid report"
-        };
+  for (const result of searchResults) {
+    if (result.status !== "fulfilled") continue;
+
+    const pairs = Array.isArray(result.value?.pairs)
+      ? result.value.pairs
+      : [];
+
+    for (const pair of pairs) {
+      if (pair.chainId !== "solana") continue;
+
+      if (pair.baseToken?.address) {
+        tokenAddresses.add(pair.baseToken.address);
       }
 
-      const risks =
-        Array.isArray(data.risks) ? data.risks : [];
+      if (pair.quoteToken?.address) {
+        tokenAddresses.add(pair.quoteToken.address);
+      }
+    }
+  }
 
-      /*
-       * Hanya tandai kritis berdasarkan indikator yang jelas.
-       * Skor risiko numerik saja tidak digunakan sebagai bukti
-       * tunggal bahwa token adalah honeypot.
-       */
-      const criticalPatterns = [
-        /honeypot/i,
-        /malicious/i,
-        /transfer.*blocked/i,
-        /cannot.*sell/i,
-        /freeze.*abuse/i
-      ];
+  return [...tokenAddresses];
+}
 
-      const criticalRisk = risks.some(risk => {
-        const text = [
-          risk.name || "",
-          risk.description || ""
-        ].join(" ");
 
-        const level =
-          String(risk.level || "").toLowerCase();
+/* =========================
+   FETCH PAIRS
+   ========================= */
 
-        return (
-          level === "danger" &&
-          criticalPatterns.some(pattern => pattern.test(text))
-        );
-      });
+async function fetchSolanaPairs(tokenAddresses) {
+  const pairs = [];
+  const uniqueAddresses = [...new Set(tokenAddresses)];
 
-      /*
-       * Top holder berasal dari laporan token.
-       * Tidak menganggap semua top holder sebagai insider.
-       */
-      let topHolderPct = null;
+  /*
+    DexScreener endpoint token pairs menerima beberapa alamat
+    token dalam satu permintaan.
+  */
 
-      if (
-        Array.isArray(data.topHolders) &&
-        data.topHolders.length > 0
-      ) {
-        const values = data.topHolders
-          .map(holder => {
-            const value =
-              holder.pct ?? holder.percentage;
+  const chunkSize = 25;
 
-            const num = Number(value);
+  for (let i = 0; i < uniqueAddresses.length; i += chunkSize) {
+    const chunk = uniqueAddresses.slice(i, i + chunkSize);
 
-            return Number.isFinite(num) ? num : null;
-          })
-          .filter(value => value !== null);
+    if (chunk.length === 0) continue;
 
-        if (values.length > 0) {
-          topHolderPct = values.reduce(
-            (sum, value) => sum + value,
-            0
-          );
+    const url =
+      CONFIG.dexBase +
+      "/tokens/v1/solana/" +
+      chunk.map(encodeURIComponent).join(",");
 
-          /*
-           * Laporan dapat mengembalikan persentase dalam
-           * format pecahan atau persen. Normalisasi sederhana.
-           */
-          if (topHolderPct <= 1) {
-            topHolderPct *= 100;
+    try {
+      const data = await fetchJSON(url);
+
+      if (Array.isArray(data)) {
+        for (const pair of data) {
+          if (pair.chainId === "solana") {
+            pairs.push(pair);
           }
-
-          topHolderPct = Math.min(
-            100,
-            Math.round(topHolderPct * 10) / 10
-          );
         }
       }
 
-      return {
-        available: true,
-        verified: true,
-        criticalRisk,
-        topHolderPct,
-        risks,
-        authorities: {
-          mintAuthority: data.mintAuthority ?? null,
-          freezeAuthority: data.freezeAuthority ?? null
-        },
-        score: Number(data.score ?? NaN),
-        raw: data
-      };
-
     } catch (error) {
-
       console.warn(
-        "RugCheck report unavailable:",
-        mintAddress,
-        error
+        "Gagal mengambil data pasangan:",
+        error.message
       );
+    }
+  }
 
+  return pairs;
+}
+
+
+/* =========================
+   PAIR AGE
+   ========================= */
+
+function getPairAgeMinutes(pair) {
+  const createdAt = Number(pair.pairCreatedAt);
+
+  if (
+    !Number.isFinite(createdAt) ||
+    createdAt <= 0 ||
+    createdAt > Date.now()
+  ) {
+    return null;
+  }
+
+  return (Date.now() - createdAt) / 60000;
+}
+
+function passesAgeFilter(pair) {
+  const age = getPairAgeMinutes(pair);
+  const maxAge = numberValue("maxAge", 60);
+
+  /*
+    Fail closed:
+    jika waktu pembuatan tidak diketahui,
+    token tidak lolos filter umur.
+  */
+
+  if (age === null) return false;
+
+  return age <= maxAge;
+}
+
+
+/* =========================
+   BASIC MARKET FILTERS
+   ========================= */
+
+function getLiquidity(pair) {
+  return Number(pair.liquidity?.usd) || 0;
+}
+
+function getVolume24h(pair) {
+  return Number(pair.volume?.h24) || 0;
+}
+
+function getBuys24h(pair) {
+  return Number(pair.txns?.h24?.buys) || 0;
+}
+
+function passesMarketFilters(pair) {
+  const minLiquidity = numberValue("minLiquidity", 5000);
+  const minVolume = numberValue("minVolume", 0);
+  const minBuys = numberValue("minBuys", 0);
+
+  if (getLiquidity(pair) < minLiquidity) return false;
+  if (getVolume24h(pair) < minVolume) return false;
+  if (getBuys24h(pair) < minBuys) return false;
+
+  return true;
+}
+
+
+/* =========================
+   RUGCHECK SECURITY REPORT
+   ========================= */
+
+async function fetchSecurityReport(mintAddress) {
+  const url =
+    CONFIG.rugBase +
+    "/tokens/" +
+    encodeURIComponent(mintAddress) +
+    "/report";
+
+  try {
+    const report = await fetchJSON(url);
+
+    if (!report || typeof report !== "object") {
       return {
         available: false,
-        verified: false,
-        criticalRisk: false,
-        topHolderPct: null,
-        risks: [],
-        authorities: null,
-        error: error.message || "Request failed"
+        reason: "Format laporan tidak dikenali"
       };
     }
-  },
-
-
-  getMarketMetrics(pair) {
-
-    const created = Number(pair.pairCreatedAt || 0);
-
-    const ageMinutes =
-      created > 0 && created <= Date.now()
-        ? (Date.now() - created) / 60000
-        : null;
-
-    const volume24 =
-      Number(pair.volume?.h24 || 0);
-
-    const volume1h =
-      Number(pair.volume?.h1 || 0);
-
-    const volume5m =
-      Number(pair.volume?.m5 || 0);
-
-    const buys24 =
-      Number(pair.txns?.h24?.buys || 0);
-
-    const sells24 =
-      Number(pair.txns?.h24?.sells || 0);
-
-    const buys1h =
-      Number(pair.txns?.h1?.buys || 0);
-
-    const sells1h =
-      Number(pair.txns?.h1?.sells || 0);
-
-    const liquidity =
-      Number(pair.liquidity?.usd || 0);
-
-    const fdv =
-      Number(pair.fdv || 0);
-
-    const marketCap =
-      Number(pair.marketCap || 0);
 
     return {
-      ageMinutes,
-      volume24,
-      volume1h,
-      volume5m,
-      buys24,
-      sells24,
-      buys1h,
-      sells1h,
-      liquidity,
-      fdv,
-      marketCap
+      available: true,
+      report
     };
-  },
+
+  } catch (error) {
+    return {
+      available: false,
+      reason: error.message || "Laporan tidak tersedia"
+    };
+  }
+}
 
 
-  analyzeProject(pair, report, m) {
+/* =========================
+   SECURITY ANALYSIS
+   ========================= */
 
-    let score = 0;
+function analyzeSecurity(result) {
+  if (!result.available) {
+    return {
+      status: "UNKNOWN",
+      reasons: [
+        "Laporan keamanan tidak tersedia atau API gagal diakses."
+      ],
+      maxHolderPercent: null,
+      rugScore: null
+    };
+  }
 
-    const reasons = [];
+  const report = result.report;
 
-    /*
-     * 1. Likuiditas: maksimum 20 poin.
-     * Ambang dibuat bertahap, bukan hanya lulus/gagal.
-     */
-    if (m.liquidity >= 50000) {
-      score += 20;
-      reasons.push("Likuiditas relatif kuat");
-    } else if (m.liquidity >= 20000) {
-      score += 16;
-      reasons.push("Likuiditas cukup baik");
-    } else if (m.liquidity >= 10000) {
-      score += 12;
-      reasons.push("Likuiditas tersedia");
-    } else if (m.liquidity >= 5000) {
-      score += 8;
-      reasons.push("Likuiditas awal");
-    } else if (m.liquidity > 0) {
-      score += 4;
-      reasons.push("Likuiditas rendah");
+  const reasons = [];
+  let criticalRisk = false;
+  let warningRisk = false;
+
+  /*
+    Struktur laporan RugCheck bisa berubah.
+    Pemeriksaan berikut menggunakan field yang umum ditemukan.
+    Field yang tidak tersedia tidak boleh dianggap aman.
+  */
+
+  const risks = Array.isArray(report.risks)
+    ? report.risks
+    : [];
+
+  for (const risk of risks) {
+    const level = String(risk.level || "").toLowerCase();
+    const description = String(
+      risk.name || risk.description || risk.message || "Risiko terdeteksi"
+    );
+
+    if (
+      level === "danger" ||
+      level === "critical"
+    ) {
+      criticalRisk = true;
+      reasons.push("Risiko tinggi: " + description);
+
+    } else if (
+      level === "warn" ||
+      level === "warning" ||
+      level === "medium"
+    ) {
+      warningRisk = true;
+      reasons.push("Peringatan: " + description);
     }
+  }
 
-    /*
-     * 2. Volume: maksimum 20 poin.
-     */
-    if (m.volume24 >= 100000) {
-      score += 20;
-      reasons.push("Volume perdagangan tinggi");
-    } else if (m.volume24 >= 25000) {
-      score += 16;
-      reasons.push("Volume perdagangan baik");
-    } else if (m.volume24 >= 10000) {
-      score += 12;
-      reasons.push("Ada aktivitas perdagangan");
-    } else if (m.volume24 >= 1000) {
-      score += 7;
-      reasons.push("Volume masih awal");
-    } else if (m.volume24 > 0) {
-      score += 3;
-      reasons.push("Volume rendah");
+  const rugScoreValue =
+    report.score_normalised ??
+    report.scoreNormalized ??
+    report.score ??
+    null;
+
+  const rugScore = Number.isFinite(Number(rugScoreValue))
+    ? Number(rugScoreValue)
+    : null;
+
+  /*
+    Skor RugCheck bukan probabilitas rug pull.
+    Skor tinggi hanya diperlakukan sebagai indikator risiko.
+  */
+
+  if (rugScore !== null && rugScore >= 7000) {
+    criticalRisk = true;
+    reasons.push("Skor risiko RugCheck sangat tinggi.");
+  } else if (rugScore !== null && rugScore >= 4000) {
+    warningRisk = true;
+    reasons.push("Skor risiko RugCheck tinggi.");
+  }
+
+  /*
+    Holder terbesar:
+    ambil hanya jika laporan benar-benar menyediakan data yang
+    dapat ditafsirkan. Jangan menganggap data yang hilang sebagai 0%.
+  */
+
+  let maxHolderPercent = null;
+
+  const topHolders = Array.isArray(report.topHolders)
+    ? report.topHolders
+    : [];
+
+  if (topHolders.length > 0) {
+    const percentages = topHolders
+      .map(holder => {
+        const value = Number(
+          holder.pct ??
+          holder.percentage ??
+          holder.percent
+        );
+
+        return Number.isFinite(value) ? value : null;
+      })
+      .filter(value => value !== null);
+
+    if (percentages.length > 0) {
+      maxHolderPercent = Math.max(...percentages);
     }
+  }
 
-    /*
-     * 3. Aktivitas transaksi dan keseimbangan beli/jual.
-     */
-    const totalTx = m.buys24 + m.sells24;
+  /*
+    Jangan menganggap top holder sama dengan insider.
+    Holder terbesar dapat berupa wallet tim, pool, exchange,
+    atau alamat lain; perlu konteks tambahan untuk memastikan.
+  */
 
-    if (totalTx >= 500) {
-      score += 15;
-      reasons.push("Aktivitas transaksi tinggi");
-    } else if (totalTx >= 150) {
-      score += 12;
-      reasons.push("Aktivitas transaksi cukup");
-    } else if (totalTx >= 40) {
-      score += 8;
-      reasons.push("Ada aktivitas transaksi");
-    } else if (totalTx >= 10) {
-      score += 4;
-      reasons.push("Aktivitas masih awal");
+  if (maxHolderPercent !== null) {
+    const holderLimit = numberValue("maxHolder", 20);
+
+    if (maxHolderPercent > holderLimit) {
+      warningRisk = true;
+
+      reasons.push(
+        "Holder terbesar " +
+        maxHolderPercent.toFixed(2) +
+        "% melebihi batas " +
+        holderLimit +
+        "%."
+      );
     }
+  }
 
-    if (m.buys24 > 0 && m.sells24 > 0) {
-      score += 5;
-      reasons.push("Transaksi beli dan jual teramati");
+  /*
+    Jika laporan tersedia tetapi tidak memiliki informasi risiko
+    atau data penting, status tidak otomatis dianggap PASS.
+  */
+
+  const hasRiskData = Array.isArray(report.risks);
+  const hasScore = rugScore !== null;
+
+  if (!hasRiskData && !hasScore) {
+    return {
+      status: "UNKNOWN",
+      reasons: [
+        "Laporan tersedia, tetapi indikator risiko tidak cukup."
+      ],
+      maxHolderPercent,
+      rugScore
+    };
+  }
+
+  if (criticalRisk) {
+    return {
+      status: "REJECT",
+      reasons: reasons.length
+        ? reasons
+        : ["Indikator risiko kritis terdeteksi."],
+      maxHolderPercent,
+      rugScore
+    };
+  }
+
+  if (warningRisk) {
+    return {
+      status: "WARNING",
+      reasons: reasons.length
+        ? reasons
+        : ["Diperlukan pemeriksaan tambahan."],
+      maxHolderPercent,
+      rugScore
+    };
+  }
+
+  return {
+    status: "PASS",
+    reasons: [
+      "Tidak ditemukan indikator kritis pada data yang diperiksa."
+    ],
+    maxHolderPercent,
+    rugScore
+  };
+}
+
+
+/* =========================
+   SIMPLE QUALITY SCORE
+   ========================= */
+
+/*
+  Ini adalah skor heuristik, bukan model prediksi.
+  Skor tinggi tidak membuktikan token berkualitas.
+*/
+
+function calculateQualityScore(pair, security) {
+  let score = 0;
+
+  const liquidity = getLiquidity(pair);
+  const volume = getVolume24h(pair);
+  const buys = getBuys24h(pair);
+  const sells = Number(pair.txns?.h24?.sells) || 0;
+
+  const age = getPairAgeMinutes(pair);
+
+  // Likuiditas
+  if (liquidity >= 50000) score += 25;
+  else if (liquidity >= 20000) score += 20;
+  else if (liquidity >= 10000) score += 15;
+  else if (liquidity >= 5000) score += 10;
+  else if (liquidity > 0) score += 5;
+
+  // Volume
+  if (volume >= 100000) score += 20;
+  else if (volume >= 25000) score += 15;
+  else if (volume >= 5000) score += 10;
+  else if (volume > 0) score += 5;
+
+  // Aktivitas pembelian
+  if (buys >= 200) score += 15;
+  else if (buys >= 50) score += 10;
+  else if (buys >= 10) score += 5;
+
+  // Keseimbangan transaksi, bukan bukti komunitas asli
+  const totalTxns = buys + sells;
+
+  if (totalTxns >= 20) {
+    const buyRatio = buys / totalTxns;
+
+    if (buyRatio >= 0.30 && buyRatio <= 0.80) {
+      score += 10;
     }
+  }
 
-    /*
-     * 4. Konsentrasi holder: maksimum 15 poin.
-     */
-    if (report.topHolderPct !== null) {
+  // Data umur harus tersedia
+  if (age !== null && age <= 5) {
+    score += 10;
+  } else if (age !== null && age <= 60) {
+    score += 5;
+  }
 
-      if (report.topHolderPct <= 20) {
-        score += 15;
-        reasons.push("Konsentrasi top holder relatif rendah");
-      } else if (report.topHolderPct <= 35) {
-        score += 11;
-        reasons.push("Konsentrasi holder moderat");
-      } else if (report.topHolderPct <= 50) {
-        score += 7;
-        reasons.push("Konsentrasi holder perlu dipantau");
-      } else {
-        score += 2;
-        reasons.push("Konsentrasi holder tinggi");
+  // Keamanan
+  if (security.status === "PASS") {
+    score += 20;
+  } else if (security.status === "WARNING") {
+    score += 5;
+  }
+
+  return clamp(score, 0, 100);
+}
+
+
+/* =========================
+   TOKEN ANALYSIS
+   ========================= */
+
+async function mapWithConcurrency(items, limit, worker) {
+  const output = new Array(items.length);
+  let nextIndex = 0;
+
+  async function runWorker() {
+    while (true) {
+      const index = nextIndex++;
+
+      if (index >= items.length) return;
+
+      try {
+        output[index] = await worker(items[index], index);
+      } catch (error) {
+        output[index] = {
+          error: error.message || "Kesalahan analisis"
+        };
       }
-
-    } else {
-      reasons.push("Data konsentrasi holder tidak tersedia");
     }
+  }
+
+  const workers = Array.from(
+    { length: Math.min(limit, items.length) },
+    () => runWorker()
+  );
+
+  await Promise.all(workers);
+
+  return output;
+}
+
+async function analyzePair(pair) {
+  const mintAddress = pair.baseToken?.address;
+
+  const securityReport = mintAddress
+    ? await fetchSecurityReport(mintAddress)
+    : {
+        available: false,
+        reason: "Alamat mint tidak tersedia"
+      };
+
+  const security = analyzeSecurity(securityReport);
+
+  const qualityScore = calculateQualityScore(pair, security);
+
+  const ageMinutes = getPairAgeMinutes(pair);
+
+  const minScore = numberValue("minScore", 40);
+
+  let status = security.status;
+
+  if (security.status === "PASS" && qualityScore < minScore) {
+    status = "WARNING";
+  }
+
+  if (security.status === "UNKNOWN") {
+    status = "UNKNOWN";
+  }
+
+  const securityMode = el("securityMode").value;
+
+  /*
+    Mode ketat:
+    token UNKNOWN tetap dapat dilihat dalam hasil,
+    tetapi tidak dianggap lolos sebagai token aman.
+  */
+
+  if (
+    securityMode === "strict" &&
+    security.status === "UNKNOWN"
+  ) {
+    status = "UNKNOWN";
+  }
+
+  return {
+    id: pair.pairAddress || mintAddress,
+    mintAddress,
+    pairAddress: pair.pairAddress || "",
+    name: pair.baseToken?.name || "Unknown Token",
+    symbol: pair.baseToken?.symbol || "UNKNOWN",
+    dexId: pair.dexId || "unknown",
+
+    url: safeExternalURL(pair.url || ""),
+
+    priceUsd: pair.priceUsd,
+    liquidity: getLiquidity(pair),
+    volume24h: getVolume24h(pair),
+    buys24h: getBuys24h(pair),
+    sells24h: Number(pair.txns?.h24?.sells) || 0,
+
+    marketCap: Number(
+      pair.marketCap ?? pair.fdv ?? 0
+    ),
+
+    ageMinutes,
+    qualityScore,
+    security,
+    status,
+
+    firstSeenAt: Date.now(),
+    updatedAt: Date.now()
+  };
+}
+
+
+/* =========================
+   MAIN SCAN
+   ========================= */
+
+async function scanNow() {
+  if (state.scanning) return;
+
+  state.scanning = true;
+  el("scanButton").disabled = true;
+
+  updateStatus("Memindai...", "yellow");
+  setMessage("Mengambil daftar token dan pasangan trading Solana...");
+
+  try {
+    const addresses = await discoverSolanaTokens();
+
+    if (addresses.length === 0) {
+      setMessage(
+        "Belum ada alamat token yang berhasil ditemukan. " +
+        "Periksa koneksi internet atau coba lagi nanti."
+      );
+
+      updateStatus("Tidak ada data", "yellow");
+      return;
+    }
+
+    const pairs = await fetchSolanaPairs(addresses);
+
+    const maxAge = numberValue("maxAge", 60);
 
     /*
-     * 5. Status pemeriksaan keamanan: maksimum 20 poin.
-     */
-    if (report.available && !report.criticalRisk) {
-      score += 20;
-      reasons.push("Laporan risiko tersedia tanpa indikator kritis");
-    } else {
-      reasons.push("Pemeriksaan keamanan belum lengkap");
+      Buang pasangan yang bukan Solana atau tidak memiliki
+      alamat pasangan dan mint yang diperlukan.
+    */
+
+    const uniquePairs = new Map();
+
+    for (const pair of pairs) {
+      if (pair.chainId !== "solana") continue;
+      if (!pair.baseToken?.address) continue;
+      if (!pair.pairAddress) continue;
+
+      uniquePairs.set(pair.pairAddress, pair);
     }
+
+    const allPairs = [...uniquePairs.values()];
+
+    state.counters.found = allPairs.length;
+
+    const ageFiltered = allPairs.filter(pair =>
+      passesAgeFilter(pair)
+    );
+
+    const marketFiltered = ageFiltered.filter(pair =>
+      passesMarketFilters(pair)
+    );
 
     /*
-     * 6. Informasi proyek: maksimum 10 poin.
-     * Keberadaan tautan bukan bukti bahwa proyek tepercaya.
-     */
-    const info = pair.info || {};
+      Prioritaskan pasangan dengan likuiditas lebih tinggi
+      ketika jumlah kandidat melebihi batas pemindaian.
+    */
 
-    const websiteExists =
-      Array.isArray(info.websites) &&
-      info.websites.some(item =>
-        typeof item.url === "string" &&
-        /^https?:\/\//i.test(item.url)
+    marketFiltered.sort(
+      (a, b) => getLiquidity(b) - getLiquidity(a)
+    );
+
+    const maxScan = numberValue("maxScan", 20);
+
+    const candidates = marketFiltered.slice(0, maxScan);
+
+    if (candidates.length === 0) {
+      setMessage(
+        "Tidak ada pasangan yang memenuhi filter saat ini. " +
+        "Coba naikkan umur maksimum atau turunkan batas likuiditas, " +
+        "volume, dan pembelian."
       );
 
-    const socialExists =
-      Array.isArray(info.socials) &&
-      info.socials.some(item =>
-        typeof item.url === "string" &&
-        /^https?:\/\//i.test(item.url)
-      );
+      updateStatus("Pemindaian selesai", "yellow");
+      el("lastScan").textContent =
+        "Terakhir: " + new Date().toLocaleTimeString();
 
-    if (websiteExists) {
-      score += 5;
-      reasons.push("Website proyek tersedia");
-    }
-
-    if (socialExists) {
-      score += 5;
-      reasons.push("Tautan sosial tersedia");
-    }
-
-    score = Math.min(100, score);
-
-    let status = "WARNING";
-
-    if (report.criticalRisk) {
-      status = "REJECT";
-    } else if (report.available && score >= 70) {
-      status = "PASS";
-    } else if (!report.available) {
-      status = "UNKNOWN";
-    }
-
-    return {
-      score,
-      status,
-      reasons,
-      websiteExists,
-      socialExists
-    };
-  },
-
-
-  renderCoins() {
-
-    const container =
-      document.getElementById("coin-list");
-
-    container.innerHTML = "";
-
-    let coins = [...this.state.results];
-
-    const sort =
-      document.getElementById("sort-filter").value;
-
-    if (sort === "score") {
-      coins.sort((a, b) =>
-        b.radar.analysis.score - a.radar.analysis.score
-      );
-    } else if (sort === "liquidity") {
-      coins.sort((a, b) =>
-        Number(b.liquidity?.usd || 0) -
-        Number(a.liquidity?.usd || 0)
-      );
-    } else if (sort === "volume") {
-      coins.sort((a, b) =>
-        Number(b.volume?.h24 || 0) -
-        Number(a.volume?.h24 || 0)
-      );
-    } else if (sort === "age") {
-      coins.sort((a, b) =>
-        Number(a.pairCreatedAt || Infinity) -
-        Number(b.pairCreatedAt || Infinity)
-      );
-    }
-
-    if (coins.length === 0) {
-      container.innerHTML = `
-        <div class="glass-panel rounded-xl p-8 text-center col-span-full">
-          <div class="text-gray-300 font-bold">
-            Belum ada kandidat
-          </div>
-          <p class="text-xs text-gray-500 mt-2">
-            Jalankan scan atau sesuaikan filter Anda.
-          </p>
-        </div>
-      `;
+      updateCounters();
+      renderResults();
 
       return;
     }
 
-    for (const pair of coins) {
-      container.appendChild(this.createCoinCard(pair));
+    setMessage(
+      "Ditemukan " + allPairs.length +
+      " pasangan Solana. " +
+      ageFiltered.length + " memenuhi filter umur dan " +
+      marketFiltered.length + " memenuhi filter pasar. " +
+      "Memeriksa keamanan " + candidates.length + " kandidat..."
+    );
+
+    const analyses = await mapWithConcurrency(
+      candidates,
+      CONFIG.securityConcurrency,
+      analyzePair
+    );
+
+    for (const item of analyses) {
+      if (!item || item.error) continue;
+
+      const wasSeen = state.seenPairs.has(item.id);
+
+      state.seenPairs.add(item.id);
+
+      /*
+        Perbarui hasil pasangan yang sudah ada.
+        Jangan menghapus hasil lama hanya karena tidak muncul
+        pada satu putaran discovery.
+      */
+
+      const previous = state.results.get(item.id);
+
+      if (previous) {
+        item.firstSeenAt = previous.firstSeenAt;
+      }
+
+      item.isNew = !wasSeen;
+
+      state.results.set(item.id, item);
     }
 
-    if (window.lucide) {
-      lucide.createIcons();
+    updateSummaryCounters();
+
+    updateCounters();
+    renderResults();
+
+    el("lastScan").textContent =
+      "Terakhir: " + new Date().toLocaleTimeString();
+
+    setMessage(
+      "Pemindaian selesai. " +
+      "Kandidat diperiksa: " + candidates.length +
+      ". Hasil ditampilkan berdasarkan filter yang dipilih."
+    );
+
+    updateStatus("Aktif", "green");
+
+  } catch (error) {
+    console.error("Kesalahan pemindaian:", error);
+
+    setMessage(
+      "Pemindaian gagal: " +
+      (error.message || "kesalahan tidak diketahui") +
+      ". Coba lagi. Jika masalah berulang, periksa akses API."
+    );
+
+    updateStatus("Terjadi kesalahan", "red");
+
+  } finally {
+    state.scanning = false;
+    el("scanButton").disabled = false;
+  }
+}
+
+
+/* =========================
+   COUNTERS
+   ========================= */
+
+function updateSummaryCounters() {
+  let passed = 0;
+  let rejected = 0;
+  let unknown = 0;
+
+  for (const item of state.results.values()) {
+    if (item.status === "PASS") {
+      passed++;
+    } else if (item.status === "REJECT") {
+      rejected++;
+    } else if (item.status === "UNKNOWN") {
+      unknown++;
     }
-  },
+  }
+
+  state.counters.passed = passed;
+  state.counters.rejected = rejected;
+  state.counters.unknown = unknown;
+}
 
 
-  createCoinCard(pair) {
+/* =========================
+   RESULTS FILTER
+   ========================= */
 
-    const card = document.createElement("article");
+function getVisibleResults() {
+  const selectedStatus = el("resultFilter").value;
 
-    card.className =
-      "glass-panel coin-card rounded-xl p-4";
+  const maxAge = numberValue("maxAge", 60);
 
-    const token = pair.baseToken || {};
+  return [...state.results.values()]
+    .filter(item => {
+      /*
+        Terapkan kembali filter umur saat menampilkan hasil,
+        bukan hanya saat pertama kali token ditemukan.
+      */
 
-    const metrics = pair.radar.metrics;
+      if (
+        item.ageMinutes === null ||
+        item.ageMinutes > maxAge
+      ) {
+        return false;
+      }
 
-    const report = pair.radar.report;
+      if (item.liquidity < numberValue("minLiquidity", 5000)) {
+        return false;
+      }
 
-    const analysis = pair.radar.analysis;
+      if (item.volume24h < numberValue("minVolume", 0)) {
+        return false;
+      }
 
-    const symbol =
-      token.symbol || "UNKNOWN";
+      if (item.buys24h < numberValue("minBuys", 0)) {
+        return false;
+      }
 
-    const name =
-      token.name || symbol;
+      if (
+        item.qualityScore <
+        numberValue("minScore", 40)
+      ) {
+        return false;
+      }
 
-    const logo =
-      pair.info?.imageUrl || "";
+      if (
+        selectedStatus !== "ALL" &&
+        item.status !== selectedStatus
+      ) {
+        return false;
+      }
 
-    const price =
-      Number(pair.priceUsd || 0);
+      return true;
+    })
+    .sort((a, b) => {
+      if (a.isNew !== b.isNew) {
+        return a.isNew ? -1 : 1;
+      }
 
-    const badgeClass = {
-      PASS: "badge-green",
-      WARNING: "badge-yellow",
-      REJECT: "badge-red",
-      UNKNOWN: "badge-gray"
-    }[analysis.status] || "badge-gray";
+      return b.qualityScore - a.qualityScore;
+    });
+}
 
-    const age =
-      metrics.ageMinutes === null
-        ? "Tidak diketahui"
-        : this.formatAge(metrics.ageMinutes);
 
-    const riskText =
-      report.available
-        ? report.criticalRisk
-          ? "Indikator kritis terdeteksi"
-          : "Laporan tersedia; bukan jaminan aman"
-        : "Data keamanan tidak tersedia";
+/* =========================
+   RENDER CARDS
+   ========================= */
 
-    const mintStatus =
-      report.authorities
-        ? report.authorities.mintAuthority === null
-          ? "Tidak ada / tidak dilaporkan"
-          : "Masih tersedia / perlu verifikasi"
-        : "Tidak diketahui";
+function statusClass(status) {
+  switch (status) {
+    case "PASS":
+      return "pass";
 
-    const freezeStatus =
-      report.authorities
-        ? report.authorities.freezeAuthority === null
-          ? "Tidak ada / tidak dilaporkan"
-          : "Masih tersedia / perlu verifikasi"
-        : "Tidak diketahui";
+    case "WARNING":
+      return "warning";
 
-    const reasons = analysis.reasons
-      .map(reason =>
-        `<li class="text-[10px] text-gray-400">• ${this.escapeHTML(reason)}</li>`
-      )
-      .join("");
+    case "REJECT":
+      return "reject";
 
-    const risks = report.risks
-      .slice(0, 4)
-      .map(risk => {
-        const level =
-          this.escapeHTML(String(risk.level || "info"));
+    default:
+      return "unknown";
+  }
+}
 
-        const name =
-          this.escapeHTML(String(risk.name || "Risk"));
+function renderResults() {
+  const resultsEl = el("results");
+  const visible = getVisibleResults();
 
-        return `
-          <li class="text-[10px] text-gray-400">
-            • ${name} (${level})
-          </li>
-        `;
-      })
-      .join("");
-
-    const socials = this.safeProjectLinks(pair.info);
-
-    card.innerHTML = `
-      <div class="flex justify-between items-start gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-
-          <img
-            src="${this.escapeHTML(logo)}"
-            alt=""
-            class="w-11 h-11 rounded-full bg-black border border-white/10 object-cover"
-            onerror="this.style.display='none'"
-          />
-
-          <div class="min-w-0">
-            <h3 class="font-extrabold text-white text-base break-words">
-              ${this.escapeHTML(symbol)}
-            </h3>
-
-            <p class="text-[10px] text-gray-400 break-words">
-              ${this.escapeHTML(name)}
-            </p>
-          </div>
-        </div>
-
-        <span class="badge ${badgeClass}">
-          ${analysis.status}
-        </span>
-      </div>
-
-      <div class="mt-4 flex items-center justify-between gap-2">
-        <span class="text-[10px] text-gray-500">Quality Score</span>
-        <span class="font-extrabold text-xl text-white">
-          ${analysis.score}<span class="text-xs text-gray-500">/100</span>
-        </span>
-      </div>
-
-      <div class="h-1.5 bg-black rounded-full overflow-hidden mt-2">
-        <div
-          class="h-full bg-blue-500"
-          style="width:${analysis.score}%"
-        ></div>
-      </div>
-
-      <div class="grid grid-cols-2 gap-2 mt-4">
-
-        <div class="metric">
-          <span class="small-label">Usia Pair</span>
-          <span class="metric-value">${this.escapeHTML(age)}</span>
-        </div>
-
-        <div class="metric">
-          <span class="small-label">Harga USD</span>
-          <span class="metric-value">${this.formatPrice(price)}</span>
-        </div>
-
-        <div class="metric">
-          <span class="small-label">Likuiditas</span>
-          <span class="metric-value">${this.money(metrics.liquidity)}</span>
-        </div>
-
-        <div class="metric">
-          <span class="small-label">Volume 24 jam</span>
-          <span class="metric-value">${this.money(metrics.volume24)}</span>
-        </div>
-
-        <div class="metric">
-          <span class="small-label">Beli / Jual 24 jam</span>
-          <span class="metric-value">
-            ${metrics.buys24} / ${metrics.sells24}
-          </span>
-        </div>
-
-        <div class="metric">
-          <span class="small-label">Top Holder</span>
-          <span class="metric-value">
-            ${report.topHolderPct === null
-              ? "N/A"
-              : report.topHolderPct + "%"}
-          </span>
-        </div>
-
-      </div>
-
-      <div class="mt-4 border-t border-white/10 pt-3">
-        <h4 class="text-[10px] text-white font-bold mb-2">
-          SECURITY CHECK
-        </h4>
-
-        <p class="text-[10px] ${
-          report.available ? "text-green-400" : "text-yellow-400"
-        }">
-          ${this.escapeHTML(riskText)}
+  if (visible.length === 0) {
+    resultsEl.innerHTML = `
+      <div class="panel p-6 md:col-span-2 xl:col-span-3">
+        <div class="font-bold text-lg">Belum ada hasil</div>
+        <p class="muted text-sm mt-2">
+          Jalankan pemindaian atau ubah filter untuk melihat
+          token yang tersedia.
         </p>
-
-        <div class="mt-2 text-[10px] text-gray-400 space-y-1">
-          <p>Mint authority: ${this.escapeHTML(mintStatus)}</p>
-          <p>Freeze authority: ${this.escapeHTML(freezeStatus)}</p>
-        </div>
-
-        ${
-          risks
-            ? `<ul class="mt-2 space-y-1">${risks}</ul>`
-            : `<p class="text-[10px] text-gray-500 mt-2">
-                 Tidak ada daftar risiko yang ditampilkan.
-               </p>`
-        }
-      </div>
-
-      <div class="mt-4 border-t border-white/10 pt-3">
-        <h4 class="text-[10px] text-white font-bold mb-2">
-          PROJECT SIGNALS
-        </h4>
-
-        <ul class="space-y-1">${reasons}</ul>
-
-        <div class="flex flex-wrap gap-2 mt-3">
-          ${socials}
-        </div>
-      </div>
-
-      <div class="grid grid-cols-1 gap-2 mt-4">
-
-        <a
-          href="${this.safeURL(pair.url)}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-[10px] font-bold rounded-lg py-3 text-center"
-        >
-          VIEW ON DEXSCREENER
-        </a>
-
-        <button
-          class="copy-address bg-white/5 hover:bg-white/10 border border-white/10 text-gray-300 text-[10px] font-bold rounded-lg py-3"
-          data-address="${this.escapeHTML(token.address || "")}"
-        >
-          COPY TOKEN ADDRESS
-        </button>
-
       </div>
     `;
 
-    const copyButton = card.querySelector(".copy-address");
-
-    copyButton.addEventListener("click", async () => {
-      const address = token.address || "";
-
-      try {
-        await navigator.clipboard.writeText(address);
-        copyButton.textContent = "ADDRESS COPIED";
-      } catch {
-        window.prompt("Salin alamat token:", address);
-      }
-    });
-
-    return card;
-  },
-
-
-  safeProjectLinks(info) {
-
-    const links = [];
-
-    if (!info) return "";
-
-    const websites =
-      Array.isArray(info.websites) ? info.websites : [];
-
-    const socials =
-      Array.isArray(info.socials) ? info.socials : [];
-
-    for (const item of websites.slice(0, 2)) {
-
-      const url = this.safeURL(item.url);
-
-      if (url === "#") continue;
-
-      links.push(`
-        <a
-          href="${url}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="badge badge-gray"
-        >
-          WEBSITE
-        </a>
-      `);
-    }
-
-    for (const item of socials.slice(0, 3)) {
-
-      const url = this.safeURL(item.url);
-
-      if (url === "#") continue;
-
-      const label =
-        String(item.type || "SOCIAL")
-          .replace(/[<>]/g, "")
-          .slice(0, 16)
-          .toUpperCase();
-
-      links.push(`
-        <a
-          href="${url}"
-          target="_blank"
-          rel="noopener noreferrer"
-          class="badge badge-gray"
-        >
-          ${this.escapeHTML(label)}
-        </a>
-      `);
-    }
-
-    return links.join("");
-  },
-
-
-  safeURL(value) {
-
-    if (typeof value !== "string") return "#";
-
-    try {
-      const url = new URL(value);
-
-      if (
-        url.protocol !== "https:" &&
-        url.protocol !== "http:"
-      ) {
-        return "#";
-      }
-
-      return url.href;
-
-    } catch {
-      return "#";
-    }
-  },
-
-
-  escapeHTML(value) {
-
-    return String(value ?? "").replace(
-      /[&<>"']/g,
-      char => ({
-        "&": "&amp;",
-        "<": "&lt;",
-        ">": "&gt;",
-        '"': "&quot;",
-        "'": "&#39;"
-      })[char]
-    );
-  },
-
-
-  formatAge(minutes) {
-
-    if (!Number.isFinite(minutes) || minutes < 0) {
-      return "N/A";
-    }
-
-    if (minutes < 1) {
-      return Math.floor(minutes * 60) + " detik";
-    }
-
-    if (minutes < 60) {
-      return Math.floor(minutes) + " menit";
-    }
-
-    if (minutes < 1440) {
-      return Math.floor(minutes / 60) + " jam";
-    }
-
-    return Math.floor(minutes / 1440) + " hari";
-  },
-
-
-  formatPrice(value) {
-
-    if (!Number.isFinite(value) || value <= 0) {
-      return "N/A";
-    }
-
-    if (value < 0.000001) {
-      return "$" + value.toExponential(2);
-    }
-
-    if (value < 0.01) {
-      return "$" + value.toFixed(8);
-    }
-
-    if (value < 1) {
-      return "$" + value.toFixed(6);
-    }
-
-    return "$" + value.toLocaleString("en-US", {
-      maximumFractionDigits: 4
-    });
-  },
-
-
-  money(value) {
-
-    if (!Number.isFinite(value) || value < 0) {
-      return "N/A";
-    }
-
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      notation: value >= 100000
-        ? "compact"
-        : "standard",
-      maximumFractionDigits: 2
-    }).format(value);
-  },
-
-
-  getNumber(id) {
-
-    const element = document.getElementById(id);
-
-    const value = Number(element.value);
-
-    return Number.isFinite(value)
-      ? Math.max(0, value)
-      : 0;
-  },
-
-
-  updateProgress(text, percent, current, total) {
-
-    document.getElementById("scan-step-text").textContent = text;
-
-    document.getElementById("progress-bar").style.width =
-      Math.max(0, Math.min(100, percent)) + "%";
-
-    document.getElementById("scan-stats").textContent =
-      current + " / " + total;
-  },
-
-
-  log(message, color = "text-gray-400") {
-
-    const box = document.getElementById("scan-log");
-
-    const line = document.createElement("div");
-
-    line.className = "log-line " + color;
-
-    line.textContent =
-      "[" + new Date().toLocaleTimeString("id-ID") + "] " +
-      message;
-
-    box.appendChild(line);
-
-    box.scrollTop = box.scrollHeight;
-  },
-
-
-  clearLog() {
-
-    document.getElementById("scan-log").innerHTML = "";
-  },
-
-
-  showError(message) {
-
-    document.getElementById("error-panel")
-      .classList.remove("hidden");
-
-    document.getElementById("error-message")
-      .textContent = message;
-  },
-
-
-  hideError() {
-
-    document.getElementById("error-panel")
-      .classList.add("hidden");
-  },
-
-
-  setLoading(isLoading) {
-
-    const button = document.getElementById("btn-scan");
-
-    const progress = document.getElementById("progress-panel");
-
-    button.disabled = isLoading;
-
-    button.innerHTML = isLoading
-      ? "MEMINDAI..."
-      : '<i data-lucide="scan-line" class="w-4 h-4"></i> MULAI LIVE SCAN';
-
-    if (isLoading) {
-      progress.classList.remove("hidden");
-      document.getElementById("progress-bar").style.width = "0%";
-    }
-
-    if (window.lucide) {
-      lucide.createIcons();
-    }
-  },
-
-
-  reset() {
-
-    if (this.state.isLoading) return;
-
-    this.state.results = [];
-
-    document.getElementById("coin-list").innerHTML = "";
-
-    document.getElementById("stat-found").textContent = "0";
-    document.getElementById("stat-market").textContent = "0";
-    document.getElementById("stat-rejected").textContent = "0";
-    document.getElementById("stat-shown").textContent = "0";
-
-    document.getElementById("last-updated").textContent =
-      "Belum ada pemindaian";
-
-    document.getElementById("network-status").textContent =
-      "● READY TO SCAN";
-
-    document.getElementById("network-status").className =
-      "text-xs text-yellow-400 font-bold";
-
-    this.clearLog();
-    this.hideError();
-  },
-
-
-  sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return;
   }
 
-};
+  resultsEl.innerHTML = visible.map(item => {
+    const reasons = item.security.reasons || [];
+
+    const reasonHTML = reasons
+      .slice(0, 5)
+      .map(reason =>
+        `<li class="mb-1">${escapeHTML(reason)}</li>`
+      )
+      .join("");
+
+    const ageText = item.ageMinutes === null
+      ? "Tidak diketahui"
+      : formatAge(item.ageMinutes);
+
+    const newBadge = item.isNew
+      ? `<span class="badge pass">BARU DITEMUKAN</span>`
+      : "";
+
+    const url = item.url !== "#"
+      ? item.url
+      : "https://dexscreener.com/solana/" +
+        encodeURIComponent(item.pairAddress);
+
+    const holderText =
+      item.security.maxHolderPercent === null
+        ? "N/A"
+        : item.security.maxHolderPercent.toFixed(2) + "%";
+
+    const rugScoreText =
+      item.security.rugScore === null
+        ? "N/A"
+        : formatNumber(item.security.rugScore);
+
+    return `
+      <article class="token-card">
+
+        <div class="flex justify-between items-start gap-3">
+          <div class="min-w-0">
+            <div class="text-xs muted">
+              ${escapeHTML(item.dexId)}
+            </div>
+
+            <h3 class="text-xl font-extrabold mt-1 break-words">
+              ${escapeHTML(item.symbol)}
+            </h3>
+
+            <div class="text-sm muted break-words">
+              ${escapeHTML(item.name)}
+            </div>
+          </div>
+
+          <span class="badge ${statusClass(item.status)}">
+            ${escapeHTML(item.status)}
+          </span>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-2">
+          ${newBadge}
+
+          <span class="badge unknown">
+            ${escapeHTML(ageText)}
+          </span>
+
+          <span class="badge unknown">
+            Skor ${item.qualityScore}/100
+          </span>
+        </div>
+
+        <div class="score-bar mt-4">
+          <div class="score-fill"
+               style="width:${item.qualityScore}%">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 mt-5">
+
+          <div>
+            <div class="text-xs muted">Likuiditas</div>
+            <div class="font-bold mt-1">
+              ${formatUSD(item.liquidity)}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs muted">Volume 24 jam</div>
+            <div class="font-bold mt-1">
+              ${formatUSD(item.volume24h)}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs muted">Pembelian 24 jam</div>
+            <div class="font-bold mt-1">
+              ${formatNumber(item.buys24h)}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs muted">Penjualan 24 jam</div>
+            <div class="font-bold mt-1">
+              ${formatNumber(item.sells24h)}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs muted">Holder terbesar</div>
+            <div class="font-bold mt-1">
+              ${escapeHTML(holderText)}
+            </div>
+          </div>
+
+          <div>
+            <div class="text-xs muted">Skor RugCheck</div>
+            <div class="font-bold mt-1">
+              ${escapeHTML(rugScoreText)}
+            </div>
+          </div>
+
+        </div>
+
+        <div class="mt-5 pt-4 border-t border-slate-800">
+          <div class="font-bold text-sm mb-2">
+            Hasil pemeriksaan
+          </div>
+
+          <ul class="text-xs muted leading-5 list-disc pl-4">
+            ${reasonHTML}
+          </ul>
+        </div>
+
+        <div class="mt-5">
+          <div class="text-xs muted">Alamat token</div>
+
+          <div class="font-mono text-xs mt-1 break-all">
+            ${escapeHTML(item.mintAddress)}
+          </div>
+        </div>
+
+        <div class="mt-4 flex flex-wrap gap-3 text-sm">
+          <a href="${escapeHTML(safeExternalURL(url))}"
+             target="_blank"
+             rel="noopener noreferrer">
+            DexScreener ↗
+          </a>
+
+          <a href="${escapeHTML(
+            "https://rugcheck.xyz/tokens/" +
+            encodeURIComponent(item.mintAddress)
+          )}"
+             target="_blank"
+             rel="noopener noreferrer">
+            RugCheck ↗
+          </a>
+
+          <a href="${escapeHTML(
+            "https://solscan.io/token/" +
+            encodeURIComponent(item.mintAddress)
+          )}"
+             target="_blank"
+             rel="noopener noreferrer">
+            Solscan ↗
+          </a>
+        </div>
+
+      </article>
+    `;
+  }).join("");
+}
 
 
-window.addEventListener("DOMContentLoaded", () => {
-  Radar.init();
+/* =========================
+   AUTO SCAN
+   ========================= */
+
+function toggleAutoScan() {
+  if (state.running) {
+    stopAutoScan();
+  } else {
+    startAutoScan();
+  }
+}
+
+function startAutoScan() {
+  if (state.running) return;
+
+  state.running = true;
+
+  el("autoButton").textContent = "Matikan Auto Scan";
+
+  updateStatus("Auto scan aktif", "green");
+
+  /*
+    Scan pertama langsung dijalankan.
+    Pemindaian berikutnya dilakukan setiap 15 detik.
+  */
+
+  scanNow();
+
+  state.timer = setInterval(() => {
+    scanNow();
+  }, CONFIG.autoIntervalMs);
+}
+
+function stopAutoScan() {
+  state.running = false;
+
+  if (state.timer) {
+    clearInterval(state.timer);
+    state.timer = null;
+  }
+
+  el("autoButton").textContent = "Aktifkan Auto Scan";
+
+  updateStatus("Auto scan berhenti", "yellow");
+}
+
+
+/* =========================
+   CLEAR RESULTS
+   ========================= */
+
+function clearResults() {
+  state.results.clear();
+  state.seenPairs.clear();
+
+  state.counters = {
+    found: 0,
+    passed: 0,
+    rejected: 0,
+    unknown: 0
+  };
+
+  updateCounters();
+  renderResults();
+
+  setMessage("Hasil lokal telah dibersihkan.");
+}
+
+
+/* =========================
+   FILTER EVENTS
+   ========================= */
+
+[
+  "maxAge",
+  "minLiquidity",
+  "minVolume",
+  "minBuys",
+  "maxHolder",
+  "minScore",
+  "securityMode"
+].forEach(id => {
+  el(id).addEventListener("change", renderResults);
 });
+
+el("resultFilter").addEventListener("change", renderResults);
+
+
+/* =========================
+   INITIALIZATION
+   ========================= */
+
+updateCounters();
+renderResults();
+
+setMessage(
+  "Siap digunakan. Atur filter lalu tekan Scan Sekarang."
+);
+
+updateStatus("Menunggu", "yellow");
+
 </script>
 
 </body>
