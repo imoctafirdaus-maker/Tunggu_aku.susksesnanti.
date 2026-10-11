@@ -6,6 +6,7 @@
 <meta name="theme-color" content="#070b14">
 <title>Binance Top 100 · Multi-Timeframe Predictor + Harmonic Radar</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{--bg:#070b14;--panel:#101827;--border:#243047;--muted:#94a3b8}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e5e7eb;font-family:Arial,sans-serif}
@@ -19,6 +20,8 @@
 table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
 #connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}#confidenceBar{height:100%;width:0;background:#facc15;transition:width .25s}
 input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
+.chart-wrap{height:430px;min-width:0;width:100%}.subchart-wrap{height:150px;min-width:0;width:100%}.chart-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+@media(max-width:640px){.chart-wrap{height:340px}.subchart-wrap{height:130px}}
 @media(max-width:640px){th,td{padding:8px}}
 </style>
 </head>
@@ -56,6 +59,15 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <div class="pt-4 border-t border-slate-700"><p class="muted text-xs leading-5">Evaluasi memakai candle target yang sudah tutup. Performa historis bukan jaminan hasil berikutnya.</p></div></div></div>
 </section>
 
+<section class="panel p-5 mb-6">
+<div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h2 class="text-lg font-bold">Grafik Binance Real-Time</h2><p id="chartSubtitle" class="muted text-xs mt-1">Candlestick · Volume · Harmonic overlay</p></div><span id="chartStatus" class="badge unknown">MENUNGGU DATA</span></div>
+<div class="chart-legend mb-3"><span><i class="legend-dot" style="background:#22c55e"></i>Candle naik</span><span><i class="legend-dot" style="background:#ef4444"></i>Candle turun</span><span><i class="legend-dot" style="background:#38bdf8"></i>Struktur XABCD</span><span><i class="legend-dot" style="background:#facc15"></i>PRZ</span></div>
+<div id="priceChart" class="chart-wrap"></div>
+<div class="muted text-xs mt-4 mb-1">RSI (14)</div><div id="rsiChart" class="subchart-wrap"></div>
+<div class="muted text-xs mt-4 mb-1">MACD (12, 26, 9)</div><div id="macdChart" class="subchart-wrap"></div>
+<p class="muted text-xs mt-3 leading-5">Grafik memakai data publik Binance Spot. Garis Harmonic hanya ditampilkan saat kandidat XABCD terdeteksi; area PRZ adalah zona potensial, bukan kepastian pembalikan. Memerlukan internet dan CDN Lightweight Charts.</p>
+</section>
+
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">10 Indikator Teknikal</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
 
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Harmonic Pattern · Scott Carney</h2><span id="harmonicBadge" class="badge unknown">BELUM TERDETEKSI</span></div>
@@ -84,6 +96,20 @@ const $=id=>document.getElementById(id), finite=Number.isFinite;
 function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
 const TIMEFRAMES={"1m":{label:"1 menit",ms:60000},"5m":{label:"5 menit",ms:300000},"15m":{label:"15 menit",ms:900000},"1h":{label:"1 jam",ms:3600000},"4h":{label:"4 jam",ms:14400000},"1d":{label:"1 hari",ms:86400000},"1w":{label:"1 minggu",ms:604800000}};
 function intervalMs(){return (TIMEFRAMES[CONFIG.interval]||TIMEFRAMES["1m"]).ms}
+let priceChart=null,rsiChart=null,macdChart=null,candleSeries=null,volumeSeries=null,harmonicSeries=null,rsiSeries=null,macdLineSeries=null,macdSignalSeries=null,macdHistSeries=null,przLowLine=null,przHighLine=null;
+function makeChart(el,height){if(!window.LightweightCharts)return null;return LightweightCharts.createChart(el,{width:el.clientWidth||600,height,layout:{background:{type:"solid",color:"#0b1220"},textColor:"#cbd5e1"},grid:{vertLines:{color:"#1e293b"},horzLines:{color:"#1e293b"}},rightPriceScale:{borderColor:"#334155"},timeScale:{borderColor:"#334155",timeVisible:true,secondsVisible:false},crosshair:{mode:LightweightCharts.CrosshairMode.Normal}})}
+function initCharts(){if(!window.LightweightCharts){$('chartStatus').textContent='GAGAL MEMUAT LIBRARY';return}if(priceChart)return;
+ priceChart=makeChart($('priceChart'),430);candleSeries=priceChart.addCandlestickSeries({upColor:'#22c55e',downColor:'#ef4444',borderUpColor:'#22c55e',borderDownColor:'#ef4444',wickUpColor:'#22c55e',wickDownColor:'#ef4444'});volumeSeries=priceChart.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:'volume',scaleMargins:{top:.82,bottom:0}});harmonicSeries=priceChart.addLineSeries({color:'#38bdf8',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
+ rsiChart=makeChart($('rsiChart'),150);rsiSeries=rsiChart.addLineSeries({color:'#c084fc',lineWidth:2,priceLineVisible:false});rsiSeries.createPriceLine({price:70,color:'#ef4444',lineStyle:LightweightCharts.LineStyle.Dashed,lineWidth:1,axisLabelVisible:true,title:'70'});rsiSeries.createPriceLine({price:30,color:'#22c55e',lineStyle:LightweightCharts.LineStyle.Dashed,lineWidth:1,axisLabelVisible:true,title:'30'});
+ macdChart=makeChart($('macdChart'),150);macdLineSeries=macdChart.addLineSeries({color:'#38bdf8',lineWidth:2,priceLineVisible:false});macdSignalSeries=macdChart.addLineSeries({color:'#f59e0b',lineWidth:2,priceLineVisible:false});macdHistSeries=macdChart.addHistogramSeries({priceLineVisible:false,lastValueVisible:false});
+ const sync=(source,others)=>source.timeScale().subscribeVisibleLogicalRangeChange(range=>{if(!range)return;for(const c of others){try{c.timeScale().setVisibleLogicalRange(range)}catch(_){}}});sync(priceChart,[rsiChart,macdChart]);sync(rsiChart,[priceChart,macdChart]);sync(macdChart,[priceChart,rsiChart]);
+ if(window.ResizeObserver){const ro=new ResizeObserver(()=>{for(const [chart,id] of [[priceChart,'priceChart'],[rsiChart,'rsiChart'],[macdChart,'macdChart']])if(chart)chart.applyOptions({width:$(id).clientWidth||600})});ro.observe($('priceChart'));ro.observe($('rsiChart'));ro.observe($('macdChart'))}
+}
+function renderMarketCharts(){try{initCharts();if(!priceChart||!state.candles.length)return;const cs=workingCandles().filter(c=>finite(c.time)&&finite(c.open)&&finite(c.high)&&finite(c.low)&&finite(c.close));if(!cs.length)return;const candles=cs.map(c=>({time:Math.floor(c.time/1000),open:c.open,high:c.high,low:c.low,close:c.close}));const vols=cs.map(c=>({time:Math.floor(c.time/1000),value:c.volume||0,color:c.close>=c.open?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)'}));candleSeries.setData(candles);volumeSeries.setData(vols);
+ const tailStart=Math.max(0,cs.length-300),rsiData=[],macdLine=[],macdSignal=[],macdHist=[];for(let i=tailStart;i<cs.length;i++){const sub=cs.slice(0,i+1),cl=sub.map(x=>x.close),t=Math.floor(cs[i].time/1000);const rv=TA.rsi(cl,14);if(finite(rv))rsiData.push({time:t,value:rv});const m=TA.macd(cl);if(finite(m.line))macdLine.push({time:t,value:m.line});if(finite(m.signal))macdSignal.push({time:t,value:m.signal});if(finite(m.histogram))macdHist.push({time:t,value:m.histogram,color:m.histogram>=0?'rgba(34,197,94,.65)':'rgba(239,68,68,.65)'})}rsiSeries.setData(rsiData);macdLineSeries.setData(macdLine);macdSignalSeries.setData(macdSignal);macdHistSeries.setData(macdHist);
+ if(przLowLine){try{candleSeries.removePriceLine(przLowLine)}catch(_){}przLowLine=null}if(przHighLine){try{candleSeries.removePriceLine(przHighLine)}catch(_){}przHighLine=null}const h=state.harmonic;if(h){przLowLine=candleSeries.createPriceLine({price:h.przLow,color:'#facc15',lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:'PRZ Low'});przHighLine=candleSeries.createPriceLine({price:h.przHigh,color:'#facc15',lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:'PRZ High'});}harmonicSeries.setData(h&&h.X&&h.A&&h.B&&h.C&&h.D?[h.X,h.A,h.B,h.C,h.D].map(p=>({time:Math.floor(p.time/1000),value:p.price})):[]);if(h){candleSeries.setMarkers([{time:Math.floor(h.X.time/1000),position:h.X.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'X'},{time:Math.floor(h.A.time/1000),position:h.A.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'A'},{time:Math.floor(h.B.time/1000),position:h.B.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'B'},{time:Math.floor(h.C.time/1000),position:h.C.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'C'},{time:Math.floor(h.D.time/1000),position:h.D.type==='L'?'belowBar':'aboveBar',color:'#facc15',shape:'circle',text:'D'}]);for(const pl of candleSeries.priceLines?.()||[]){} }else candleSeries.setMarkers([]);
+ $('chartSubtitle').textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${cs.length} candle · ${h?h.name+' '+(h.confirmed?'rasio cocok':'kandidat'):'belum ada pola'}`;$('chartStatus').className='badge '+(h?(h.confirmed?'pass':'warning'):'unknown');$('chartStatus').textContent=h?(h.confirmed?'HARMONIC TERKONFIRMASI':'KANDIDAT HARMONIC'):'MENUNGGU POLA';if(!priceChart.timeScale().getVisibleLogicalRange())priceChart.timeScale().fitContent();}catch(e){console.warn('Chart render:',e);$('chartStatus').textContent='GRAFIK MEMUAT ULANG'}}
+
 function updateTimeframeLabels(){const label=(TIMEFRAMES[CONFIG.interval]||TIMEFRAMES["1m"]).label;$("timeframeLabel").textContent="Timeframe "+label;$("predictionTitle").textContent="Prediksi Harga · "+label;$("timeframeSelect").value=CONFIG.interval}
 function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN}
 function fmtUSD(n){return finite(n)?n.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:8}):"--"}
@@ -215,7 +241,7 @@ function renderIndicators(){
  ["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP"]
  ];
  $("indicatorsGrid").innerHTML=cards.map(([n,v,s])=>{let cl=/Bullish|Positif|Buy Dominan|di atas VWAP|Tren kuat/.test(s)?"text-green-400":/Bearish|Negatif|Sell Dominan|di bawah band|di bawah VWAP/.test(s)?"text-red-400":"text-slate-400";return `<div class="indicator-card"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status ${cl}">${s}</div></div>`}).join("");
- renderHarmonic(i.harmonic);
+ renderHarmonic(i.harmonic);renderMarketCharts();
 }
 function renderHarmonic(h){
  state.harmonic=h;
@@ -283,7 +309,7 @@ async function fetchHistory(){
   const now=Date.now();state.candles=data.map(d=>({time:+d[0],open:+d[1],high:+d[2],low:+d[3],close:+d[4],volume:+d[5],closeTime:+d[6],takerBuyBase:+d[9]})).filter(c=>[c.time,c.open,c.high,c.low,c.close,c.volume,c.closeTime,c.takerBuyBase].every(finite)&&c.closeTime<now);
   if(state.candles.length<50)throw Error("Candle tertutup kurang dari 50");
   state.restEndpoint=base;state.lastClosedTime=state.candles.at(-1).time;state.currentPrice=state.candles.at(-1).close;state.liveCandle=null;state.indicators=calculateIndicators(state.candles);
-  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;renderPrice();renderIndicators();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS();
+  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;renderPrice();renderIndicators();renderMarketCharts();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS();
  }catch(e){if(gen!==state.generation)return;console.error(e);setStatus("Gagal memuat data","red");msg("Tidak dapat mengambil candle Binance: "+e.message);scheduleReconnect()}
 }
 function connectWS(){
@@ -300,7 +326,7 @@ function processKline(k){
  if(![c.time,c.open,c.high,c.low,c.close,c.volume,c.takerBuyBase].every(finite))return;
  state.currentPrice=c.close;state.liveCandle=c;renderPrice();state.indicators=calculateIndicators(workingCandles());renderIndicators();if(!c.isClosed)return;
  const idx=state.candles.findIndex(x=>x.time===c.time);if(idx>=0)state.candles[idx]=c;else state.candles.push(c);state.candles.sort((a,b)=>a.time-b.time);state.candles=state.candles.slice(-1500);state.liveCandle=null;
- const last=state.candles.at(-1),previous=state.lastClosedTime;if(last.time===previous){evaluateCandle(last);return}state.lastClosedTime=last.time;state.indicators=calculateIndicators(state.candles);renderIndicators();
+ const last=state.candles.at(-1),previous=state.lastClosedTime;if(last.time===previous){evaluateCandle(last);return}state.lastClosedTime=last.time;state.indicators=calculateIndicators(state.candles);renderIndicators();renderMarketCharts();
  if(previous!==null&&last.time>previous){evaluateCandle(last);createPrediction(last)}else evaluateCandle(last);stats();renderHistory();
 }
 function reconnectNow(){state.stopped=false;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;state.reconnectDelay=1000;state.reconnectAttempts=0;state.generation++;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}state.ws=null}state.candles=[];state.liveCandle=null;state.indicators=null;state.lastClosedTime=null;fetchHistory()}
