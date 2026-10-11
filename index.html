@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<title>Binance Top 100 · 5-Min Predictor + Harmonic Radar</title>
+<title>Binance Top 100 · Multi-Timeframe Predictor + Harmonic Radar</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
 :root{--bg:#070b14;--panel:#101827;--border:#243047;--muted:#94a3b8}
@@ -26,7 +26,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <main class="max-w-7xl mx-auto px-4 py-6">
 <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div><div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE MARKET ANALYSIS</div>
-<h1 class="text-3xl md:text-4xl font-extrabold mt-2">Binance Top 100 · 5-Min Predictor</h1>
+<h1 class="text-3xl md:text-4xl font-extrabold mt-2">Binance Top 100 · Multi-Timeframe Predictor</h1>
 <p class="muted mt-2 text-sm">10 indikator teknikal + Harmonic Pattern Scott Carney · Binance Spot</p></div>
 <div class="panel p-4 min-w-[240px]"><div class="muted text-sm">Status Market</div><div class="flex items-center gap-2 mt-2"><span id="connectionDot"></span><span id="connectionText" class="font-bold">Memuat...</span></div>
 <div id="lastUpdate" class="muted text-xs mt-2">Menunggu data</div><div id="sourceText" class="muted text-xs mt-1">Sumber: Binance Spot</div></div>
@@ -34,7 +34,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 
 <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
 <div class="panel p-5 lg:col-span-2">
-<div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-xl font-bold">Prediksi Harga 5 Menit</h2><span class="badge unknown">RULE-BASED BASELINE</span></div>
+<div class="flex flex-wrap justify-between gap-3 mb-5"><h2 id="predictionTitle" class="text-xl font-bold">Prediksi Harga · 1 Menit</h2><span class="badge unknown">RULE-BASED BASELINE</span></div>
 <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 <div><div class="muted text-sm">Harga Saat Ini</div><div id="currentPrice" class="stat-number mt-2">$--</div></div>
 <div><div class="muted text-sm">Target Prediksi</div><div id="predictedPrice" class="stat-number mt-2 text-sky-400">$--</div></div>
@@ -56,31 +56,35 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <div class="pt-4 border-t border-slate-700"><p class="muted text-xs leading-5">Evaluasi memakai candle target yang sudah tutup. Performa historis bukan jaminan hasil berikutnya.</p></div></div></div>
 </section>
 
-<section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">10 Indikator Teknikal</h2><span class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
+<section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">10 Indikator Teknikal</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
 
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Harmonic Pattern · Scott Carney</h2><span id="harmonicBadge" class="badge unknown">BELUM TERDETEKSI</span></div>
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 <div class="indicator-card"><div class="muted text-xs mb-2">Pola terbaru</div><div id="harmonicName" class="indicator-value">Belum cukup data</div><div id="harmonicDirection" class="indicator-status">Menunggu pivot XABCD</div></div>
 <div class="indicator-card"><div class="muted text-xs mb-2">Kesesuaian rasio</div><div id="harmonicScore" class="indicator-value">--</div><div class="indicator-status">Rasio Fibonacci XABCD</div></div>
 <div class="indicator-card"><div class="muted text-xs mb-2">Potential Reversal Zone (PRZ)</div><div id="harmonicPRZ" class="indicator-value">--</div><div id="harmonicDetails" class="indicator-status">Konfirmasi diperlukan</div></div></div>
-<p class="muted text-xs mt-4 leading-5">Deteksi menggunakan pivot swing dan toleransi rasio Fibonacci. Pola dianggap kandidat sampai titik D terkonfirmasi; zona PRZ dan rasio tidak menjamin reversal. Parameter mengikuti keluarga rasio yang umum dipakai dalam pendekatan Scott Carney, bukan sertifikasi resmi.</p></section>
+<p class="muted text-xs mt-4 leading-5">Deteksi menggunakan pivot swing dan toleransi rasio Fibonacci. Validasi mengecek rasio XA, AB, BC, CD, AD serta keselarasan AB=CD; PRZ dihitung dari konfluensi proyeksi XA, CD, dan AB=CD. Pola tetap kandidat sampai pivot D dan proyeksi terkonfirmasi; tidak ada pola yang menjamin reversal.</p></section>
 
 <section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Pengaturan</h2><div class="flex flex-wrap items-center gap-3">
 <label class="text-sm">Pilih koin top 100<br><select id="symbolSelect"><option value="BTCUSDT">Memuat daftar...</option></select></label>
+<label class="text-sm">Timeframe analisis<br><select id="timeframeSelect"><option value="1m">1 menit</option><option value="5m">5 menit</option><option value="15m">15 menit</option><option value="1h">1 jam</option><option value="4h">4 jam</option><option value="1d">1 hari</option><option value="1w">1 minggu</option></select></label>
 <label class="text-sm">Riwayat tampilan<br><select id="historyLimit"><option value="15">15</option><option value="30">30</option><option value="50">50</option></select></label>
 <button id="reconnectButton" class="btn text-sm">Sambungkan Ulang</button><button id="refreshCoinsButton" class="btn text-sm">Perbarui Top 100</button><button id="clearButton" class="btn text-sm">Hapus Riwayat</button>
-</div><p class="muted text-xs mt-4">Top 100 dihitung dinamis dari pasangan Spot USDT Binance berdasarkan quote volume 24 jam, dengan mengecualikan token leverage umum. Aplikasi menganalisis satu simbol yang dipilih pada satu waktu; mengganti koin akan mengubah stream dan evaluasi aktif. Endpoint publik tidak memerlukan API key.</p></section>
+</div><p class="muted text-xs mt-4">Top 100 dihitung dinamis dari pasangan Spot USDT Binance berdasarkan quote volume 24 jam, dengan mengecualikan token leverage umum. Pilih timeframe 1m, 5m, 15m, 1h, 4h, 1d, atau 1w; indikator, candle, WebSocket, horizon prediksi, dan evaluasi mengikuti timeframe terpilih. Endpoint publik tidak memerlukan API key.</p></section>
 
-<section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Riwayat Prediksi dan Evaluasi</h2><div class="overflow-x-auto"><table><thead><tr><th>Waktu</th><th>Koin</th><th>Harga Awal</th><th>Prediksi</th><th>Arah</th><th>Target</th><th>Aktual</th><th>Status</th><th>Error USD</th></tr></thead><tbody id="historyBody"><tr><td colspan="9" class="text-center muted">Menunggu data prediksi</td></tr></tbody></table></div></section>
-<footer class="muted text-xs mt-6 leading-5">Alat analisis eksperimental, bukan saran investasi. Tidak melakukan transaksi. Prediksi 5 menit sangat bising; gunakan pengujian independen dan pertimbangkan biaya serta slippage.</footer>
+<section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Riwayat Prediksi dan Evaluasi</h2><div class="overflow-x-auto"><table><thead><tr><th>Waktu</th><th>Koin</th><th>TF</th><th>Harga Awal</th><th>Prediksi</th><th>Arah</th><th>Target</th><th>Aktual</th><th>Status</th><th>Error USD</th></tr></thead><tbody id="historyBody"><tr><td colspan="10" class="text-center muted">Menunggu data prediksi</td></tr></tbody></table></div></section>
+<footer class="muted text-xs mt-6 leading-5">Alat analisis eksperimental, bukan saran investasi. Tidak melakukan transaksi. Prediksi pada semua timeframe dapat meleset; uji secara independen dan pertimbangkan biaya serta slippage.</footer>
 </main>
 <script>
 "use strict";
-const CONFIG={symbol:"BTCUSDT",interval:"1m",historyLimit:500,predictionHorizon:5,maxPredictions:500,restEndpoints:["https://api.binance.com","https://api-gcp.binance.com","https://api1.binance.com","https://api2.binance.com","https://api3.binance.com","https://api4.binance.com"],websocketBase:"wss://stream.binance.com:9443/ws/"};
+const CONFIG={symbol:"BTCUSDT",interval:"1m",historyLimit:500,maxPredictions:500,restEndpoints:["https://api.binance.com","https://api-gcp.binance.com","https://api1.binance.com","https://api2.binance.com","https://api3.binance.com","https://api4.binance.com"],websocketBase:"wss://stream.binance.com:9443/ws/"};
 const STORAGE_KEY="binance_top100_predictor_harmonic_v3";
 const state={candles:[],liveCandle:null,indicators:null,predictions:[],currentPrice:0,ws:null,reconnectTimer:null,reconnectDelay:1000,reconnectAttempts:0,generation:0,stopped:false,restEndpoint:CONFIG.restEndpoints[0],lastClosedTime:null,coinList:[],harmonic:null};
 const $=id=>document.getElementById(id), finite=Number.isFinite;
 function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
+const TIMEFRAMES={"1m":{label:"1 menit",ms:60000},"5m":{label:"5 menit",ms:300000},"15m":{label:"15 menit",ms:900000},"1h":{label:"1 jam",ms:3600000},"4h":{label:"4 jam",ms:14400000},"1d":{label:"1 hari",ms:86400000},"1w":{label:"1 minggu",ms:604800000}};
+function intervalMs(){return (TIMEFRAMES[CONFIG.interval]||TIMEFRAMES["1m"]).ms}
+function updateTimeframeLabels(){const label=(TIMEFRAMES[CONFIG.interval]||TIMEFRAMES["1m"]).label;$("timeframeLabel").textContent="Timeframe "+label;$("predictionTitle").textContent="Prediksi Harga · "+label;$("timeframeSelect").value=CONFIG.interval}
 function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN}
 function fmtUSD(n){return finite(n)?n.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:8}):"--"}
 function fmt(n,d=2){return finite(n)?n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"--"}
@@ -144,37 +148,50 @@ function pivots(candles,span=3){
 }
 function nearRatio(value,target,tolerance=.10){return finite(value)&&Math.abs(value-target)<=tolerance}
 function inRange(v,a,b,tol=.08){return finite(v)&&v>=a*(1-tol)&&v<=b*(1+tol)}
-function ratioScore(v,targetOrRange,tol=.12){if(!finite(v))return 0;let distance;if(Array.isArray(targetOrRange)){let [a,b]=targetOrRange;distance=v<a?a-v:v>b?v-b:0;return clamp(100-distance/Math.max(b-a,.01)*100,0,100)}distance=Math.abs(v-targetOrRange);return clamp(100-distance/Math.max(targetOrRange*tol,.01)*100,0,100)}
+function ratioScore(v,targetOrRange,tol=.12){if(!finite(v))return 0;let distance;if(Array.isArray(targetOrRange)){let [a,b]=targetOrRange;distance=v<a?a-v:v>b?v-b:0;return clamp(100-distance/Math.max(b-a,Math.abs((a+b)/2)*tol,.01)*100,0,100)}distance=Math.abs(v-targetOrRange);return clamp(100-distance/Math.max(targetOrRange*tol,.01)*100,0,100)}
 function detectHarmonic(candles){
-  const ps=pivots(candles,3);if(ps.length<5)return null;
-  const p=ps.slice(-5),[X,A,B,C,D]=p;
-  if(new Set(p.map(q=>q.type)).size<2||p.some((q,i)=>i&&q.type===p[i-1].type))return null;
-  const XA=Math.abs(A.price-X.price),AB=Math.abs(B.price-A.price),BC=Math.abs(C.price-B.price),CD=Math.abs(D.price-C.price),AD=Math.abs(D.price-A.price);
+  const ps=pivots(candles,3);
+  if(ps.length<5)return null;
+  const [X,A,B,C,D]=ps.slice(-5);
+  const seq=[X,A,B,C,D];
+  if(seq.some((q,i)=>i>0&&q.type===seq[i-1].type))return null;
+  const XA=Math.abs(A.price-X.price),AB=Math.abs(B.price-A.price),BC=Math.abs(C.price-B.price),CD=Math.abs(D.price-C.price);
   if(!XA||!AB||!BC||!CD)return null;
-  // Alternating pivots should form alternating leg directions.
-  const rAB=AB/XA,rBC=BC/AB,rCD=CD/BC,rAD=AD/XA;
+  const rAB=AB/XA,rBC=BC/AB,rCD=CD/BC,rABCD=CD/AB,rAD=Math.abs(D.price-A.price)/XA;
   const bullish=D.type==="L";
   const patterns=[
     {name:"Gartley",ab:[.618,.618],bc:[.382,.886],cd:[1.272,1.618],ad:[.786,.786]},
-    {name:"Bat",ab:[.382,.5],bc:[.382,.886],cd:[1.618,2.618],ad:[.886,.886]},
-    {name:"Butterfly",ab:[.786,.786],bc:[.382,.886],cd:[1.618,2.24],ad:[1.27,1.618]},
-    {name:"Crab",ab:[.382,.618],bc:[.382,.886],cd:[2.24,3.618],ad:[1.618,1.618]},
-    {name:"Deep Crab",ab:[.886,.886],bc:[.382,.886],cd:[2.0,3.618],ad:[1.618,1.618]}
+    {name:"Bat",ab:[.382,.500],bc:[.382,.886],cd:[1.618,2.618],ad:[.886,.886]},
+    {name:"Butterfly",ab:[.786,.786],bc:[.382,.886],cd:[1.618,2.240],ad:[1.272,1.618]},
+    {name:"Crab",ab:[.382,.618],bc:[.382,.886],cd:[2.240,3.618],ad:[1.618,1.618]},
+    {name:"Deep Crab",ab:[.886,.886],bc:[.382,.886],cd:[2.000,3.618],ad:[1.618,1.618]}
   ];
   let best=null;
   for(const pat of patterns){
-    const parts=[
-      {v:rAB,range:pat.ab},{v:rBC,range:pat.bc},{v:rCD,range:pat.cd},{v:rAD,range:pat.ad}
-    ];
+    const parts=[{key:"AB_XA",v:rAB,range:pat.ab},{key:"BC_AB",v:rBC,range:pat.bc},{key:"CD_BC",v:rCD,range:pat.cd},{key:"AD_XA",v:rAD,range:pat.ad}];
     const scores=parts.map(x=>ratioScore(x.v,x.range));
-    const score=mean(scores);
-    const allWithin=parts.every(x=>inRange(x.v,x.range[0],x.range[1],.10));
-    if(!best||score>best.score)best={name:pat.name,score,allWithin,ratios:{AB_XA:rAB,BC_AB:rBC,CD_BC:rCD,AD_XA:rAD},bullish,D, X,A,B,C,przLow:Math.min(D.price,D.price),przHigh:Math.max(D.price,D.price),pattern:pat};
+    const abcdScore=ratioScore(rABCD,1,.15);
+    const score=mean([...scores,abcdScore]);
+    const allWithin=parts.every(x=>inRange(x.v,x.range[0],x.range[1],.08))&&Math.abs(rABCD-1)<=.20;
+    if(!best||score>best.score){
+      const dir=Math.sign(X.price-A.price);
+      const xaTargets=pat.ad.map(r=>A.price+dir*XA*r);
+      const cdTargets=pat.cd.map(r=>C.price+dir*BC*r);
+      const abcdTarget=C.price+dir*AB;
+      const projections=[...xaTargets,...cdTargets,abcdTarget].filter(finite);
+      best={name:pat.name,score,allWithin,ratios:{AB_XA:rAB,BC_AB:rBC,CD_BC:rCD,AD_XA:rAD,AB_CD:rABCD},bullish,D,X,A,B,C,pattern:pat,projections};
+    }
   }
-  // Reject low-quality ratio matches to reduce false detections.
   if(!best||best.score<65)return null;
-  best.confirmed=best.allWithin&&best.score>=80;
-  best.przLow=D.price*(1-.0015);best.przHigh=D.price*(1+.0015);
+  const all=[...best.projections,best.D.price].sort((a,b)=>a-b);
+  const q1=all[Math.floor((all.length-1)*.20)],q3=all[Math.ceil((all.length-1)*.80)];
+  const padding=Math.max((q3-q1)*.12,best.D.price*.0005);
+  best.przLow=Math.min(q1,best.D.price)-padding;
+  best.przHigh=Math.max(q3,best.D.price)+padding;
+  const nearest=best.projections.reduce((m,v)=>Math.min(m,Math.abs(v-best.D.price)),Infinity);
+  const projectionScale=Math.max(XA*.08,best.D.price*.0005);
+  best.przDistancePct=best.D.price?nearest/best.D.price*100:NaN;
+  best.confirmed=best.allWithin&&nearest<=projectionScale&&best.score>=80;
   return best;
 }
 function calculateIndicators(cs=workingCandles()){
@@ -229,49 +246,49 @@ function runModel(cs,i){
 function createPrediction(candle){
  const cs=state.candles,i=calculateIndicators(cs);if(!i){msg("Riwayat candle belum cukup untuk menghitung indikator.");return}
  state.indicators=i;state.currentPrice=candle.close;const r=runModel(cs,i);if(!r)return;
- const targetTime=candle.time+CONFIG.predictionHorizon*60000;
+ const targetTime=candle.time+intervalMs();
  if(state.predictions.some(p=>p.time===candle.time&&p.symbol===CONFIG.symbol))return;
- const p={id:`${CONFIG.symbol}-${candle.time}`,symbol:CONFIG.symbol,time:candle.time,targetTime,...r,status:"PENDING",actualPrice:null,errorUsd:null,absError:null,baselineErrorUsd:null,isDirCorrect:null};
+ const p={id:`${CONFIG.symbol}-${CONFIG.interval}-${candle.time}`,symbol:CONFIG.symbol,interval:CONFIG.interval,time:candle.time,targetTime,...r,status:"PENDING",actualPrice:null,errorUsd:null,absError:null,baselineErrorUsd:null,isDirCorrect:null};
  state.predictions.unshift(p);state.predictions=state.predictions.slice(0,CONFIG.maxPredictions);savePredictions();renderPrediction(p);renderHistory();
 }
 function renderPrediction(p){
  $("predictedPrice").textContent=fmtUSD(p.predPrice);$("predChange").textContent=`${p.returnPct>0?"+":""}${fmt(p.returnPct,4)}%`;
  const b=$("predDirection");b.textContent=p.direction;b.className="badge mt-2 "+(p.direction==="NAIK"?"up":p.direction==="TURUN"?"down":"neutral");
  $("predRange").textContent=`${fmtUSD(p.lowerBound)} – ${fmtUSD(p.upperBound)}`;$("confidenceScore").textContent=fmt(p.signalStrength,0)+"/100";$("confidenceBar").style.width=p.signalStrength+"%";$("confidenceBar").style.background=p.signalStrength>=65?"#22c55e":p.signalStrength>=35?"#facc15":"#ef4444";
- $("targetTime").textContent=fmtTime(p.targetTime)+" · Target candle close";msg(`${p.symbol}: prediksi dibuat ${fmtTime(p.time)}; arah ${p.direction}; skor aturan ${fmt(p.signalStrength,0)}/100.`);
+ $("targetTime").textContent=fmtTime(p.targetTime)+" · Target candle";msg(`${p.symbol}: prediksi dibuat ${fmtTime(p.time)}; arah ${p.direction}; skor aturan ${fmt(p.signalStrength,0)}/100.`);
 }
 function actualDir(a,s){const ch=(a-s)/s;return ch>.0002?"NAIK":ch<-.0002?"TURUN":"NETRAL"}
 function evaluateCandle(c){
- let changed=false;for(const p of state.predictions){if(p.status!=="PENDING"||p.symbol!==CONFIG.symbol||p.targetTime!==c.time)continue;const a=c.close;p.actualPrice=a;p.errorUsd=a-p.predPrice;p.absError=Math.abs(p.errorUsd);p.baselineErrorUsd=a-p.startPrice;p.actualDirection=actualDir(a,p.startPrice);p.isDirCorrect=p.direction===p.actualDirection;p.status="EVALUATED";p.evaluatedAt=Date.now();changed=true}
- for(const p of state.predictions)if(p.status==="PENDING"&&p.symbol===CONFIG.symbol&&Date.now()>p.targetTime+180000){p.status="DATA_MISSING";changed=true}
+ let changed=false;for(const p of state.predictions){if(p.status!=="PENDING"||p.symbol!==CONFIG.symbol||(p.interval||"1m")!==CONFIG.interval||p.targetTime!==c.time)continue;const a=c.close;p.actualPrice=a;p.errorUsd=a-p.predPrice;p.absError=Math.abs(p.errorUsd);p.baselineErrorUsd=a-p.startPrice;p.actualDirection=actualDir(a,p.startPrice);p.isDirCorrect=p.direction===p.actualDirection;p.status="EVALUATED";p.evaluatedAt=Date.now();changed=true}
+ for(const p of state.predictions)if(p.status==="PENDING"&&p.symbol===CONFIG.symbol&&(p.interval||"1m")===CONFIG.interval&&Date.now()>p.targetTime+intervalMs()*2){p.status="DATA_MISSING";changed=true}
  if(changed){savePredictions();stats();renderHistory()}
 }
 function stats(){
- const a=state.predictions.filter(p=>p.status==="EVALUATED"&&p.symbol===CONFIG.symbol&&finite(p.actualPrice));
+ const a=state.predictions.filter(p=>p.status==="EVALUATED"&&p.symbol===CONFIG.symbol&&(p.interval||"1m")===CONFIG.interval&&finite(p.actualPrice));
  if(!a.length){["accArah","maeScore","rmseScore","baselineMAE"].forEach(id=>$(id).textContent="--");$("totalEval").textContent="0";return}
  const mae=mean(a.map(p=>Math.abs(p.actualPrice-p.predPrice))),rmse=Math.sqrt(mean(a.map(p=>(p.actualPrice-p.predPrice)**2))),base=mean(a.map(p=>Math.abs(p.actualPrice-p.startPrice))),acc=a.filter(p=>p.isDirCorrect).length/a.length*100;
  $("maeScore").textContent=fmtUSD(mae);$("rmseScore").textContent=fmtUSD(rmse);$("baselineMAE").textContent=fmtUSD(base);$("accArah").textContent=acc.toFixed(1)+"%";$("totalEval").textContent=String(a.length);
 }
 function renderHistory(){
- const limit=Number($("historyLimit").value)||15,arr=state.predictions.slice(0).filter(p=>p.symbol===CONFIG.symbol).slice(0,limit),tb=$("historyBody");
- if(!arr.length){tb.innerHTML='<tr><td colspan="9" class="text-center muted">Belum ada riwayat untuk koin ini</td></tr>';return}
- tb.innerHTML=arr.map(p=>`<tr><td>${fmtTime(p.time)}</td><td>${p.symbol}</td><td>${fmtUSD(p.startPrice)}</td><td class="text-sky-300 font-bold">${fmtUSD(p.predPrice)}</td><td><span class="badge ${p.direction==="NAIK"?"up":p.direction==="TURUN"?"down":"neutral"}">${p.direction}</span></td><td>${fmtTime(p.targetTime)}</td><td>${finite(p.actualPrice)?fmtUSD(p.actualPrice):"--"}</td><td><span class="badge ${p.status==="EVALUATED"?"pass":p.status==="PENDING"?"warning":"unknown"}">${p.status}</span></td><td>${finite(p.errorUsd)?(p.errorUsd>0?"+":"")+fmt(p.errorUsd,5):"--"}</td></tr>`).join("");
+ const limit=Number($("historyLimit").value)||15,arr=state.predictions.slice(0).filter(p=>p.symbol===CONFIG.symbol&&(p.interval||"1m")===CONFIG.interval).slice(0,limit),tb=$("historyBody");
+ if(!arr.length){tb.innerHTML='<tr><td colspan="10" class="text-center muted">Belum ada riwayat untuk koin/timeframe ini</td></tr>';return}
+ tb.innerHTML=arr.map(p=>`<tr><td>${fmtTime(p.time)}</td><td>${p.symbol}</td><td>${TIMEFRAMES[p.interval||"1m"]?.label||p.interval||"1m"}</td><td>${fmtUSD(p.startPrice)}</td><td class="text-sky-300 font-bold">${fmtUSD(p.predPrice)}</td><td><span class="badge ${p.direction==="NAIK"?"up":p.direction==="TURUN"?"down":"neutral"}">${p.direction}</span></td><td>${fmtTime(p.targetTime)}</td><td>${finite(p.actualPrice)?fmtUSD(p.actualPrice):"--"}</td><td><span class="badge ${p.status==="EVALUATED"?"pass":p.status==="PENDING"?"warning":"unknown"}">${p.status}</span></td><td>${finite(p.errorUsd)?(p.errorUsd>0?"+":"")+fmt(p.errorUsd,5):"--"}</td></tr>`).join("");
 }
 function renderPrice(){if(finite(state.currentPrice)&&state.currentPrice>0)$("currentPrice").textContent=fmtUSD(state.currentPrice)}
 async function fetchHistory(){
  const gen=++state.generation;setStatus("Memuat candle "+CONFIG.symbol+"...","yellow");
  try{
-  const {data,base}=await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=1m&limit=${CONFIG.historyLimit}`);
+  const {data,base}=await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${encodeURIComponent(CONFIG.interval)}&limit=${CONFIG.historyLimit}`);
   if(gen!==state.generation)return;if(!Array.isArray(data))throw Error("Format candle tidak valid");
   const now=Date.now();state.candles=data.map(d=>({time:+d[0],open:+d[1],high:+d[2],low:+d[3],close:+d[4],volume:+d[5],closeTime:+d[6],takerBuyBase:+d[9]})).filter(c=>[c.time,c.open,c.high,c.low,c.close,c.volume,c.closeTime,c.takerBuyBase].every(finite)&&c.closeTime<now);
   if(state.candles.length<50)throw Error("Candle tertutup kurang dari 50");
   state.restEndpoint=base;state.lastClosedTime=state.candles.at(-1).time;state.currentPrice=state.candles.at(-1).close;state.liveCandle=null;state.indicators=calculateIndicators(state.candles);
-  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol;renderPrice();renderIndicators();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS();
+  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;renderPrice();renderIndicators();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS();
  }catch(e){if(gen!==state.generation)return;console.error(e);setStatus("Gagal memuat data","red");msg("Tidak dapat mengambil candle Binance: "+e.message);scheduleReconnect()}
 }
 function connectWS(){
  if(state.stopped)return;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}}
- setStatus("Menyambungkan stream...","yellow");let ws;try{ws=new WebSocket(CONFIG.websocketBase+CONFIG.symbol.toLowerCase()+"@kline_1m")}catch(e){scheduleReconnect();return}state.ws=ws;
+ setStatus("Menyambungkan stream...","yellow");let ws;try{ws=new WebSocket(CONFIG.websocketBase+CONFIG.symbol.toLowerCase()+"@kline_"+CONFIG.interval)}catch(e){scheduleReconnect();return}state.ws=ws;
  ws.onopen=()=>{if(state.ws!==ws)return;state.reconnectDelay=1000;state.reconnectAttempts=0;setStatus("Terhubung · "+CONFIG.symbol,"green")};
  ws.onmessage=e=>{if(state.ws!==ws)return;try{const m=JSON.parse(e.data);if(m.k)processKline(m.k)}catch(err){console.warn(err)}};
  ws.onerror=()=>{if(state.ws===ws)setStatus("WebSocket error","red")};
@@ -288,12 +305,13 @@ function processKline(k){
 }
 function reconnectNow(){state.stopped=false;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;state.reconnectDelay=1000;state.reconnectAttempts=0;state.generation++;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}state.ws=null}state.candles=[];state.liveCandle=null;state.indicators=null;state.lastClosedTime=null;fetchHistory()}
 function clearHistory(){if(!confirm("Hapus semua riwayat prediksi yang tersimpan?"))return;state.predictions=[];savePredictions();stats();renderHistory();msg("Riwayat prediksi dihapus.")}
+$("timeframeSelect").addEventListener("change",()=>{const tf=$("timeframeSelect").value;if(!TIMEFRAMES[tf])return;CONFIG.interval=tf;updateTimeframeLabels();$("predictedPrice").textContent="$--";$("predChange").textContent="--";$("predRange").textContent="Menunggu data";$("confidenceScore").textContent="--";$("confidenceBar").style.width="0%";$("predDirection").textContent="MENUNGGU";$("predDirection").className="badge unknown mt-2";reconnectNow()});
 $("reconnectButton").addEventListener("click",reconnectNow);$("refreshCoinsButton").addEventListener("click",async()=>{await loadTop100()});$("clearButton").addEventListener("click",clearHistory);$("historyLimit").addEventListener("change",renderHistory);
 $("symbolSelect").addEventListener("change",()=>{const s=$("symbolSelect").value;if(!/^[A-Z0-9]{5,20}$/.test(s))return;CONFIG.symbol=s;state.predictions=state.predictions.slice(0);$("predictedPrice").textContent="$--";$("predChange").textContent="--";$("predRange").textContent="Menunggu data";$("confidenceScore").textContent="--";$("confidenceBar").style.width="0%";$("predDirection").textContent="MENUNGGU";$("predDirection").className="badge unknown mt-2";reconnectNow()});
 window.addEventListener("online",()=>{if(!state.stopped)reconnectNow()});window.addEventListener("offline",()=>setStatus("Perangkat offline","red"));
 document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible"&&!state.stopped&&(!state.ws||state.ws.readyState>1))reconnectNow()});
 window.addEventListener("beforeunload",()=>{state.stopped=true;clearTimeout(state.reconnectTimer);if(state.ws)try{state.ws.close()}catch(_){}});
-loadPredictions();stats();renderHistory();loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
+loadPredictions();updateTimeframeLabels();stats();renderHistory();loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
 </script>
 </body>
 </html>
