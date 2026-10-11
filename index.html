@@ -59,6 +59,18 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <div class="pt-4 border-t border-slate-700"><p class="muted text-xs leading-5">Evaluasi memakai candle target yang sudah tutup. Performa historis bukan jaminan hasil berikutnya.</p></div></div></div>
 </section>
 
+<section class="panel p-5 mb-6" id="tradePlanPanel">
+ <div class="flex flex-wrap items-center justify-between gap-3 mb-4"><div><h2 class="text-lg font-bold">Rencana Trade · Buy / Sell / Stop Loss</h2><p class="muted text-xs mt-1">Level indikatif otomatis mengikuti timeframe dan ATR; tunggu konfirmasi sebelum entry.</p></div><span id="tradeSignal" class="badge unknown">MENUNGGU DATA</span></div>
+ <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+  <div class="indicator-card"><div class="muted text-xs mb-2">Aksi</div><div id="tradeAction" class="indicator-value">MENUNGGU</div><div id="tradeActionNote" class="indicator-status">Data belum cukup</div></div>
+  <div class="indicator-card"><div class="muted text-xs mb-2">Zona entry</div><div id="entryRange" class="indicator-value">--</div><div class="indicator-status">Rentang indikatif</div></div>
+  <div class="indicator-card"><div class="muted text-xs mb-2">Stop loss</div><div id="stopLossLevel" class="indicator-value">--</div><div id="stopLossNote" class="indicator-status">Berbasis ATR</div></div>
+  <div class="indicator-card"><div class="muted text-xs mb-2">Take profit 1</div><div id="takeProfit1" class="indicator-value">--</div><div class="indicator-status">Target 1R</div></div>
+  <div class="indicator-card"><div class="muted text-xs mb-2">Take profit 2</div><div id="takeProfit2" class="indicator-value">--</div><div class="indicator-status">Target 2R</div></div>
+ </div>
+ <p id="tradePlanNote" class="muted text-xs mt-4 leading-5">Level akan dihitung setelah indikator tersedia. Ini bukan instruksi transaksi atau jaminan profit; sesuaikan ukuran posisi dan biaya/slippage.</p>
+</section>
+
 <section class="panel p-5 mb-6">
 <div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h2 class="text-lg font-bold">Grafik Binance Real-Time</h2><p id="chartSubtitle" class="muted text-xs mt-1">Candlestick · Volume · Harmonic overlay</p></div><span id="chartStatus" class="badge unknown">MENUNGGU DATA</span></div>
 <div class="chart-legend mb-3"><span><i class="legend-dot" style="background:#22c55e"></i>Candle naik</span><span><i class="legend-dot" style="background:#ef4444"></i>Candle turun</span><span><i class="legend-dot" style="background:#38bdf8"></i>Struktur XABCD</span><span><i class="legend-dot" style="background:#facc15"></i>PRZ</span></div>
@@ -242,6 +254,7 @@ function renderIndicators(){
  ];
  $("indicatorsGrid").innerHTML=cards.map(([n,v,s])=>{let cl=/Bullish|Positif|Buy Dominan|di atas VWAP|Tren kuat/.test(s)?"text-green-400":/Bearish|Negatif|Sell Dominan|di bawah band|di bawah VWAP/.test(s)?"text-red-400":"text-slate-400";return `<div class="indicator-card"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status ${cl}">${s}</div></div>`}).join("");
  renderHarmonic(i.harmonic);renderMarketCharts();
+ const plan=runModel(workingCandles(),i);if(plan)renderTradePlan(plan);else renderTradePlan(null);
 }
 function renderHarmonic(h){
  state.harmonic=h;
@@ -267,7 +280,31 @@ function runModel(cs,i){
  if(i.harmonic&&i.harmonic.score>=65)add((i.harmonic.bullish?1:-1)*(i.harmonic.score/100),1.0);
  const norm=w?clamp(score/w,-1,1):0,move=norm*i.atr*.35,pred=price+move,pct=(pred-price)/price*100;
  const direction=pct>.01?"NAIK":pct<-.01?"TURUN":"NETRAL";
- return {startPrice:price,predPrice:pred,direction,returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),normalizedScore:norm,lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8,indicatorSnapshot:{rsi:i.rsi,ema9:i.ema9,ema21:i.ema21,macd:i.macd.line,stoch:i.stoch,volDelta:i.volDelta,atr:i.atr,adx:i.adx.adx,vwap:i.vwap,harmonic:i.harmonic?{name:i.harmonic.name,score:i.harmonic.score,bullish:i.harmonic.bullish}:null}};
+ // ATR multiplier grows with the selected timeframe to reduce overly tight stops on slower charts.
+ const riskMult={"1m":0.8,"5m":1.0,"15m":1.2,"1h":1.5,"4h":1.8,"1d":2.0,"1w":2.5}[CONFIG.interval]||1.0;
+ const action=norm>=0.20?"BUY":norm<=-0.20?"SELL":"WAIT";
+ const entryPad=i.atr*0.15;
+ const entryLow=action==="BUY"?price-entryPad:action==="SELL"?price-entryPad:price-entryPad;
+ const entryHigh=price+entryPad;
+ const riskDistance=i.atr*riskMult;
+ const stopLoss=action==="BUY"?price-riskDistance:action==="SELL"?price+riskDistance:null;
+ const takeProfit1=action==="BUY"?price+riskDistance:action==="SELL"?price-riskDistance:null;
+ const takeProfit2=action==="BUY"?price+riskDistance*2:action==="SELL"?price-riskDistance*2:null;
+ return {startPrice:price,predPrice:pred,direction,returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),normalizedScore:norm,tradeAction:action,entryLow,entryHigh,stopLoss,takeProfit1,takeProfit2,riskAtrMultiplier:riskMult,lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8,indicatorSnapshot:{rsi:i.rsi,ema9:i.ema9,ema21:i.ema21,macd:i.macd.line,stoch:i.stoch,volDelta:i.volDelta,atr:i.atr,adx:i.adx.adx,vwap:i.vwap,harmonic:i.harmonic?{name:i.harmonic.name,score:i.harmonic.score,bullish:i.harmonic.bullish}:null}};
+}
+function renderTradePlan(p){
+ const ids=["entryRange","stopLossLevel","takeProfit1","takeProfit2"];
+ if(!p){$("tradeSignal").className="badge unknown";$("tradeSignal").textContent="MENUNGGU DATA";$("tradeAction").textContent="MENUNGGU";$("tradeActionNote").textContent="Minimal 50 candle diperlukan";ids.forEach(id=>$(id).textContent="--");$("stopLossNote").textContent="Berbasis ATR";$("tradePlanNote").textContent="Level akan dihitung setelah indikator tersedia.";return}
+ const action=p.tradeAction||"WAIT",cls=action==="BUY"?"pass":action==="SELL"?"reject":"warning";
+ $("tradeSignal").className="badge "+cls;$("tradeSignal").textContent=action==="WAIT"?"TUNGGU KONFIRMASI":action+" · SINYAL ATURAN";
+ $("tradeAction").textContent=action;$("tradeAction").style.color=action==="BUY"?"#86efac":action==="SELL"?"#fca5a5":"#fde68a";
+ $("tradeActionNote").textContent=`Skor ${fmt(p.signalStrength,0)}/100 · ${CONFIG.interval}`;
+ $("entryRange").textContent=`${fmtUSD(p.entryLow)} – ${fmtUSD(p.entryHigh)}`;
+ $("stopLossLevel").textContent=finite(p.stopLoss)?fmtUSD(p.stopLoss):"Tidak aktif";
+ $("stopLossNote").textContent=`${fmt(p.riskAtrMultiplier,1)} × ATR`;
+ $("takeProfit1").textContent=finite(p.takeProfit1)?fmtUSD(p.takeProfit1):"--";
+ $("takeProfit2").textContent=finite(p.takeProfit2)?fmtUSD(p.takeProfit2):"--";
+ $("tradePlanNote").textContent=action==="WAIT"?"Skor arah belum melewati ambang ±20/100. Jangan paksa entry; tunggu sinyal lebih jelas. Zona entry tetap hanya referensi harga saat ini.":`Harga referensi ${fmtUSD(p.startPrice)} · ATR ${fmtUSD(state.indicators?.atr)} · Stop ${fmt(p.riskAtrMultiplier,1)}×ATR. TP1 = 1R dan TP2 = 2R. Level diperbarui saat data live berubah; spread, slippage, dan gap dapat menyebabkan eksekusi berbeda.`;
 }
 function createPrediction(candle){
  const cs=state.candles,i=calculateIndicators(cs);if(!i){msg("Riwayat candle belum cukup untuk menghitung indikator.");return}
