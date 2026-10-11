@@ -3,1748 +3,507 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Solana Anti-Rug Live Radar</title>
-
+  <title>BTC 5-Min Price Prediction AI</title>
   <script src="https://cdn.tailwindcss.com"></script>
-
   <style>
-    body {
-      background: #070b14;
-      color: #e5e7eb;
-      font-family: Arial, sans-serif;
-    }
-
-    .panel {
-      background: #101827;
-      border: 1px solid #243047;
-      border-radius: 14px;
-    }
-
-    .input {
-      width: 100%;
-      padding: 10px;
-      background: #080f1c;
-      border: 1px solid #334155;
-      border-radius: 8px;
-      color: #e5e7eb;
-      outline: none;
-    }
-
-    .input:focus {
-      border-color: #38bdf8;
-    }
-
-    .btn {
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-weight: 700;
-      cursor: pointer;
-    }
-
-    .btn-primary {
-      background: #0ea5e9;
-      color: #00111c;
-    }
-
-    .btn-secondary {
-      background: #253247;
-      color: white;
-    }
-
-    .token-card {
-      background: #0c1422;
-      border: 1px solid #273449;
-      border-radius: 12px;
-      padding: 16px;
-      min-width: 0;
-    }
-
-    .muted {
-      color: #94a3b8;
-    }
-
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 800;
-    }
-
-    .pass {
-      color: #86efac;
-      background: #123322;
-    }
-
-    .warning {
-      color: #fde68a;
-      background: #3b2e0a;
-    }
-
-    .reject {
-      color: #fca5a5;
-      background: #431717;
-    }
-
-    .unknown {
-      color: #cbd5e1;
-      background: #293548;
-    }
-
-    .score-bar {
-      height: 6px;
-      border-radius: 10px;
-      background: #273449;
-      overflow: hidden;
-    }
-
-    .score-fill {
-      height: 100%;
-      background: #38bdf8;
-    }
-
-    a {
-      color: #7dd3fc;
-      text-decoration: none;
-    }
-
-    a:hover {
-      text-decoration: underline;
-    }
-
-    .small {
-      font-size: 12px;
-    }
-
-    .stat-number {
-      font-size: 24px;
-      font-weight: 800;
-    }
-
-    button:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
+    body { background: #070b14; color: #e5e7eb; font-family: Arial, sans-serif; }
+    .panel { background: #101827; border: 1px solid #243047; border-radius: 14px; }
+    .btn { padding: 10px 15px; border-radius: 8px; font-weight: 700; cursor: pointer; }
+    .btn-secondary { background: #253247; color: white; }
+    .muted { color: #94a3b8; }
+    .badge { display: inline-block; padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: 800; }
+    .pass, .up { color: #86efac; background: #123322; }
+    .warning, .neutral { color: #fde68a; background: #3b2e0a; }
+    .reject, .down { color: #fca5a5; background: #431717; }
+    .unknown { color: #cbd5e1; background: #293548; }
+    .stat-number { font-size: 24px; font-weight: 800; }
+    table { width: 100%; text-align: left; border-collapse: collapse; }
+    th, td { padding: 12px; border-bottom: 1px solid #243047; font-size: 14px; }
+    th { color: #94a3b8; font-weight: normal; }
   </style>
 </head>
-
 <body>
   <div class="max-w-7xl mx-auto px-4 py-6">
-
     <!-- HEADER -->
-    <header class="mb-6">
-      <div class="flex flex-col md:flex-row md:items-center
-                  md:justify-between gap-4">
-
-        <div>
-          <div class="text-sky-400 text-sm font-bold tracking-widest">
-            SOLANA ECOSYSTEM
-          </div>
-
-          <h1 class="text-3xl md:text-4xl font-extrabold mt-2">
-            Anti-Rug Live Radar
-          </h1>
-
-          <p class="muted mt-2">
-            Pemantauan token baru, likuiditas, aktivitas transaksi,
-            dan indikator risiko.
-          </p>
+    <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <div>
+        <div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE ANALYSIS</div>
+        <h1 class="text-3xl md:text-4xl font-extrabold mt-2">BTC 5-Min Price Predictor</h1>
+        <p class="muted mt-2">Model statistik time-series dengan 10 Indikator Teknikal (Live Data Binance).</p>
+      </div>
+      <div class="panel p-4 min-w-[250px]">
+        <div class="text-sm muted">Status Koneksi Market</div>
+        <div class="flex items-center gap-2 mt-2">
+          <span id="wsStatusDot" class="inline-block w-3 h-3 rounded-full bg-yellow-400"></span>
+          <span id="wsStatusText" class="font-bold">Menghubungkan...</span>
         </div>
-
-        <div class="panel p-4">
-          <div class="text-sm muted">Status scanner</div>
-          <div class="flex items-center gap-2 mt-2">
-            <span id="statusDot"
-                  class="inline-block w-3 h-3 rounded-full bg-yellow-400">
-            </span>
-
-            <span id="scannerStatus" class="font-bold">
-              Menunggu
-            </span>
-          </div>
-
-          <div id="lastScan" class="text-xs muted mt-2">
-            Belum ada pemindaian
-          </div>
-        </div>
-
+        <div id="lastUpdate" class="text-xs muted mt-2">Menunggu data awal</div>
       </div>
     </header>
 
-    <!-- STATS -->
-    <section class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+    <!-- DASHBOARD UTAMA -->
+    <section class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+      <!-- PANEL PREDIKSI -->
+      <div class="panel p-6 lg:col-span-2 relative overflow-hidden">
+        <div class="absolute top-0 right-0 p-4">
+          <span class="badge pass">MODEL: STATISTICAL BASELINE</span>
+        </div>
+        <h2 class="text-xl font-bold mb-4">Live Prediction Target (5 Menit)</h2>
+        
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+          <div>
+            <div class="text-sm muted">Harga Saat Ini</div>
+            <div id="currentPrice" class="stat-number mt-1">$0.00</div>
+          </div>
+          <div>
+            <div class="text-sm muted">Prediksi 5 Menit</div>
+            <div id="predictedPrice" class="stat-number mt-1 text-sky-400">$0.00</div>
+          </div>
+          <div>
+            <div class="text-sm muted">Arah Prediksi</div>
+            <div id="predDirection" class="mt-2 badge unknown">MENUNGGU</div>
+          </div>
+          <div>
+            <div class="text-sm muted">Perubahan (%)</div>
+            <div id="predChange" class="stat-number mt-1 text-lg">0.00%</div>
+          </div>
+        </div>
 
-      <div class="panel p-4">
-        <div class="muted text-sm">Token ditemukan</div>
-        <div id="statFound" class="stat-number mt-2">0</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 border-t border-slate-700 pt-4">
+          <div>
+            <div class="text-sm muted mb-1">Rentang Harga (Volatilitas ATR)</div>
+            <div id="predRange" class="font-mono text-sm bg-slate-800 p-2 rounded">$0.00 - $0.00</div>
+          </div>
+          <div>
+            <div class="text-sm muted mb-1">Confidence Score & Data Status</div>
+            <div class="flex items-center gap-3">
+              <div id="confidenceScore" class="font-bold text-xl text-yellow-400">0%</div>
+              <div class="w-full bg-slate-700 h-2 rounded-full overflow-hidden">
+                <div id="confidenceBar" class="bg-yellow-400 h-full" style="width: 0%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="panel p-4">
-        <div class="muted text-sm">Lolos filter</div>
-        <div id="statPassed" class="stat-number mt-2 text-green-400">0</div>
+      <!-- METRIK EVALUASI -->
+      <div class="panel p-6">
+        <h2 class="text-lg font-bold mb-4">Evaluasi Model (Live)</h2>
+        <div class="space-y-4">
+          <div class="flex justify-between items-center">
+            <span class="muted text-sm">Akurasi Arah (Directional)</span>
+            <span id="accArah" class="font-bold">0.0%</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="muted text-sm">Mean Absolute Error (MAE)</span>
+            <span id="maeScore" class="font-bold">$0.00</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="muted text-sm">Root Mean Sq Error (RMSE)</span>
+            <span id="rmseScore" class="font-bold">$0.00</span>
+          </div>
+          <div class="flex justify-between items-center">
+            <span class="muted text-sm">Total Sampel Dievaluasi</span>
+            <span id="totalEval" class="font-bold">0</span>
+          </div>
+          <div class="pt-4 border-t border-slate-700 text-xs muted">
+            Evaluasi dilakukan secara otomatis 5 menit setelah setiap candle ditutup berdasarkan perbandingan harga aktual.
+          </div>
+        </div>
       </div>
-
-      <div class="panel p-4">
-        <div class="muted text-sm">Risiko ditolak</div>
-        <div id="statRejected" class="stat-number mt-2 text-red-400">0</div>
-      </div>
-
-      <div class="panel p-4">
-        <div class="muted text-sm">Belum diketahui</div>
-        <div id="statUnknown" class="stat-number mt-2 text-yellow-300">0</div>
-      </div>
-
     </section>
 
-    <!-- FILTERS -->
-    <section class="panel p-5 mb-6">
-
-      <div class="flex flex-col md:flex-row
-                  md:items-center md:justify-between gap-3 mb-5">
-
-        <div>
-          <h2 class="text-xl font-bold">Pengaturan Filter</h2>
-          <p class="text-sm muted mt-1">
-            Atur kriteria token yang ingin dipantau.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-          <button id="scanButton"
-                  class="btn btn-primary"
-                  onclick="scanNow()">
-            Scan Sekarang
-          </button>
-
-          <button id="autoButton"
-                  class="btn btn-secondary"
-                  onclick="toggleAutoScan()">
-            Aktifkan Auto Scan
-          </button>
-        </div>
-
+    <!-- 10 INDIKATOR TEKNIKAL -->
+    <section class="panel p-6 mb-6">
+      <h2 class="text-lg font-bold mb-4">10 Fitur Indikator Teknikal (Real-Time 1m)</h2>
+      <div class="grid grid-cols-2 md:grid-cols-5 gap-4" id="indicatorsGrid">
+        <!-- JS will populate this -->
       </div>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-
-        <div>
-          <label for="maxAge" class="block text-sm mb-2">
-            Umur maksimum token
-          </label>
-
-          <select id="maxAge" class="input">
-            <option value="5">5 menit</option>
-            <option value="15">15 menit</option>
-            <option value="30">30 menit</option>
-            <option value="60" selected>1 jam</option>
-            <option value="180">3 jam</option>
-            <option value="360">6 jam</option>
-            <option value="720">12 jam</option>
-            <option value="1440">24 jam</option>
-          </select>
-
-          <p class="text-xs muted mt-2">
-            Token dengan waktu pembuatan yang tidak diketahui
-            tidak lolos filter umur.
-          </p>
-        </div>
-
-        <div>
-          <label for="minLiquidity" class="block text-sm mb-2">
-            Likuiditas minimum (USD)
-          </label>
-
-          <input id="minLiquidity"
-                 class="input"
-                 type="number"
-                 min="0"
-                 value="5000">
-        </div>
-
-        <div>
-          <label for="minVolume" class="block text-sm mb-2">
-            Volume 24 jam minimum (USD)
-          </label>
-
-          <input id="minVolume"
-                 class="input"
-                 type="number"
-                 min="0"
-                 value="0">
-        </div>
-
-        <div>
-          <label for="minBuys" class="block text-sm mb-2">
-            Jumlah pembelian minimum
-          </label>
-
-          <input id="minBuys"
-                 class="input"
-                 type="number"
-                 min="0"
-                 value="0">
-
-          <p class="text-xs muted mt-2">
-            Menggunakan jumlah pembelian yang dilaporkan DexScreener
-            untuk periode 24 jam.
-          </p>
-        </div>
-
-        <div>
-          <label for="maxHolder" class="block text-sm mb-2">
-            Holder terbesar maksimum (%)
-          </label>
-
-          <input id="maxHolder"
-                 class="input"
-                 type="number"
-                 min="0"
-                 max="100"
-                 value="20">
-
-          <p class="text-xs muted mt-2">
-            Menggunakan data holder RugCheck jika tersedia.
-          </p>
-        </div>
-
-        <div>
-          <label for="minScore" class="block text-sm mb-2">
-            Skor kualitas minimum
-          </label>
-
-          <input id="minScore"
-                 class="input"
-                 type="number"
-                 min="0"
-                 max="100"
-                 value="40">
-        </div>
-
-        <div>
-          <label for="maxScan" class="block text-sm mb-2">
-            Maksimum token per pemindaian
-          </label>
-
-          <select id="maxScan" class="input">
-            <option value="10">10 token</option>
-            <option value="20" selected>20 token</option>
-            <option value="30">30 token</option>
-            <option value="50">50 token</option>
-          </select>
-        </div>
-
-        <div>
-          <label for="securityMode" class="block text-sm mb-2">
-            Kebijakan pemeriksaan keamanan
-          </label>
-
-          <select id="securityMode" class="input">
-            <option value="strict" selected>
-              Ketat — wajib ada laporan
-            </option>
-
-            <option value="balanced">
-              Seimbang — tampilkan UNKNOWN
-            </option>
-          </select>
-        </div>
-
-      </div>
-
-      <div class="mt-5 p-4 rounded-lg bg-slate-950 border border-slate-800">
-        <div class="font-bold text-sm mb-2">
-          Cara kerja filter 5 menit
-        </div>
-
-        <p class="text-sm muted leading-6">
-          Scanner membaca waktu pembuatan pasangan trading dari
-          DexScreener, kemudian menghitung umur token berdasarkan
-          waktu saat ini. Jika umurnya lebih dari 5 menit, token
-          tidak ditampilkan ketika filter 5 menit dipilih.
-          Token yang waktu pembuatannya tidak tersedia akan dilewati.
-        </p>
-      </div>
-
     </section>
 
-    <!-- RESULTS -->
-    <section>
-
-      <div class="flex flex-col md:flex-row
-                  md:items-center md:justify-between gap-3 mb-4">
-
-        <div>
-          <h2 class="text-2xl font-bold">Hasil Pemindaian</h2>
-          <p class="muted text-sm mt-1">
-            Token yang memenuhi filter ditampilkan di bawah ini.
-          </p>
-        </div>
-
-        <div class="flex flex-wrap gap-2">
-
-          <select id="resultFilter"
-                  class="input"
-                  style="width:auto"
-                  onchange="renderResults()">
-
-            <option value="ALL">Semua status</option>
-            <option value="PASS">PASS</option>
-            <option value="WARNING">WARNING</option>
-            <option value="REJECT">REJECT</option>
-            <option value="UNKNOWN">UNKNOWN</option>
-
-          </select>
-
-          <button class="btn btn-secondary"
-                  onclick="clearResults()">
-            Bersihkan hasil
-          </button>
-
-        </div>
-
+    <!-- RIWAYAT PREDIKSI -->
+    <section class="panel p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-bold">Riwayat & Evaluasi Prediksi (Log)</h2>
+        <button class="btn btn-secondary text-sm" onclick="clearHistory()">Reset Log</button>
       </div>
-
-      <div id="message"
-           class="panel p-5 mb-4 text-sm muted">
-        Tekan "Scan Sekarang" untuk memulai.
+      <div class="overflow-x-auto">
+        <table id="historyTable">
+          <thead>
+            <tr>
+              <th>Waktu Prediksi</th>
+              <th>Harga Awal</th>
+              <th>Prediksi (Target)</th>
+              <th>Arah</th>
+              <th>Waktu Target</th>
+              <th>Harga Aktual</th>
+              <th>Status</th>
+              <th>Error (USD)</th>
+            </tr>
+          </thead>
+          <tbody id="historyBody">
+            <tr><td colspan="8" class="text-center muted">Belum ada data evaluasi. Menunggu 5 menit...</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <div id="results"
-           class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-      </div>
-
     </section>
-
-    <!-- FOOTER -->
-    <footer class="mt-10 pt-5 border-t border-slate-800 text-xs muted leading-6">
-      Data token dan pasar: DexScreener.
-      Indikator keamanan: RugCheck jika tersedia.
-      <br>
-      Hasil scanner bukan jaminan keamanan dan bukan saran investasi.
-      API publik dapat mengalami keterlambatan, pembatasan permintaan,
-      atau kegagalan akses.
-    </footer>
-
   </div>
 
 <script>
-"use strict";
-
-/* =========================================================
-   SOLANA ANTI-RUG LIVE RADAR
-   ========================================================= */
+/** 
+ * BTC 5-MINUTE PRICE PREDICTION AI (BROWSER-ONLY VERSION)
+ * Engine: JavaScript ES6
+ * Data Source: Binance Public REST & WebSocket API
+ */
 
 const CONFIG = {
-  dexBase: "https://api.dexscreener.com",
-  rugBase: "https://api.rugcheck.xyz/v1",
-  autoIntervalMs: 15000,
-  requestTimeoutMs: 12000,
-  securityConcurrency: 4
+  symbol: "BTCUSDT",
+  interval: "1m",
+  historyLimit: 100,
+  targetMinutes: 5
 };
 
 const state = {
-  running: false,
-  timer: null,
-  scanning: false,
+  candles: [],
+  indicators: {},
+  predictions: JSON.parse(localStorage.getItem('btc_predictions') || '[]'),
+  evalStats: { mae: 0, rmse: 0, dirAcc: 0, total: 0 },
+  currentPrice: 0
+};
 
-  // Hasil terbaru berdasarkan alamat pasangan trading.
-  results: new Map(),
-
-  // Pasangan yang sudah pernah ditemukan.
-  seenPairs: new Set(),
-
-  counters: {
-    found: 0,
-    passed: 0,
-    rejected: 0,
-    unknown: 0
+// --- TAHAP 1: PERHITUNGAN 10 INDIKATOR TEKNIKAL ---
+const TA = {
+  SMA: (data, period) => {
+    let sum = 0;
+    for(let i=data.length-period; i<data.length; i++) sum += data[i];
+    return sum / period;
+  },
+  EMA: (data, period) => {
+    const k = 2 / (period + 1);
+    let ema = data[0];
+    for(let i=1; i<data.length; i++) {
+      ema = (data[i] * k) + (ema * (1 - k));
+    }
+    return ema;
+  },
+  RSI: (data, period) => {
+    let gains = 0, losses = 0;
+    for(let i=data.length-period; i<data.length; i++) {
+      let diff = data[i] - data[i-1];
+      if(diff >= 0) gains += diff;
+      else losses -= diff;
+    }
+    let avgGain = gains / period;
+    let avgLoss = losses / period;
+    if(avgLoss === 0) return 100;
+    let rs = avgGain / avgLoss;
+    return 100 - (100 / (1 + rs));
+  },
+  MACD: (data) => {
+    let ema12 = TA.EMA(data.slice(-50), 12);
+    let ema26 = TA.EMA(data.slice(-50), 26);
+    return ema12 - ema26;
+  },
+  BollingerBands: (data, period, stdDevMult) => {
+    let subset = data.slice(-period);
+    let sma = TA.SMA(subset, period);
+    let variance = subset.reduce((acc, val) => acc + Math.pow(val - sma, 2), 0) / period;
+    let stdDev = Math.sqrt(variance);
+    return { upper: sma + (stdDev * stdDevMult), lower: sma - (stdDev * stdDevMult), middle: sma };
+  },
+  ATR: (highs, lows, closes, period) => {
+    let trs = [];
+    for(let i=1; i<closes.length; i++) {
+      let hl = highs[i] - lows[i];
+      let hc = Math.abs(highs[i] - closes[i-1]);
+      let lc = Math.abs(lows[i] - closes[i-1]);
+      trs.push(Math.max(hl, hc, lc));
+    }
+    return TA.SMA(trs, period);
+  },
+  Stoch: (highs, lows, closes, period) => {
+    let recentHighs = highs.slice(-period);
+    let recentLows = lows.slice(-period);
+    let highest = Math.max(...recentHighs);
+    let lowest = Math.min(...recentLows);
+    let current = closes[closes.length-1];
+    return ((current - lowest) / (highest - lowest)) * 100;
   }
 };
 
-
-/* =========================
-   UTILITIES
-   ========================= */
-
-function el(id) {
-  return document.getElementById(id);
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function numberValue(id, fallback = 0) {
-  const n = Number(el(id).value);
-  return Number.isFinite(n) ? Math.max(0, n) : fallback;
-}
-
-function escapeHTML(value) {
-  return String(value ?? "").replace(/[&<>"']/g, char => ({
-    "&": "&amp;",
-    "<": "&lt;",
-    ">": "&gt;",
-    '"': "&quot;",
-    "'": "&#39;"
-  })[char]);
-}
-
-function shortenAddress(address) {
-  if (!address) return "Tidak tersedia";
-  if (address.length <= 15) return address;
-
-  return address.slice(0, 6) + "..." + address.slice(-5);
-}
-
-function formatUSD(value) {
-  const n = Number(value);
-
-  if (!Number.isFinite(n)) return "N/A";
-
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: n < 1 ? 6 : 2
-  }).format(n);
-}
-
-function formatNumber(value) {
-  const n = Number(value);
-
-  if (!Number.isFinite(n)) return "N/A";
-
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: 2
-  }).format(n);
-}
-
-function formatAge(minutes) {
-  if (!Number.isFinite(minutes) || minutes < 0) {
-    return "Umur tidak diketahui";
-  }
-
-  if (minutes < 1) {
-    return Math.round(minutes * 60) + " detik";
-  }
-
-  if (minutes < 60) {
-    return minutes.toFixed(1) + " menit";
-  }
-
-  if (minutes < 1440) {
-    return (minutes / 60).toFixed(1) + " jam";
-  }
-
-  return (minutes / 1440).toFixed(1) + " hari";
-}
-
-function safeExternalURL(value) {
+// --- TAHAP 2: FETCH DATA MARKET ---
+async function fetchHistoricalData() {
+  updateStatus("Memuat Data Historis...", "yellow");
   try {
-    const url = new URL(value);
-
-    if (url.protocol !== "https:") return "#";
-
-    return url.href;
-  } catch {
-    return "#";
+    const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${CONFIG.symbol}&interval=${CONFIG.interval}&limit=200`);
+    const data = await res.json();
+    state.candles = data.map(d => ({
+      time: d[0], open: parseFloat(d[1]), high: parseFloat(d[2]), low: parseFloat(d[3]),
+      close: parseFloat(d[4]), volume: parseFloat(d[5]), takerBuyBase: parseFloat(d[9])
+    }));
+    calculateIndicators();
+    connectWebSocket();
+  } catch(e) {
+    updateStatus("Gagal Memuat Data", "red");
   }
 }
 
-function updateStatus(text, color = "green") {
-  el("scannerStatus").textContent = text;
-
-  const colors = {
-    green: "bg-green-400",
-    yellow: "bg-yellow-400",
-    red: "bg-red-400"
+function connectWebSocket() {
+  const ws = new WebSocket(`wss://stream.binance.com:9443/ws/${CONFIG.symbol.toLowerCase()}@kline_${CONFIG.interval}`);
+  ws.onopen = () => updateStatus("Terhubung (Live)", "green");
+  ws.onmessage = (event) => {
+    const msg = JSON.parse(event.data);
+    const k = msg.k;
+    state.currentPrice = parseFloat(k.c);
+    document.getElementById("currentPrice").innerText = `$${state.currentPrice.toFixed(2)}`;
+    
+    const lastCandle = state.candles[state.candles.length - 1];
+    if(k.t === lastCandle.time) {
+      lastCandle.close = state.currentPrice;
+      lastCandle.high = Math.max(lastCandle.high, parseFloat(k.h));
+      lastCandle.low = Math.min(lastCandle.low, parseFloat(k.l));
+      lastCandle.volume = parseFloat(k.v);
+      lastCandle.takerBuyBase = parseFloat(k.Q);
+    } else if (k.t > lastCandle.time) {
+      state.candles.push({
+        time: k.t, open: parseFloat(k.o), high: parseFloat(k.h), low: parseFloat(k.l),
+        close: parseFloat(k.c), volume: parseFloat(k.v), takerBuyBase: parseFloat(k.Q)
+      });
+      if(state.candles.length > 250) state.candles.shift();
+      
+      calculateIndicators();
+      runBaselineModel(); 
+      evaluatePredictions(); 
+    }
   };
-
-  el("statusDot").className =
-    "inline-block w-3 h-3 rounded-full " +
-    (colors[color] || colors.yellow);
+  ws.onerror = () => updateStatus("Koneksi WS Terputus", "red");
 }
 
-function setMessage(text) {
-  el("message").textContent = text;
+// --- TAHAP 3: KALKULASI 10 INDIKATOR ---
+function calculateIndicators() {
+  const closes = state.candles.map(c => c.close);
+  const highs = state.candles.map(c => c.high);
+  const lows = state.candles.map(c => c.low);
+  const vols = state.candles.map(c => c.volume);
+  const takerBuys = state.candles.map(c => c.takerBuyBase);
+
+  let curClose = closes[closes.length-1];
+
+  const rsi = TA.RSI(closes, 14);
+  const ema9 = TA.EMA(closes.slice(-20), 9);
+  const ema21 = TA.EMA(closes.slice(-40), 21);
+  const ema50 = TA.EMA(closes.slice(-100), 50);
+  const ema200 = closes.length >= 200 ? TA.EMA(closes, 200) : ema50;
+  const stoch = TA.Stoch(highs, lows, closes, 14);
+  const volDelta = takerBuys[takerBuys.length-1] - (vols[vols.length-1] - takerBuys[takerBuys.length-1]);
+  const macd = TA.MACD(closes);
+  const bb = TA.BollingerBands(closes, 20, 2);
+  const atr = TA.ATR(highs, lows, closes, 14);
+  
+  const recentHighs = highs.slice(-50);
+  const recentLows = lows.slice(-50);
+  const res = Math.max(...recentHighs);
+  const sup = Math.min(...recentLows);
+  
+  let sumPV = 0, sumV = 0;
+  state.candles.slice(-1440).forEach(c => { sumPV += ((c.high + c.low + c.close)/3)*c.volume; sumV += c.volume; });
+  const vwap = sumPV / (sumV || 1);
+  const trendStrength = Math.abs(ema9 - ema50) / atr;
+
+  state.indicators = { rsi, ema9, ema21, ema50, ema200, stoch, volDelta, macd, bb, atr, res, sup, vwap, trendStrength };
+  renderIndicatorsGrid();
 }
 
-function updateCounters() {
-  el("statFound").textContent = state.counters.found;
-  el("statPassed").textContent = state.counters.passed;
-  el("statRejected").textContent = state.counters.rejected;
-  el("statUnknown").textContent = state.counters.unknown;
+function renderIndicatorsGrid() {
+  const i = state.indicators;
+  const c = state.currentPrice;
+  const grid = document.getElementById("indicatorsGrid");
+  
+  const boxes = [
+    { name: "RSI (14)", val: i.rsi.toFixed(1), status: i.rsi > 70 ? "Overbought" : i.rsi < 30 ? "Oversold" : "Netral" },
+    { name: "EMA (9/21)", val: `${i.ema9.toFixed(0)} / ${i.ema21.toFixed(0)}`, status: i.ema9 > i.ema21 ? "Bullish" : "Bearish" },
+    { name: "Stoch (14)", val: i.stoch.toFixed(1), status: i.stoch > 80 ? "OB" : i.stoch < 20 ? "OS" : "Netral" },
+    { name: "Vol Delta", val: i.volDelta > 0 ? "+Buy" : "-Sell", status: i.volDelta > 0 ? "Akurasi Beli" : "Akurasi Jual" },
+    { name: "MACD", val: i.macd.toFixed(2), status: i.macd > 0 ? "Bullish" : "Bearish" },
+    { name: "B. Bands (20)", val: "Width: " + ((i.bb.upper - i.bb.lower)/c*100).toFixed(2)+"%", status: c > i.bb.middle ? "Upper Half" : "Lower Half" },
+    { name: "ATR (14)", val: "$" + i.atr.toFixed(2), status: (i.atr/c*100).toFixed(2) + "% Volatility" },
+    { name: "Supp/Resist", val: `$${i.sup.toFixed(0)} - $${i.res.toFixed(0)}`, status: "Range 50m" },
+    { name: "VWAP", val: "$" + i.vwap.toFixed(1), status: c > i.vwap ? "Di atas VWAP" : "Di bawah VWAP" },
+    { name: "Trend Force", val: i.trendStrength.toFixed(2), status: i.trendStrength > 1.5 ? "Trending" : "Ranging" }
+  ];
+
+  grid.innerHTML = boxes.map(b => `
+    <div class="bg-slate-800 p-3 rounded-lg border border-slate-700">
+      <div class="text-xs muted mb-1">${b.name}</div>
+      <div class="font-bold text-sm text-sky-300">${b.val}</div>
+      <div class="text-[10px] uppercase mt-1 ${b.status.includes('Bull') || b.status.includes('Buy') || b.status.includes('atas') ? 'text-green-400' : 'text-slate-400'}">${b.status}</div>
+    </div>
+  `).join("");
 }
 
-
-/* =========================
-   API FETCH WITH TIMEOUT
-   ========================= */
-
-async function fetchJSON(url, timeoutMs = CONFIG.requestTimeoutMs) {
-  const controller = new AbortController();
-
-  const timeout = setTimeout(() => {
-    controller.abort();
-  }, timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        "Accept": "application/json"
-      },
-      signal: controller.signal
-    });
-
-    if (!response.ok) {
-      throw new Error("HTTP " + response.status);
-    }
-
-    return await response.json();
-
-  } finally {
-    clearTimeout(timeout);
-  }
-}
-
-
-/* =========================
-   TOKEN DISCOVERY
-   ========================= */
-
-/*
-  Sumber penemuan:
-  1. Profil token terbaru dari DexScreener.
-  2. Pencarian pasangan Solana menggunakan kata kunci umum.
-
-  Penting:
-  Endpoint profil bukan daftar lengkap semua pasangan baru.
-  Ini adalah mekanisme discovery, bukan pemantauan on-chain penuh.
-*/
-
-async function discoverSolanaTokens() {
-  const tokenAddresses = new Set();
-
-  const profileURL =
-    CONFIG.dexBase + "/token-profiles/latest/v1";
-
-  try {
-    const profiles = await fetchJSON(profileURL);
-
-    if (Array.isArray(profiles)) {
-      for (const profile of profiles) {
-        if (
-          profile &&
-          profile.chainId === "solana" &&
-          typeof profile.tokenAddress === "string"
-        ) {
-          tokenAddresses.add(profile.tokenAddress);
-        }
-      }
-    }
-  } catch (error) {
-    console.warn("Gagal mengambil profil terbaru:", error.message);
-  }
-
-  /*
-    Pencarian tambahan meningkatkan peluang menemukan pasangan,
-    tetapi bukan jaminan menemukan seluruh token baru.
-  */
-
-  const queries = ["SOL", "pump", "USDC"];
-
-  const searchResults = await Promise.allSettled(
-    queries.map(query => {
-      const url =
-        CONFIG.dexBase +
-        "/latest/dex/search?q=" +
-        encodeURIComponent(query);
-
-      return fetchJSON(url);
-    })
-  );
-
-  for (const result of searchResults) {
-    if (result.status !== "fulfilled") continue;
-
-    const pairs = Array.isArray(result.value?.pairs)
-      ? result.value.pairs
-      : [];
-
-    for (const pair of pairs) {
-      if (pair.chainId !== "solana") continue;
-
-      if (pair.baseToken?.address) {
-        tokenAddresses.add(pair.baseToken.address);
-      }
-
-      if (pair.quoteToken?.address) {
-        tokenAddresses.add(pair.quoteToken.address);
-      }
-    }
-  }
-
-  return [...tokenAddresses];
-}
-
-
-/* =========================
-   FETCH PAIRS
-   ========================= */
-
-async function fetchSolanaPairs(tokenAddresses) {
-  const pairs = [];
-  const uniqueAddresses = [...new Set(tokenAddresses)];
-
-  /*
-    DexScreener endpoint token pairs menerima beberapa alamat
-    token dalam satu permintaan.
-  */
-
-  const chunkSize = 25;
-
-  for (let i = 0; i < uniqueAddresses.length; i += chunkSize) {
-    const chunk = uniqueAddresses.slice(i, i + chunkSize);
-
-    if (chunk.length === 0) continue;
-
-    const url =
-      CONFIG.dexBase +
-      "/tokens/v1/solana/" +
-      chunk.map(encodeURIComponent).join(",");
-
-    try {
-      const data = await fetchJSON(url);
-
-      if (Array.isArray(data)) {
-        for (const pair of data) {
-          if (pair.chainId === "solana") {
-            pairs.push(pair);
-          }
-        }
-      }
-
-    } catch (error) {
-      console.warn(
-        "Gagal mengambil data pasangan:",
-        error.message
-      );
-    }
-  }
-
-  return pairs;
-}
-
-
-/* =========================
-   PAIR AGE
-   ========================= */
-
-function getPairAgeMinutes(pair) {
-  const createdAt = Number(pair.pairCreatedAt);
-
-  if (
-    !Number.isFinite(createdAt) ||
-    createdAt <= 0 ||
-    createdAt > Date.now()
-  ) {
-    return null;
-  }
-
-  return (Date.now() - createdAt) / 60000;
-}
-
-function passesAgeFilter(pair) {
-  const age = getPairAgeMinutes(pair);
-  const maxAge = numberValue("maxAge", 60);
-
-  /*
-    Fail closed:
-    jika waktu pembuatan tidak diketahui,
-    token tidak lolos filter umur.
-  */
-
-  if (age === null) return false;
-
-  return age <= maxAge;
-}
-
-
-/* =========================
-   BASIC MARKET FILTERS
-   ========================= */
-
-function getLiquidity(pair) {
-  return Number(pair.liquidity?.usd) || 0;
-}
-
-function getVolume24h(pair) {
-  return Number(pair.volume?.h24) || 0;
-}
-
-function getBuys24h(pair) {
-  return Number(pair.txns?.h24?.buys) || 0;
-}
-
-function passesMarketFilters(pair) {
-  const minLiquidity = numberValue("minLiquidity", 5000);
-  const minVolume = numberValue("minVolume", 0);
-  const minBuys = numberValue("minBuys", 0);
-
-  if (getLiquidity(pair) < minLiquidity) return false;
-  if (getVolume24h(pair) < minVolume) return false;
-  if (getBuys24h(pair) < minBuys) return false;
-
-  return true;
-}
-
-
-/* =========================
-   RUGCHECK SECURITY REPORT
-   ========================= */
-
-async function fetchSecurityReport(mintAddress) {
-  const url =
-    CONFIG.rugBase +
-    "/tokens/" +
-    encodeURIComponent(mintAddress) +
-    "/report";
-
-  try {
-    const report = await fetchJSON(url);
-
-    if (!report || typeof report !== "object") {
-      return {
-        available: false,
-        reason: "Format laporan tidak dikenali"
-      };
-    }
-
-    return {
-      available: true,
-      report
-    };
-
-  } catch (error) {
-    return {
-      available: false,
-      reason: error.message || "Laporan tidak tersedia"
-    };
-  }
-}
-
-
-/* =========================
-   SECURITY ANALYSIS
-   ========================= */
-
-function analyzeSecurity(result) {
-  if (!result.available) {
-    return {
-      status: "UNKNOWN",
-      reasons: [
-        "Laporan keamanan tidak tersedia atau API gagal diakses."
-      ],
-      maxHolderPercent: null,
-      rugScore: null
-    };
-  }
-
-  const report = result.report;
-
-  const reasons = [];
-  let criticalRisk = false;
-  let warningRisk = false;
-
-  /*
-    Struktur laporan RugCheck bisa berubah.
-    Pemeriksaan berikut menggunakan field yang umum ditemukan.
-    Field yang tidak tersedia tidak boleh dianggap aman.
-  */
-
-  const risks = Array.isArray(report.risks)
-    ? report.risks
-    : [];
-
-  for (const risk of risks) {
-    const level = String(risk.level || "").toLowerCase();
-    const description = String(
-      risk.name || risk.description || risk.message || "Risiko terdeteksi"
-    );
-
-    if (
-      level === "danger" ||
-      level === "critical"
-    ) {
-      criticalRisk = true;
-      reasons.push("Risiko tinggi: " + description);
-
-    } else if (
-      level === "warn" ||
-      level === "warning" ||
-      level === "medium"
-    ) {
-      warningRisk = true;
-      reasons.push("Peringatan: " + description);
-    }
-  }
-
-  const rugScoreValue =
-    report.score_normalised ??
-    report.scoreNormalized ??
-    report.score ??
-    null;
-
-  const rugScore = Number.isFinite(Number(rugScoreValue))
-    ? Number(rugScoreValue)
-    : null;
-
-  /*
-    Skor RugCheck bukan probabilitas rug pull.
-    Skor tinggi hanya diperlakukan sebagai indikator risiko.
-  */
-
-  if (rugScore !== null && rugScore >= 7000) {
-    criticalRisk = true;
-    reasons.push("Skor risiko RugCheck sangat tinggi.");
-  } else if (rugScore !== null && rugScore >= 4000) {
-    warningRisk = true;
-    reasons.push("Skor risiko RugCheck tinggi.");
-  }
-
-  /*
-    Holder terbesar:
-    ambil hanya jika laporan benar-benar menyediakan data yang
-    dapat ditafsirkan. Jangan menganggap data yang hilang sebagai 0%.
-  */
-
-  let maxHolderPercent = null;
-
-  const topHolders = Array.isArray(report.topHolders)
-    ? report.topHolders
-    : [];
-
-  if (topHolders.length > 0) {
-    const percentages = topHolders
-      .map(holder => {
-        const value = Number(
-          holder.pct ??
-          holder.percentage ??
-          holder.percent
-        );
-
-        return Number.isFinite(value) ? value : null;
-      })
-      .filter(value => value !== null);
-
-    if (percentages.length > 0) {
-      maxHolderPercent = Math.max(...percentages);
-    }
-  }
-
-  /*
-    Jangan menganggap top holder sama dengan insider.
-    Holder terbesar dapat berupa wallet tim, pool, exchange,
-    atau alamat lain; perlu konteks tambahan untuk memastikan.
-  */
-
-  if (maxHolderPercent !== null) {
-    const holderLimit = numberValue("maxHolder", 20);
-
-    if (maxHolderPercent > holderLimit) {
-      warningRisk = true;
-
-      reasons.push(
-        "Holder terbesar " +
-        maxHolderPercent.toFixed(2) +
-        "% melebihi batas " +
-        holderLimit +
-        "%."
-      );
-    }
-  }
-
-  /*
-    Jika laporan tersedia tetapi tidak memiliki informasi risiko
-    atau data penting, status tidak otomatis dianggap PASS.
-  */
-
-  const hasRiskData = Array.isArray(report.risks);
-  const hasScore = rugScore !== null;
-
-  if (!hasRiskData && !hasScore) {
-    return {
-      status: "UNKNOWN",
-      reasons: [
-        "Laporan tersedia, tetapi indikator risiko tidak cukup."
-      ],
-      maxHolderPercent,
-      rugScore
-    };
-  }
-
-  if (criticalRisk) {
-    return {
-      status: "REJECT",
-      reasons: reasons.length
-        ? reasons
-        : ["Indikator risiko kritis terdeteksi."],
-      maxHolderPercent,
-      rugScore
-    };
-  }
-
-  if (warningRisk) {
-    return {
-      status: "WARNING",
-      reasons: reasons.length
-        ? reasons
-        : ["Diperlukan pemeriksaan tambahan."],
-      maxHolderPercent,
-      rugScore
-    };
-  }
-
-  return {
-    status: "PASS",
-    reasons: [
-      "Tidak ditemukan indikator kritis pada data yang diperiksa."
-    ],
-    maxHolderPercent,
-    rugScore
-  };
-}
-
-
-/* =========================
-   SIMPLE QUALITY SCORE
-   ========================= */
-
-/*
-  Ini adalah skor heuristik, bukan model prediksi.
-  Skor tinggi tidak membuktikan token berkualitas.
-*/
-
-function calculateQualityScore(pair, security) {
+// --- TAHAP 4: PREDICTOR MODEL (STATISTICAL) ---
+function runBaselineModel() {
+  const ind = state.indicators;
+  const currentPrice = state.currentPrice;
+  const currentTime = state.candles[state.candles.length-1].time;
+  
   let score = 0;
+  if(ind.rsi < 40) score += 0.2; else if (ind.rsi > 60) score -= 0.2;
+  if(ind.ema9 > ind.ema21) score += 0.2; else score -= 0.2;
+  if(ind.macd > 0) score += 0.15; else score -= 0.15;
+  if(currentPrice > ind.vwap) score += 0.15; else score -= 0.15;
+  if(ind.volDelta > 0) score += 0.1; else score -= 0.1;
+  if(ind.stoch < 20) score += 0.2; else if(ind.stoch > 80) score -= 0.2;
 
-  const liquidity = getLiquidity(pair);
-  const volume = getVolume24h(pair);
-  const buys = getBuys24h(pair);
-  const sells = Number(pair.txns?.h24?.sells) || 0;
+  score = Math.max(-1, Math.min(1, score));
+  
+  const expectedMoveUsd = score * (ind.atr * 0.6); 
+  const predictedPrice = currentPrice + expectedMoveUsd;
+  const returnPct = (predictedPrice - currentPrice) / currentPrice * 100;
+  
+  let direction = "NETRAL";
+  if(returnPct > 0.02) direction = "NAIK";
+  if(returnPct < -0.02) direction = "TURUN";
 
-  const age = getPairAgeMinutes(pair);
+  let confidence = Math.abs(score) * 100;
+  if((ind.atr / currentPrice) > 0.005) confidence -= 20; 
+  confidence = Math.max(10, Math.min(95, confidence)); 
 
-  // Likuiditas
-  if (liquidity >= 50000) score += 25;
-  else if (liquidity >= 20000) score += 20;
-  else if (liquidity >= 10000) score += 15;
-  else if (liquidity >= 5000) score += 10;
-  else if (liquidity > 0) score += 5;
+  const lowerBound = predictedPrice - (ind.atr * 0.8);
+  const upperBound = predictedPrice + (ind.atr * 0.8);
 
-  // Volume
-  if (volume >= 100000) score += 20;
-  else if (volume >= 25000) score += 15;
-  else if (volume >= 5000) score += 10;
-  else if (volume > 0) score += 5;
-
-  // Aktivitas pembelian
-  if (buys >= 200) score += 15;
-  else if (buys >= 50) score += 10;
-  else if (buys >= 10) score += 5;
-
-  // Keseimbangan transaksi, bukan bukti komunitas asli
-  const totalTxns = buys + sells;
-
-  if (totalTxns >= 20) {
-    const buyRatio = buys / totalTxns;
-
-    if (buyRatio >= 0.30 && buyRatio <= 0.80) {
-      score += 10;
-    }
-  }
-
-  // Data umur harus tersedia
-  if (age !== null && age <= 5) {
-    score += 10;
-  } else if (age !== null && age <= 60) {
-    score += 5;
-  }
-
-  // Keamanan
-  if (security.status === "PASS") {
-    score += 20;
-  } else if (security.status === "WARNING") {
-    score += 5;
-  }
-
-  return clamp(score, 0, 100);
-}
-
-
-/* =========================
-   TOKEN ANALYSIS
-   ========================= */
-
-async function mapWithConcurrency(items, limit, worker) {
-  const output = new Array(items.length);
-  let nextIndex = 0;
-
-  async function runWorker() {
-    while (true) {
-      const index = nextIndex++;
-
-      if (index >= items.length) return;
-
-      try {
-        output[index] = await worker(items[index], index);
-      } catch (error) {
-        output[index] = {
-          error: error.message || "Kesalahan analisis"
-        };
-      }
-    }
-  }
-
-  const workers = Array.from(
-    { length: Math.min(limit, items.length) },
-    () => runWorker()
-  );
-
-  await Promise.all(workers);
-
-  return output;
-}
-
-async function analyzePair(pair) {
-  const mintAddress = pair.baseToken?.address;
-
-  const securityReport = mintAddress
-    ? await fetchSecurityReport(mintAddress)
-    : {
-        available: false,
-        reason: "Alamat mint tidak tersedia"
-      };
-
-  const security = analyzeSecurity(securityReport);
-
-  const qualityScore = calculateQualityScore(pair, security);
-
-  const ageMinutes = getPairAgeMinutes(pair);
-
-  const minScore = numberValue("minScore", 40);
-
-  let status = security.status;
-
-  if (security.status === "PASS" && qualityScore < minScore) {
-    status = "WARNING";
-  }
-
-  if (security.status === "UNKNOWN") {
-    status = "UNKNOWN";
-  }
-
-  const securityMode = el("securityMode").value;
-
-  /*
-    Mode ketat:
-    token UNKNOWN tetap dapat dilihat dalam hasil,
-    tetapi tidak dianggap lolos sebagai token aman.
-  */
-
-  if (
-    securityMode === "strict" &&
-    security.status === "UNKNOWN"
-  ) {
-    status = "UNKNOWN";
-  }
-
-  return {
-    id: pair.pairAddress || mintAddress,
-    mintAddress,
-    pairAddress: pair.pairAddress || "",
-    name: pair.baseToken?.name || "Unknown Token",
-    symbol: pair.baseToken?.symbol || "UNKNOWN",
-    dexId: pair.dexId || "unknown",
-
-    url: safeExternalURL(pair.url || ""),
-
-    priceUsd: pair.priceUsd,
-    liquidity: getLiquidity(pair),
-    volume24h: getVolume24h(pair),
-    buys24h: getBuys24h(pair),
-    sells24h: Number(pair.txns?.h24?.sells) || 0,
-
-    marketCap: Number(
-      pair.marketCap ?? pair.fdv ?? 0
-    ),
-
-    ageMinutes,
-    qualityScore,
-    security,
-    status,
-
-    firstSeenAt: Date.now(),
-    updatedAt: Date.now()
+  const predData = {
+    id: currentTime,
+    time: currentTime,
+    targetTime: currentTime + (CONFIG.targetMinutes * 60 * 1000), 
+    startPrice: currentPrice,
+    predPrice: predictedPrice,
+    direction, returnPct, confidence, lowerBound, upperBound,
+    status: "PENDING"
   };
+
+  state.predictions.unshift(predData);
+  if(state.predictions.length > 50) state.predictions.pop(); 
+  localStorage.setItem('btc_predictions', JSON.stringify(state.predictions));
+
+  document.getElementById("predictedPrice").innerText = `$${predictedPrice.toFixed(2)}`;
+  document.getElementById("predChange").innerText = `${returnPct > 0 ? '+' : ''}${returnPct.toFixed(3)}%`;
+  
+  const dirBadge = document.getElementById("predDirection");
+  dirBadge.innerText = direction;
+  dirBadge.className = `mt-2 badge ${direction==='NAIK'?'up':direction==='TURUN'?'down':'neutral'}`;
+
+  document.getElementById("predRange").innerText = `$${lowerBound.toFixed(1)} - $${upperBound.toFixed(1)}`;
+  
+  const confBar = document.getElementById("confidenceBar");
+  document.getElementById("confidenceScore").innerText = `${confidence.toFixed(0)}%`;
+  confBar.style.width = `${confidence}%`;
+  confBar.className = `h-full ${confidence > 60 ? 'bg-green-500' : confidence > 40 ? 'bg-yellow-400' : 'bg-red-500'}`;
+  
+  renderHistoryTable();
 }
 
+// --- TAHAP 5: EVALUASI PREDIKSI (LIVE) ---
+function evaluatePredictions() {
+  const now = state.candles[state.candles.length-1].time;
+  let updated = false;
 
-/* =========================
-   MAIN SCAN
-   ========================= */
-
-async function scanNow() {
-  if (state.scanning) return;
-
-  state.scanning = true;
-  el("scanButton").disabled = true;
-
-  updateStatus("Memindai...", "yellow");
-  setMessage("Mengambil daftar token dan pasangan trading Solana...");
-
-  try {
-    const addresses = await discoverSolanaTokens();
-
-    if (addresses.length === 0) {
-      setMessage(
-        "Belum ada alamat token yang berhasil ditemukan. " +
-        "Periksa koneksi internet atau coba lagi nanti."
-      );
-
-      updateStatus("Tidak ada data", "yellow");
-      return;
-    }
-
-    const pairs = await fetchSolanaPairs(addresses);
-
-    const maxAge = numberValue("maxAge", 60);
-
-    /*
-      Buang pasangan yang bukan Solana atau tidak memiliki
-      alamat pasangan dan mint yang diperlukan.
-    */
-
-    const uniquePairs = new Map();
-
-    for (const pair of pairs) {
-      if (pair.chainId !== "solana") continue;
-      if (!pair.baseToken?.address) continue;
-      if (!pair.pairAddress) continue;
-
-      uniquePairs.set(pair.pairAddress, pair);
-    }
-
-    const allPairs = [...uniquePairs.values()];
-
-    state.counters.found = allPairs.length;
-
-    const ageFiltered = allPairs.filter(pair =>
-      passesAgeFilter(pair)
-    );
-
-    const marketFiltered = ageFiltered.filter(pair =>
-      passesMarketFilters(pair)
-    );
-
-    /*
-      Prioritaskan pasangan dengan likuiditas lebih tinggi
-      ketika jumlah kandidat melebihi batas pemindaian.
-    */
-
-    marketFiltered.sort(
-      (a, b) => getLiquidity(b) - getLiquidity(a)
-    );
-
-    const maxScan = numberValue("maxScan", 20);
-
-    const candidates = marketFiltered.slice(0, maxScan);
-
-    if (candidates.length === 0) {
-      setMessage(
-        "Tidak ada pasangan yang memenuhi filter saat ini. " +
-        "Coba naikkan umur maksimum atau turunkan batas likuiditas, " +
-        "volume, dan pembelian."
-      );
-
-      updateStatus("Pemindaian selesai", "yellow");
-      el("lastScan").textContent =
-        "Terakhir: " + new Date().toLocaleTimeString();
-
-      updateCounters();
-      renderResults();
-
-      return;
-    }
-
-    setMessage(
-      "Ditemukan " + allPairs.length +
-      " pasangan Solana. " +
-      ageFiltered.length + " memenuhi filter umur dan " +
-      marketFiltered.length + " memenuhi filter pasar. " +
-      "Memeriksa keamanan " + candidates.length + " kandidat..."
-    );
-
-    const analyses = await mapWithConcurrency(
-      candidates,
-      CONFIG.securityConcurrency,
-      analyzePair
-    );
-
-    for (const item of analyses) {
-      if (!item || item.error) continue;
-
-      const wasSeen = state.seenPairs.has(item.id);
-
-      state.seenPairs.add(item.id);
-
-      /*
-        Perbarui hasil pasangan yang sudah ada.
-        Jangan menghapus hasil lama hanya karena tidak muncul
-        pada satu putaran discovery.
-      */
-
-      const previous = state.results.get(item.id);
-
-      if (previous) {
-        item.firstSeenAt = previous.firstSeenAt;
+  state.predictions.forEach(p => {
+    if (p.status === "PENDING" && now >= p.targetTime) {
+      const targetCandle = state.candles.find(c => c.time === p.targetTime);
+      if (targetCandle) {
+        const actualPrice = targetCandle.close;
+        const actualDir = actualPrice > p.startPrice * 1.0002 ? "NAIK" : actualPrice < p.startPrice * 0.9998 ? "TURUN" : "NETRAL";
+        
+        p.actualPrice = actualPrice;
+        p.errorUsd = actualPrice - p.predPrice;
+        p.absError = Math.abs(p.errorUsd);
+        p.isDirCorrect = (p.direction === actualDir) || (p.direction === "NETRAL" && actualDir === "NETRAL");
+        p.status = "EVALUATED";
+        updated = true;
+      } else if (now > p.targetTime + 120000) {
+        p.status = "DATA_MISSING";
+        updated = true;
       }
-
-      item.isNew = !wasSeen;
-
-      state.results.set(item.id, item);
     }
+  });
 
-    updateSummaryCounters();
-
-    updateCounters();
-    renderResults();
-
-    el("lastScan").textContent =
-      "Terakhir: " + new Date().toLocaleTimeString();
-
-    setMessage(
-      "Pemindaian selesai. " +
-      "Kandidat diperiksa: " + candidates.length +
-      ". Hasil ditampilkan berdasarkan filter yang dipilih."
-    );
-
-    updateStatus("Aktif", "green");
-
-  } catch (error) {
-    console.error("Kesalahan pemindaian:", error);
-
-    setMessage(
-      "Pemindaian gagal: " +
-      (error.message || "kesalahan tidak diketahui") +
-      ". Coba lagi. Jika masalah berulang, periksa akses API."
-    );
-
-    updateStatus("Terjadi kesalahan", "red");
-
-  } finally {
-    state.scanning = false;
-    el("scanButton").disabled = false;
+  if (updated) {
+    localStorage.setItem('btc_predictions', JSON.stringify(state.predictions));
+    calculateStats();
+    renderHistoryTable();
   }
 }
 
+function calculateStats() {
+  const evals = state.predictions.filter(p => p.status === "EVALUATED");
+  if(evals.length === 0) return;
 
-/* =========================
-   COUNTERS
-   ========================= */
+  const total = evals.length;
+  let sumAbsError = 0;
+  let sumSqError = 0;
+  let correctDir = 0;
 
-function updateSummaryCounters() {
-  let passed = 0;
-  let rejected = 0;
-  let unknown = 0;
+  evals.forEach(e => {
+    sumAbsError += e.absError;
+    sumSqError += Math.pow(e.absError, 2);
+    if(e.isDirCorrect) correctDir++;
+  });
 
-  for (const item of state.results.values()) {
-    if (item.status === "PASS") {
-      passed++;
-    } else if (item.status === "REJECT") {
-      rejected++;
-    } else if (item.status === "UNKNOWN") {
-      unknown++;
+  document.getElementById("maeScore").innerText = "$" + (sumAbsError / total).toFixed(2);
+  document.getElementById("rmseScore").innerText = "$" + Math.sqrt(sumSqError / total).toFixed(2);
+  document.getElementById("accArah").innerText = ((correctDir / total) * 100).toFixed(1) + "%";
+  document.getElementById("totalEval").innerText = total;
+}
+
+function renderHistoryTable() {
+  const tbody = document.getElementById("historyBody");
+  if(state.predictions.length === 0) return;
+
+  tbody.innerHTML = state.predictions.slice(0, 15).map(p => {
+    const timeStr = new Date(p.time).toLocaleTimeString();
+    const tgtStr = new Date(p.targetTime).toLocaleTimeString();
+    const statBadge = p.status === 'EVALUATED' ? 'pass' : p.status === 'PENDING' ? 'warning' : 'unknown';
+    const actualTxt = p.actualPrice ? `$${p.actualPrice.toFixed(2)}` : '-';
+    let errTxt = '-';
+    if(p.status === 'EVALUATED') {
+      const errColor = p.isDirCorrect ? 'text-green-400' : 'text-red-400';
+      errTxt = `<span class="${errColor}">${p.errorUsd > 0 ? '+' : ''}${p.errorUsd.toFixed(2)}</span>`;
     }
-  }
-
-  state.counters.passed = passed;
-  state.counters.rejected = rejected;
-  state.counters.unknown = unknown;
-}
-
-
-/* =========================
-   RESULTS FILTER
-   ========================= */
-
-function getVisibleResults() {
-  const selectedStatus = el("resultFilter").value;
-
-  const maxAge = numberValue("maxAge", 60);
-
-  return [...state.results.values()]
-    .filter(item => {
-      /*
-        Terapkan kembali filter umur saat menampilkan hasil,
-        bukan hanya saat pertama kali token ditemukan.
-      */
-
-      if (
-        item.ageMinutes === null ||
-        item.ageMinutes > maxAge
-      ) {
-        return false;
-      }
-
-      if (item.liquidity < numberValue("minLiquidity", 5000)) {
-        return false;
-      }
-
-      if (item.volume24h < numberValue("minVolume", 0)) {
-        return false;
-      }
-
-      if (item.buys24h < numberValue("minBuys", 0)) {
-        return false;
-      }
-
-      if (
-        item.qualityScore <
-        numberValue("minScore", 40)
-      ) {
-        return false;
-      }
-
-      if (
-        selectedStatus !== "ALL" &&
-        item.status !== selectedStatus
-      ) {
-        return false;
-      }
-
-      return true;
-    })
-    .sort((a, b) => {
-      if (a.isNew !== b.isNew) {
-        return a.isNew ? -1 : 1;
-      }
-
-      return b.qualityScore - a.qualityScore;
-    });
-}
-
-
-/* =========================
-   RENDER CARDS
-   ========================= */
-
-function statusClass(status) {
-  switch (status) {
-    case "PASS":
-      return "pass";
-
-    case "WARNING":
-      return "warning";
-
-    case "REJECT":
-      return "reject";
-
-    default:
-      return "unknown";
-  }
-}
-
-function renderResults() {
-  const resultsEl = el("results");
-  const visible = getVisibleResults();
-
-  if (visible.length === 0) {
-    resultsEl.innerHTML = `
-      <div class="panel p-6 md:col-span-2 xl:col-span-3">
-        <div class="font-bold text-lg">Belum ada hasil</div>
-        <p class="muted text-sm mt-2">
-          Jalankan pemindaian atau ubah filter untuk melihat
-          token yang tersedia.
-        </p>
-      </div>
-    `;
-
-    return;
-  }
-
-  resultsEl.innerHTML = visible.map(item => {
-    const reasons = item.security.reasons || [];
-
-    const reasonHTML = reasons
-      .slice(0, 5)
-      .map(reason =>
-        `<li class="mb-1">${escapeHTML(reason)}</li>`
-      )
-      .join("");
-
-    const ageText = item.ageMinutes === null
-      ? "Tidak diketahui"
-      : formatAge(item.ageMinutes);
-
-    const newBadge = item.isNew
-      ? `<span class="badge pass">BARU DITEMUKAN</span>`
-      : "";
-
-    const url = item.url !== "#"
-      ? item.url
-      : "https://dexscreener.com/solana/" +
-        encodeURIComponent(item.pairAddress);
-
-    const holderText =
-      item.security.maxHolderPercent === null
-        ? "N/A"
-        : item.security.maxHolderPercent.toFixed(2) + "%";
-
-    const rugScoreText =
-      item.security.rugScore === null
-        ? "N/A"
-        : formatNumber(item.security.rugScore);
 
     return `
-      <article class="token-card">
-
-        <div class="flex justify-between items-start gap-3">
-          <div class="min-w-0">
-            <div class="text-xs muted">
-              ${escapeHTML(item.dexId)}
-            </div>
-
-            <h3 class="text-xl font-extrabold mt-1 break-words">
-              ${escapeHTML(item.symbol)}
-            </h3>
-
-            <div class="text-sm muted break-words">
-              ${escapeHTML(item.name)}
-            </div>
-          </div>
-
-          <span class="badge ${statusClass(item.status)}">
-            ${escapeHTML(item.status)}
-          </span>
-        </div>
-
-        <div class="mt-4 flex flex-wrap gap-2">
-          ${newBadge}
-
-          <span class="badge unknown">
-            ${escapeHTML(ageText)}
-          </span>
-
-          <span class="badge unknown">
-            Skor ${item.qualityScore}/100
-          </span>
-        </div>
-
-        <div class="score-bar mt-4">
-          <div class="score-fill"
-               style="width:${item.qualityScore}%">
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-3 mt-5">
-
-          <div>
-            <div class="text-xs muted">Likuiditas</div>
-            <div class="font-bold mt-1">
-              ${formatUSD(item.liquidity)}
-            </div>
-          </div>
-
-          <div>
-            <div class="text-xs muted">Volume 24 jam</div>
-            <div class="font-bold mt-1">
-              ${formatUSD(item.volume24h)}
-            </div>
-          </div>
-
-          <div>
-            <div class="text-xs muted">Pembelian 24 jam</div>
-            <div class="font-bold mt-1">
-              ${formatNumber(item.buys24h)}
-            </div>
-          </div>
-
-          <div>
-            <div class="text-xs muted">Penjualan 24 jam</div>
-            <div class="font-bold mt-1">
-              ${formatNumber(item.sells24h)}
-            </div>
-          </div>
-
-          <div>
-            <div class="text-xs muted">Holder terbesar</div>
-            <div class="font-bold mt-1">
-              ${escapeHTML(holderText)}
-            </div>
-          </div>
-
-          <div>
-            <div class="text-xs muted">Skor RugCheck</div>
-            <div class="font-bold mt-1">
-              ${escapeHTML(rugScoreText)}
-            </div>
-          </div>
-
-        </div>
-
-        <div class="mt-5 pt-4 border-t border-slate-800">
-          <div class="font-bold text-sm mb-2">
-            Hasil pemeriksaan
-          </div>
-
-          <ul class="text-xs muted leading-5 list-disc pl-4">
-            ${reasonHTML}
-          </ul>
-        </div>
-
-        <div class="mt-5">
-          <div class="text-xs muted">Alamat token</div>
-
-          <div class="font-mono text-xs mt-1 break-all">
-            ${escapeHTML(item.mintAddress)}
-          </div>
-        </div>
-
-        <div class="mt-4 flex flex-wrap gap-3 text-sm">
-          <a href="${escapeHTML(safeExternalURL(url))}"
-             target="_blank"
-             rel="noopener noreferrer">
-            DexScreener ↗
-          </a>
-
-          <a href="${escapeHTML(
-            "https://rugcheck.xyz/tokens/" +
-            encodeURIComponent(item.mintAddress)
-          )}"
-             target="_blank"
-             rel="noopener noreferrer">
-            RugCheck ↗
-          </a>
-
-          <a href="${escapeHTML(
-            "https://solscan.io/token/" +
-            encodeURIComponent(item.mintAddress)
-          )}"
-             target="_blank"
-             rel="noopener noreferrer">
-            Solscan ↗
-          </a>
-        </div>
-
-      </article>
+      <tr>
+        <td>${timeStr}</td>
+        <td>$${p.startPrice.toFixed(2)}</td>
+        <td class="text-sky-300 font-bold">$${p.predPrice.toFixed(2)}</td>
+        <td><span class="badge ${p.direction==='NAIK'?'up':p.direction==='TURUN'?'down':'neutral'}">${p.direction}</span></td>
+        <td>${tgtStr}</td>
+        <td>${actualTxt}</td>
+        <td><span class="badge ${statBadge}">${p.status}</span></td>
+        <td class="font-mono">${errTxt}</td>
+      </tr>
     `;
   }).join("");
 }
 
-
-/* =========================
-   AUTO SCAN
-   ========================= */
-
-function toggleAutoScan() {
-  if (state.running) {
-    stopAutoScan();
-  } else {
-    startAutoScan();
-  }
+function clearHistory() {
+  state.predictions = [];
+  localStorage.removeItem('btc_predictions');
+  renderHistoryTable();
+  alert("Log Evaluasi telah dibersihkan.");
 }
 
-function startAutoScan() {
-  if (state.running) return;
-
-  state.running = true;
-
-  el("autoButton").textContent = "Matikan Auto Scan";
-
-  updateStatus("Auto scan aktif", "green");
-
-  /*
-    Scan pertama langsung dijalankan.
-    Pemindaian berikutnya dilakukan setiap 15 detik.
-  */
-
-  scanNow();
-
-  state.timer = setInterval(() => {
-    scanNow();
-  }, CONFIG.autoIntervalMs);
+// Utils
+function updateStatus(text, color) {
+  document.getElementById("wsStatusText").innerText = text;
+  document.getElementById("wsStatusDot").className = `inline-block w-3 h-3 rounded-full bg-${color}-400`;
+  document.getElementById("lastUpdate").innerText = "Terakhir: " + new Date().toLocaleTimeString();
 }
 
-function stopAutoScan() {
-  state.running = false;
-
-  if (state.timer) {
-    clearInterval(state.timer);
-    state.timer = null;
-  }
-
-  el("autoButton").textContent = "Aktifkan Auto Scan";
-
-  updateStatus("Auto scan berhenti", "yellow");
-}
-
-
-/* =========================
-   CLEAR RESULTS
-   ========================= */
-
-function clearResults() {
-  state.results.clear();
-  state.seenPairs.clear();
-
-  state.counters = {
-    found: 0,
-    passed: 0,
-    rejected: 0,
-    unknown: 0
-  };
-
-  updateCounters();
-  renderResults();
-
-  setMessage("Hasil lokal telah dibersihkan.");
-}
-
-
-/* =========================
-   FILTER EVENTS
-   ========================= */
-
-[
-  "maxAge",
-  "minLiquidity",
-  "minVolume",
-  "minBuys",
-  "maxHolder",
-  "minScore",
-  "securityMode"
-].forEach(id => {
-  el(id).addEventListener("change", renderResults);
-});
-
-el("resultFilter").addEventListener("change", renderResults);
-
-
-/* =========================
-   INITIALIZATION
-   ========================= */
-
-updateCounters();
-renderResults();
-
-setMessage(
-  "Siap digunakan. Atur filter lalu tekan Scan Sekarang."
-);
-
-updateStatus("Menunggu", "yellow");
+// INIT
+calculateStats();
+fetchHistoricalData();
 
 </script>
-
 </body>
 </html>
