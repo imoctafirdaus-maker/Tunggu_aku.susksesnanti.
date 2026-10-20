@@ -4,16 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<meta name="application-name" content="Binance Predictor">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Binance Predictor">
-<link rel="manifest" href="./manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
-<link rel="apple-touch-icon" href="./icons/icon-192.png">
 <title>Binance Top 100 · Multi-Timeframe Predictor + Harmonic Radar</title>
 <script src="https://cdn.tailwindcss.com"></script>
-<script src="https://unpkg.com/lightweight-charts@4.2.3/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{--bg:#070b14;--panel:#101827;--border:#243047;--muted:#94a3b8}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e5e7eb;font-family:Arial,sans-serif}
@@ -27,8 +19,6 @@
 table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
 #connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}#confidenceBar{height:100%;width:0;background:#facc15;transition:width .25s}
 input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
-.chart-wrap{height:430px;min-width:0;width:100%}.subchart-wrap{height:150px;min-width:0;width:100%}.chart-legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11px;color:var(--muted)}.legend-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
-@media(max-width:640px){.chart-wrap{height:340px}.subchart-wrap{height:130px}}
 @media(max-width:640px){th,td{padding:8px}}
 </style>
 </head>
@@ -66,27 +56,6 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <div class="pt-4 border-t border-slate-700"><p class="muted text-xs leading-5">Evaluasi memakai candle target yang sudah tutup. Performa historis bukan jaminan hasil berikutnya.</p></div></div></div>
 </section>
 
-<section class="panel p-5 mb-6" id="tradePlanPanel">
- <div class="flex flex-wrap items-center justify-between gap-3 mb-4"><div><h2 class="text-lg font-bold">Rencana Trade · Buy / Sell / Stop Loss</h2><p class="muted text-xs mt-1">Level indikatif otomatis mengikuti timeframe dan ATR; tunggu konfirmasi sebelum entry.</p></div><span id="tradeSignal" class="badge unknown">MENUNGGU DATA</span></div>
- <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
-  <div class="indicator-card"><div class="muted text-xs mb-2">Aksi</div><div id="tradeAction" class="indicator-value">MENUNGGU</div><div id="tradeActionNote" class="indicator-status">Data belum cukup</div></div>
-  <div class="indicator-card"><div class="muted text-xs mb-2">Zona entry</div><div id="entryRange" class="indicator-value">--</div><div class="indicator-status">Rentang indikatif</div></div>
-  <div class="indicator-card"><div class="muted text-xs mb-2">Stop loss</div><div id="stopLossLevel" class="indicator-value">--</div><div id="stopLossNote" class="indicator-status">Berbasis ATR</div></div>
-  <div class="indicator-card"><div class="muted text-xs mb-2">Take profit 1</div><div id="takeProfit1" class="indicator-value">--</div><div class="indicator-status">Target 1R</div></div>
-  <div class="indicator-card"><div class="muted text-xs mb-2">Take profit 2</div><div id="takeProfit2" class="indicator-value">--</div><div class="indicator-status">Target 2R</div></div>
- </div>
- <p id="tradePlanNote" class="muted text-xs mt-4 leading-5">Level akan dihitung setelah indikator tersedia. Ini bukan instruksi transaksi atau jaminan profit; sesuaikan ukuran posisi dan biaya/slippage.</p>
-</section>
-
-<section class="panel p-5 mb-6">
-<div class="flex flex-wrap items-center justify-between gap-3 mb-3"><div><h2 class="text-lg font-bold">Grafik Binance Real-Time</h2><p id="chartSubtitle" class="muted text-xs mt-1">Candlestick · Volume · Harmonic overlay</p></div><span id="chartStatus" class="badge unknown">MENUNGGU DATA</span></div>
-<div class="chart-legend mb-3"><span><i class="legend-dot" style="background:#22c55e"></i>Candle naik</span><span><i class="legend-dot" style="background:#ef4444"></i>Candle turun</span><span><i class="legend-dot" style="background:#38bdf8"></i>Struktur XABCD</span><span><i class="legend-dot" style="background:#facc15"></i>PRZ</span></div>
-<div id="priceChart" class="chart-wrap"></div>
-<div class="muted text-xs mt-4 mb-1">RSI (14)</div><div id="rsiChart" class="subchart-wrap"></div>
-<div class="muted text-xs mt-4 mb-1">MACD (12, 26, 9)</div><div id="macdChart" class="subchart-wrap"></div>
-<p class="muted text-xs mt-3 leading-5">Grafik memakai data publik Binance Spot. Garis Harmonic hanya ditampilkan saat kandidat XABCD terdeteksi; area PRZ adalah zona potensial, bukan kepastian pembalikan. Memerlukan internet dan CDN Lightweight Charts.</p>
-</section>
-
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">10 Indikator Teknikal</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
 
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Harmonic Pattern · Scott Carney</h2><span id="harmonicBadge" class="badge unknown">BELUM TERDETEKSI</span></div>
@@ -115,20 +84,6 @@ const $=id=>document.getElementById(id), finite=Number.isFinite;
 function clamp(n,a,b){return Math.max(a,Math.min(b,n))}
 const TIMEFRAMES={"1m":{label:"1 menit",ms:60000},"5m":{label:"5 menit",ms:300000},"15m":{label:"15 menit",ms:900000},"1h":{label:"1 jam",ms:3600000},"4h":{label:"4 jam",ms:14400000},"1d":{label:"1 hari",ms:86400000},"1w":{label:"1 minggu",ms:604800000}};
 function intervalMs(){return (TIMEFRAMES[CONFIG.interval]||TIMEFRAMES["1m"]).ms}
-let priceChart=null,rsiChart=null,macdChart=null,candleSeries=null,volumeSeries=null,harmonicSeries=null,rsiSeries=null,macdLineSeries=null,macdSignalSeries=null,macdHistSeries=null,przLowLine=null,przHighLine=null;
-function makeChart(el,height){if(!window.LightweightCharts)return null;return LightweightCharts.createChart(el,{width:el.clientWidth||600,height,layout:{background:{type:"solid",color:"#0b1220"},textColor:"#cbd5e1"},grid:{vertLines:{color:"#1e293b"},horzLines:{color:"#1e293b"}},rightPriceScale:{borderColor:"#334155"},timeScale:{borderColor:"#334155",timeVisible:true,secondsVisible:false},crosshair:{mode:LightweightCharts.CrosshairMode.Normal}})}
-function initCharts(){if(!window.LightweightCharts){$('chartStatus').textContent='GAGAL MEMUAT LIBRARY';return}if(priceChart)return;
- priceChart=makeChart($('priceChart'),430);candleSeries=priceChart.addCandlestickSeries({upColor:'#22c55e',downColor:'#ef4444',borderUpColor:'#22c55e',borderDownColor:'#ef4444',wickUpColor:'#22c55e',wickDownColor:'#ef4444'});volumeSeries=priceChart.addHistogramSeries({priceFormat:{type:'volume'},priceScaleId:'volume',scaleMargins:{top:.82,bottom:0}});harmonicSeries=priceChart.addLineSeries({color:'#38bdf8',lineWidth:2,priceLineVisible:false,lastValueVisible:false,crosshairMarkerVisible:false});
- rsiChart=makeChart($('rsiChart'),150);rsiSeries=rsiChart.addLineSeries({color:'#c084fc',lineWidth:2,priceLineVisible:false});rsiSeries.createPriceLine({price:70,color:'#ef4444',lineStyle:LightweightCharts.LineStyle.Dashed,lineWidth:1,axisLabelVisible:true,title:'70'});rsiSeries.createPriceLine({price:30,color:'#22c55e',lineStyle:LightweightCharts.LineStyle.Dashed,lineWidth:1,axisLabelVisible:true,title:'30'});
- macdChart=makeChart($('macdChart'),150);macdLineSeries=macdChart.addLineSeries({color:'#38bdf8',lineWidth:2,priceLineVisible:false});macdSignalSeries=macdChart.addLineSeries({color:'#f59e0b',lineWidth:2,priceLineVisible:false});macdHistSeries=macdChart.addHistogramSeries({priceLineVisible:false,lastValueVisible:false});
- const sync=(source,others)=>source.timeScale().subscribeVisibleLogicalRangeChange(range=>{if(!range)return;for(const c of others){try{c.timeScale().setVisibleLogicalRange(range)}catch(_){}}});sync(priceChart,[rsiChart,macdChart]);sync(rsiChart,[priceChart,macdChart]);sync(macdChart,[priceChart,rsiChart]);
- if(window.ResizeObserver){const ro=new ResizeObserver(()=>{for(const [chart,id] of [[priceChart,'priceChart'],[rsiChart,'rsiChart'],[macdChart,'macdChart']])if(chart)chart.applyOptions({width:$(id).clientWidth||600})});ro.observe($('priceChart'));ro.observe($('rsiChart'));ro.observe($('macdChart'))}
-}
-function renderMarketCharts(){try{initCharts();if(!priceChart||!state.candles.length)return;const cs=workingCandles().filter(c=>finite(c.time)&&finite(c.open)&&finite(c.high)&&finite(c.low)&&finite(c.close));if(!cs.length)return;const candles=cs.map(c=>({time:Math.floor(c.time/1000),open:c.open,high:c.high,low:c.low,close:c.close}));const vols=cs.map(c=>({time:Math.floor(c.time/1000),value:c.volume||0,color:c.close>=c.open?'rgba(34,197,94,.45)':'rgba(239,68,68,.45)'}));candleSeries.setData(candles);volumeSeries.setData(vols);
- const tailStart=Math.max(0,cs.length-300),rsiData=[],macdLine=[],macdSignal=[],macdHist=[];for(let i=tailStart;i<cs.length;i++){const sub=cs.slice(0,i+1),cl=sub.map(x=>x.close),t=Math.floor(cs[i].time/1000);const rv=TA.rsi(cl,14);if(finite(rv))rsiData.push({time:t,value:rv});const m=TA.macd(cl);if(finite(m.line))macdLine.push({time:t,value:m.line});if(finite(m.signal))macdSignal.push({time:t,value:m.signal});if(finite(m.histogram))macdHist.push({time:t,value:m.histogram,color:m.histogram>=0?'rgba(34,197,94,.65)':'rgba(239,68,68,.65)'})}rsiSeries.setData(rsiData);macdLineSeries.setData(macdLine);macdSignalSeries.setData(macdSignal);macdHistSeries.setData(macdHist);
- if(przLowLine){try{candleSeries.removePriceLine(przLowLine)}catch(_){}przLowLine=null}if(przHighLine){try{candleSeries.removePriceLine(przHighLine)}catch(_){}przHighLine=null}const h=state.harmonic;if(h){przLowLine=candleSeries.createPriceLine({price:h.przLow,color:'#facc15',lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:'PRZ Low'});przHighLine=candleSeries.createPriceLine({price:h.przHigh,color:'#facc15',lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:'PRZ High'});}harmonicSeries.setData(h&&h.X&&h.A&&h.B&&h.C&&h.D?[h.X,h.A,h.B,h.C,h.D].map(p=>({time:Math.floor(p.time/1000),value:p.price})):[]);if(h){candleSeries.setMarkers([{time:Math.floor(h.X.time/1000),position:h.X.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'X'},{time:Math.floor(h.A.time/1000),position:h.A.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'A'},{time:Math.floor(h.B.time/1000),position:h.B.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'B'},{time:Math.floor(h.C.time/1000),position:h.C.type==='L'?'belowBar':'aboveBar',color:'#38bdf8',shape:'circle',text:'C'},{time:Math.floor(h.D.time/1000),position:h.D.type==='L'?'belowBar':'aboveBar',color:'#facc15',shape:'circle',text:'D'}]);for(const pl of candleSeries.priceLines?.()||[]){} }else candleSeries.setMarkers([]);
- $('chartSubtitle').textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${cs.length} candle · ${h?h.name+' '+(h.confirmed?'rasio cocok':'kandidat'):'belum ada pola'}`;$('chartStatus').className='badge '+(h?(h.confirmed?'pass':'warning'):'unknown');$('chartStatus').textContent=h?(h.confirmed?'HARMONIC TERKONFIRMASI':'KANDIDAT HARMONIC'):'MENUNGGU POLA';if(!priceChart.timeScale().getVisibleLogicalRange())priceChart.timeScale().fitContent();}catch(e){console.warn('Chart render:',e);$('chartStatus').textContent='GRAFIK MEMUAT ULANG'}}
-
 function updateTimeframeLabels(){const label=(TIMEFRAMES[CONFIG.interval]||TIMEFRAMES["1m"]).label;$("timeframeLabel").textContent="Timeframe "+label;$("predictionTitle").textContent="Prediksi Harga · "+label;$("timeframeSelect").value=CONFIG.interval}
 function mean(a){return a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN}
 function fmtUSD(n){return finite(n)?n.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:8}):"--"}
@@ -195,48 +150,79 @@ function nearRatio(value,target,tolerance=.10){return finite(value)&&Math.abs(va
 function inRange(v,a,b,tol=.08){return finite(v)&&v>=a*(1-tol)&&v<=b*(1+tol)}
 function ratioScore(v,targetOrRange,tol=.12){if(!finite(v))return 0;let distance;if(Array.isArray(targetOrRange)){let [a,b]=targetOrRange;distance=v<a?a-v:v>b?v-b:0;return clamp(100-distance/Math.max(b-a,Math.abs((a+b)/2)*tol,.01)*100,0,100)}distance=Math.abs(v-targetOrRange);return clamp(100-distance/Math.max(targetOrRange*tol,.01)*100,0,100)}
 function detectHarmonic(candles){
-  const ps=pivots(candles,3);
+  // Confirmed swing pivots use closed candles only. X-A-B-C-D must alternate
+  // and form a coherent five-point zigzag; projections are measured directionally.
+  const closedCandles=candles;
+  const ps=pivots(closedCandles,3);
   if(ps.length<5)return null;
-  const [X,A,B,C,D]=ps.slice(-5);
-  const seq=[X,A,B,C,D];
+  const [X,A,B,C,D]=ps.slice(-5), seq=[X,A,B,C,D];
   if(seq.some((q,i)=>i>0&&q.type===seq[i-1].type))return null;
-  const XA=Math.abs(A.price-X.price),AB=Math.abs(B.price-A.price),BC=Math.abs(C.price-B.price),CD=Math.abs(D.price-C.price);
-  if(!XA||!AB||!BC||!CD)return null;
-  const rAB=AB/XA,rBC=BC/AB,rCD=CD/BC,rABCD=CD/AB,rAD=Math.abs(D.price-A.price)/XA;
-  const bullish=D.type==="L";
+  const XA=A.price-X.price, AB=B.price-A.price, BC=C.price-B.price, CD=D.price-C.price;
+  const eps=Math.max(Math.abs(X.price),Math.abs(A.price),Math.abs(B.price),Math.abs(C.price),Math.abs(D.price))*1e-10;
+  if([XA,AB,BC,CD].some(v=>!finite(v)||Math.abs(v)<=eps))return null;
+  // Correct orientation: X->A, A->B, B->C, C->D must alternate in direction.
+  if(!(Math.sign(AB)===-Math.sign(XA)&&Math.sign(BC)===-Math.sign(AB)&&Math.sign(CD)===-Math.sign(BC)))return null;
+  const rAB=Math.abs(AB/XA), rBC=Math.abs(BC/AB), rCD=Math.abs(CD/BC), rABCD=Math.abs(CD/AB), rAD=Math.abs((D.price-A.price)/XA);
+  const bullish=D.type==='L';
+  // Commonly accepted Fibonacci zones (Scott Carney-style; tolerance is explicit).
   const patterns=[
-    {name:"Gartley",ab:[.618,.618],bc:[.382,.886],cd:[1.272,1.618],ad:[.786,.786]},
-    {name:"Bat",ab:[.382,.500],bc:[.382,.886],cd:[1.618,2.618],ad:[.886,.886]},
-    {name:"Butterfly",ab:[.786,.786],bc:[.382,.886],cd:[1.618,2.240],ad:[1.272,1.618]},
-    {name:"Crab",ab:[.382,.618],bc:[.382,.886],cd:[2.240,3.618],ad:[1.618,1.618]},
-    {name:"Deep Crab",ab:[.886,.886],bc:[.382,.886],cd:[2.000,3.618],ad:[1.618,1.618]}
+    {name:'Gartley',ab:[.618,.618],bc:[.382,.886],cd:[1.272,1.618],ad:[.786,.786],idealCD:[1.272,1.618]},
+    {name:'Bat',ab:[.382,.500],bc:[.382,.886],cd:[1.618,2.618],ad:[.886,.886],idealCD:[1.618,2.618]},
+    {name:'Butterfly',ab:[.786,.786],bc:[.382,.886],cd:[1.618,2.240],ad:[1.270,1.618],idealCD:[1.618,2.240]},
+    {name:'Crab',ab:[.382,.618],bc:[.382,.886],cd:[2.240,3.618],ad:[1.618,1.618],idealCD:[2.240,3.618]},
+    {name:'Deep Crab',ab:[.886,.886],bc:[.382,.886],cd:[2.000,3.618],ad:[1.618,1.618],idealCD:[2.000,3.618]}
   ];
+  // Ratios must match both the pattern family and directional geometry.
+  function targetScore(v,range,tolerance){
+    const [lo,hi]=range, center=(lo+hi)/2;
+    const allowed=Math.max((hi-lo)/2,tolerance);
+    const dist=v<lo?lo-v:v>hi?v-hi:0;
+    return clamp(100-100*dist/allowed,0,100);
+  }
   let best=null;
   for(const pat of patterns){
-    const parts=[{key:"AB_XA",v:rAB,range:pat.ab},{key:"BC_AB",v:rBC,range:pat.bc},{key:"CD_BC",v:rCD,range:pat.cd},{key:"AD_XA",v:rAD,range:pat.ad}];
-    const scores=parts.map(x=>ratioScore(x.v,x.range));
-    const abcdScore=ratioScore(rABCD,1,.15);
+    const specs=[
+      {key:'AB_XA',v:rAB,range:pat.ab,tol:.035},
+      {key:'BC_AB',v:rBC,range:pat.bc,tol:.04},
+      {key:'CD_BC',v:rCD,range:pat.cd,tol:.08},
+      {key:'AD_XA',v:rAD,range:pat.ad,tol:.04}
+    ];
+    const scores=specs.map(x=>targetScore(x.v,x.range,x.tol));
+    // AB=CD is a separate harmonic family, not a mandatory rule for every named pattern.
+    const abcdScore=targetScore(rABCD,[.90,1.10],.10);
     const score=mean([...scores,abcdScore]);
-    const allWithin=parts.every(x=>inRange(x.v,x.range[0],x.range[1],.08))&&Math.abs(rABCD-1)<=.20;
-    if(!best||score>best.score){
-      const dir=Math.sign(X.price-A.price);
-      const xaTargets=pat.ad.map(r=>A.price+dir*XA*r);
-      const cdTargets=pat.cd.map(r=>C.price+dir*BC*r);
-      const abcdTarget=C.price+dir*AB;
-      const projections=[...xaTargets,...cdTargets,abcdTarget].filter(finite);
-      best={name:pat.name,score,allWithin,ratios:{AB_XA:rAB,BC_AB:rBC,CD_BC:rCD,AD_XA:rAD,AB_CD:rABCD},bullish,D,X,A,B,C,pattern:pat,projections};
+    const within=specs.every(x=>x.v>=x.range[0]-x.tol&&x.v<=x.range[1]+x.tol);
+    const abcdWithin=rABCD>=.90&&rABCD<=1.10;
+    // Expected D price from XA retracement/extension, and CD projection from C.
+    const xaDirection=Math.sign(XA);
+    const adPrices=pat.ad.map(r=>A.price-XA*r);
+    const cdPrices=pat.cd.map(r=>C.price+Math.sign(AB)*Math.abs(BC)*r);
+    const adLow=Math.min(...adPrices),adHigh=Math.max(...adPrices);
+    const cdLow=Math.min(...cdPrices),cdHigh=Math.max(...cdPrices);
+    // Use projection intervals only if they point toward the observed D reversal.
+    const directionOK=bullish ? D.price<C.price&&D.price<A.price : D.price>C.price&&D.price>A.price;
+    const distanceToInterval=(price,lo,hi)=>price<lo?lo-price:price>hi?price-hi:0;
+    const projDistance=Math.min(distanceToInterval(D.price,Math.min(adLow,adHigh),Math.max(adLow,adHigh)),distanceToInterval(D.price,Math.min(cdLow,cdHigh),Math.max(cdLow,cdHigh)));
+    const scale=Math.max(Math.abs(XA)*.04,Math.abs(D.price)*.0005);
+    const przLow=Math.max(Math.min(adLow,adHigh,cdLow,cdHigh),Math.min(adLow,adHigh,cdLow,cdHigh));
+    const low=Math.min(adLow,adHigh,cdLow,cdHigh), high=Math.max(adLow,adHigh,cdLow,cdHigh);
+    const intersects=Math.max(Math.min(adLow,adHigh),Math.min(cdLow,cdHigh))<=Math.min(Math.max(adLow,adHigh),Math.max(cdLow,cdHigh));
+    // Score includes geometry and projection confluence, avoiding a false pass from ratios alone.
+    const projectionScore=clamp(100-projDistance/scale*100,0,100);
+    const total=score*.75+projectionScore*.25;
+    const confirmed=within&&directionOK&&projDistance<=scale&&total>=80;
+    if(!best||total>best.score){
+      let zoneLow=intersects?Math.max(Math.min(adLow,adHigh),Math.min(cdLow,cdHigh)):low;
+      let zoneHigh=intersects?Math.min(Math.max(adLow,adHigh),Math.max(cdLow,cdHigh)):high;
+      if(!finite(zoneLow)||!finite(zoneHigh)||zoneLow>zoneHigh){zoneLow=low;zoneHigh=high}
+      const pad=Math.max((zoneHigh-zoneLow)*.10,Math.abs(D.price)*.0002);
+      best={name:pat.name,score:total,ratioScore:score,allWithin:within&&abcdWithin,confirmed,bullish,D,X,A,B,C,pattern:pat,
+        ratios:{AB_XA:rAB,BC_AB:rBC,CD_BC:rCD,AD_XA:rAD,AB_CD:rABCD},
+        przLow:zoneLow-pad,przHigh:zoneHigh+pad,przDistancePct:D.price?projDistance/Math.abs(D.price)*100:NaN,
+        projections:[...adPrices,...cdPrices],projectionScore};
     }
   }
-  if(!best||best.score<65)return null;
-  const all=[...best.projections,best.D.price].sort((a,b)=>a-b);
-  const q1=all[Math.floor((all.length-1)*.20)],q3=all[Math.ceil((all.length-1)*.80)];
-  const padding=Math.max((q3-q1)*.12,best.D.price*.0005);
-  best.przLow=Math.min(q1,best.D.price)-padding;
-  best.przHigh=Math.max(q3,best.D.price)+padding;
-  const nearest=best.projections.reduce((m,v)=>Math.min(m,Math.abs(v-best.D.price)),Infinity);
-  const projectionScale=Math.max(XA*.08,best.D.price*.0005);
-  best.przDistancePct=best.D.price?nearest/best.D.price*100:NaN;
-  best.confirmed=best.allWithin&&nearest<=projectionScale&&best.score>=80;
+  if(!best||best.ratioScore<72)return null;
   return best;
 }
 function calculateIndicators(cs=workingCandles()){
@@ -260,8 +246,7 @@ function renderIndicators(){
  ["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP"]
  ];
  $("indicatorsGrid").innerHTML=cards.map(([n,v,s])=>{let cl=/Bullish|Positif|Buy Dominan|di atas VWAP|Tren kuat/.test(s)?"text-green-400":/Bearish|Negatif|Sell Dominan|di bawah band|di bawah VWAP/.test(s)?"text-red-400":"text-slate-400";return `<div class="indicator-card"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status ${cl}">${s}</div></div>`}).join("");
- renderHarmonic(i.harmonic);renderMarketCharts();
- const plan=runModel(workingCandles(),i);if(plan)renderTradePlan(plan);else renderTradePlan(null);
+ renderHarmonic(i.harmonic);
 }
 function renderHarmonic(h){
  state.harmonic=h;
@@ -287,31 +272,7 @@ function runModel(cs,i){
  if(i.harmonic&&i.harmonic.score>=65)add((i.harmonic.bullish?1:-1)*(i.harmonic.score/100),1.0);
  const norm=w?clamp(score/w,-1,1):0,move=norm*i.atr*.35,pred=price+move,pct=(pred-price)/price*100;
  const direction=pct>.01?"NAIK":pct<-.01?"TURUN":"NETRAL";
- // ATR multiplier grows with the selected timeframe to reduce overly tight stops on slower charts.
- const riskMult={"1m":0.8,"5m":1.0,"15m":1.2,"1h":1.5,"4h":1.8,"1d":2.0,"1w":2.5}[CONFIG.interval]||1.0;
- const action=norm>=0.20?"BUY":norm<=-0.20?"SELL":"WAIT";
- const entryPad=i.atr*0.15;
- const entryLow=action==="BUY"?price-entryPad:action==="SELL"?price-entryPad:price-entryPad;
- const entryHigh=price+entryPad;
- const riskDistance=i.atr*riskMult;
- const stopLoss=action==="BUY"?price-riskDistance:action==="SELL"?price+riskDistance:null;
- const takeProfit1=action==="BUY"?price+riskDistance:action==="SELL"?price-riskDistance:null;
- const takeProfit2=action==="BUY"?price+riskDistance*2:action==="SELL"?price-riskDistance*2:null;
- return {startPrice:price,predPrice:pred,direction,returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),normalizedScore:norm,tradeAction:action,entryLow,entryHigh,stopLoss,takeProfit1,takeProfit2,riskAtrMultiplier:riskMult,lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8,indicatorSnapshot:{rsi:i.rsi,ema9:i.ema9,ema21:i.ema21,macd:i.macd.line,stoch:i.stoch,volDelta:i.volDelta,atr:i.atr,adx:i.adx.adx,vwap:i.vwap,harmonic:i.harmonic?{name:i.harmonic.name,score:i.harmonic.score,bullish:i.harmonic.bullish}:null}};
-}
-function renderTradePlan(p){
- const ids=["entryRange","stopLossLevel","takeProfit1","takeProfit2"];
- if(!p){$("tradeSignal").className="badge unknown";$("tradeSignal").textContent="MENUNGGU DATA";$("tradeAction").textContent="MENUNGGU";$("tradeActionNote").textContent="Minimal 50 candle diperlukan";ids.forEach(id=>$(id).textContent="--");$("stopLossNote").textContent="Berbasis ATR";$("tradePlanNote").textContent="Level akan dihitung setelah indikator tersedia.";return}
- const action=p.tradeAction||"WAIT",cls=action==="BUY"?"pass":action==="SELL"?"reject":"warning";
- $("tradeSignal").className="badge "+cls;$("tradeSignal").textContent=action==="WAIT"?"TUNGGU KONFIRMASI":action+" · SINYAL ATURAN";
- $("tradeAction").textContent=action;$("tradeAction").style.color=action==="BUY"?"#86efac":action==="SELL"?"#fca5a5":"#fde68a";
- $("tradeActionNote").textContent=`Skor ${fmt(p.signalStrength,0)}/100 · ${CONFIG.interval}`;
- $("entryRange").textContent=`${fmtUSD(p.entryLow)} – ${fmtUSD(p.entryHigh)}`;
- $("stopLossLevel").textContent=finite(p.stopLoss)?fmtUSD(p.stopLoss):"Tidak aktif";
- $("stopLossNote").textContent=`${fmt(p.riskAtrMultiplier,1)} × ATR`;
- $("takeProfit1").textContent=finite(p.takeProfit1)?fmtUSD(p.takeProfit1):"--";
- $("takeProfit2").textContent=finite(p.takeProfit2)?fmtUSD(p.takeProfit2):"--";
- $("tradePlanNote").textContent=action==="WAIT"?"Skor arah belum melewati ambang ±20/100. Jangan paksa entry; tunggu sinyal lebih jelas. Zona entry tetap hanya referensi harga saat ini.":`Harga referensi ${fmtUSD(p.startPrice)} · ATR ${fmtUSD(state.indicators?.atr)} · Stop ${fmt(p.riskAtrMultiplier,1)}×ATR. TP1 = 1R dan TP2 = 2R. Level diperbarui saat data live berubah; spread, slippage, dan gap dapat menyebabkan eksekusi berbeda.`;
+ return {startPrice:price,predPrice:pred,direction,returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),normalizedScore:norm,lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8,indicatorSnapshot:{rsi:i.rsi,ema9:i.ema9,ema21:i.ema21,macd:i.macd.line,stoch:i.stoch,volDelta:i.volDelta,atr:i.atr,adx:i.adx.adx,vwap:i.vwap,harmonic:i.harmonic?{name:i.harmonic.name,score:i.harmonic.score,bullish:i.harmonic.bullish}:null}};
 }
 function createPrediction(candle){
  const cs=state.candles,i=calculateIndicators(cs);if(!i){msg("Riwayat candle belum cukup untuk menghitung indikator.");return}
@@ -353,7 +314,7 @@ async function fetchHistory(){
   const now=Date.now();state.candles=data.map(d=>({time:+d[0],open:+d[1],high:+d[2],low:+d[3],close:+d[4],volume:+d[5],closeTime:+d[6],takerBuyBase:+d[9]})).filter(c=>[c.time,c.open,c.high,c.low,c.close,c.volume,c.closeTime,c.takerBuyBase].every(finite)&&c.closeTime<now);
   if(state.candles.length<50)throw Error("Candle tertutup kurang dari 50");
   state.restEndpoint=base;state.lastClosedTime=state.candles.at(-1).time;state.currentPrice=state.candles.at(-1).close;state.liveCandle=null;state.indicators=calculateIndicators(state.candles);
-  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;renderPrice();renderIndicators();renderMarketCharts();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS();
+  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;renderPrice();renderIndicators();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS();
  }catch(e){if(gen!==state.generation)return;console.error(e);setStatus("Gagal memuat data","red");msg("Tidak dapat mengambil candle Binance: "+e.message);scheduleReconnect()}
 }
 function connectWS(){
@@ -370,7 +331,7 @@ function processKline(k){
  if(![c.time,c.open,c.high,c.low,c.close,c.volume,c.takerBuyBase].every(finite))return;
  state.currentPrice=c.close;state.liveCandle=c;renderPrice();state.indicators=calculateIndicators(workingCandles());renderIndicators();if(!c.isClosed)return;
  const idx=state.candles.findIndex(x=>x.time===c.time);if(idx>=0)state.candles[idx]=c;else state.candles.push(c);state.candles.sort((a,b)=>a.time-b.time);state.candles=state.candles.slice(-1500);state.liveCandle=null;
- const last=state.candles.at(-1),previous=state.lastClosedTime;if(last.time===previous){evaluateCandle(last);return}state.lastClosedTime=last.time;state.indicators=calculateIndicators(state.candles);renderIndicators();renderMarketCharts();
+ const last=state.candles.at(-1),previous=state.lastClosedTime;if(last.time===previous){evaluateCandle(last);return}state.lastClosedTime=last.time;state.indicators=calculateIndicators(state.candles);renderIndicators();
  if(previous!==null&&last.time>previous){evaluateCandle(last);createPrediction(last)}else evaluateCandle(last);stats();renderHistory();
 }
 function reconnectNow(){state.stopped=false;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;state.reconnectDelay=1000;state.reconnectAttempts=0;state.generation++;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}state.ws=null}state.candles=[];state.liveCandle=null;state.indicators=null;state.lastClosedTime=null;fetchHistory()}
