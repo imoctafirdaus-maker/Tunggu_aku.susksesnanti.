@@ -156,84 +156,722 @@ function calculateIndicators(cs){if(cs.length<50)return null;const c=cs.map(x=>x
 function workingCandles(){const a=state.candles.slice();if(state.liveCandle){const i=a.findIndex(x=>x.time===state.liveCandle.time);if(i>=0)a[i]=state.liveCandle;else a.push(state.liveCandle)}return a}
 
 /*HARMONIC-START*/
-/* =====================================================================
-   HARMONIC PATTERN — tabel rasio mengikuti Scott Carney
-   (Harmonic Trading Vol. 1–3). Semua rasio memakai nilai absolut leg.
-   ab = AB/XA   bc = BC/AB   cd = CD/BC   ad = retracement D terhadap XA
-   Cypher: ab = B/XA, xc = XC/XA (C ekstensi XA), dxc = CD/XC
-   ===================================================================== */
-const HARMONIC_DEFS=[
- {name:"Gartley",  ab:[.618,.618],bc:[.382,.886],cd:[1.272,1.618],ad:[.786,.786],stop:1},
- {name:"Bat",      ab:[.382,.5],  bc:[.382,.886],cd:[1.618,2.618],ad:[.886,.886],stop:1},
- {name:"Alt Bat",  ab:[.382,.382],bc:[.382,.886],cd:[2.0,3.618],  ad:[1.13,1.13],stop:1.272},
- {name:"Butterfly",ab:[.786,.786],bc:[.382,.886],cd:[1.618,2.24], ad:[1.27,1.618],stop:1.75},
- {name:"Crab",     ab:[.382,.618],bc:[.382,.886],cd:[2.24,3.618], ad:[1.618,1.618],stop:1.75},
- {name:"Deep Crab",ab:[.886,.886],bc:[.382,.886],cd:[2.24,3.618], ad:[1.618,1.618],stop:1.75},
- {name:"Cypher",cypher:true,ab:[.382,.618],xc:[1.272,1.414],dxc:[.786,.786]}
+/* ================================================================
+   HARMONIC SCANNER — PEMINDAIAN SELURUH RIWAYAT + DIAGNOSTIK
+   Mempertahankan struktur data yang dipakai chart dan UI Anda.
+
+   Memindai semua jendela lima pivot, bukan hanya lima pivot terakhir.
+   Menangani plateau high/low, merekam alasan penolakan, dan memilih
+   pola utama berdasarkan status, kualitas, serta waktu pembentukan.
+   ================================================================ */
+
+const HARMONIC_DEFS = [
+  {
+    name: "Gartley",
+    ab: [.618, .618],
+    bc: [.382, .886],
+    cd: [1.272, 1.618],
+    ad: [.786, .786],
+    stop: 1
+  },
+  {
+    name: "Bat",
+    ab: [.382, .500],
+    bc: [.382, .886],
+    cd: [1.618, 2.618],
+    ad: [.886, .886],
+    stop: 1
+  },
+  {
+    name: "Alt Bat",
+    ab: [.382, .382],
+    bc: [.382, .886],
+    cd: [2.000, 3.618],
+    ad: [1.130, 1.130],
+    stop: 1.272
+  },
+  {
+    name: "Butterfly",
+    ab: [.786, .786],
+    bc: [.382, .886],
+    cd: [1.618, 2.240],
+    ad: [1.270, 1.618],
+    stop: 1.750
+  },
+  {
+    name: "Crab",
+    ab: [.382, .618],
+    bc: [.382, .886],
+    cd: [2.240, 3.618],
+    ad: [1.618, 1.618],
+    stop: 1.750
+  },
+  {
+    name: "Deep Crab",
+    ab: [.886, .886],
+    bc: [.382, .886],
+    cd: [2.240, 3.618],
+    ad: [1.618, 1.618],
+    stop: 1.750
+  },
+  {
+    name: "Cypher",
+    cypher: true,
+    ab: [.382, .618],
+    xc: [1.272, 1.414],
+    dxc: [.786, .786]
+  }
 ];
-function pivots(cs,span,minLeg){
- const out=[];const add=p=>{const z=out[out.length-1];if(!z){out.push(p);return}
-  if(z.type===p.type){if((p.type==="H"&&p.price>z.price)||(p.type==="L"&&p.price<z.price))out[out.length-1]=p;return}
-  if(Math.abs(p.price-z.price)<minLeg)return;out.push(p)};
- for(let i=span;i<cs.length-span;i++){let H=true,L=true;
-  for(let j=i-span;j<=i+span;j++){if(j===i)continue;if(cs[j].high>=cs[i].high)H=false;if(cs[j].low<=cs[i].low)L=false}
-  const mk=t=>({index:i,time:cs[i].time,price:t==="H"?cs[i].high:cs[i].low,type:t});
-  if(H&&L){const z=out[out.length-1];add(mk(z&&z.type==="H"?"L":"H"))}else if(H)add(mk("H"));else if(L)add(mk("L"))}
- return out}
-function devR(v,r){if(!finite(v))return Infinity;if(v<r[0])return (r[0]-v)/r[0];if(v>r[1])return (v-r[1])/r[1];return 0}
-function zoneOf(fn,r,h){const a=fn(r[0]*(1-h)),b=fn(r[1]*(1+h));return [Math.min(a,b),Math.max(a,b)]}
-function evalHarmonic(def,X,A,B,C,Dp,tol){
- const xp=X.price,ap=A.price,bp=B.price,cp=C.price,s=ap>xp?1:-1,h=tol/2;
- const XA=Math.abs(ap-xp),AB=Math.abs(ap-bp),BC=Math.abs(cp-bp);
- if(!(XA>0&&AB>0&&BC>0))return null;
- if(Math.sign(bp-ap)!==-s||Math.sign(cp-bp)!==s)return null;
- const rows=[],devs=[],wts=[];
- const rAB=AB/XA,dAB=devR(rAB,def.ab);if(dAB>tol)return null;
- rows.push({label:def.cypher?"B/XA":"AB/XA",value:rAB,range:def.ab,dev:dAB});devs.push(dAB);wts.push(1);
- let zoneA,zoneB=null,legRef,stop;
- if(def.cypher){
-  const XC=Math.abs(cp-xp),rXC=XC/XA;if((cp-xp)*s<=XA)return null;
-  const dXC=devR(rXC,def.xc);if(dXC>tol)return null;
-  rows.push({label:"XC/XA",value:rXC,range:def.xc,dev:dXC});devs.push(dXC);wts.push(1.5);
-  zoneA=zoneOf(r=>cp-s*XC*r,def.dxc,h);
-  if(Dp!=null){if((Dp-cp)*s>=0)return null;const rD=Math.abs(cp-Dp)/XC,dD=devR(rD,def.dxc);if(dD>tol)return null;
-   rows.push({label:"CD/XC",value:rD,range:def.dxc,dev:dD});devs.push(dD);wts.push(2.5)}
-  stop=xp;legRef=cp;
- }else{
-  const rBC=BC/AB,dBC=devR(rBC,def.bc);if(dBC>tol)return null;
-  rows.push({label:"BC/AB",value:rBC,range:def.bc,dev:dBC});devs.push(dBC);wts.push(1);
-  zoneA=zoneOf(r=>ap-s*XA*r,def.ad,h);zoneB=zoneOf(r=>cp-s*BC*r,def.cd,h);
-  if(Dp!=null){if((Dp-cp)*s>=0)return null;const rCD=Math.abs(cp-Dp)/BC,rAD=(ap-Dp)*s/XA;if(rAD<=0)return null;
-   const dCD=devR(rCD,def.cd),dAD=devR(rAD,def.ad);if(dCD>tol||dAD>tol)return null;
-   rows.push({label:"CD/BC",value:rCD,range:def.cd,dev:dCD});devs.push(dCD);wts.push(1);
-   rows.push({label:"AD/XA (D)",value:rAD,range:def.ad,dev:dAD});devs.push(dAD);wts.push(2.5)}
-  stop=ap-s*XA*def.stop;legRef=ap;
- }
- let lo=zoneA[0],hi=zoneA[1],confluence=!zoneB;
- if(zoneB){const l2=Math.max(zoneA[0],zoneB[0]),h2=Math.min(zoneA[1],zoneB[1]);if(l2<=h2){lo=l2;hi=h2;confluence=true}}
- if(Dp==null&&!confluence)return null;
- const entry=Dp!=null?Dp:(lo+hi)/2;if((entry-stop)*s<=0)return null;
- const leg=Math.abs(legRef-entry),risk=Math.abs(entry-stop),tp1=entry+s*.382*leg,tp2=entry+s*.618*leg;
- let sw=0,sd=0;for(let i=0;i<devs.length;i++){sw+=wts[i];sd+=devs[i]*wts[i]}
- const quality=clamp(100*(1-(sd/sw)/tol),0,100);
- return {name:def.name,cypher:!!def.cypher,bullish:s===1,X,A,B,C,rows,quality,przLow:lo,przHigh:hi,confluence,entry,stop,tp1,tp2,rr1:Math.abs(tp1-entry)/risk,rr2:Math.abs(tp2-entry)/risk,eqCD:def.cypher?NaN:cp-s*AB}}
-function scanHarmonic(P,cs,tol,proj){
- if(P.length<4||cs.length<2)return null;
- const price=cs[cs.length-1].close,found=[];
- const stale=r=>(r.bullish&&price<r.stop)||(!r.bullish&&price>r.stop);
- if(P.length>=5){const [X,A,B,C,D]=P.slice(-5),since=cs.filter(c=>c.time>D.time).length;
-  if(since<=40)for(const def of HARMONIC_DEFS){const r=evalHarmonic(def,X,A,B,C,D.price,tol);if(r&&!stale(r)){r.status="SELESAI";r.rank=3;r.D={time:D.time,price:D.price,type:D.type};found.push(r)}}}
- const [X,A,B,C]=P.slice(-4),after=cs.filter(c=>c.time>C.time);
- if(after.length){const wantLow=C.type==="H";let ext={time:after[0].time,price:wantLow?after[0].low:after[0].high};
-  for(const c of after){const v=wantLow?c.low:c.high;if(wantLow?v<ext.price:v>ext.price)ext={time:c.time,price:v}}
-  ext.type=wantLow?"L":"H";
-  for(const def of HARMONIC_DEFS){
-   const rf=evalHarmonic(def,X,A,B,C,ext.price,tol);
-   if(rf&&!stale(rf)){rf.status="TERBENTUK";rf.rank=2;rf.D=ext;found.push(rf);continue}
-   if(proj){const rp=evalHarmonic(def,X,A,B,C,null,tol);
-    if(rp&&(rp.bullish?ext.price>rp.przHigh:ext.price<rp.przLow)&&!stale(rp)){rp.status="PROYEKSI";rp.rank=1;rp.D=null;found.push(rp)}}}}
- if(!found.length)return null;
- found.sort((a,b)=>b.rank-a.rank||b.quality-a.quality);return found[0]}
+
+/* Statistik pemindaian untuk diagnostik. */
+const harmonicDiagnostics = {
+  candleCount: 0,
+  pivotCount: 0,
+  windowsScanned: 0,
+  candidates: 0,
+  completed: 0,
+  forming: 0,
+  projected: 0,
+  accepted: 0,
+  rejected: {},
+  errors: [],
+  lastScan: null
+};
+
+function resetHarmonicDiagnostics() {
+  harmonicDiagnostics.candleCount = 0;
+  harmonicDiagnostics.pivotCount = 0;
+  harmonicDiagnostics.windowsScanned = 0;
+  harmonicDiagnostics.candidates = 0;
+  harmonicDiagnostics.completed = 0;
+  harmonicDiagnostics.forming = 0;
+  harmonicDiagnostics.projected = 0;
+  harmonicDiagnostics.accepted = 0;
+  harmonicDiagnostics.rejected = {};
+  harmonicDiagnostics.errors = [];
+  harmonicDiagnostics.lastScan = new Date().toISOString();
+}
+
+function harmonicReject(reason) {
+  const key = reason || "Alasan tidak diketahui";
+  harmonicDiagnostics.rejected[key] =
+    (harmonicDiagnostics.rejected[key] || 0) + 1;
+}
+
+function harmonicError(context, error) {
+  const item = {
+    context,
+    message: error && error.message
+      ? error.message
+      : String(error),
+    time: new Date().toISOString()
+  };
+
+  harmonicDiagnostics.errors.push(item);
+
+  if (harmonicDiagnostics.errors.length > 30) {
+    harmonicDiagnostics.errors.shift();
+  }
+
+  console.error("[Harmonic]", context, error);
+}
+
+/*
+ * Pivot detection:
+ * - Memilih satu wakil untuk plateau high/low.
+ * - Tidak membuang pivot hanya karena harga hampir sama.
+ * - Menjaga urutan swing High/Low.
+ * - Memastikan pivot yang sama tidak ditambahkan berulang.
+ */
+function pivots(cs, span, minLeg) {
+  const out = [];
+  if (!Array.isArray(cs) || cs.length < span * 2 + 1) {
+    return out;
+  }
+
+  const threshold = finite(minLeg) && minLeg > 0
+    ? minLeg * 0.15
+    : 0;
+
+  const raw = [];
+
+  for (let i = span; i < cs.length - span; i++) {
+    const candle = cs[i];
+    if (!candle || !finite(candle.high) || !finite(candle.low)) {
+      continue;
+    }
+
+    let isHigh = true;
+    let isLow = true;
+
+    for (let j = i - span; j <= i + span; j++) {
+      if (j === i) continue;
+
+      const other = cs[j];
+      if (!other) continue;
+
+      /*
+       * Pada plateau harga yang sama, hanya pilih wakil paling kanan.
+       * Ini mencegah seluruh candle plateau menggagalkan pivot.
+       */
+      if (other.high > candle.high) isHigh = false;
+      if (other.low < candle.low) isLow = false;
+
+      if (j > i && other.high === candle.high) isHigh = false;
+      if (j > i && other.low === candle.low) isLow = false;
+    }
+
+    if (isHigh) {
+      raw.push({
+        index: i,
+        time: candle.time,
+        price: candle.high,
+        type: "H"
+      });
+    }
+
+    if (isLow) {
+      raw.push({
+        index: i,
+        time: candle.time,
+        price: candle.low,
+        type: "L"
+      });
+    }
+  }
+
+  raw.sort((a, b) => a.index - b.index);
+
+  for (const p of raw) {
+    const previous = out[out.length - 1];
+
+    if (!previous) {
+      out.push(p);
+      continue;
+    }
+
+    if (previous.index === p.index && previous.type === p.type) {
+      continue;
+    }
+
+    if (previous.type === p.type) {
+      const moreExtreme =
+        (p.type === "H" && p.price > previous.price) ||
+        (p.type === "L" && p.price < previous.price);
+
+      if (moreExtreme) out[out.length - 1] = p;
+      continue;
+    }
+
+    /*
+     * minLeg hanya digunakan untuk mengurangi swing berukuran sangat
+     * kecil. Nilai nol atau ATR yang belum tersedia tidak memblokir pivot.
+     */
+    if (threshold > 0 && Math.abs(p.price - previous.price) < threshold) {
+      continue;
+    }
+
+    out.push(p);
+  }
+
+  return out;
+}
+
+function devR(value, range) {
+  if (!finite(value) || !range || range.length !== 2) {
+    return Infinity;
+  }
+
+  const [low, high] = range;
+
+  if (value < low) return (low - value) / Math.max(Math.abs(low), 1e-12);
+  if (value > high) return (value - high) / Math.max(Math.abs(high), 1e-12);
+
+  return 0;
+}
+
+function zoneOf(fn, range, tolerance) {
+  const low = fn(range[0] * (1 - tolerance));
+  const high = fn(range[1] * (1 + tolerance));
+
+  return [
+    Math.min(low, high),
+    Math.max(low, high)
+  ];
+}
+
+/*
+ * Evaluasi pola dengan alasan penolakan yang dapat dilacak.
+ * Dp = null berarti pola X-A-B-C sedang diproyeksikan.
+ */
+function evalHarmonic(def, X, A, B, C, Dp, tol) {
+  try {
+    if (!X || !A || !B || !C) {
+      harmonicReject(def.name + ": pivot XABC tidak lengkap");
+      return null;
+    }
+
+    const xp = X.price;
+    const ap = A.price;
+    const bp = B.price;
+    const cp = C.price;
+    const s = ap > xp ? 1 : -1;
+    const tolerance = tol / 2;
+
+    const XA = Math.abs(ap - xp);
+    const AB = Math.abs(ap - bp);
+    const BC = Math.abs(cp - bp);
+
+    if (!(XA > 0 && AB > 0 && BC > 0)) {
+      harmonicReject(def.name + ": panjang leg nol");
+      return null;
+    }
+
+    if (Math.sign(bp - ap) !== -s ||
+        Math.sign(cp - bp) !== s) {
+      harmonicReject(def.name + ": arah pivot tidak valid");
+      return null;
+    }
+
+    const rows = [];
+    const deviations = [];
+    const weights = [];
+
+    const rAB = AB / XA;
+    const dAB = devR(rAB, def.ab);
+
+    if (dAB > tol) {
+      harmonicReject(
+        def.name + ": rasio AB/XA di luar toleransi"
+      );
+      return null;
+    }
+
+    rows.push({
+      label: def.cypher ? "B/XA" : "AB/XA",
+      value: rAB,
+      range: def.ab,
+      dev: dAB
+    });
+
+    deviations.push(dAB);
+    weights.push(1);
+
+    let zoneA;
+    let zoneB = null;
+    let legRef;
+    let stop;
+
+    if (def.cypher) {
+      const XC = Math.abs(cp - xp);
+      const rXC = XC / XA;
+
+      if ((cp - xp) * s <= XA) {
+        harmonicReject("Cypher: C belum melewati ekstensi XA");
+        return null;
+      }
+
+      const dXC = devR(rXC, def.xc);
+
+      if (dXC > tol) {
+        harmonicReject("Cypher: rasio XC/XA tidak valid");
+        return null;
+      }
+
+      rows.push({
+        label: "XC/XA",
+        value: rXC,
+        range: def.xc,
+        dev: dXC
+      });
+
+      deviations.push(dXC);
+      weights.push(1.5);
+
+      zoneA = zoneOf(
+        ratio => cp - s * XC * ratio,
+        def.dxc,
+        tolerance
+      );
+
+      if (Dp != null) {
+        if ((Dp - cp) * s >= 0) {
+          harmonicReject("Cypher: arah D tidak valid");
+          return null;
+        }
+
+        const rD = Math.abs(cp - Dp) / XC;
+        const dD = devR(rD, def.dxc);
+
+        if (dD > tol) {
+          harmonicReject("Cypher: rasio CD/XC di luar toleransi");
+          return null;
+        }
+
+        rows.push({
+          label: "CD/XC",
+          value: rD,
+          range: def.dxc,
+          dev: dD
+        });
+
+        deviations.push(dD);
+        weights.push(2.5);
+      }
+
+      stop = xp;
+      legRef = cp;
+    } else {
+      const rBC = BC / AB;
+      const dBC = devR(rBC, def.bc);
+
+      if (dBC > tol) {
+        harmonicReject(def.name + ": rasio BC/AB di luar toleransi");
+        return null;
+      }
+
+      rows.push({
+        label: "BC/AB",
+        value: rBC,
+        range: def.bc,
+        dev: dBC
+      });
+
+      deviations.push(dBC);
+      weights.push(1);
+
+      zoneA = zoneOf(
+        ratio => ap - s * XA * ratio,
+        def.ad,
+        tolerance
+      );
+
+      zoneB = zoneOf(
+        ratio => cp - s * BC * ratio,
+        def.cd,
+        tolerance
+      );
+
+      if (Dp != null) {
+        if ((Dp - cp) * s >= 0) {
+          harmonicReject(def.name + ": arah D tidak valid");
+          return null;
+        }
+
+        const rCD = Math.abs(cp - Dp) / BC;
+        const rAD = (ap - Dp) * s / XA;
+
+        if (rAD <= 0) {
+          harmonicReject(def.name + ": D berada di sisi yang salah");
+          return null;
+        }
+
+        const dCD = devR(rCD, def.cd);
+        const dAD = devR(rAD, def.ad);
+
+        if (dCD > tol) {
+          harmonicReject(def.name + ": rasio CD/BC di luar toleransi");
+          return null;
+        }
+
+        if (dAD > tol) {
+          harmonicReject(def.name + ": rasio AD/XA di luar toleransi");
+          return null;
+        }
+
+        rows.push({
+          label: "CD/BC",
+          value: rCD,
+          range: def.cd,
+          dev: dCD
+        });
+
+        rows.push({
+          label: "AD/XA (D)",
+          value: rAD,
+          range: def.ad,
+          dev: dAD
+        });
+
+        deviations.push(dCD, dAD);
+        weights.push(1, 2.5);
+      }
+
+      stop = ap - s * XA * def.stop;
+      legRef = ap;
+    }
+
+    let low = zoneA[0];
+    let high = zoneA[1];
+    let confluence = !zoneB;
+
+    if (zoneB) {
+      const overlapLow = Math.max(zoneA[0], zoneB[0]);
+      const overlapHigh = Math.min(zoneA[1], zoneB[1]);
+
+      if (overlapLow <= overlapHigh) {
+        low = overlapLow;
+        high = overlapHigh;
+        confluence = true;
+      } else if (Dp == null) {
+        harmonicReject(def.name + ": zona PRZ XA dan BC tidak bertemu");
+        return null;
+      }
+    }
+
+    const entry = Dp != null ? Dp : (low + high) / 2;
+
+    if ((entry - stop) * s <= 0) {
+      harmonicReject(def.name + ": posisi stop tidak valid");
+      return null;
+    }
+
+    const leg = Math.abs(legRef - entry);
+    const risk = Math.abs(entry - stop);
+
+    if (!(leg > 0 && risk > 0)) {
+      harmonicReject(def.name + ": risiko atau target tidak valid");
+      return null;
+    }
+
+    const tp1 = entry + s * 0.382 * leg;
+    const tp2 = entry + s * 0.618 * leg;
+
+    let totalWeight = 0;
+    let weightedDeviation = 0;
+
+    for (let i = 0; i < deviations.length; i++) {
+      totalWeight += weights[i];
+      weightedDeviation += deviations[i] * weights[i];
+    }
+
+    const quality = clamp(
+      100 * (1 - (weightedDeviation / Math.max(totalWeight, 1)) / tol),
+      0,
+      100
+    );
+
+    harmonicDiagnostics.candidates++;
+
+    return {
+      name: def.name,
+      cypher: !!def.cypher,
+      bullish: s === 1,
+      X, A, B, C,
+      rows,
+      quality,
+      przLow: low,
+      przHigh: high,
+      confluence,
+      entry,
+      stop,
+      tp1,
+      tp2,
+      rr1: Math.abs(tp1 - entry) / risk,
+      rr2: Math.abs(tp2 - entry) / risk,
+      eqCD: def.cypher ? NaN : cp - s * AB
+    };
+  } catch (error) {
+    harmonicError("evalHarmonic:" + def.name, error);
+    harmonicReject(def.name + ": kesalahan evaluasi");
+    return null;
+  }
+}
+
+/*
+ * Menentukan apakah stop telah tersentuh setelah titik D.
+ * Tidak menggunakan harga saat ini untuk langsung membuang semua pola
+ * historis, sebab pola lama tetap berguna untuk diagnostik.
+ */
+function wasInvalidated(pattern, candles, startIndex, endIndex) {
+  if (!pattern || !finite(pattern.stop)) return false;
+
+  const start = Math.max(0, startIndex);
+  const end = Math.min(candles.length - 1, endIndex);
+
+  for (let i = start; i <= end; i++) {
+    const candle = candles[i];
+    if (!candle) continue;
+
+    if (pattern.bullish && candle.low <= pattern.stop) return true;
+    if (!pattern.bullish && candle.high >= pattern.stop) return true;
+  }
+
+  return false;
+}
+
+function scanHarmonic(P, cs, tol, proj) {
+  resetHarmonicDiagnostics();
+
+  harmonicDiagnostics.candleCount = cs.length;
+  harmonicDiagnostics.pivotCount = P.length;
+
+  if (P.length < 4 || cs.length < 2) {
+    harmonicReject("Data candle atau pivot belum cukup");
+    return null;
+  }
+
+  const completed = [];
+  const forming = [];
+  const projected = [];
+
+  /*
+   * SCAN COMPLETED:
+   * Periksa semua jendela lima pivot dalam riwayat, bukan hanya
+   * P.slice(-5). Setiap pola memakai lima pivot berurutan.
+   */
+  for (let i = 0; i <= P.length - 5; i++) {
+    harmonicDiagnostics.windowsScanned++;
+
+    const [X, A, B, C, D] = P.slice(i, i + 5);
+
+    if (!X || !A || !B || !C || !D) continue;
+
+    const expected = ["H", "L", "H", "L", "H"];
+    const reverse = ["L", "H", "L", "H", "L"];
+    const sequence = [X.type, A.type, B.type, C.type, D.type];
+
+    if (
+      !sequence.every((type, index) =>
+        type === expected[index] || type === reverse[index]
+      )
+    ) {
+      harmonicReject("Urutan pivot XABCD tidak bergantian");
+      continue;
+    }
+
+    for (const def of HARMONIC_DEFS) {
+      const result = evalHarmonic(def, X, A, B, C, D.price, tol);
+      if (!result) continue;
+
+      result.D = D;
+      result.status = "SELESAI";
+      result.rank = 3;
+      result.historical = true;
+      result.invalidated = wasInvalidated(
+        result,
+        cs,
+        D.index + 1,
+        cs.length - 1
+      );
+
+      completed.push(result);
+      harmonicDiagnostics.completed++;
+    }
+  }
+
+  /*
+   * SCAN LIVE:
+   * Gunakan empat pivot terakhir sebagai X-A-B-C untuk mencari
+   * D yang sedang terbentuk atau memproyeksikan PRZ.
+   */
+  if (P.length >= 4) {
+    const [X, A, B, C] = P.slice(-4);
+    const afterC = cs.filter(c => c.time > C.time);
+
+    if (afterC.length) {
+      const wantLow = C.type === "H";
+      let extreme = {
+        time: afterC[0].time,
+        price: wantLow ? afterC[0].low : afterC[0].high,
+        type: wantLow ? "L" : "H",
+        index: cs.findIndex(c => c.time === afterC[0].time)
+      };
+
+      for (const candle of afterC) {
+        const value = wantLow ? candle.low : candle.high;
+
+        if (
+          (wantLow && value < extreme.price) ||
+          (!wantLow && value > extreme.price)
+        ) {
+          extreme = {
+            time: candle.time,
+            price: value,
+            type: wantLow ? "L" : "H",
+            index: cs.findIndex(c => c.time === candle.time)
+          };
+        }
+      }
+
+      for (const def of HARMONIC_DEFS) {
+        const result = evalHarmonic(
+          def, X, A, B, C, extreme.price, tol
+        );
+
+        if (result) {
+          result.D = extreme;
+          result.status = "TERBENTUK";
+          result.rank = 2;
+          result.historical = false;
+          result.invalidated = false;
+
+          forming.push(result);
+          harmonicDiagnostics.forming++;
+          continue;
+        }
+
+        if (!proj) continue;
+
+        const projection = evalHarmonic(
+          def, X, A, B, C, null, tol
+        );
+
+        if (!projection) continue;
+
+        const reachedPRZ = projection.bullish
+          ? extreme.price <= projection.przHigh
+          : extreme.price >= projection.przLow;
+
+        if (reachedPRZ) {
+          harmonicReject(def.name + ": PRZ sudah disentuh; evaluasi D diperlukan");
+          continue;
+        }
+
+        projection.D = null;
+        projection.status = "PROYEKSI";
+        projection.rank = 1;
+        projection.historical = false;
+        projection.invalidated = false;
+
+        projected.push(projection);
+        harmonicDiagnostics.projected++;
+      }
+    }
+  }
+
+  /*
+   * Pola historis yang sudah invalid tetap dicatat untuk audit, tetapi
+   * tidak diprioritaskan sebagai sinyal aktif.
+   */
+  const validCompleted = completed.filter(p => !p.invalidated);
+  const candidates = [
+    ...validCompleted,
+    ...forming,
+    ...projected
+  ];
+
+  harmonicDiagnostics.accepted = candidates.length;
+
+  /*
+   * Prioritas:
+   * 1. Pola yang selesai dan belum invalid.
+   * 2. Pola yang sedang terbentuk.
+   * 3. Proyeksi.
+   * 4. Kualitas tertinggi.
+   * 5. Pola paling baru.
+   */
+  candidates.sort((a, b) =>
+    b.rank - a.rank ||
+    b.quality - a.quality ||
+    (b.D ? b.D.time : b.C.time) -
+      (a.D ? a.D.time : a.C.time)
+  );
+
+  harmonicDiagnostics.lastScan = new Date().toISOString();
+
+  return candidates[0] || null;
+}
 /*HARMONIC-END*/
 
 /* ================= CHART (Lightweight Charts) ================= */
