@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<title>Binance Top 100 · Predictor + Harmonic Carney</title>
+<title>Binance Top 100 · Predictor + Sinyal Multi-Indikator</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -20,16 +20,15 @@
 .up,.pass{color:#86efac;background:#123322}.down,.reject{color:#fca5a5;background:#431717}.neutral,.warning{color:#fde68a;background:#3b2e0a}.unknown{color:#cbd5e1;background:#293548}
 .stat-number{font-size:clamp(18px,2.2vw,26px);font-weight:800;overflow-wrap:anywhere}
 
-/* CSS Asal Indicator Card */
 .indicator-card{background:#0b1220;border:1px solid var(--border);padding:12px;border-radius:9px;min-width:0;transition:all 0.3s ease;}
 .indicator-value{font-weight:800;font-size:14px;overflow-wrap:anywhere}.indicator-status{font-size:10px;text-transform:uppercase;margin-top:6px;color:var(--muted)}
 
-/* KELAS CSS BAHARU UNTUK WARNA INDIKATOR DINAMIK */
 .card-bullish { background: rgba(22, 163, 74, 0.15) !important; border-color: rgba(22, 163, 74, 0.4) !important; }
 .card-bearish { background: rgba(220, 38, 38, 0.15) !important; border-color: rgba(220, 38, 38, 0.4) !important; }
 .card-neutral { background: rgba(202, 138, 4, 0.15) !important; border-color: rgba(202, 138, 4, 0.4) !important; }
 
 table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
+td.wrap{white-space:normal;min-width:260px;line-height:1.5}
 #connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}#confidenceBar{height:100%;width:0;background:#facc15;transition:width .25s}
 input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
 #chartWrap{position:relative;border-radius:10px;overflow:hidden;background:#131722}
@@ -37,7 +36,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 #legend{position:absolute;left:10px;top:8px;z-index:5;pointer-events:none;font:12px/1.5 monospace;color:#d1d4dc;text-shadow:0 0 4px #131722}
 #tvWidget{height:560px;width:100%;border-radius:10px;overflow:hidden;background:#131722}
 .chart-note{font-size:11px;color:var(--muted);line-height:1.5}
-.plan{font-family:monospace;font-size:12px;line-height:1.7}
+.sg-text{font-size:12px;line-height:1.6;color:#d1d5db}
 @media(max-width:640px){th,td{padding:8px}#chart{height:380px}#tvWidget{height:440px}}
 </style>
 </head>
@@ -46,7 +45,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div><div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE MARKET ANALYSIS</div>
 <h1 class="text-3xl md:text-4xl font-extrabold mt-2">Binance Top 100 · Multi-Timeframe Predictor</h1>
-<p class="muted mt-2 text-sm">10 indikator teknikal + Harmonic Pattern Scott Carney (Gartley, Bat, Alt Bat, Butterfly, Crab, Deep Crab, Cypher)</p></div>
+<p class="muted mt-2 text-sm">10 indikator teknikal + sinyal BUY / SELL-SHORT / NETRAL berbasis suara indikator, filter tren, dan backtest historis</p></div>
 <div class="panel p-4 min-w-[240px]"><div class="muted text-sm">Status Market</div><div class="flex items-center gap-2 mt-2"><span id="connectionDot"></span><span id="connectionText" class="font-bold">Memuat...</span></div>
 <div id="lastUpdate" class="muted text-xs mt-2">Menunggu data</div><div id="sourceText" class="muted text-xs mt-1">Sumber: Binance Spot</div></div>
 </header>
@@ -71,33 +70,64 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <!-- GRAFIK CHART -->
 <section class="panel p-4 mb-6">
 <div class="flex flex-wrap justify-between items-center gap-3 mb-3">
-<div><h2 class="text-lg font-bold">Grafik Candlestick · Gaya TradingView</h2><p class="muted text-xs mt-1">Garis X-A-B-C-D, garis putus-putus XB/AC/BD/XD, zona PRZ, serta level Stop dan Target digambar otomatis di chart.</p></div>
+<div><h2 class="text-lg font-bold">Grafik Candlestick · Gaya TradingView</h2><p class="muted text-xs mt-1">Level Entry, Stop Loss, dan Target 1–3 dari sinyal BUY/SELL aktif digambar otomatis di chart.</p></div>
 <span id="chartStatus" class="badge unknown">Memuat chart...</span></div>
 <div class="flex flex-wrap gap-2 mb-3">
-<button class="btn text-sm active" id="tabChart">Chart + Harmonic Otomatis</button>
+<button class="btn text-sm active" id="tabChart">Chart + Level Sinyal</button>
 <button class="btn text-sm" id="tabTV">TradingView Asli</button></div>
 <div id="paneChart">
 <div id="chartWrap"><div id="chart"></div><div id="legend"></div></div>
-<div class="flex flex-wrap gap-2 mt-3"><button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button><button class="btn text-sm" id="toggleHarmonicButton">Sembunyikan/Tampilkan Harmonic</button></div>
-<p class="chart-note mt-3">Chart ini memakai Lightweight Charts, library resmi TradingView, dengan data candle publik Binance. Widget TradingView tertanam tidak mengizinkan halaman menggambar pola custom, jadi pola digambar di chart ini. Tab "TradingView Asli" menampilkan widget TradingView penuh (tanpa gambar otomatis) jika Anda ingin membandingkan.</p>
+<div class="flex flex-wrap gap-2 mt-3"><button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button></div>
+<p class="chart-note mt-3">Chart ini memakai Lightweight Charts, library resmi TradingView, dengan data candle publik Binance. Widget TradingView tertanam tidak mengizinkan halaman menggambar level custom, jadi level sinyal digambar di chart ini. Tab "TradingView Asli" menampilkan widget TradingView penuh (tanpa gambar otomatis).</p>
 </div>
 <div id="paneTV" style="display:none"><div id="tvWidget"></div>
-<p class="chart-note mt-3">Widget TradingView resmi. Pola harmonic tidak bisa digambar otomatis di sini, tetapi Anda dapat memakai alat bawaan TradingView "XABCD Pattern" / "Cypher Pattern" secara manual dan membandingkannya dengan hasil di tab sebelah.</p></div>
+<p class="chart-note mt-3">Widget TradingView resmi. Level sinyal tidak bisa digambar otomatis di sini; bandingkan dengan angka pada panel sinyal di bawah.</p></div>
 </section>
 
-<section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">10 Indikator Teknikal</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
+<section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">Indikator Pendukung Prediksi</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
 
-<section class="panel p-5 mb-6">
-<div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Harmonic Pattern · Scott Carney</h2><span id="harmonicBadge" class="badge unknown">BELUM TERDETEKSI</span></div>
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-<div class="indicator-card"><div class="muted text-xs mb-2">Pola</div><div id="harmonicName" class="indicator-value">Belum cukup data</div><div id="harmonicDirection" class="indicator-status">Menunggu pivot XABCD</div></div>
-<div class="indicator-card"><div class="muted text-xs mb-2">Ketepatan rasio vs tabel Carney</div><div id="harmonicScore" class="indicator-value">--</div><div class="indicator-status">100 = tepat di rasio ideal</div></div>
-<div class="indicator-card"><div class="muted text-xs mb-2">Potential Reversal Zone (PRZ)</div><div id="harmonicPRZ" class="indicator-value">--</div><div id="harmonicDetails" class="indicator-status">Konfluensi XA &amp; BC</div></div>
-<div class="indicator-card"><div class="muted text-xs mb-2">Skenario (acuan)</div><div id="harmonicPlan" class="plan">--</div></div></div>
-<div class="overflow-x-auto mt-4"><table><thead><tr><th>Rasio</th><th>Ideal Carney</th><th>Aktual</th><th>Deviasi</th><th>Status</th></tr></thead><tbody id="harmonicTable"><tr><td colspan="5" class="muted text-center">Belum ada pola</td></tr></tbody></table></div>
-<p class="muted text-xs mt-4 leading-5">Pola dihitung dari pivot swing dan dicocokkan ke tabel rasio Carney dengan toleransi yang dapat diatur. Status SELESAI = titik D sudah terkonfirmasi sebagai pivot; TERBENTUK = harga sedang berada di D tetapi belum terkonfirmasi; PROYEKSI = X-A-B-C valid dan PRZ ditampilkan lebih dulu. Level stop/target hanyalah acuan umum (target 0,382 dan 0,618 dari leg), bukan jaminan. Pola dapat berubah saat candle baru masuk.</p></section>
+<!-- PANEL SINYAL MULTI-INDIKATOR (menggantikan Harmonic Pattern) -->
+<section class="panel p-5 mb-6" id="signalSection">
+<div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Sinyal Multi-Indikator · BUY / SELL / NETRAL</h2><span id="sgBadge" class="badge unknown">MENUNGGU DATA</span></div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+<div class="indicator-card"><div class="muted text-xs mb-2">Simbol · Timeframe</div><div id="sgSymbol" class="indicator-value">--</div></div>
+<div class="indicator-card"><div class="muted text-xs mb-2">Harga Saat Ini</div><div id="sgPrice" class="indicator-value">--</div><div id="sgPos" class="indicator-status">--</div></div>
+<div id="sgMainCard" class="indicator-card"><div class="muted text-xs mb-2">Sinyal Utama</div><div id="sgMain" class="indicator-value text-lg">--</div><div id="sgSub" class="indicator-status">--</div></div>
+<div class="indicator-card"><div id="sgStrengthLabel" class="muted text-xs mb-2">Kekuatan Sinyal</div><div id="sgStrength" class="indicator-value">--</div><div class="progress-track mt-2"><div id="sgBar" style="height:100%;width:0;background:#facc15;transition:width .25s"></div></div></div>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+<div id="sgGreenCard" class="indicator-card card-bullish"><div class="muted text-xs mb-2">Indikator Hijau (Bullish)</div><div id="sgGreen" class="indicator-value">--</div></div>
+<div id="sgYellowCard" class="indicator-card card-neutral"><div class="muted text-xs mb-2">Indikator Kuning (Netral)</div><div id="sgYellow" class="indicator-value">--</div></div>
+<div id="sgRedCard" class="indicator-card card-bearish"><div class="muted text-xs mb-2">Indikator Merah (Bearish)</div><div id="sgRed" class="indicator-value">--</div></div>
+<div class="indicator-card"><div class="muted text-xs mb-2">Akurasi Historis (Backtest)</div><div id="sgAcc" class="indicator-value">--</div><div id="sgAccSub" class="indicator-status">--</div></div>
+</div>
 
-<!-- SEGMEN BARU: TRADINGVIEW ACCOUNT INTEGRATION -->
+<div id="sgPlan" class="mt-4" style="display:none">
+<div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+<div class="indicator-card"><div id="sgEntryLabel" class="muted text-xs mb-2">ENTRY RANGE</div><div id="sgEntry" class="indicator-value">--</div></div>
+<div class="indicator-card card-bearish"><div class="muted text-xs mb-2">STOP LOSS</div><div id="sgSL" class="indicator-value">--</div><div id="sgSLpct" class="indicator-status">--</div></div>
+<div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TARGET 1</div><div id="sgT1" class="indicator-value">--</div><div id="sgRR1" class="indicator-status">--</div></div>
+<div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TARGET 2</div><div id="sgT2" class="indicator-value">--</div><div id="sgRR2" class="indicator-status">--</div></div>
+<div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TARGET 3</div><div id="sgT3" class="indicator-value">--</div><div id="sgRR3" class="indicator-status">--</div></div>
+</div>
+</div>
+<div id="sgNoTrade" class="indicator-card card-neutral mt-4" style="display:none"><div class="muted text-xs mb-2">TIDAK ADA REKOMENDASI TRANSAKSI</div><div id="sgNoTradeText" class="sg-text">--</div></div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+<div class="indicator-card"><div class="muted text-xs mb-2">Alasan Sinyal</div><div id="sgReason" class="sg-text">--</div></div>
+<div class="indicator-card"><div class="muted text-xs mb-2">Kondisi Pembatalan</div><div id="sgInvalid" class="sg-text">--</div></div>
+</div>
+<div id="sgAccDetail" class="chart-note mt-3"></div>
+<div id="sgUpdated" class="chart-note mt-1"></div>
+
+<div class="overflow-x-auto mt-4"><table><thead><tr><th>Indikator</th><th>Nilai</th><th>Arah</th><th>Warna</th><th>Keterangan</th></tr></thead><tbody id="sgTable"><tr><td colspan="5" class="muted text-center">Menunggu data candle tertutup</td></tr></tbody></table></div>
+
+<p class="muted text-xs mt-4 leading-5"><b>Cara kerja.</b> Sinyal dihitung hanya dari candle yang sudah tertutup (tanpa look-ahead) dan tidak diulang pada candle yang sama. Setiap indikator diberi warna dengan aturan eksplisit: hijau = bullish, merah = bearish, kuning = netral/campuran, abu-abu = gagal dihitung (tidak dihitung sebagai suara). ADX memberi suara arah (+DI/-DI) hanya bila ADX ≥ 20 dan juga menjadi filter kekuatan tren; ATR memberi suara hanya bila volatilitas sedang meluas dan harga bergerak searah, selebihnya netral. Keputusan: BUY/SELL bila suara searah ≥ 60% dari indikator valid <i>dan</i> unggul ≥ 30% atas arah berlawanan; selain itu NETRAL. Bila EMA &amp; SMA sama-sama berlawanan, atau ADX ≥ 25 berlawanan arah, hasilnya NETRAL. ADX &lt; 20 menandai konfirmasi lemah.<br>
+<b>Skor kekuatan (0–100)</b> = 100 × (0,65 × dominasi + 0,20 × faktor ADX + 0,15 × faktor volatilitas). Dominasi = rata-rata terbobot keselarasan per kelompok (tren 35%, momentum 25%, band/volatilitas 20%, volume 20%), sehingga indikator yang berkorelasi dalam satu kelompok tidak dihitung sebagai bukti independen penuh. Faktor ADX = (ADX − 15) / 25 dibatasi 0–1; faktor volatilitas = 1 bila ATR meluas, 0,4 bila tidak. Skor ini bukan probabilitas profit.<br>
+<b>Akurasi historis</b> = sinyal yang mencapai Target 1 (1R) sebelum Stop Loss dalam 24 candle ÷ seluruh sinyal yang selesai dievaluasi × 100%. Backtest berjalan maju (walk-forward) pada candle yang dimuat untuk koin &amp; timeframe terpilih, entry di open candle berikutnya, kasus SL dan TP di candle yang sama dihitung kalah, sinyal yang tidak menyentuh keduanya dihitung tidak berhasil, biaya 0,12% per sisi (fee + slippage) sudah dikurangkan. Bagian out-of-sample = 30% periode terakhir. Di bawah 30 sampel ditampilkan "AKURASI BELUM TERVALIDASI". Sinyal adalah analisis probabilistik, bukan jaminan keuntungan.</p>
+</section>
+
+<!-- TRADINGVIEW ACCOUNT INTEGRATION -->
 <section class="panel p-5 mb-6" id="tvAccountSection">
 <div class="flex flex-wrap justify-between gap-3 mb-4">
   <h2 class="text-lg font-bold uppercase">TradingView Account</h2>
@@ -112,7 +142,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   <div class="bg-[#0b1220] border border-[#243047] p-4 rounded-lg">
     <div class="muted text-xs mb-2 uppercase font-bold">Catatan Keamanan Resmi</div>
     <div class="text-sm text-gray-300 leading-relaxed">
-      Sesuai dokumentasi resmi TradingView, tidak ada metode OAuth publik untuk menyematkan sesi login privat Anda ke dalam aplikasi HTML pihak ketiga (GitHub Pages). 
+      Sesuai dokumentasi resmi TradingView, tidak ada metode OAuth publik untuk menyematkan sesi login privat Anda ke dalam aplikasi HTML pihak ketiga (GitHub Pages).
       <strong class="text-yellow-500">AUTENTIKASI AKUN TIDAK DAPAT DIVERIFIKASI</strong> secara otomatis di sini. Meminta kata sandi Anda di tapak ini akan menjadi pelanggaran keselamatan (Phishing).
     </div>
   </div>
@@ -123,33 +153,33 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   <button id="btnTVBack" class="btn text-sm bg-slate-700 hover:bg-slate-600">Kembali ke Analisis</button>
 </div>
 </section>
-<!-- AKHIR SEGMEN BARU -->
 
 <section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Pengaturan</h2><div class="flex flex-wrap items-end gap-3">
 <label class="text-sm">Pilih koin top 100<br><select id="symbolSelect"><option value="BTCUSDT">Memuat daftar...</option></select></label>
 <label class="text-sm">Timeframe analisis<br><select id="timeframeSelect"><option value="1m">1 menit</option><option value="5m">5 menit</option><option value="15m">15 menit</option><option value="1h">1 jam</option><option value="4h">4 jam</option><option value="1d">1 hari</option><option value="1w">1 minggu</option></select></label>
 <label class="text-sm">Riwayat tampilan<br><select id="historyLimit"><option value="15">15</option><option value="30">30</option><option value="50">50</option></select></label>
-<label class="text-sm">Sensitivitas swing<br><select id="swingSelect"><option value="2">Halus (2)</option><option value="3" selected>Normal (3)</option><option value="5">Kasar (5)</option><option value="8">Sangat kasar (8)</option></select></label>
-<label class="text-sm">Toleransi rasio<br><select id="tolSelect"><option value="0.03">Ketat (3%)</option><option value="0.05" selected>Normal (5%)</option><option value="0.08">Longgar (8%)</option></select></label>
-<label class="text-sm flex items-center gap-2 pb-2"><input type="checkbox" id="projCheck" checked> Tampilkan proyeksi PRZ</label>
 <button id="reconnectButton" class="btn text-sm">Sambungkan Ulang</button><button id="refreshCoinsButton" class="btn text-sm">Perbarui Top 100</button><button id="clearButton" class="btn text-sm">Hapus Riwayat</button>
 </div><p class="muted text-xs mt-4">Top 100 dihitung dari pasangan Spot USDT Binance berdasarkan quote volume 24 jam. Endpoint publik tidak memerlukan API key. Koneksi membutuhkan internet dan dapat dibatasi oleh wilayah/CORS.</p></section>
 <section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Riwayat Prediksi dan Evaluasi</h2><div class="overflow-x-auto"><table><thead><tr><th>Waktu</th><th>Koin</th><th>TF</th><th>Harga Awal</th><th>Prediksi</th><th>Arah</th><th>Target</th><th>Aktual</th><th>Status</th><th>Error USD</th></tr></thead><tbody id="historyBody"><tr><td colspan="10" class="text-center muted">Menunggu data prediksi</td></tr></tbody></table></div></section>
-<footer class="muted text-xs mt-6 leading-5">Alat analisis eksperimental, bukan saran investasi. Tidak melakukan transaksi. Prediksi dapat meleset; uji independen dan pertimbangkan biaya serta slippage.</footer>
+<footer class="muted text-xs mt-6 leading-5">Alat analisis eksperimental, bukan saran investasi. Tidak melakukan transaksi. Prediksi dan sinyal dapat meleset; uji independen dan pertimbangkan biaya serta slippage.</footer>
 </main>
 <script>
 "use strict";
-const CONFIG={symbol:"BTCUSDT",interval:"1m",historyLimit:1000,maxPredictions:500,swing:3,tol:0.05,showProjection:true,
+const CONFIG={symbol:"BTCUSDT",interval:"1m",historyLimit:1000,maxPredictions:500,costPct:0.0012,
  restEndpoints:["https://data-api.binance.vision","https://api.binance.com","https://api-gcp.binance.com","https://api1.binance.com","https://api2.binance.com","https://api3.binance.com","https://api4.binance.com"],
  wsBases:["wss://stream.binance.com:9443/ws/","wss://data-stream.binance.vision/ws/"]};
+const SIG={window:300,minCandles:60,minValid:7,maxBars:24,minSample:30,backtestStart:100,oosShare:0.3};
+const GROUPS={ema:"trend",sma:"trend",macd:"trend",adx:"trend",rsi:"momentum",stochrsi:"momentum",cci:"momentum",bb:"band",atr:"band",obv:"volume"};
+const GROUP_W={trend:.35,momentum:.25,band:.2,volume:.2};
 const STORAGE_KEY="binance_top100_predictor_harmonic_carney_v5";
 const TZ_OFFSET=-new Date().getTimezoneOffset()*60;
 const toCT=ms=>Math.floor(ms/1000)+TZ_OFFSET;
-const state={candles:[],liveCandle:null,indicators:null,predictions:[],currentPrice:0,ws:null,wsIdx:0,reconnectTimer:null,reconnectDelay:1000,generation:0,stopped:false,coinList:[],harmonic:null,pivots:[],chart:null,candleSeries:null,volumeSeries:null,hSeries:[],showHarmonic:true,tab:"chart",lastSig:""};
+const state={candles:[],liveCandle:null,indicators:null,predictions:[],currentPrice:0,ws:null,wsIdx:0,reconnectTimer:null,reconnectDelay:1000,generation:0,stopped:false,coinList:[],chart:null,candleSeries:null,volumeSeries:null,tab:"chart",signal:null,sigKey:"",sigTime:0,sigLines:[],bt:null,btTimer:null};
 const $=id=>document.getElementById(id), finite=Number.isFinite;
 const TIMEFRAMES={"1m":{label:"1 menit",ms:60000},"5m":{label:"5 menit",ms:300000},"15m":{label:"15 menit",ms:900000},"1h":{label:"1 jam",ms:3600000},"4h":{label:"4 jam",ms:14400000},"1d":{label:"1 hari",ms:86400000},"1w":{label:"1 minggu",ms:604800000}};
 const TV_INTERVAL={"1m":"1","5m":"5","15m":"15","1h":"60","4h":"240","1d":"D","1w":"W"};
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]);
 function fmtUSD(n){return finite(n)?n.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:8}):"--"}
 function fmt(n,d=2){return finite(n)?n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"--"}
 function fmtP(n){if(!finite(n))return"--";const d=n>=1000?2:n>=1?4:n>=0.01?6:8;return n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
@@ -178,16 +208,23 @@ async function loadTop100(){ $("refreshCoinsButton").disabled=true;try{
 const TA={
  emaSeries(a,p){const out=new Array(a.length).fill(NaN);if(a.length<p)return out;let v=mean(a.slice(0,p));out[p-1]=v;const k=2/(p+1);for(let i=p;i<a.length;i++){v=a[i]*k+v*(1-k);out[i]=v}return out},
  ema(a,p){const s=this.emaSeries(a,p);return s.length?s[s.length-1]:NaN},
+ sma(a,p){return a.length>=p?mean(a.slice(-p)):NaN},
+ smaSeries(a,p){return a.map((_,i)=>{if(i<p-1)return NaN;const w=a.slice(i-p+1,i+1);return w.every(x=>finite(x))?mean(w):NaN})},
  rsi(a,p=14){if(a.length<p+1)return NaN;let g=0,l=0;for(let i=1;i<=p;i++){let d=a[i]-a[i-1];g+=Math.max(d,0);l+=Math.max(-d,0)}g/=p;l/=p;for(let i=p+1;i<a.length;i++){let d=a[i]-a[i-1];g=(g*(p-1)+Math.max(d,0))/p;l=(l*(p-1)+Math.max(-d,0))/p}return l===0?(g===0?50:100):100-100/(1+g/l)},
+ rsiSeries(a,p=14){const out=new Array(a.length).fill(NaN);if(a.length<p+1)return out;let g=0,l=0;for(let i=1;i<=p;i++){const d=a[i]-a[i-1];g+=Math.max(d,0);l+=Math.max(-d,0)}g/=p;l/=p;const val=()=>l===0?(g===0?50:100):100-100/(1+g/l);out[p]=val();for(let i=p+1;i<a.length;i++){const d=a[i]-a[i-1];g=(g*(p-1)+Math.max(d,0))/p;l=(l*(p-1)+Math.max(-d,0))/p;out[i]=val()}return out},
+ stochRsi(a,rp=14,sp=14,kp=3,dp=3){const rs=this.rsiSeries(a,rp),raw=rs.map((v,i)=>{if(i<sp-1)return NaN;const w=rs.slice(i-sp+1,i+1);if(!w.every(x=>finite(x)))return NaN;const hi=Math.max(...w),lo=Math.min(...w);return hi===lo?50:(rs[i]-lo)/(hi-lo)*100});const k=this.smaSeries(raw,kp),d=this.smaSeries(k,dp);return {k:k[k.length-1],d:d[d.length-1]}},
  stochastic(h,l,c,p=14){if(c.length<p)return NaN;let hi=Math.max(...h.slice(-p)),lo=Math.min(...l.slice(-p));return hi===lo?50:(c[c.length-1]-lo)/(hi-lo)*100},
  macd(a){if(a.length<35)return {line:NaN,signal:NaN,histogram:NaN};const e12=this.emaSeries(a,12),e26=this.emaSeries(a,26),m=[];for(let i=25;i<a.length;i++)m.push(e12[i]-e26[i]);const sg=this.emaSeries(m,9),line=m[m.length-1],signal=sg[sg.length-1];return {line,signal,histogram:line-signal}},
  bb(a,p=20,k=2){if(a.length<p)return {upper:NaN,middle:NaN,lower:NaN,width:NaN};let s=a.slice(-p),m=mean(s),sd=Math.sqrt(mean(s.map(x=>(x-m)**2)));return {upper:m+k*sd,middle:m,lower:m-k*sd,width:m?2*k*sd/m:NaN}},
  atr(h,l,c,p=14){if(c.length<p+1)return NaN;const tr=[];for(let j=1;j<c.length;j++)tr.push(Math.max(h[j]-l[j],Math.abs(h[j]-c[j-1]),Math.abs(l[j]-c[j-1])));let v=mean(tr.slice(0,p));for(let i=p;i<tr.length;i++)v=(v*(p-1)+tr[i])/p;return v},
+ atrSeries(h,l,c,p=14){const n=c.length,out=new Array(n).fill(NaN);if(n<p+1)return out;const tr=new Array(n).fill(0);for(let j=1;j<n;j++)tr[j]=Math.max(h[j]-l[j],Math.abs(h[j]-c[j-1]),Math.abs(l[j]-c[j-1]));let v=mean(tr.slice(1,p+1));out[p]=v;for(let i=p+1;i<n;i++){v=(v*(p-1)+tr[i])/p;out[i]=v}return out},
  adx(h,l,c,p=14){const n=c.length;if(n<2*p+2)return {adx:NaN,plusDI:NaN,minusDI:NaN};const tr=[],pd=[],md=[];for(let i=1;i<n;i++){const up=h[i]-h[i-1],dn=l[i-1]-l[i];pd.push(up>dn&&up>0?up:0);md.push(dn>up&&dn>0?dn:0);tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}
   let sT=0,sP=0,sM=0;for(let i=0;i<p;i++){sT+=tr[i];sP+=pd[i];sM+=md[i]}
   const dxs=[];let pdi=0,mdi=0;const calc=()=>{pdi=sT?100*sP/sT:0;mdi=sT?100*sM/sT:0;dxs.push(pdi+mdi?100*Math.abs(pdi-mdi)/(pdi+mdi):0)};calc();
   for(let i=p;i<tr.length;i++){sT=sT-sT/p+tr[i];sP=sP-sP/p+pd[i];sM=sM-sM/p+md[i];calc()}
   if(dxs.length<p)return {adx:NaN,plusDI:pdi,minusDI:mdi};let a=mean(dxs.slice(0,p));for(let j=p;j<dxs.length;j++)a=(a*(p-1)+dxs[j])/p;return {adx:a,plusDI:pdi,minusDI:mdi}},
+ cci(h,l,c,p=20){const n=c.length;if(n<p)return NaN;const tp=[];for(let i=n-p;i<n;i++)tp.push((h[i]+l[i]+c[i])/3);const m=mean(tp),md=mean(tp.map(x=>Math.abs(x-m)));return md===0?0:(tp[tp.length-1]-m)/(0.015*md)},
+ obvSeries(cs){const out=new Array(cs.length).fill(0);for(let i=1;i<cs.length;i++){const d=cs[i].close-cs[i-1].close;out[i]=out[i-1]+(d>0?cs[i].volume:d<0?-cs[i].volume:0)}return out},
  volumeDelta(c){return finite(c.takerBuyBase)?2*c.takerBuyBase-c.volume:NaN},
  sr(h,l,p=50){return h.length>=p?{support:Math.min(...l.slice(-p)),resistance:Math.max(...h.slice(-p))}:{support:NaN,resistance:NaN}},
  vwap(cs){let pv=0,v=0;for(const c of cs){pv+=(c.high+c.low+c.close)/3*c.volume;v+=c.volume}return v?pv/v:NaN}
@@ -195,138 +232,228 @@ const TA={
 function calculateIndicators(cs){if(cs.length<50)return null;const c=cs.map(x=>x.close),h=cs.map(x=>x.high),l=cs.map(x=>x.low),last=cs[cs.length-1];return {rsi:TA.rsi(c),ema9:TA.ema(c,9),ema21:TA.ema(c,21),ema50:TA.ema(c,50),ema200:c.length>=200?TA.ema(c,200):NaN,stoch:TA.stochastic(h,l,c),volDelta:TA.volumeDelta(last),macd:TA.macd(c),bb:TA.bb(c),atr:TA.atr(h,l,c),adx:TA.adx(h,l,c),...TA.sr(h,l),vwap:TA.vwap(cs.slice(-500))}}
 function workingCandles(){const a=state.candles.slice();if(state.liveCandle){const i=a.findIndex(x=>x.time===state.liveCandle.time);if(i>=0)a[i]=state.liveCandle;else a.push(state.liveCandle)}return a}
 
-/*HARMONIC-START*/
-const HARMONIC_DEFS = [
-  {name: "Gartley", ab: [.618, .618], bc: [.382, .886], cd: [1.272, 1.618], ad: [.786, .786], stop: 1},
-  {name: "Bat", ab: [.382, .500], bc: [.382, .886], cd: [1.618, 2.618], ad: [.886, .886], stop: 1},
-  {name: "Alt Bat", ab: [.382, .382], bc: [.382, .886], cd: [2.000, 3.618], ad: [1.130, 1.130], stop: 1.272},
-  {name: "Butterfly", ab: [.786, .786], bc: [.382, .886], cd: [1.618, 2.240], ad: [1.270, 1.618], stop: 1.750},
-  {name: "Crab", ab: [.382, .618], bc: [.382, .886], cd: [2.240, 3.618], ad: [1.618, 1.618], stop: 1.750},
-  {name: "Deep Crab", ab: [.886, .886], bc: [.382, .886], cd: [2.240, 3.618], ad: [1.618, 1.618], stop: 1.750},
-  {name: "Cypher", cypher: true, ab: [.382, .618], xc: [1.272, 1.414], dxc: [.786, .786]}
-];
-const harmonicDiagnostics = {candleCount: 0, pivotCount: 0, windowsScanned: 0, candidates: 0, completed: 0, forming: 0, projected: 0, accepted: 0, rejected: {}, errors: [], lastScan: null};
-function resetHarmonicDiagnostics() {harmonicDiagnostics.candleCount = 0; harmonicDiagnostics.pivotCount = 0; harmonicDiagnostics.windowsScanned = 0; harmonicDiagnostics.candidates = 0; harmonicDiagnostics.completed = 0; harmonicDiagnostics.forming = 0; harmonicDiagnostics.projected = 0; harmonicDiagnostics.accepted = 0; harmonicDiagnostics.rejected = {}; harmonicDiagnostics.errors = []; harmonicDiagnostics.lastScan = new Date().toISOString();}
-function harmonicReject(reason) {const key = reason || "Alasan tidak diketahui"; harmonicDiagnostics.rejected[key] = (harmonicDiagnostics.rejected[key] || 0) + 1;}
-function harmonicError(context, error) {const item = {context, message: error && error.message ? error.message : String(error), time: new Date().toISOString()}; harmonicDiagnostics.errors.push(item); if (harmonicDiagnostics.errors.length > 30) harmonicDiagnostics.errors.shift(); console.error("[Harmonic]", context, error);}
-function pivots(cs, span, minLeg) {
-  const out = []; if (!Array.isArray(cs) || cs.length < span * 2 + 1) return out;
-  const threshold = finite(minLeg) && minLeg > 0 ? minLeg * 0.15 : 0; const raw = [];
-  for (let i = span; i < cs.length - span; i++) {
-    const candle = cs[i]; if (!candle || !finite(candle.high) || !finite(candle.low)) continue;
-    let isHigh = true, isLow = true;
-    for (let j = i - span; j <= i + span; j++) {
-      if (j === i) continue; const other = cs[j]; if (!other) continue;
-      if (other.high > candle.high) isHigh = false; if (other.low < candle.low) isLow = false;
-      if (j > i && other.high === candle.high) isHigh = false; if (j > i && other.low === candle.low) isLow = false;
-    }
-    if (isHigh) raw.push({index: i, time: candle.time, price: candle.high, type: "H"});
-    if (isLow) raw.push({index: i, time: candle.time, price: candle.low, type: "L"});
-  }
-  raw.sort((a, b) => a.index - b.index);
-  for (const p of raw) {
-    const previous = out[out.length - 1]; if (!previous) {out.push(p); continue;}
-    if (previous.index === p.index && previous.type === p.type) continue;
-    if (previous.type === p.type) {const moreExtreme = (p.type === "H" && p.price > previous.price) || (p.type === "L" && p.price < previous.price); if (moreExtreme) out[out.length - 1] = p; continue;}
-    if (threshold > 0 && Math.abs(p.price - previous.price) < threshold) continue;
-    out.push(p);
-  }
-  return out;
+/*SIGNAL-START*/
+/* ===== Mesin sinyal: 10 indikator -> hijau / kuning / merah (bull / neutral / bear) ===== */
+function evaluateIndicators(cs){
+ const n=cs.length,c=cs.map(x=>x.close),h=cs.map(x=>x.high),l=cs.map(x=>x.low),p=c[n-1],list=[],ctx={};
+ const push=(key,name,value,dir,note)=>list.push({key,name,group:GROUPS[key],value,dir,note});
+ const na=(key,name,why)=>push(key,name,"--","na","Gagal dihitung / data belum cukup ("+why+"); tidak dihitung sebagai suara");
+ const atrS=TA.atrSeries(h,l,c,14),atrNow=atrS[n-1];ctx.atr=atrNow;
+
+ const rsi=TA.rsi(c);
+ if(!finite(rsi))na("rsi","RSI (14)","butuh minimal 15 candle");
+ else{let d,t;
+  if(rsi>70){d="neutral";t="Jenuh beli (di atas 70): rawan koreksi, tidak dihitung sebagai suara BUY"}
+  else if(rsi<30){d="neutral";t="Jenuh jual (di bawah 30): rawan pantulan, tidak dihitung sebagai suara SELL"}
+  else if(rsi>=55){d="bull";t="Momentum naik (RSI 55–70)"}
+  else if(rsi<=45){d="bear";t="Momentum turun (RSI 30–45)"}
+  else{d="neutral";t="Zona tengah 45–55, tanpa arah jelas"}
+  push("rsi","RSI (14)",fmt(rsi,1),d,t)}
+
+ const m=TA.macd(c);
+ if(!finite(m.histogram)||!finite(atrNow))na("macd","MACD (12,26,9)","butuh minimal 35 candle");
+ else{const th=0.02*atrNow;let d,t;
+  if(m.histogram>th&&m.line>m.signal){d="bull";t="Histogram positif, garis MACD di atas sinyal"}
+  else if(m.histogram<-th&&m.line<m.signal){d="bear";t="Histogram negatif, garis MACD di bawah sinyal"}
+  else{d="neutral";t="Histogram mendekati nol, momentum belum jelas"}
+  push("macd","MACD (12,26,9)",fmt(m.histogram,p<1?6:4),d,t)}
+
+ const e9=TA.ema(c,9),e21=TA.ema(c,21);ctx.ema21=e21;
+ if(!finite(e9)||!finite(e21))na("ema","EMA 9/21","butuh minimal 21 candle");
+ else{let d,t;
+  if(e9>e21&&p>e21){d="bull";t="EMA 9 di atas EMA 21 dan harga di atas EMA 21"}
+  else if(e9<e21&&p<e21){d="bear";t="EMA 9 di bawah EMA 21 dan harga di bawah EMA 21"}
+  else{d="neutral";t="Persilangan EMA dan posisi harga tidak searah"}
+  push("ema","EMA 9/21",fmtP(e9)+" / "+fmtP(e21),d,t)}
+
+ const s20=TA.sma(c,20),s50=TA.sma(c,50);
+ if(!finite(s20)||!finite(s50))na("sma","SMA 20/50","butuh minimal 50 candle");
+ else{let d,t;
+  if(s20>s50&&p>s50){d="bull";t="SMA 20 di atas SMA 50 dan harga di atas SMA 50"}
+  else if(s20<s50&&p<s50){d="bear";t="SMA 20 di bawah SMA 50 dan harga di bawah SMA 50"}
+  else{d="neutral";t="Rata-rata harga dan posisi harga tidak searah"}
+  push("sma","SMA 20/50",fmtP(s20)+" / "+fmtP(s50),d,t)}
+
+ const b=TA.bb(c);
+ if(!finite(b.upper)||!finite(b.lower)||b.upper<=b.lower)na("bb","Bollinger Bands (20,2)","butuh minimal 20 candle");
+ else{const pct=(p-b.lower)/(b.upper-b.lower);let d,t;
+  if(pct>1){d="neutral";t="Harga di atas band atas (ekstrem), tidak dihitung sebagai suara"}
+  else if(pct<0){d="neutral";t="Harga di bawah band bawah (ekstrem), tidak dihitung sebagai suara"}
+  else if(pct>=0.55){d="bull";t="Harga di paruh atas band (di atas garis tengah)"}
+  else if(pct<=0.45){d="bear";t="Harga di paruh bawah band (di bawah garis tengah)"}
+  else{d="neutral";t="Harga dekat garis tengah band"}
+  push("bb","Bollinger Bands (20,2)","%B "+fmt(pct*100,0)+"%",d,t)}
+
+ const sr=TA.stochRsi(c);
+ if(!finite(sr.k)||!finite(sr.d))na("stochrsi","Stochastic RSI","butuh sekitar 35 candle");
+ else{let d,t;
+  if(sr.k>sr.d&&sr.k<80){d="bull";t="%K di atas %D dan belum jenuh beli"}
+  else if(sr.k<sr.d&&sr.k>20){d="bear";t="%K di bawah %D dan belum jenuh jual"}
+  else{d="neutral";t=sr.k>=80?"Zona jenuh beli atau %K sama dengan %D":sr.k<=20?"Zona jenuh jual atau %K sama dengan %D":"%K sama dengan %D"}
+  push("stochrsi","Stochastic RSI (14,14,3,3)","K "+fmt(sr.k,1)+" / D "+fmt(sr.d,1),d,t)}
+
+ const a=TA.adx(h,l,c);ctx.adx=a.adx;
+ if(!finite(a.adx))na("adx","ADX (14)","butuh minimal 30 candle");
+ else{let d,t;
+  if(a.adx>=20&&a.plusDI>a.minusDI){d="bull";t="Tren cukup kuat (ADX ≥ 20), +DI di atas -DI"}
+  else if(a.adx>=20&&a.minusDI>a.plusDI){d="bear";t="Tren cukup kuat (ADX ≥ 20), -DI di atas +DI"}
+  else{d="neutral";t="ADX di bawah 20: tren lemah/sideways, arah tidak dipakai sebagai suara"}
+  push("adx","ADX (14)",fmt(a.adx,1)+" (+DI "+fmt(a.plusDI,1)+" / -DI "+fmt(a.minusDI,1)+")",d,t)}
+
+ const cci=TA.cci(h,l,c);
+ if(!finite(cci))na("cci","CCI (20)","butuh minimal 20 candle");
+ else{let d,t;
+  if(cci>200||cci<-200){d="neutral";t="Penyimpangan ekstrem (di luar ±200), rawan berbalik, tidak dihitung sebagai suara"}
+  else if(cci>100){d="bull";t="CCI di atas +100: harga jauh di atas rata-rata statistiknya (momentum naik)"}
+  else if(cci<-100){d="bear";t="CCI di bawah -100: harga jauh di bawah rata-rata statistiknya (momentum turun)"}
+  else{d="neutral";t="CCI di antara -100 dan +100"}
+  push("cci","CCI (20)",fmt(cci,1),d,t)}
+
+ const obv=TA.obvSeries(cs);
+ if(n<26)na("obv","OBV","butuh minimal 26 candle");
+ else{const oe=TA.emaSeries(obv,20),eNow=oe[n-1],now=obv[n-1],prev=obv[n-6];let d,t;
+  if(!finite(eNow))na("obv","OBV","EMA OBV belum tersedia");
+  else{
+   if(now>eNow&&now>prev){d="bull";t="OBV di atas EMA 20 dan naik dalam 5 candle: volume mengonfirmasi kenaikan"}
+   else if(now<eNow&&now<prev){d="bear";t="OBV di bawah EMA 20 dan turun dalam 5 candle: volume mengonfirmasi penurunan"}
+   else{d="neutral";t="OBV tidak searah dengan rata-ratanya"}
+   push("obv","OBV",fmt(now,0),d,t)}}
+
+ const atrVals=atrS.slice(-20).filter(x=>finite(x));
+ if(!finite(atrNow)||atrVals.length<10||n<5)na("atr","ATR (14)","butuh minimal 25 candle");
+ else{const avg=mean(atrVals),exp=atrNow>avg*1.05,chg=c[n-1]-c[n-4];ctx.atrExp=exp;let d,t;
+  if(exp&&Math.abs(chg)>0.5*atrNow){d=chg>0?"bull":"bear";t="Volatilitas meluas (ATR di atas rata-rata 20) dan harga bergerak "+(chg>0?"naik":"turun")+" dalam 3 candle"}
+  else if(exp){d="neutral";t="Volatilitas meluas tetapi arah 3 candle terakhir belum tegas"}
+  else{d="neutral";t="Volatilitas menyempit/normal: tidak ada konfirmasi dari ATR"}
+  push("atr","ATR (14)",fmtP(atrNow)+" ("+(atrNow/p*100).toFixed(3)+"%)",d,t)}
+ return {list,ctx};
 }
-function devR(value, range) {if (!finite(value) || !range || range.length !== 2) return Infinity; const [low, high] = range; if (value < low) return (low - value) / Math.max(Math.abs(low), 1e-12); if (value > high) return (value - high) / Math.max(Math.abs(high), 1e-12); return 0;}
-function zoneOf(fn, range, tolerance) {const low = fn(range[0] * (1 - tolerance)), high = fn(range[1] * (1 + tolerance)); return [Math.min(low, high), Math.max(low, high)];}
-function evalHarmonic(def, X, A, B, C, Dp, tol) {
-  try {
-    if (!X || !A || !B || !C) {harmonicReject(def.name + ": pivot XABC tidak lengkap"); return null;}
-    const xp = X.price, ap = A.price, bp = B.price, cp = C.price, s = ap > xp ? 1 : -1, tolerance = tol / 2;
-    const XA = Math.abs(ap - xp), AB = Math.abs(ap - bp), BC = Math.abs(cp - bp);
-    if (!(XA > 0 && AB > 0 && BC > 0)) {harmonicReject(def.name + ": panjang leg nol"); return null;}
-    if (Math.sign(bp - ap) !== -s || Math.sign(cp - bp) !== s) {harmonicReject(def.name + ": arah pivot tidak valid"); return null;}
-    const rows = [], deviations = [], weights = [];
-    const rAB = AB / XA, dAB = devR(rAB, def.ab); if (dAB > tol) {harmonicReject(def.name + ": rasio AB/XA di luar toleransi"); return null;}
-    rows.push({label: def.cypher ? "B/XA" : "AB/XA", value: rAB, range: def.ab, dev: dAB}); deviations.push(dAB); weights.push(1);
-    let zoneA, zoneB = null, legRef, stop;
-    if (def.cypher) {
-      const XC = Math.abs(cp - xp), rXC = XC / XA; if ((cp - xp) * s <= XA) {harmonicReject("Cypher: C belum melewati ekstensi XA"); return null;}
-      const dXC = devR(rXC, def.xc); if (dXC > tol) {harmonicReject("Cypher: rasio XC/XA tidak valid"); return null;}
-      rows.push({label: "XC/XA", value: rXC, range: def.xc, dev: dXC}); deviations.push(dXC); weights.push(1.5);
-      zoneA = zoneOf(ratio => cp - s * XC * ratio, def.dxc, tolerance);
-      if (Dp != null) {
-        if ((Dp - cp) * s >= 0) {harmonicReject("Cypher: arah D tidak valid"); return null;}
-        const rD = Math.abs(cp - Dp) / XC, dD = devR(rD, def.dxc); if (dD > tol) {harmonicReject("Cypher: rasio CD/XC di luar toleransi"); return null;}
-        rows.push({label: "CD/XC", value: rD, range: def.dxc, dev: dD}); deviations.push(dD); weights.push(2.5);
-      }
-      stop = xp; legRef = cp;
-    } else {
-      const rBC = BC / AB, dBC = devR(rBC, def.bc); if (dBC > tol) {harmonicReject(def.name + ": rasio BC/AB di luar toleransi"); return null;}
-      rows.push({label: "BC/AB", value: rBC, range: def.bc, dev: dBC}); deviations.push(dBC); weights.push(1);
-      zoneA = zoneOf(ratio => ap - s * XA * ratio, def.ad, tolerance); zoneB = zoneOf(ratio => cp - s * BC * ratio, def.cd, tolerance);
-      if (Dp != null) {
-        if ((Dp - cp) * s >= 0) {harmonicReject(def.name + ": arah D tidak valid"); return null;}
-        const rCD = Math.abs(cp - Dp) / BC, rAD = (ap - Dp) * s / XA; if (rAD <= 0) {harmonicReject(def.name + ": D berada di sisi yang salah"); return null;}
-        const dCD = devR(rCD, def.cd), dAD = devR(rAD, def.ad); if (dCD > tol) {harmonicReject(def.name + ": rasio CD/BC di luar toleransi"); return null;}
-        if (dAD > tol) {harmonicReject(def.name + ": rasio AD/XA di luar toleransi"); return null;}
-        rows.push({label: "CD/BC", value: rCD, range: def.cd, dev: dCD}); rows.push({label: "AD/XA (D)", value: rAD, range: def.ad, dev: dAD}); deviations.push(dCD, dAD); weights.push(1, 2.5);
-      }
-      stop = ap - s * XA * def.stop; legRef = ap;
-    }
-    let low = zoneA[0], high = zoneA[1], confluence = !zoneB;
-    if (zoneB) {
-      const overlapLow = Math.max(zoneA[0], zoneB[0]), overlapHigh = Math.min(zoneA[1], zoneB[1]);
-      if (overlapLow <= overlapHigh) {low = overlapLow; high = overlapHigh; confluence = true;}
-      else if (Dp == null) {harmonicReject(def.name + ": zona PRZ XA dan BC tidak bertemu"); return null;}
-    }
-    const entry = Dp != null ? Dp : (low + high) / 2; if ((entry - stop) * s <= 0) {harmonicReject(def.name + ": posisi stop tidak valid"); return null;}
-    const leg = Math.abs(legRef - entry), risk = Math.abs(entry - stop); if (!(leg > 0 && risk > 0)) {harmonicReject(def.name + ": risiko atau target tidak valid"); return null;}
-    const tp1 = entry + s * 0.382 * leg, tp2 = entry + s * 0.618 * leg;
-    let totalWeight = 0, weightedDeviation = 0;
-    for (let i = 0; i < deviations.length; i++) {totalWeight += weights[i]; weightedDeviation += deviations[i] * weights[i];}
-    const quality = clamp(100 * (1 - (weightedDeviation / Math.max(totalWeight, 1)) / tol), 0, 100);
-    harmonicDiagnostics.candidates++;
-    return {name: def.name, cypher: !!def.cypher, bullish: s === 1, X, A, B, C, rows, quality, przLow: low, przHigh: high, confluence, entry, stop, tp1, tp2, rr1: Math.abs(tp1 - entry) / risk, rr2: Math.abs(tp2 - entry) / risk, eqCD: def.cypher ? NaN : cp - s * AB};
-  } catch (error) {harmonicError("evalHarmonic:" + def.name, error); harmonicReject(def.name + ": kesalahan evaluasi"); return null;}
+function swingExt(cs,k,type){const s=cs.slice(-k);return type==="L"?Math.min(...s.map(x=>x.low)):Math.max(...s.map(x=>x.high))}
+function buildLevels(s,cs,ctx){
+ const p=cs[cs.length-1].close,atr=ctx.atr,ema21=ctx.ema21;
+ let far=p-s*0.5*atr;
+ if(finite(ema21)&&((s===1&&ema21<p&&ema21>far)||(s===-1&&ema21>p&&ema21<far)))far=ema21;
+ if(Math.abs(p-far)<0.1*atr)far=p-s*0.1*atr;
+ const low=Math.min(p,far),high=Math.max(p,far),mid=(low+high)/2;let sl;
+ if(s===1){const sw=swingExt(cs,10,"L")-0.25*atr;sl=sw<low?sw:mid-1.5*atr;sl=Math.max(mid-2.5*atr,Math.min(sl,mid-1.0*atr))}
+ else{const sw=swingExt(cs,10,"H")+0.25*atr;sl=sw>high?sw:mid+1.5*atr;sl=Math.min(mid+2.5*atr,Math.max(sl,mid+1.0*atr))}
+ const risk=Math.abs(mid-sl);
+ return {low,high,mid,sl,risk,rr:[1,2,3],tps:[1,2,3].map(k=>mid+s*k*risk)};
 }
-function wasInvalidated(pattern, candles, startIndex, endIndex) {
-  if (!pattern || !finite(pattern.stop)) return false; const start = Math.max(0, startIndex), end = Math.min(candles.length - 1, endIndex);
-  for (let i = start; i <= end; i++) {
-    const candle = candles[i]; if (!candle) continue;
-    if (pattern.bullish && candle.low <= pattern.stop) return true;
-    if (!pattern.bullish && candle.high >= pattern.stop) return true;
-  } return false;
+function computeSignal(all){
+ const cs=all.slice(-SIG.window),last=cs[cs.length-1];
+ const base={time:last?last.time:0,price:last?last.close:NaN,list:[],g:0,y:0,r:0,nv:0,strength:null,dom:0,weak:false,levels:null,filterMsg:""};
+ if(cs.length<SIG.minCandles)return {...base,status:"INSUFFICIENT",reason:`Data candle tertutup belum cukup (${cs.length}/${SIG.minCandles}).`,invalid:"--"};
+ const {list,ctx}=evaluateIndicators(cs),valid=list.filter(x=>x.dir!=="na"),nv=valid.length;
+ const g=valid.filter(x=>x.dir==="bull").length,r=valid.filter(x=>x.dir==="bear").length,y=valid.filter(x=>x.dir==="neutral").length;
+ const res={...base,list,g,y,r,nv};
+ if(nv<SIG.minValid)return {...res,status:"INSUFFICIENT",reason:`Hanya ${nv} dari 10 indikator yang valid (minimal ${SIG.minValid}). Sinyal tidak dikeluarkan agar tidak menyesatkan.`,invalid:"--"};
+ const minVotes=Math.ceil(0.6*nv),minMargin=Math.ceil(0.3*nv);res.minVotes=minVotes;res.minMargin=minMargin;
+ const get=k=>list.find(x=>x.key===k),names=d=>valid.filter(x=>x.dir===d).map(x=>x.name.split(" (")[0]).join(", ")||"-";
+ let status="NEUTRAL";
+ if(g>=minVotes&&g-r>=minMargin)status="BUY";else if(r>=minVotes&&r-g>=minMargin)status="SELL";
+ const s=status==="BUY"?1:status==="SELL"?-1:0,adxV=ctx.adx;
+ if(s!==0){
+  const ema=get("ema"),sma=get("sma"),adx=get("adx"),opp=s===1?"bear":"bull";
+  if(ema&&sma&&ema.dir===opp&&sma.dir===opp)res.filterMsg="Filter tren bertentangan: EMA dan SMA sama-sama berlawanan arah dengan mayoritas indikator.";
+  else if(adx&&adx.dir===opp&&adxV>=25)res.filterMsg="Filter ADX bertentangan: tren berlawanan sedang kuat (ADX ≥ 25).";
+  if(res.filterMsg)status="NEUTRAL";
+ }
+ res.status=status;res.weak=!(adxV>=20);
+ const counts=`${g} hijau, ${y} kuning, ${r} merah dari ${nv} indikator valid`;
+ if(status==="NEUTRAL"){
+  res.reason=(res.filterMsg?res.filterMsg+" ":"")+`Komposisi: ${counts}. `+(y>=g&&y>=r?"Indikator kuning mendominasi. ":"")+`Sinyal membutuhkan minimal ${minVotes} suara searah dengan selisih minimal ${minMargin} atas arah berlawanan.`;
+  res.invalid="Tunggu candle tertutup berikutnya atau perubahan kondisi indikator sebelum dievaluasi ulang.";
+  return res;
+ }
+ const sc=d=>d==="bull"?1:d==="bear"?-1:0;let num=0,den=0;
+ for(const gr in GROUP_W){const mm=valid.filter(x=>x.group===gr);if(!mm.length)continue;num+=GROUP_W[gr]*s*mean(mm.map(x=>sc(x.dir)));den+=GROUP_W[gr]}
+ const dom=den?clamp(num/den,-1,1):0,adxF=finite(adxV)?clamp((adxV-15)/25,0,1):0,volF=ctx.atrExp?1:0.4;
+ res.dom=s*Math.max(0,dom);res.strength=Math.round(100*clamp(0.65*Math.max(0,dom)+0.2*adxF+0.15*volF,0,1));
+ res.levels=buildLevels(s,cs,ctx);
+ const lv=res.levels,P=fmtP;
+ res.reason=`${counts}. `+(s===1?`Bullish: ${names("bull")}. `:`Bearish: ${names("bear")}. `)+`Netral: ${names("neutral")}. `+(s===1?`Bearish: ${names("bear")}. `:`Bullish: ${names("bull")}. `)+`ADX ${fmt(adxV,1)} (${adxV>=25?"tren kuat":adxV>=20?"tren cukup":"tren lemah, konfirmasi lemah"}). Entry, SL, dan target dihitung dari harga penutupan, ATR, EMA 21, dan swing 10 candle terakhir.`;
+ res.invalid=s===1
+  ?`Candle ditutup di bawah Stop Loss ${P(lv.sl)}; atau EMA 9 memotong ke bawah EMA 21 disertai histogram MACD negatif; atau indikator merah mencapai ${minVotes} atau lebih pada candle berikutnya.`
+  :`Candle ditutup di atas Stop Loss ${P(lv.sl)}; atau EMA 9 memotong ke atas EMA 21 disertai histogram MACD positif; atau indikator hijau mencapai ${minVotes} atau lebih pada candle berikutnya.`;
+ return res;
 }
-function scanHarmonic(P, cs, tol, proj) {
-  resetHarmonicDiagnostics(); harmonicDiagnostics.candleCount = cs.length; harmonicDiagnostics.pivotCount = P.length;
-  if (P.length < 4 || cs.length < 2) {harmonicReject("Data candle atau pivot belum cukup"); return null;}
-  const completed = [], forming = [], projected = [];
-  for (let i = 0; i <= P.length - 5; i++) {
-    harmonicDiagnostics.windowsScanned++; const [X, A, B, C, D] = P.slice(i, i + 5); if (!X || !A || !B || !C || !D) continue;
-    const expected = ["H", "L", "H", "L", "H"], reverse = ["L", "H", "L", "H", "L"], sequence = [X.type, A.type, B.type, C.type, D.type];
-    if (!sequence.every((type, index) => type === expected[index] || type === reverse[index])) {harmonicReject("Urutan pivot XABCD tidak bergantian"); continue;}
-    for (const def of HARMONIC_DEFS) {
-      const result = evalHarmonic(def, X, A, B, C, D.price, tol); if (!result) continue;
-      result.D = D; result.status = "SELESAI"; result.rank = 3; result.historical = true; result.invalidated = wasInvalidated(result, cs, D.index + 1, cs.length - 1); completed.push(result); harmonicDiagnostics.completed++;
-    }
-  }
-  if (P.length >= 4) {
-    const [X, A, B, C] = P.slice(-4); const afterC = cs.filter(c => c.time > C.time);
-    if (afterC.length) {
-      const wantLow = C.type === "H"; let extreme = {time: afterC[0].time, price: wantLow ? afterC[0].low : afterC[0].high, type: wantLow ? "L" : "H", index: cs.findIndex(c => c.time === afterC[0].time)};
-      for (const candle of afterC) {const value = wantLow ? candle.low : candle.high; if ((wantLow && value < extreme.price) || (!wantLow && value > extreme.price)) extreme = {time: candle.time, price: value, type: wantLow ? "L" : "H", index: cs.findIndex(c => c.time === candle.time)};}
-      for (const def of HARMONIC_DEFS) {
-        const result = evalHarmonic(def, X, A, B, C, extreme.price, tol);
-        if (result) {result.D = extreme; result.status = "TERBENTUK"; result.rank = 2; result.historical = false; result.invalidated = false; forming.push(result); harmonicDiagnostics.forming++; continue;}
-        if (!proj) continue; const projection = evalHarmonic(def, X, A, B, C, null, tol); if (!projection) continue;
-        const reachedPRZ = projection.bullish ? extreme.price <= projection.przHigh : extreme.price >= projection.przLow;
-        if (reachedPRZ) {harmonicReject(def.name + ": PRZ sudah disentuh; evaluasi D diperlukan"); continue;}
-        projection.D = null; projection.status = "PROYEKSI"; projection.rank = 1; projection.historical = false; projection.invalidated = false; projected.push(projection); harmonicDiagnostics.projected++;
-      }
-    }
-  }
-  const validCompleted = completed.filter(p => !p.invalidated), candidates = [...validCompleted, ...forming, ...projected];
-  harmonicDiagnostics.accepted = candidates.length; candidates.sort((a, b) => b.rank - a.rank || b.quality - a.quality || (b.D ? b.D.time : b.C.time) - (a.D ? a.D.time : a.C.time));
-  harmonicDiagnostics.lastScan = new Date().toISOString(); return candidates[0] || null;
+
+/* ===== Backtest walk-forward (tanpa look-ahead) ===== */
+function runBacktest(cs){
+ const N=cs.length,start=SIG.backtestStart,trades=[];if(N<start+SIG.maxBars+5)return null;
+ let i=start;
+ while(i<N-1){
+  const s=computeSignal(cs.slice(0,i+1));
+  if((s.status!=="BUY"&&s.status!=="SELL")||!s.levels||!(s.levels.risk>0)){i++;continue}
+  const dir=s.status==="BUY"?1:-1,entry=cs[i+1].open,risk=s.levels.risk,sl=entry-dir*risk,tp1=entry+dir*risk,costR=2*CONFIG.costPct*entry/risk,last=i+SIG.maxBars;let res=null;
+  for(let k=i+1;k<=Math.min(last,N-1);k++){const c=cs[k],hitSL=dir===1?c.low<=sl:c.high>=sl,hitTP=dir===1?c.high>=tp1:c.low<=tp1;
+   if(hitSL){res={k,out:"SL",r:-1-costR};break}
+   if(hitTP){res={k,out:"TP1",r:1-costR};break}
+   if(k===last){res={k,out:"TIMEOUT",r:dir*(c.close-entry)/risk-costR};break}}
+  if(!res)break;
+  trades.push({i,time:cs[i].time,dir,out:res.out,r:res.r});i=res.k+1;
+ }
+ const st=a=>{const n=a.length;if(!n)return {n:0};const w=a.filter(t=>t.out==="TP1"),l=a.filter(t=>t.out==="SL"),o=a.filter(t=>t.out==="TIMEOUT");return {n,wins:w.length,losses:l.length,timeouts:o.length,winRate:100*w.length/n,avgWin:mean(w.map(x=>x.r)),avgLoss:mean(l.map(x=>x.r)),expR:mean(a.map(x=>x.r))}};
+ const oosFrom=Math.floor(start+(1-SIG.oosShare)*(N-start));
+ return {all:st(trades),oos:st(trades.filter(t=>t.i>=oosFrom)),from:cs[start].time,to:cs[N-1].time,candles:N-start};
 }
-/*HARMONIC-END*/
+function scheduleBacktest(){clearTimeout(state.btTimer);const key=CONFIG.symbol+"|"+CONFIG.interval;
+ state.btTimer=setTimeout(()=>{try{const r=runBacktest(state.candles);if(key!==CONFIG.symbol+"|"+CONFIG.interval)return;state.bt=r||{insufficient:true};renderSignal()}catch(e){console.error("Backtest",e);state.bt={error:true};renderSignal()}},60)}
+
+/* ===== Penggambaran level di chart & render panel ===== */
+function clearSignalLines(){if(state.candleSeries)state.sigLines.forEach(l=>{try{state.candleSeries.removePriceLine(l)}catch(_){}});state.sigLines=[]}
+function drawSignalLines(s){clearSignalLines();if(!state.candleSeries||!s||!s.levels||(s.status!=="BUY"&&s.status!=="SELL"))return;const lv=s.levels,add=(price,color,title)=>state.sigLines.push(state.candleSeries.createPriceLine({price,color,lineWidth:1,lineStyle:2,axisLabelVisible:true,title}));
+ add(lv.mid,"#38bdf8","ENTRY");add(lv.sl,"#ef5350","SL");lv.tps.forEach((t,i)=>add(t,"#26a69a","TP"+(i+1)))}
+function updateSignal(){
+ const cs=state.candles;if(!cs.length){state.signal=null;renderSignal();return}
+ const key=CONFIG.symbol+"|"+CONFIG.interval+"|"+cs[cs.length-1].time;
+ if(key!==state.sigKey){state.sigKey=key;state.signal=computeSignal(cs);state.sigTime=Date.now();drawSignalLines(state.signal)}
+ renderSignal()}
+function setCard(id,cls){const e=$(id);e.classList.remove("card-bullish","card-bearish","card-neutral");if(cls)e.classList.add(cls)}
+const DIR_UI={bull:["Bullish","pass","HIJAU"],bear:["Bearish","reject","MERAH"],neutral:["Netral","warning","KUNING"],na:["Gagal dihitung","unknown","N/A"]};
+function renderSignal(){
+ const s=state.signal,p=state.currentPrice,bt=state.bt;
+ $("sgSymbol").textContent=`${CONFIG.symbol} · ${(TIMEFRAMES[CONFIG.interval]||{}).label||CONFIG.interval}`;
+ $("sgPrice").textContent=finite(p)&&p>0?"$"+fmtP(p):"--";
+ if(!s){$("sgBadge").className="badge unknown";$("sgBadge").textContent="MENUNGGU DATA";["sgMain","sgStrength","sgGreen","sgYellow","sgRed","sgAcc"].forEach(id=>$(id).textContent="--");$("sgPlan").style.display="none";$("sgNoTrade").style.display="none";return}
+ const buy=s.status==="BUY",sell=s.status==="SELL",ins=s.status==="INSUFFICIENT";
+ const ui=buy?["up","SINYAL BUY"]:sell?["down","SINYAL SELL/SHORT"]:ins?["unknown","DATA TIDAK CUKUP"]:["neutral","NETRAL - TIDAK ADA SINYAL"];
+ $("sgBadge").className="badge "+ui[0];$("sgBadge").textContent=ui[1];
+ $("sgMain").textContent=ui[1];setCard("sgMainCard",buy?"card-bullish":sell?"card-bearish":ins?"":"card-neutral");
+ $("sgSub").textContent=ins?"Indikator valid kurang":(buy||sell)?(s.weak?"Konfirmasi lemah (ADX di bawah 20)":"Terkonfirmasi (candle tertutup)"):(s.filterMsg?"Ditahan oleh filter":"Belum ada konfirmasi");
+ $("sgGreen").textContent=ins?"--":`${s.g} dari ${s.nv}`;$("sgYellow").textContent=ins?"--":`${s.y} dari ${s.nv}`;$("sgRed").textContent=ins?"--":`${s.r} dari ${s.nv}`;
+ $("sgStrengthLabel").textContent=buy?"Kekuatan Sinyal BUY":sell?"Kekuatan Sinyal SELL":"Kekuatan Sinyal";
+ $("sgStrength").textContent=s.strength!=null?s.strength+" / 100":"--";$("sgBar").style.width=(s.strength||0)+"%";$("sgBar").style.background=buy?"#22c55e":sell?"#ef4444":"#facc15";
+ // Akurasi historis
+ if(!bt)$("sgAcc").textContent="Menghitung...";
+ else if(bt.error||bt.insufficient||!bt.all||bt.all.n<SIG.minSample){$("sgAcc").textContent="AKURASI BELUM TERVALIDASI";$("sgAccSub").textContent=bt&&bt.all?`Sampel ${bt.all.n} dari minimal ${SIG.minSample}`:"Riwayat candle belum cukup"}
+ else{$("sgAcc").textContent=fmt(bt.all.winRate,1)+"%";$("sgAccSub").textContent=`n = ${bt.all.n} sinyal · ${CONFIG.symbol} ${CONFIG.interval}`}
+ if(bt&&bt.all&&bt.all.n>0){const a=bt.all,o=bt.oos,ok=a.n>=SIG.minSample;
+  $("sgAccDetail").innerHTML=`<b>Backtest walk-forward</b> (${esc(CONFIG.symbol)} ${esc(CONFIG.interval)}, ${esc(fmtTime(bt.from))} – ${esc(fmtTime(bt.to))}, ${bt.candles} candle): ${a.n} sinyal selesai, ${a.wins} capai Target 1, ${a.losses} kena Stop Loss, ${a.timeouts} tidak menyentuh keduanya dalam ${SIG.maxBars} candle. Win rate ${fmt(a.winRate,1)}%${ok?"":" (BELUM TERVALIDASI, sampel kurang)"}; rata-rata untung ${fmt(a.avgWin,2)}R, rata-rata rugi ${fmt(a.avgLoss,2)}R, ekspektasi ${fmt(a.expR,2)}R per sinyal setelah biaya. Out-of-sample (30% terakhir): ${o.n?`${o.n} sinyal, win rate ${fmt(o.winRate,1)}%, ekspektasi ${fmt(o.expR,2)}R${o.n<SIG.minSample?" (sampel kecil)":""}`:"belum ada sinyal"}. Akurasi historis berbeda dari kekuatan sinyal saat ini dan bukan jaminan hasil berikutnya.`}
+ else if(bt&&bt.all)$("sgAccDetail").textContent="Backtest tidak menghasilkan sinyal pada periode yang dimuat. AKURASI BELUM TERVALIDASI.";
+ else $("sgAccDetail").textContent="";
+ // Rencana transaksi / netral
+ const lv=s.levels;
+ if((buy||sell)&&lv){
+  $("sgPlan").style.display="block";$("sgNoTrade").style.display="none";
+  $("sgEntryLabel").textContent=buy?"BUY DI RANGE":"SHORT DI RANGE";
+  $("sgEntry").textContent=`${fmtP(lv.low)} - ${fmtP(lv.high)}`;
+  $("sgSL").textContent=fmtP(lv.sl);$("sgSLpct").textContent=`Risiko ${fmt(lv.risk/lv.mid*100,2)}% dari entry`;
+  lv.tps.forEach((t,i)=>{$("sgT"+(i+1)).textContent=fmtP(t);$("sgRR"+(i+1)).textContent=`R:R 1 : ${fmt(lv.rr[i],2)}`});
+  let pos;if(buy)pos=p<=lv.sl?"Harga menembus SL, sinyal batal":p>lv.high?"Di atas range entry (jangan mengejar)":p<lv.low?"Di bawah range entry":"Di dalam range entry";
+  else pos=p>=lv.sl?"Harga menembus SL, sinyal batal":p<lv.low?"Di bawah range entry (jangan mengejar)":p>lv.high?"Di atas range entry":"Di dalam range entry";
+  $("sgPos").textContent=pos;
+ }else{
+  $("sgPlan").style.display="none";$("sgPos").textContent="--";
+  if(ins){$("sgNoTrade").style.display="block";$("sgNoTradeText").textContent=s.reason}
+  else{$("sgNoTrade").style.display="block";$("sgNoTradeText").textContent="Tidak ada entry, Stop Loss, atau Target karena belum ada konfirmasi yang cukup. Tunggu candle tertutup berikutnya atau perubahan kondisi indikator."}
+ }
+ $("sgReason").textContent=s.reason||"--";$("sgInvalid").textContent=s.invalid||"--";
+ $("sgUpdated").textContent=`Dihitung dari candle tertutup ${fmtTime(s.time)} · sinyal diperbarui ${new Date(state.sigTime).toLocaleTimeString("id-ID")} · satu sinyal per candle tertutup.`;
+ $("sgTable").innerHTML=s.list.length?s.list.map(x=>{const u=DIR_UI[x.dir]||DIR_UI.na;return `<tr><td>${esc(x.name)}</td><td>${esc(x.value)}</td><td>${u[0]}</td><td><span class="badge ${u[1]}">${u[2]}</span></td><td class="wrap">${esc(x.note)}</td></tr>`}).join(""):'<tr><td colspan="5" class="muted text-center">Data belum cukup untuk menghitung indikator</td></tr>';
+}
+/*SIGNAL-END*/
 
 /* ================= CHART (Lightweight Charts) ================= */
 function initChart(){if(!window.LightweightCharts){$("chartStatus").textContent="Library chart gagal dimuat";return}
@@ -347,49 +474,11 @@ function setChartData(cs,fit){if(!state.candleSeries||!cs.length)return;
  if(fit){state.chart.timeScale().fitContent();const n=data.length;if(n>150)state.chart.timeScale().setVisibleLogicalRange({from:n-150,to:n+12})}
  const l=cs[cs.length-1];showLegend({open:l.open,high:l.high,low:l.low,close:l.close});
  $("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${data.length} candle`}
-function clearHarmonic(){if(state.chart)state.hSeries.forEach(s=>{try{state.chart.removeSeries(s)}catch(_){}});state.hSeries=[];if(state.candleSeries)try{state.candleSeries.setMarkers([])}catch(_){}}
-function hLine(color,width,style,pts,title){const s=state.chart.addLineSeries({color,lineWidth:width,lineStyle:style,priceLineVisible:false,lastValueVisible:!!title,title:title||"",crosshairMarkerVisible:false,autoscaleInfoProvider:()=>null});s.setData(pts);state.hSeries.push(s);return s}
-function drawHarmonic(h){clearHarmonic();if(!state.chart||!state.showHarmonic||!h)return;
- const LS=LightweightCharts.LineStyle,step=Math.floor(intervalMs()/1000),w=workingCandles(),lastT=toCT(w[w.length-1].time),futT=lastT+step*10;
- const pt=p=>({time:toCT(p.time),value:p.price}),dash="#6b7280";
- const pts=[h.X,h.A,h.B,h.C];if(h.D)pts.push(h.D);
- hLine("#38bdf8",2,LS.Solid,pts.map(pt));
- hLine(dash,1,LS.Dashed,[pt(h.X),pt(h.B)]);
- hLine(dash,1,LS.Dashed,[pt(h.A),pt(h.C)]);
- if(h.D){hLine(dash,1,LS.Dashed,[pt(h.B),pt(h.D)]);hLine(dash,1,LS.Dashed,[pt(h.X),pt(h.cypher?h.C:h.D)])}
- else hLine(dash,1,LS.Dashed,[pt(h.X),pt(h.C)]);
- const t0=toCT(h.C.time);
- hLine("#a78bfa",1,LS.Dashed,[{time:t0,value:h.przHigh},{time:futT,value:h.przHigh}],"PRZ");
- hLine("#a78bfa",1,LS.Dashed,[{time:t0,value:h.przLow},{time:futT,value:h.przLow}],"PRZ");
- if(!h.D)hLine("#a78bfa",1,LS.Dotted,[pt(h.C),{time:futT,value:(h.przLow+h.przHigh)/2}]);
- const st=h.D?toCT(h.D.time):lastT;
- if(st<futT){hLine("#ef5350",1,LS.Dotted,[{time:st,value:h.stop},{time:futT,value:h.stop}],"SL");
-  hLine("#26a69a",1,LS.Dotted,[{time:st,value:h.tp1},{time:futT,value:h.tp1}],"TP1");
-  hLine("#26a69a",1,LS.Dotted,[{time:st,value:h.tp2},{time:futT,value:h.tp2}],"TP2")}
- const mk=[["X",h.X],["A",h.A],["B",h.B],["C",h.C]];if(h.D)mk.push(["D",h.D]);
- state.candleSeries.setMarkers(mk.map(([l,p])=>({time:toCT(p.time),position:p.type==="H"?"aboveBar":"belowBar",color:l==="D"?(h.bullish?"#26a69a":"#ef5350"):"#38bdf8",shape:p.type==="H"?"arrowDown":"arrowUp",text:l+" "+fmtP(p.price)})));
- $("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${h.name} ${h.bullish?"Bullish":"Bearish"} · ${h.status}`}
 
-/* ================= RENDER HARMONIC & INDIKATOR (DIKEMAS KINI DENGAN WARNA) ================= */
-function fmtRange(r){return r[0]===r[1]?fmt(r[0],3):fmt(r[0],3)+" – "+fmt(r[1],3)}
-function renderHarmonic(h){
- const sig=h?[h.name,h.status,h.X.time,h.C.time,h.D?h.D.time+":"+h.D.price:"p",h.przLow.toFixed(8),h.przHigh.toFixed(8)].join("|")+"|"+CONFIG.tol+"|"+state.showHarmonic:"none|"+state.showHarmonic;
- if(!h){$("harmonicBadge").className="badge unknown";$("harmonicBadge").textContent="BELUM TERDETEKSI";$("harmonicName").textContent="Tidak ada pola valid";$("harmonicDirection").textContent="Menunggu pivot XABCD";$("harmonicScore").textContent="--";$("harmonicPRZ").textContent="--";$("harmonicDetails").textContent="Konfluensi XA & BC";$("harmonicPlan").textContent="--";$("harmonicTable").innerHTML='<tr><td colspan="5" class="muted text-center">Belum ada pola</td></tr>'}
- else{
-  const cls=h.status==="SELESAI"?"pass":h.status==="TERBENTUK"?"warning":"unknown";
-  $("harmonicBadge").className="badge "+cls;$("harmonicBadge").textContent=h.status;
-  $("harmonicName").textContent=h.name;$("harmonicDirection").textContent=(h.bullish?"Bullish":"Bearish")+" reversal"+(h.status==="PROYEKSI"?" (D belum tercapai)":"");
-  $("harmonicScore").textContent=fmt(h.quality,0)+"/100";
-  $("harmonicPRZ").textContent=`${fmtP(h.przLow)} – ${fmtP(h.przHigh)}`;
-  $("harmonicDetails").textContent=h.cypher?"Zona 0,786 XC":(h.confluence?"Konfluensi XA & BC · AB=CD "+fmtP(h.eqCD):"Tanpa konfluensi BC");
-  $("harmonicPlan").innerHTML=`Entry ${fmtP(h.entry)}<br>SL ${fmtP(h.stop)}<br>TP1 ${fmtP(h.tp1)} (R:R ${fmt(h.rr1,2)})<br>TP2 ${fmtP(h.tp2)} (R:R ${fmt(h.rr2,2)})`;
-  $("harmonicTable").innerHTML=h.rows.map(r=>`<tr><td>${r.label}</td><td>${fmtRange(r.range)}</td><td>${fmt(r.value,3)}</td><td>${fmt(r.dev*100,2)}%</td><td><span class="badge ${r.dev===0?"pass":"warning"}">${r.dev===0?"Dalam rentang":"Dalam toleransi"}</span></td></tr>`).join("")+(h.D?"":'<tr><td colspan="5" class="muted">Rasio D (CD/BC dan AD/XA) dinilai setelah harga mencapai PRZ.</td></tr>')}
- if(sig!==state.lastSig){state.lastSig=sig;drawHarmonic(h)}}
-
+/* ================= RENDER INDIKATOR ================= */
 function renderIndicators(){
  const i=state.indicators,p=state.currentPrice;if(!i)return;
 
- // Logik penentuan warna kelas untuk latar belakang kad
  const getRsiClass = r => r>70 ? "card-bearish" : r<30 ? "card-bullish" : "card-neutral";
  const getEmaClass = (e9, e21) => e9>e21 ? "card-bullish" : "card-bearish";
  const getStochClass = s => s>80 ? "card-bearish" : s<20 ? "card-bullish" : "card-neutral";
@@ -398,7 +487,7 @@ function renderIndicators(){
  const getBbClass = (pr, u, l) => pr>u ? "card-bearish" : pr<l ? "card-bullish" : "card-neutral";
  const getAdxClass = (adxObj) => (adxObj.adx>=25 && adxObj.plusDI>adxObj.minusDI) ? "card-bullish" : (adxObj.adx>=25 && adxObj.minusDI>adxObj.plusDI) ? "card-bearish" : "card-neutral";
  const getVwapClass = (pr, v) => pr>v ? "card-bullish" : pr<v ? "card-bearish" : "card-neutral";
- 
+
  const adxStatus = i.adx.adx>=25 ? (i.adx.plusDI>i.adx.minusDI?"Tren Naik Kuat":"Tren Turun Kuat") : "Tren Lemah";
 
  const cards=[
@@ -413,13 +502,11 @@ function renderIndicators(){
   ["Support / Resistance",`${fmtUSD(i.support)} / ${fmtUSD(i.resistance)}`,"Rentang 50 candle", "card-neutral"],
   ["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP", getVwapClass(p, i.vwap)]
  ];
- 
- // Render setiap kad dengan menambahkan kelas warna (cls)
+
  $("indicatorsGrid").innerHTML=cards.map(([n,v,s,cls])=>`<div class="indicator-card ${cls}"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status">${s}</div></div>`).join("")
 }
 
-function recomputePivots(){const cs=state.candles;if(cs.length<30){state.pivots=[];return}const atr=TA.atr(cs.map(c=>c.high),cs.map(c=>c.low),cs.map(c=>c.close));state.pivots=pivots(cs,CONFIG.swing,finite(atr)?atr:0)}
-function refreshAnalysis(){const all=workingCandles();state.indicators=calculateIndicators(all);state.harmonic=scanHarmonic(state.pivots,all,CONFIG.tol,CONFIG.showProjection);renderIndicators();renderHarmonic(state.harmonic)}
+function refreshAnalysis(){const all=workingCandles();state.indicators=calculateIndicators(all);renderIndicators();updateSignal()}
 
 /* ================= MODEL PREDIKSI ================= */
 function runModel(cs,i){const price=cs[cs.length-1].close;if(!i||!finite(i.atr))return null;let score=0,w=0;function add(v,z){if(finite(v)){score+=v*z;w+=z}}
@@ -430,7 +517,7 @@ function runModel(cs,i){const price=cs[cs.length-1].close;if(!i||!finite(i.atr))
  if(finite(i.volDelta))add(i.volDelta>0?1:i.volDelta<0?-1:0,.6);
  if(finite(i.stoch))add(i.stoch<20?.6:i.stoch>80?-.6:0,.5);
  if(finite(i.adx.adx)&&i.adx.adx>=20)add(i.adx.plusDI>i.adx.minusDI?1:-1,.7);
- const h=state.harmonic;if(h&&h.status!=="PROYEKSI"&&h.quality>=40)add((h.bullish?1:-1)*h.quality/100,h.status==="SELESAI"?1.2:.7);
+ const sg=state.signal;if(sg&&(sg.status==="BUY"||sg.status==="SELL")&&finite(sg.dom))add(sg.dom,1.2);
  const norm=w?clamp(score/w,-1,1):0,move=norm*i.atr*.35,pred=price+move,pct=(pred-price)/price*100;
  return {startPrice:price,predPrice:pred,direction:pct>.01?"NAIK":pct<-.01?"TURUN":"NETRAL",returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8}}
 function renderPrediction(p){$("predictedPrice").textContent=fmtUSD(p.predPrice);$("predChange").textContent=(p.returnPct>0?"+":"")+fmt(p.returnPct,4)+"%";const b=$("predDirection");b.textContent=p.direction;b.className="badge mt-2 "+(p.direction==="NAIK"?"up":p.direction==="TURUN"?"down":"neutral");$("predRange").textContent=`${fmtUSD(p.lowerBound)} – ${fmtUSD(p.upperBound)}`;$("confidenceScore").textContent=fmt(p.signalStrength,0)+"/100";$("confidenceBar").style.width=p.signalStrength+"%";$("targetTime").textContent=fmtTime(p.targetTime)+" · Target candle"}
@@ -449,7 +536,7 @@ async function fetchHistory(){const gen=++state.generation;setStatus("Memuat can
  if(state.candles.length<50)throw Error("Candle tertutup kurang dari 50");
  state.currentPrice=state.candles[state.candles.length-1].close;state.liveCandle=null;
  $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;$("currentPrice").textContent=fmtUSD(state.currentPrice);
- clearHarmonic();state.lastSig="";setChartData(state.candles,true);recomputePivots();refreshAnalysis();
+ clearSignalLines();state.sigKey="";state.signal=null;state.bt=null;setChartData(state.candles,true);refreshAnalysis();scheduleBacktest();
  const ind=calculateIndicators(state.candles),r=runModel(state.candles,ind);if(r){r.targetTime=state.candles[state.candles.length-1].time+intervalMs();renderPrediction(r)}
  stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS()
  }catch(e){if(gen!==state.generation)return;console.error(e);setStatus("Gagal memuat data","red");msg("Tidak dapat mengambil candle Binance: "+e.message);scheduleReconnect()}}
@@ -469,9 +556,9 @@ function processKline(k){const c={time:+k.t,open:+k.o,high:+k.h,low:+k.l,close:+
  if(!c.isClosed){refreshAnalysis();return}
  const idx=state.candles.findIndex(x=>x.time===c.time);if(idx>=0)state.candles[idx]=c;else state.candles.push(c);
  state.candles.sort((a,b)=>a.time-b.time);state.candles=state.candles.slice(-1500);state.liveCandle=null;
- recomputePivots();refreshAnalysis();evaluateCandle(c);createPrediction(c);stats();renderHistory()}
+ refreshAnalysis();evaluateCandle(c);createPrediction(c);stats();renderHistory();scheduleBacktest()}
 function reconnectNow(){state.stopped=false;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;state.reconnectDelay=1000;state.generation++;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}state.ws=null}
- state.candles=[];state.liveCandle=null;state.indicators=null;state.pivots=[];state.harmonic=null;state.lastSig="";clearHarmonic();mountTV();fetchHistory()}
+ state.candles=[];state.liveCandle=null;state.indicators=null;state.signal=null;state.sigKey="";state.bt=null;clearTimeout(state.btTimer);clearSignalLines();renderSignal();mountTV();fetchHistory()}
 function clearHistory(){if(!confirm("Hapus semua riwayat prediksi yang tersimpan?"))return;state.predictions=[];savePredictions();stats();renderHistory();msg("Riwayat prediksi dihapus.")}
 
 /* ================= WIDGET TRADINGVIEW ASLI ================= */
@@ -484,12 +571,8 @@ function setTab(t){state.tab=t;$("paneChart").style.display=t==="chart"?"block":
 /* ================= EVENT ================= */
 $("timeframeSelect").addEventListener("change",()=>{CONFIG.interval=$("timeframeSelect").value;updateTimeframeLabels();reconnectNow()});
 $("symbolSelect").addEventListener("change",()=>{CONFIG.symbol=$("symbolSelect").value;reconnectNow()});
-$("swingSelect").addEventListener("change",()=>{CONFIG.swing=Number($("swingSelect").value);state.lastSig="";recomputePivots();refreshAnalysis()});
-$("tolSelect").addEventListener("change",()=>{CONFIG.tol=Number($("tolSelect").value);state.lastSig="";refreshAnalysis()});
-$("projCheck").addEventListener("change",()=>{CONFIG.showProjection=$("projCheck").checked;state.lastSig="";refreshAnalysis()});
 $("reconnectButton").addEventListener("click",reconnectNow);$("refreshCoinsButton").addEventListener("click",loadTop100);$("clearButton").addEventListener("click",clearHistory);$("historyLimit").addEventListener("change",renderHistory);
 $("fitChartButton").addEventListener("click",()=>{if(!state.chart)return;state.chart.timeScale().fitContent()});
-$("toggleHarmonicButton").addEventListener("click",()=>{state.showHarmonic=!state.showHarmonic;state.lastSig="";renderHarmonic(state.harmonic)});
 $("tabChart").addEventListener("click",()=>setTab("chart"));$("tabTV").addEventListener("click",()=>setTab("tv"));
 
 // EVENT UNTUK TOMBOL TRADINGVIEW ACCOUNT INTEGRATION
@@ -513,7 +596,7 @@ $("btnTVBack").addEventListener("click", () => {
 
 window.addEventListener("online",()=>reconnectNow());window.addEventListener("offline",()=>setStatus("Perangkat offline","red"));
 window.addEventListener("beforeunload",()=>{state.stopped=true;clearTimeout(state.reconnectTimer);if(state.ws)try{state.ws.close()}catch(_){}});
-loadPredictions();initChart();updateTimeframeLabels();stats();renderHistory();loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
+loadPredictions();initChart();updateTimeframeLabels();stats();renderHistory();renderSignal();loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
 </script>
 </body>
 </html>
