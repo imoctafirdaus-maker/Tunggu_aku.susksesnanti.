@@ -1,0 +1,11 @@
+{
+  "name": "octa-signal-scanner",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Crypto Signal Scanner untuk Octa Analyzer (GitHub Actions + Firebase Realtime Database)",
+  "main": "scan.js",
+  "engines": { "node": ">=20" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0"
+  }
+}
