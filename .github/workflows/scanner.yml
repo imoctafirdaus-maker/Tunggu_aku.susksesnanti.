@@ -33,3 +33,4 @@ jobs:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
           FIREBASE_DB_URL: https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app
         run: node scanner/scan.js
+      
