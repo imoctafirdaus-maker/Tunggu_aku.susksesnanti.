@@ -1,0 +1,13 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "signals": {
+      ".read": true,
+      ".indexOn": ["updatedAt"]
+    },
+    "scannerStatus": {
+      ".read": true
+    }
+  }
+}
