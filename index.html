@@ -4,14 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<title>Binance Top 100 · Multi-Timeframe Predictor + Harmonic Radar</title>
+<title>Binance Top 100 · Predictor + Harmonic Carney</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
 <style>
 :root{--bg:#070b14;--panel:#101827;--border:#243047;--muted:#94a3b8}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e5e7eb;font-family:Arial,sans-serif}
 .panel{background:var(--panel);border:1px solid var(--border);border-radius:14px}.muted{color:var(--muted)}
-.btn{padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;background:#253247;color:white}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn{padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;background:#253247;color:white;border:0}.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.active{background:#2962ff}
 .badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800}
 .up,.pass{color:#86efac;background:#123322}.down,.reject{color:#fca5a5;background:#431717}.neutral,.warning{color:#fde68a;background:#3b2e0a}.unknown{color:#cbd5e1;background:#293548}
 .stat-number{font-size:clamp(18px,2.2vw,26px);font-weight:800;overflow-wrap:anywhere}
@@ -20,8 +21,13 @@
 table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
 #connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}#confidenceBar{height:100%;width:0;background:#facc15;transition:width .25s}
 input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
-#chart{height:420px;width:100%;position:relative}.chart-note{font-size:11px;color:var(--muted);line-height:1.5}
-@media(max-width:640px){th,td{padding:8px}#chart{height:340px}}
+#chartWrap{position:relative;border-radius:10px;overflow:hidden;background:#131722}
+#chart{height:520px;width:100%}
+#legend{position:absolute;left:10px;top:8px;z-index:5;pointer-events:none;font:12px/1.5 monospace;color:#d1d4dc;text-shadow:0 0 4px #131722}
+#tvWidget{height:560px;width:100%;border-radius:10px;overflow:hidden;background:#131722}
+.chart-note{font-size:11px;color:var(--muted);line-height:1.5}
+.plan{font-family:monospace;font-size:12px;line-height:1.7}
+@media(max-width:640px){th,td{padding:8px}#chart{height:380px}#tvWidget{height:440px}}
 </style>
 </head>
 <body>
@@ -29,7 +35,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div><div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE MARKET ANALYSIS</div>
 <h1 class="text-3xl md:text-4xl font-extrabold mt-2">Binance Top 100 · Multi-Timeframe Predictor</h1>
-<p class="muted mt-2 text-sm">10 indikator teknikal + Harmonic Pattern XABCD · Binance Spot</p></div>
+<p class="muted mt-2 text-sm">10 indikator teknikal + Harmonic Pattern Scott Carney (Gartley, Bat, Alt Bat, Butterfly, Crab, Deep Crab, Cypher)</p></div>
 <div class="panel p-4 min-w-[240px]"><div class="muted text-sm">Status Market</div><div class="flex items-center gap-2 mt-2"><span id="connectionDot"></span><span id="connectionText" class="font-bold">Memuat...</span></div>
 <div id="lastUpdate" class="muted text-xs mt-2">Menunggu data</div><div id="sourceText" class="muted text-xs mt-1">Sumber: Binance Spot</div></div>
 </header>
@@ -52,20 +58,40 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </section>
 
 <section class="panel p-4 mb-6">
-<div class="flex flex-wrap justify-between items-center gap-3 mb-3"><div><h2 class="text-lg font-bold">Grafik Candlestick + Harmonic Pattern</h2><p class="muted text-xs mt-1">Chart live dari candle Binance. Garis X-A-B-C-D digambar pada chart saat kandidat pola terdeteksi.</p></div><span id="chartStatus" class="badge unknown">Memuat chart...</span></div>
-<div id="chart"></div><div class="flex flex-wrap gap-2 mt-3"><button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button><button class="btn text-sm" id="toggleHarmonicButton">Sembunyikan/Tampilkan Harmonic</button></div>
-<p class="chart-note mt-3">Grafik ini memakai Lightweight Charts dan data candlestick publik Binance, bukan iframe TradingView. Widget TradingView tertanam tidak mengizinkan kode halaman menggambar pola custom di atas chart, sehingga chart ini dipakai agar garis XABCD dan PRZ bisa digambar serta diperbarui oleh program.</p>
+<div class="flex flex-wrap justify-between items-center gap-3 mb-3">
+<div><h2 class="text-lg font-bold">Grafik Candlestick · Gaya TradingView</h2><p class="muted text-xs mt-1">Garis X-A-B-C-D, garis putus-putus XB/AC/BD/XD, zona PRZ, serta level Stop dan Target digambar otomatis di chart.</p></div>
+<span id="chartStatus" class="badge unknown">Memuat chart...</span></div>
+<div class="flex flex-wrap gap-2 mb-3">
+<button class="btn text-sm active" id="tabChart">Chart + Harmonic Otomatis</button>
+<button class="btn text-sm" id="tabTV">TradingView Asli</button></div>
+<div id="paneChart">
+<div id="chartWrap"><div id="chart"></div><div id="legend"></div></div>
+<div class="flex flex-wrap gap-2 mt-3"><button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button><button class="btn text-sm" id="toggleHarmonicButton">Sembunyikan/Tampilkan Harmonic</button></div>
+<p class="chart-note mt-3">Chart ini memakai Lightweight Charts, library resmi TradingView, dengan data candle publik Binance. Widget TradingView tertanam tidak mengizinkan halaman menggambar pola custom, jadi pola digambar di chart ini. Tab "TradingView Asli" menampilkan widget TradingView penuh (tanpa gambar otomatis) jika Anda ingin membandingkan.</p>
+</div>
+<div id="paneTV" style="display:none"><div id="tvWidget"></div>
+<p class="chart-note mt-3">Widget TradingView resmi. Pola harmonic tidak bisa digambar otomatis di sini, tetapi Anda dapat memakai alat bawaan TradingView "XABCD Pattern" / "Cypher Pattern" secara manual dan membandingkannya dengan hasil di tab sebelah.</p></div>
 </section>
 
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">10 Indikator Teknikal</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
-<section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Harmonic Pattern · XABCD</h2><span id="harmonicBadge" class="badge unknown">BELUM TERDETEKSI</span></div>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4"><div class="indicator-card"><div class="muted text-xs mb-2">Pola terbaru</div><div id="harmonicName" class="indicator-value">Belum cukup data</div><div id="harmonicDirection" class="indicator-status">Menunggu pivot XABCD</div></div><div class="indicator-card"><div class="muted text-xs mb-2">Kesesuaian rasio</div><div id="harmonicScore" class="indicator-value">--</div><div class="indicator-status">Rasio Fibonacci XABCD</div></div><div class="indicator-card"><div class="muted text-xs mb-2">Potential Reversal Zone (PRZ)</div><div id="harmonicPRZ" class="indicator-value">--</div><div id="harmonicDetails" class="indicator-status">Konfirmasi diperlukan</div></div></div>
-<p class="muted text-xs mt-4 leading-5">Pola adalah kandidat berbasis pivot swing dan rasio Fibonacci, bukan jaminan reversal. Pivot baru terkonfirmasi setelah beberapa candle di kanan pivot; hasilnya dapat berubah ketika data baru masuk.</p></section>
 
-<section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Pengaturan</h2><div class="flex flex-wrap items-center gap-3">
+<section class="panel p-5 mb-6">
+<div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Harmonic Pattern · Scott Carney</h2><span id="harmonicBadge" class="badge unknown">BELUM TERDETEKSI</span></div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+<div class="indicator-card"><div class="muted text-xs mb-2">Pola</div><div id="harmonicName" class="indicator-value">Belum cukup data</div><div id="harmonicDirection" class="indicator-status">Menunggu pivot XABCD</div></div>
+<div class="indicator-card"><div class="muted text-xs mb-2">Ketepatan rasio vs tabel Carney</div><div id="harmonicScore" class="indicator-value">--</div><div class="indicator-status">100 = tepat di rasio ideal</div></div>
+<div class="indicator-card"><div class="muted text-xs mb-2">Potential Reversal Zone (PRZ)</div><div id="harmonicPRZ" class="indicator-value">--</div><div id="harmonicDetails" class="indicator-status">Konfluensi XA &amp; BC</div></div>
+<div class="indicator-card"><div class="muted text-xs mb-2">Skenario (acuan)</div><div id="harmonicPlan" class="plan">--</div></div></div>
+<div class="overflow-x-auto mt-4"><table><thead><tr><th>Rasio</th><th>Ideal Carney</th><th>Aktual</th><th>Deviasi</th><th>Status</th></tr></thead><tbody id="harmonicTable"><tr><td colspan="5" class="muted text-center">Belum ada pola</td></tr></tbody></table></div>
+<p class="muted text-xs mt-4 leading-5">Pola dihitung dari pivot swing dan dicocokkan ke tabel rasio Carney dengan toleransi yang dapat diatur. Status SELESAI = titik D sudah terkonfirmasi sebagai pivot; TERBENTUK = harga sedang berada di D tetapi belum terkonfirmasi; PROYEKSI = X-A-B-C valid dan PRZ ditampilkan lebih dulu. Level stop/target hanyalah acuan umum (target 0,382 dan 0,618 dari leg), bukan jaminan. Pola dapat berubah saat candle baru masuk.</p></section>
+
+<section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Pengaturan</h2><div class="flex flex-wrap items-end gap-3">
 <label class="text-sm">Pilih koin top 100<br><select id="symbolSelect"><option value="BTCUSDT">Memuat daftar...</option></select></label>
 <label class="text-sm">Timeframe analisis<br><select id="timeframeSelect"><option value="1m">1 menit</option><option value="5m">5 menit</option><option value="15m">15 menit</option><option value="1h">1 jam</option><option value="4h">4 jam</option><option value="1d">1 hari</option><option value="1w">1 minggu</option></select></label>
 <label class="text-sm">Riwayat tampilan<br><select id="historyLimit"><option value="15">15</option><option value="30">30</option><option value="50">50</option></select></label>
+<label class="text-sm">Sensitivitas swing<br><select id="swingSelect"><option value="2">Halus (2)</option><option value="3" selected>Normal (3)</option><option value="5">Kasar (5)</option><option value="8">Sangat kasar (8)</option></select></label>
+<label class="text-sm">Toleransi rasio<br><select id="tolSelect"><option value="0.03">Ketat (3%)</option><option value="0.05" selected>Normal (5%)</option><option value="0.08">Longgar (8%)</option></select></label>
+<label class="text-sm flex items-center gap-2 pb-2"><input type="checkbox" id="projCheck" checked> Tampilkan proyeksi PRZ</label>
 <button id="reconnectButton" class="btn text-sm">Sambungkan Ulang</button><button id="refreshCoinsButton" class="btn text-sm">Perbarui Top 100</button><button id="clearButton" class="btn text-sm">Hapus Riwayat</button>
 </div><p class="muted text-xs mt-4">Top 100 dihitung dari pasangan Spot USDT Binance berdasarkan quote volume 24 jam. Endpoint publik tidak memerlukan API key. Koneksi membutuhkan internet dan dapat dibatasi oleh wilayah/CORS.</p></section>
 <section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Riwayat Prediksi dan Evaluasi</h2><div class="overflow-x-auto"><table><thead><tr><th>Waktu</th><th>Koin</th><th>TF</th><th>Harga Awal</th><th>Prediksi</th><th>Arah</th><th>Target</th><th>Aktual</th><th>Status</th><th>Error USD</th></tr></thead><tbody id="historyBody"><tr><td colspan="10" class="text-center muted">Menunggu data prediksi</td></tr></tbody></table></div></section>
@@ -73,14 +99,20 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </main>
 <script>
 "use strict";
-const CONFIG={symbol:"BTCUSDT",interval:"1m",historyLimit:500,maxPredictions:500,restEndpoints:["https://api.binance.com","https://api-gcp.binance.com","https://api1.binance.com","https://api2.binance.com","https://api3.binance.com","https://api4.binance.com"],websocketBase:"wss://stream.binance.com:9443/ws/"};
-const STORAGE_KEY="binance_top100_predictor_harmonic_chart_v4";
-const state={candles:[],liveCandle:null,indicators:null,predictions:[],currentPrice:0,ws:null,reconnectTimer:null,reconnectDelay:1000,generation:0,stopped:false,coinList:[],harmonic:null,chart:null,candleSeries:null,volumeSeries:null,harmonicLines:[],showHarmonic:true};
+const CONFIG={symbol:"BTCUSDT",interval:"1m",historyLimit:1000,maxPredictions:500,swing:3,tol:0.05,showProjection:true,
+ restEndpoints:["https://data-api.binance.vision","https://api.binance.com","https://api-gcp.binance.com","https://api1.binance.com","https://api2.binance.com","https://api3.binance.com","https://api4.binance.com"],
+ wsBases:["wss://stream.binance.com:9443/ws/","wss://data-stream.binance.vision/ws/"]};
+const STORAGE_KEY="binance_top100_predictor_harmonic_carney_v5";
+const TZ_OFFSET=-new Date().getTimezoneOffset()*60;
+const toCT=ms=>Math.floor(ms/1000)+TZ_OFFSET;
+const state={candles:[],liveCandle:null,indicators:null,predictions:[],currentPrice:0,ws:null,wsIdx:0,reconnectTimer:null,reconnectDelay:1000,generation:0,stopped:false,coinList:[],harmonic:null,pivots:[],chart:null,candleSeries:null,volumeSeries:null,hSeries:[],showHarmonic:true,tab:"chart",lastSig:""};
 const $=id=>document.getElementById(id), finite=Number.isFinite;
 const TIMEFRAMES={"1m":{label:"1 menit",ms:60000},"5m":{label:"5 menit",ms:300000},"15m":{label:"15 menit",ms:900000},"1h":{label:"1 jam",ms:3600000},"4h":{label:"4 jam",ms:14400000},"1d":{label:"1 hari",ms:86400000},"1w":{label:"1 minggu",ms:604800000}};
+const TV_INTERVAL={"1m":"1","5m":"5","15m":"15","1h":"60","4h":"240","1d":"D","1w":"W"};
 const clamp=(n,a,b)=>Math.max(a,Math.min(b,n)), mean=a=>a.length?a.reduce((x,y)=>x+y,0)/a.length:NaN;
 function fmtUSD(n){return finite(n)?n.toLocaleString("en-US",{style:"currency",currency:"USD",minimumFractionDigits:2,maximumFractionDigits:8}):"--"}
 function fmt(n,d=2){return finite(n)?n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d}):"--"}
+function fmtP(n){if(!finite(n))return"--";const d=n>=1000?2:n>=1?4:n>=0.01?6:8;return n.toLocaleString("en-US",{minimumFractionDigits:d,maximumFractionDigits:d})}
 function fmtTime(t){return finite(t)?new Date(t).toLocaleString("id-ID",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit"}):"--"}
 function compactUSD(n){return n>=1e9?"$"+(n/1e9).toFixed(2)+"B":n>=1e6?"$"+(n/1e6).toFixed(1)+"M":n>=1e3?"$"+(n/1e3).toFixed(1)+"K":"$"+Math.round(n)}
 function setStatus(t,c="yellow"){$("connectionText").textContent=t;$("lastUpdate").textContent="Terakhir: "+new Date().toLocaleTimeString("id-ID");$("connectionDot").style.background=({green:"#22c55e",yellow:"#facc15",red:"#ef4444",gray:"#94a3b8"})[c]||"#94a3b8"}
@@ -91,6 +123,7 @@ async function fetchTimeout(url,ms=12000){const c=new AbortController(),t=setTim
 async function apiFetch(path){let last;for(const base of CONFIG.restEndpoints){try{const r=await fetchTimeout(base+path);if(!r.ok)throw Error("HTTP "+r.status);return {data:await r.json(),base}}catch(e){last=e;console.warn(base,e)}}throw last||Error("Semua endpoint Binance gagal")}
 function loadPredictions(){try{const p=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");state.predictions=Array.isArray(p)?p.slice(0,CONFIG.maxPredictions):[]}catch(_){state.predictions=[]}}
 function savePredictions(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state.predictions))}catch(_){msg("Penyimpanan browser penuh; riwayat mungkin tidak tersimpan.")}}
+
 async function loadTop100(){ $("refreshCoinsButton").disabled=true;try{
  const [{data:ex,base},{data:ticks}]=await Promise.all([apiFetch("/api/v3/exchangeInfo"),apiFetch("/api/v3/ticker/24hr")]);
  const valid=new Set(ex.symbols.filter(s=>s.status==="TRADING"&&s.isSpotTradingAllowed&&s.quoteAsset==="USDT"&&s.baseAsset!=="USDT").map(s=>s.symbol));
@@ -100,61 +133,243 @@ async function loadTop100(){ $("refreshCoinsButton").disabled=true;try{
  const sel=$("symbolSelect");sel.innerHTML="";state.coinList.forEach((c,i)=>{const o=document.createElement("option");o.value=c.symbol;o.textContent=`${i+1}. ${c.symbol} · 24h ${compactUSD(c.volume)}`;sel.appendChild(o)});sel.value=CONFIG.symbol;
  $("sourceText").textContent=`REST: ${new URL(base).hostname} · ${state.coinList.length} pasangan`;if(!state.candles.length)reconnectNow();
  }catch(e){console.error(e);msg("Gagal memuat daftar Top 100: "+e.message)}finally{$("refreshCoinsButton").disabled=false}}
+
+/* ================= INDIKATOR TEKNIKAL ================= */
 const TA={
- ema(a,p){if(a.length<p)return NaN;let v=mean(a.slice(0,p)),k=2/(p+1);for(let i=p;i<a.length;i++)v=a[i]*k+v*(1-k);return v},
+ emaSeries(a,p){const out=new Array(a.length).fill(NaN);if(a.length<p)return out;let v=mean(a.slice(0,p));out[p-1]=v;const k=2/(p+1);for(let i=p;i<a.length;i++){v=a[i]*k+v*(1-k);out[i]=v}return out},
+ ema(a,p){const s=this.emaSeries(a,p);return s.length?s[s.length-1]:NaN},
  rsi(a,p=14){if(a.length<p+1)return NaN;let g=0,l=0;for(let i=1;i<=p;i++){let d=a[i]-a[i-1];g+=Math.max(d,0);l+=Math.max(-d,0)}g/=p;l/=p;for(let i=p+1;i<a.length;i++){let d=a[i]-a[i-1];g=(g*(p-1)+Math.max(d,0))/p;l=(l*(p-1)+Math.max(-d,0))/p}return l===0?(g===0?50:100):100-100/(1+g/l)},
- stochastic(h,l,c,p=14){if(c.length<p)return NaN;let hi=Math.max(...h.slice(-p)),lo=Math.min(...l.slice(-p));return hi===lo?50:(c.at(-1)-lo)/(hi-lo)*100},
- macd(a){if(a.length<35)return {line:NaN,signal:NaN,histogram:NaN};const line=this.ema(a,12)-this.ema(a,26);let m=[];for(let i=34;i<a.length;i++)m.push(this.ema(a.slice(0,i+1),12)-this.ema(a.slice(0,i+1),26));const signal=m.length>=9?this.ema(m,9):NaN;return {line,signal,histogram:line-signal}},
+ stochastic(h,l,c,p=14){if(c.length<p)return NaN;let hi=Math.max(...h.slice(-p)),lo=Math.min(...l.slice(-p));return hi===lo?50:(c[c.length-1]-lo)/(hi-lo)*100},
+ macd(a){if(a.length<35)return {line:NaN,signal:NaN,histogram:NaN};const e12=this.emaSeries(a,12),e26=this.emaSeries(a,26),m=[];for(let i=25;i<a.length;i++)m.push(e12[i]-e26[i]);const sg=this.emaSeries(m,9),line=m[m.length-1],signal=sg[sg.length-1];return {line,signal,histogram:line-signal}},
  bb(a,p=20,k=2){if(a.length<p)return {upper:NaN,middle:NaN,lower:NaN,width:NaN};let s=a.slice(-p),m=mean(s),sd=Math.sqrt(mean(s.map(x=>(x-m)**2)));return {upper:m+k*sd,middle:m,lower:m-k*sd,width:m?2*k*sd/m:NaN}},
- atr(h,l,c,p=14){if(c.length<p+1)return NaN;let tr=[];for(let j=1;j<c.length;j++)tr.push(Math.max(h[j]-l[j],Math.abs(h[j]-c[j-1]),Math.abs(l[j]-c[j-1])));return mean(tr.slice(-p))},
- adx(h,l,c,p=14){if(c.length<2*p+2)return {adx:NaN,plusDI:NaN,minusDI:NaN};let plus=0,minus=0,tr=0;for(let j=c.length-p;j<c.length;j++){const u=h[j]-h[j-1],d=l[j-1]-l[j];plus+=u>d&&u>0?u:0;minus+=d>u&&d>0?d:0;tr+=Math.max(h[j]-l[j],Math.abs(h[j]-c[j-1]),Math.abs(l[j]-c[j-1]))}const pdi=tr?100*plus/tr:0,mdi=tr?100*minus/tr:0;return {adx:pdi+mdi?100*Math.abs(pdi-mdi)/(pdi+mdi):0,plusDI:pdi,minusDI:mdi}},
+ atr(h,l,c,p=14){if(c.length<p+1)return NaN;const tr=[];for(let j=1;j<c.length;j++)tr.push(Math.max(h[j]-l[j],Math.abs(h[j]-c[j-1]),Math.abs(l[j]-c[j-1])));let v=mean(tr.slice(0,p));for(let i=p;i<tr.length;i++)v=(v*(p-1)+tr[i])/p;return v},
+ adx(h,l,c,p=14){const n=c.length;if(n<2*p+2)return {adx:NaN,plusDI:NaN,minusDI:NaN};const tr=[],pd=[],md=[];for(let i=1;i<n;i++){const up=h[i]-h[i-1],dn=l[i-1]-l[i];pd.push(up>dn&&up>0?up:0);md.push(dn>up&&dn>0?dn:0);tr.push(Math.max(h[i]-l[i],Math.abs(h[i]-c[i-1]),Math.abs(l[i]-c[i-1])))}
+  let sT=0,sP=0,sM=0;for(let i=0;i<p;i++){sT+=tr[i];sP+=pd[i];sM+=md[i]}
+  const dxs=[];let pdi=0,mdi=0;const calc=()=>{pdi=sT?100*sP/sT:0;mdi=sT?100*sM/sT:0;dxs.push(pdi+mdi?100*Math.abs(pdi-mdi)/(pdi+mdi):0)};calc();
+  for(let i=p;i<tr.length;i++){sT=sT-sT/p+tr[i];sP=sP-sP/p+pd[i];sM=sM-sM/p+md[i];calc()}
+  if(dxs.length<p)return {adx:NaN,plusDI:pdi,minusDI:mdi};let a=mean(dxs.slice(0,p));for(let j=p;j<dxs.length;j++)a=(a*(p-1)+dxs[j])/p;return {adx:a,plusDI:pdi,minusDI:mdi}},
  volumeDelta(c){return finite(c.takerBuyBase)?2*c.takerBuyBase-c.volume:NaN},
  sr(h,l,p=50){return h.length>=p?{support:Math.min(...l.slice(-p)),resistance:Math.max(...h.slice(-p))}:{support:NaN,resistance:NaN}},
  vwap(cs){let pv=0,v=0;for(const c of cs){pv+=(c.high+c.low+c.close)/3*c.volume;v+=c.volume}return v?pv/v:NaN}
 };
-function pivots(cs,span=3){const pts=[];if(cs.length<span*2+1)return pts;for(let i=span;i<cs.length-span;i++){let H=true,L=true;for(let j=i-span;j<=i+span;j++){if(j===i)continue;if(cs[j].high>=cs[i].high)H=false;if(cs[j].low<=cs[i].low)L=false}if(H)pts.push({index:i,time:cs[i].time,price:cs[i].high,type:"H"});if(L)pts.push({index:i,time:cs[i].time,price:cs[i].low,type:"L"})}pts.sort((a,b)=>a.index-b.index);const out=[];for(const p of pts){const z=out.at(-1);if(z&&z.type===p.type){if((p.type==="H"&&p.price>z.price)||(p.type==="L"&&p.price<z.price))out[out.length-1]=p}else out.push(p)}return out}
-function rangeScore(v,r){const [a,b]=r,dist=v<a?a-v:v>b?v-b:0;return clamp(100-dist/Math.max((b-a)/2,.035)*100,0,100)}
-function detectHarmonic(cs){const ps=pivots(cs,3);if(ps.length<5)return null;const [X,A,B,C,D]=ps.slice(-5),q=[X,A,B,C,D];if(q.some((p,i)=>i&&p.type===q[i-1].type))return null;
- const XA=A.price-X.price,AB=B.price-A.price,BC=C.price-B.price,CD=D.price-C.price;if([XA,AB,BC,CD].some(v=>!finite(v)||Math.abs(v)<1e-12))return null;
- if(!(Math.sign(AB)===-Math.sign(XA)&&Math.sign(BC)===-Math.sign(AB)&&Math.sign(CD)===-Math.sign(BC)))return null;
- const rAB=Math.abs(AB/XA),rBC=Math.abs(BC/AB),rCD=Math.abs(CD/BC),rAD=Math.abs((D.price-A.price)/XA),rABCD=Math.abs(CD/AB),bullish=D.type==="L";
- const pats=[{name:"Gartley",ab:[.58,.66],bc:[.382,.886],cd:[1.20,1.70],ad:[.74,.83]},{name:"Bat",ab:[.35,.53],bc:[.382,.886],cd:[1.50,2.70],ad:[.84,.93]},{name:"Butterfly",ab:[.74,.83],bc:[.382,.886],cd:[1.50,2.30],ad:[1.20,1.70]},{name:"Crab",ab:[.35,.65],bc:[.382,.886],cd:[2.10,3.70],ad:[1.52,1.70]},{name:"Deep Crab",ab:[.84,.93],bc:[.382,.886],cd:[1.90,3.70],ad:[1.52,1.70]}];
- let best=null;for(const p of pats){const sc=[rangeScore(rAB,p.ab),rangeScore(rBC,p.bc),rangeScore(rCD,p.cd),rangeScore(rAD,p.ad),rangeScore(rABCD,[.85,1.15])],score=mean(sc);if(!best||score>best.score){const target1=A.price-XA*((p.ad[0]+p.ad[1])/2),target2=C.price+Math.sign(AB)*Math.abs(BC)*((p.cd[0]+p.cd[1])/2),lo=Math.min(target1,target2,D.price),hi=Math.max(target1,target2,D.price);best={name:p.name,score,bullish,X,A,B,C,D,ratios:{AB_XA:rAB,BC_AB:rBC,CD_BC:rCD,AD_XA:rAD,AB_CD:rABCD},przLow:lo,przHigh:hi,confirmed:score>=80&&Math.abs(target1-target2)/Math.max(Math.abs(D.price),1)<.025}}}return best&&best.score>=60?best:null}
-function calculateIndicators(cs){if(cs.length<50)return null;const c=cs.map(x=>x.close),h=cs.map(x=>x.high),l=cs.map(x=>x.low),last=cs.at(-1);return {rsi:TA.rsi(c),ema9:TA.ema(c,9),ema21:TA.ema(c,21),ema50:TA.ema(c,50),ema200:c.length>=200?TA.ema(c,200):NaN,stoch:TA.stochastic(h,l,c),volDelta:TA.volumeDelta(last),macd:TA.macd(c),bb:TA.bb(c),atr:TA.atr(h,l,c),adx:TA.adx(h,l,c),...TA.sr(h,l),vwap:TA.vwap(cs.slice(-500)),harmonic:detectHarmonic(cs)}}
+function calculateIndicators(cs){if(cs.length<50)return null;const c=cs.map(x=>x.close),h=cs.map(x=>x.high),l=cs.map(x=>x.low),last=cs[cs.length-1];return {rsi:TA.rsi(c),ema9:TA.ema(c,9),ema21:TA.ema(c,21),ema50:TA.ema(c,50),ema200:c.length>=200?TA.ema(c,200):NaN,stoch:TA.stochastic(h,l,c),volDelta:TA.volumeDelta(last),macd:TA.macd(c),bb:TA.bb(c),atr:TA.atr(h,l,c),adx:TA.adx(h,l,c),...TA.sr(h,l),vwap:TA.vwap(cs.slice(-500))}}
 function workingCandles(){const a=state.candles.slice();if(state.liveCandle){const i=a.findIndex(x=>x.time===state.liveCandle.time);if(i>=0)a[i]=state.liveCandle;else a.push(state.liveCandle)}return a}
-function initChart(){if(!window.LightweightCharts){$("chartStatus").textContent="Library chart gagal dimuat";return}state.chart=LightweightCharts.createChart($("chart"),{layout:{background:{type:"solid",color:"#101827"},textColor:"#cbd5e1"},grid:{vertLines:{color:"#1f2a3d"},horzLines:{color:"#1f2a3d"}},rightPriceScale:{borderColor:"#334155"},timeScale:{borderColor:"#334155",timeVisible:true,secondsVisible:false},crosshair:{mode:LightweightCharts.CrosshairMode.Normal},width:$("chart").clientWidth,height:$("chart").clientHeight});state.candleSeries=state.chart.addCandlestickSeries({upColor:"#22c55e",downColor:"#ef4444",borderUpColor:"#22c55e",borderDownColor:"#ef4444",wickUpColor:"#22c55e",wickDownColor:"#ef4444"});state.volumeSeries=state.chart.addHistogramSeries({priceFormat:{type:"volume"},priceScaleId:"volume",scaleMargins:{top:.82,bottom:0}});state.chart.priceScale("volume").applyOptions({scaleMargins:{top:.82,bottom:0}});new ResizeObserver(()=>{if(state.chart)state.chart.applyOptions({width:$("chart").clientWidth,height:$("chart").clientHeight})}).observe($("chart"))}
-function setChartData(cs){if(!state.candleSeries||!cs.length)return;const data=cs.filter(c=>finite(c.time)&&finite(c.open)&&finite(c.high)&&finite(c.low)&&finite(c.close)).map(c=>({time:Math.floor(c.time/1000),open:c.open,high:c.high,low:c.low,close:c.close}));state.candleSeries.setData(data);state.volumeSeries.setData(cs.filter(c=>finite(c.time)&&finite(c.volume)).map(c=>({time:Math.floor(c.time/1000),value:c.volume,color:c.close>=c.open?"rgba(34,197,94,.35)":"rgba(239,68,68,.35)"})));state.chart.timeScale().fitContent();$("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${data.length} candle`}
-function clearHarmonicLines(){if(!state.candleSeries)return;state.harmonicLines.forEach(x=>{try{state.candleSeries.removePriceLine(x)}catch(_){}});state.harmonicLines=[]}
-function drawHarmonic(h){clearHarmonicLines();if(!state.candleSeries||!state.showHarmonic||!h)return;
- const pts=[h.X,h.A,h.B,h.C,h.D];const lineColor=h.bullish?"#22c55e":"#f97316";
- // Overlay the PRZ as price lines and mark the five harmonic points with series markers.
- state.harmonicLines.push(state.candleSeries.createPriceLine({price:h.przLow,color:"#a78bfa",lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:"PRZ bawah"}));
- state.harmonicLines.push(state.candleSeries.createPriceLine({price:h.przHigh,color:"#a78bfa",lineWidth:1,lineStyle:LightweightCharts.LineStyle.Dashed,axisLabelVisible:true,title:"PRZ atas"}));
- state.candleSeries.setMarkers(pts.map((p,i)=>({time:Math.floor(p.time/1000),position:p.type==="H"?"aboveBar":"belowBar",color:i===4?lineColor:"#38bdf8",shape:p.type==="H"?"arrowDown":"arrowUp",text:["X","A","B","C","D"][i]+" "+fmt(p.price,4)})));
- $("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · pola ${h.name} ${fmt(h.score,0)}%`;
-}
-function renderHarmonic(h){state.harmonic=h;if(!h){$("harmonicBadge").className="badge unknown";$("harmonicBadge").textContent="BELUM TERDETEKSI";$("harmonicName").textContent="Tidak ada pola valid";$("harmonicDirection").textContent="Menunggu pivot XABCD";$("harmonicScore").textContent="--";$("harmonicPRZ").textContent="--";$("harmonicDetails").textContent="Belum melewati ambang rasio";clearHarmonicLines();if(state.candleSeries)state.candleSeries.setMarkers([]);return}
- $("harmonicBadge").className="badge "+(h.confirmed?"pass":"warning");$("harmonicBadge").textContent=h.confirmed?"KANDIDAT KUAT":"KANDIDAT";$("harmonicName").textContent=h.name;$("harmonicDirection").textContent=h.bullish?"Bullish reversal candidate":"Bearish reversal candidate";$("harmonicScore").textContent=fmt(h.score,0)+"/100";$("harmonicPRZ").textContent=`${fmtUSD(h.przLow)} – ${fmtUSD(h.przHigh)}`;$("harmonicDetails").textContent=`AB/XA ${fmt(h.ratios.AB_XA,3)} · BC/AB ${fmt(h.ratios.BC_AB,3)} · CD/BC ${fmt(h.ratios.CD_BC,3)} · AD/XA ${fmt(h.ratios.AD_XA,3)}`;drawHarmonic(h)}
-function renderIndicators(){const i=state.indicators,p=state.currentPrice;if(!i)return;const cards=[["RSI Wilder (14)",fmt(i.rsi),i.rsi>70?"Overbought":i.rsi<30?"Oversold":"Netral"],["EMA (9 / 21)",`${fmt(i.ema9,5)} / ${fmt(i.ema21,5)}`,i.ema9>i.ema21?"Bullish":"Bearish"],["Stochastic (14)",fmt(i.stoch),i.stoch>80?"Overbought":i.stoch<20?"Oversold":"Netral"],["Volume Delta",fmt(i.volDelta,5),i.volDelta>0?"Taker Buy Dominan":i.volDelta<0?"Taker Sell Dominan":"Netral"],["MACD",fmt(i.macd.line,6),i.macd.histogram>0?"Histogram Positif":"Histogram Negatif"],["Bollinger Bands",finite(i.bb.width)?(i.bb.width*100).toFixed(3)+"%":"--",p>i.bb.upper?"Di atas band":p<i.bb.lower?"Di bawah band":"Dalam band"],["ATR (14)",fmtUSD(i.atr),p>0&&finite(i.atr)?(i.atr/p*100).toFixed(3)+"% volatilitas":"--"],["ADX (14)",fmt(i.adx.adx),i.adx.adx>=25?"Tren kuat":"Tren lemah"],["Support / Resistance",`${fmtUSD(i.support)} / ${fmtUSD(i.resistance)}`,"Rentang 50 candle"],["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP"]];$("indicatorsGrid").innerHTML=cards.map(([n,v,s])=>`<div class="indicator-card"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status">${s}</div></div>`).join("");renderHarmonic(i.harmonic)}
-function runModel(cs,i){const price=cs.at(-1).close;if(!finite(i.atr))return null;let score=0,w=0;function add(v,z){if(finite(v)){score+=v*z;w+=z}}if(finite(i.rsi))add(i.rsi<30?1:i.rsi>70?-1:i.rsi>50?.35:-.35,1);if(finite(i.ema9)&&finite(i.ema21))add(i.ema9>i.ema21?1:-1,1.2);if(finite(i.macd.histogram))add(i.macd.histogram>0?1:-1,1);if(finite(i.vwap))add(price>i.vwap?1:-1,.8);if(finite(i.volDelta))add(i.volDelta>0?1:i.volDelta<0?-1:0,.6);if(finite(i.stoch))add(i.stoch<20?.6:i.stoch>80?-.6:0,.5);if(finite(i.adx.adx)&&i.adx.adx>=20)add(i.adx.plusDI>i.adx.minusDI?1:-1,.7);if(i.harmonic&&i.harmonic.score>=65)add((i.harmonic.bullish?1:-1)*i.harmonic.score/100,1);const norm=w?clamp(score/w,-1,1):0,move=norm*i.atr*.35,pred=price+move,pct=(pred-price)/price*100;return {startPrice:price,predPrice:pred,direction:pct>.01?"NAIK":pct<-.01?"TURUN":"NETRAL",returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8}}
+
+/*HARMONIC-START*/
+/* =====================================================================
+   HARMONIC PATTERN — tabel rasio mengikuti Scott Carney
+   (Harmonic Trading Vol. 1–3). Semua rasio memakai nilai absolut leg.
+   ab = AB/XA   bc = BC/AB   cd = CD/BC   ad = retracement D terhadap XA
+   Cypher: ab = B/XA, xc = XC/XA (C ekstensi XA), dxc = CD/XC
+   ===================================================================== */
+const HARMONIC_DEFS=[
+ {name:"Gartley",  ab:[.618,.618],bc:[.382,.886],cd:[1.272,1.618],ad:[.786,.786],stop:1},
+ {name:"Bat",      ab:[.382,.5],  bc:[.382,.886],cd:[1.618,2.618],ad:[.886,.886],stop:1},
+ {name:"Alt Bat",  ab:[.382,.382],bc:[.382,.886],cd:[2.0,3.618],  ad:[1.13,1.13],stop:1.272},
+ {name:"Butterfly",ab:[.786,.786],bc:[.382,.886],cd:[1.618,2.24], ad:[1.27,1.618],stop:1.75},
+ {name:"Crab",     ab:[.382,.618],bc:[.382,.886],cd:[2.24,3.618], ad:[1.618,1.618],stop:1.75},
+ {name:"Deep Crab",ab:[.886,.886],bc:[.382,.886],cd:[2.24,3.618], ad:[1.618,1.618],stop:1.75},
+ {name:"Cypher",cypher:true,ab:[.382,.618],xc:[1.272,1.414],dxc:[.786,.786]}
+];
+function pivots(cs,span,minLeg){
+ const out=[];const add=p=>{const z=out[out.length-1];if(!z){out.push(p);return}
+  if(z.type===p.type){if((p.type==="H"&&p.price>z.price)||(p.type==="L"&&p.price<z.price))out[out.length-1]=p;return}
+  if(Math.abs(p.price-z.price)<minLeg)return;out.push(p)};
+ for(let i=span;i<cs.length-span;i++){let H=true,L=true;
+  for(let j=i-span;j<=i+span;j++){if(j===i)continue;if(cs[j].high>=cs[i].high)H=false;if(cs[j].low<=cs[i].low)L=false}
+  const mk=t=>({index:i,time:cs[i].time,price:t==="H"?cs[i].high:cs[i].low,type:t});
+  if(H&&L){const z=out[out.length-1];add(mk(z&&z.type==="H"?"L":"H"))}else if(H)add(mk("H"));else if(L)add(mk("L"))}
+ return out}
+function devR(v,r){if(!finite(v))return Infinity;if(v<r[0])return (r[0]-v)/r[0];if(v>r[1])return (v-r[1])/r[1];return 0}
+function zoneOf(fn,r,h){const a=fn(r[0]*(1-h)),b=fn(r[1]*(1+h));return [Math.min(a,b),Math.max(a,b)]}
+function evalHarmonic(def,X,A,B,C,Dp,tol){
+ const xp=X.price,ap=A.price,bp=B.price,cp=C.price,s=ap>xp?1:-1,h=tol/2;
+ const XA=Math.abs(ap-xp),AB=Math.abs(ap-bp),BC=Math.abs(cp-bp);
+ if(!(XA>0&&AB>0&&BC>0))return null;
+ if(Math.sign(bp-ap)!==-s||Math.sign(cp-bp)!==s)return null;
+ const rows=[],devs=[],wts=[];
+ const rAB=AB/XA,dAB=devR(rAB,def.ab);if(dAB>tol)return null;
+ rows.push({label:def.cypher?"B/XA":"AB/XA",value:rAB,range:def.ab,dev:dAB});devs.push(dAB);wts.push(1);
+ let zoneA,zoneB=null,legRef,stop;
+ if(def.cypher){
+  const XC=Math.abs(cp-xp),rXC=XC/XA;if((cp-xp)*s<=XA)return null;
+  const dXC=devR(rXC,def.xc);if(dXC>tol)return null;
+  rows.push({label:"XC/XA",value:rXC,range:def.xc,dev:dXC});devs.push(dXC);wts.push(1.5);
+  zoneA=zoneOf(r=>cp-s*XC*r,def.dxc,h);
+  if(Dp!=null){if((Dp-cp)*s>=0)return null;const rD=Math.abs(cp-Dp)/XC,dD=devR(rD,def.dxc);if(dD>tol)return null;
+   rows.push({label:"CD/XC",value:rD,range:def.dxc,dev:dD});devs.push(dD);wts.push(2.5)}
+  stop=xp;legRef=cp;
+ }else{
+  const rBC=BC/AB,dBC=devR(rBC,def.bc);if(dBC>tol)return null;
+  rows.push({label:"BC/AB",value:rBC,range:def.bc,dev:dBC});devs.push(dBC);wts.push(1);
+  zoneA=zoneOf(r=>ap-s*XA*r,def.ad,h);zoneB=zoneOf(r=>cp-s*BC*r,def.cd,h);
+  if(Dp!=null){if((Dp-cp)*s>=0)return null;const rCD=Math.abs(cp-Dp)/BC,rAD=(ap-Dp)*s/XA;if(rAD<=0)return null;
+   const dCD=devR(rCD,def.cd),dAD=devR(rAD,def.ad);if(dCD>tol||dAD>tol)return null;
+   rows.push({label:"CD/BC",value:rCD,range:def.cd,dev:dCD});devs.push(dCD);wts.push(1);
+   rows.push({label:"AD/XA (D)",value:rAD,range:def.ad,dev:dAD});devs.push(dAD);wts.push(2.5)}
+  stop=ap-s*XA*def.stop;legRef=ap;
+ }
+ let lo=zoneA[0],hi=zoneA[1],confluence=!zoneB;
+ if(zoneB){const l2=Math.max(zoneA[0],zoneB[0]),h2=Math.min(zoneA[1],zoneB[1]);if(l2<=h2){lo=l2;hi=h2;confluence=true}}
+ if(Dp==null&&!confluence)return null;
+ const entry=Dp!=null?Dp:(lo+hi)/2;if((entry-stop)*s<=0)return null;
+ const leg=Math.abs(legRef-entry),risk=Math.abs(entry-stop),tp1=entry+s*.382*leg,tp2=entry+s*.618*leg;
+ let sw=0,sd=0;for(let i=0;i<devs.length;i++){sw+=wts[i];sd+=devs[i]*wts[i]}
+ const quality=clamp(100*(1-(sd/sw)/tol),0,100);
+ return {name:def.name,cypher:!!def.cypher,bullish:s===1,X,A,B,C,rows,quality,przLow:lo,przHigh:hi,confluence,entry,stop,tp1,tp2,rr1:Math.abs(tp1-entry)/risk,rr2:Math.abs(tp2-entry)/risk,eqCD:def.cypher?NaN:cp-s*AB}}
+function scanHarmonic(P,cs,tol,proj){
+ if(P.length<4||cs.length<2)return null;
+ const price=cs[cs.length-1].close,found=[];
+ const stale=r=>(r.bullish&&price<r.stop)||(!r.bullish&&price>r.stop);
+ if(P.length>=5){const [X,A,B,C,D]=P.slice(-5),since=cs.filter(c=>c.time>D.time).length;
+  if(since<=40)for(const def of HARMONIC_DEFS){const r=evalHarmonic(def,X,A,B,C,D.price,tol);if(r&&!stale(r)){r.status="SELESAI";r.rank=3;r.D={time:D.time,price:D.price,type:D.type};found.push(r)}}}
+ const [X,A,B,C]=P.slice(-4),after=cs.filter(c=>c.time>C.time);
+ if(after.length){const wantLow=C.type==="H";let ext={time:after[0].time,price:wantLow?after[0].low:after[0].high};
+  for(const c of after){const v=wantLow?c.low:c.high;if(wantLow?v<ext.price:v>ext.price)ext={time:c.time,price:v}}
+  ext.type=wantLow?"L":"H";
+  for(const def of HARMONIC_DEFS){
+   const rf=evalHarmonic(def,X,A,B,C,ext.price,tol);
+   if(rf&&!stale(rf)){rf.status="TERBENTUK";rf.rank=2;rf.D=ext;found.push(rf);continue}
+   if(proj){const rp=evalHarmonic(def,X,A,B,C,null,tol);
+    if(rp&&(rp.bullish?ext.price>rp.przHigh:ext.price<rp.przLow)&&!stale(rp)){rp.status="PROYEKSI";rp.rank=1;rp.D=null;found.push(rp)}}}}
+ if(!found.length)return null;
+ found.sort((a,b)=>b.rank-a.rank||b.quality-a.quality);return found[0]}
+/*HARMONIC-END*/
+
+/* ================= CHART (Lightweight Charts) ================= */
+function initChart(){if(!window.LightweightCharts){$("chartStatus").textContent="Library chart gagal dimuat";return}
+ state.chart=LightweightCharts.createChart($("chart"),{layout:{background:{type:"solid",color:"#131722"},textColor:"#d1d4dc"},grid:{vertLines:{color:"#1e222d"},horzLines:{color:"#1e222d"}},rightPriceScale:{borderColor:"#2a2e39"},timeScale:{borderColor:"#2a2e39",timeVisible:true,secondsVisible:false,rightOffset:12},crosshair:{mode:LightweightCharts.CrosshairMode.Normal},width:$("chart").clientWidth,height:$("chart").clientHeight});
+ state.candleSeries=state.chart.addCandlestickSeries({upColor:"#26a69a",downColor:"#ef5350",borderUpColor:"#26a69a",borderDownColor:"#ef5350",wickUpColor:"#26a69a",wickDownColor:"#ef5350"});
+ state.volumeSeries=state.chart.addHistogramSeries({priceFormat:{type:"volume"},priceScaleId:"volume"});
+ state.chart.priceScale("volume").applyOptions({scaleMargins:{top:.82,bottom:0}});
+ state.chart.subscribeCrosshairMove(p=>{const d=p&&p.seriesData?p.seriesData.get(state.candleSeries):null;if(d)showLegend(d);else{const l=workingCandles().at(-1);if(l)showLegend({open:l.open,high:l.high,low:l.low,close:l.close})}});
+ new ResizeObserver(()=>{if(state.chart&&state.tab==="chart")state.chart.applyOptions({width:$("chart").clientWidth,height:$("chart").clientHeight})}).observe($("chart"))}
+function showLegend(d){const up=d.close>=d.open,col=up?"#26a69a":"#ef5350",ch=d.open?(d.close-d.open)/d.open*100:0;
+ $("legend").innerHTML=`<b>${CONFIG.symbol}</b> · ${CONFIG.interval} · Binance &nbsp; <span style="color:${col}">O ${fmtP(d.open)} H ${fmtP(d.high)} L ${fmtP(d.low)} C ${fmtP(d.close)} (${ch>=0?"+":""}${ch.toFixed(2)}%)</span>`}
+function pricePrecision(p){return p>=1000?2:p>=100?3:p>=1?4:p>=0.1?5:p>=0.01?6:8}
+function setChartData(cs,fit){if(!state.candleSeries||!cs.length)return;
+ const pr=pricePrecision(cs[cs.length-1].close);state.candleSeries.applyOptions({priceFormat:{type:"price",precision:pr,minMove:Math.pow(10,-pr)}});
+ const data=cs.filter(c=>[c.time,c.open,c.high,c.low,c.close].every(finite)).map(c=>({time:toCT(c.time),open:c.open,high:c.high,low:c.low,close:c.close}));
+ state.candleSeries.setData(data);
+ state.volumeSeries.setData(cs.filter(c=>finite(c.time)&&finite(c.volume)).map(c=>({time:toCT(c.time),value:c.volume,color:c.close>=c.open?"rgba(38,166,154,.35)":"rgba(239,83,80,.35)"})));
+ if(fit){state.chart.timeScale().fitContent();const n=data.length;if(n>150)state.chart.timeScale().setVisibleLogicalRange({from:n-150,to:n+12})}
+ const l=cs[cs.length-1];showLegend({open:l.open,high:l.high,low:l.low,close:l.close});
+ $("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${data.length} candle`}
+function clearHarmonic(){if(state.chart)state.hSeries.forEach(s=>{try{state.chart.removeSeries(s)}catch(_){}});state.hSeries=[];if(state.candleSeries)try{state.candleSeries.setMarkers([])}catch(_){}}
+function hLine(color,width,style,pts,title){const s=state.chart.addLineSeries({color,lineWidth:width,lineStyle:style,priceLineVisible:false,lastValueVisible:!!title,title:title||"",crosshairMarkerVisible:false,autoscaleInfoProvider:()=>null});s.setData(pts);state.hSeries.push(s);return s}
+function drawHarmonic(h){clearHarmonic();if(!state.chart||!state.showHarmonic||!h)return;
+ const LS=LightweightCharts.LineStyle,step=Math.floor(intervalMs()/1000),w=workingCandles(),lastT=toCT(w[w.length-1].time),futT=lastT+step*10;
+ const pt=p=>({time:toCT(p.time),value:p.price}),dash="#6b7280";
+ const pts=[h.X,h.A,h.B,h.C];if(h.D)pts.push(h.D);
+ hLine("#38bdf8",2,LS.Solid,pts.map(pt));
+ hLine(dash,1,LS.Dashed,[pt(h.X),pt(h.B)]);
+ hLine(dash,1,LS.Dashed,[pt(h.A),pt(h.C)]);
+ if(h.D){hLine(dash,1,LS.Dashed,[pt(h.B),pt(h.D)]);hLine(dash,1,LS.Dashed,[pt(h.X),pt(h.cypher?h.C:h.D)])}
+ else hLine(dash,1,LS.Dashed,[pt(h.X),pt(h.C)]);
+ const t0=toCT(h.C.time);
+ hLine("#a78bfa",1,LS.Dashed,[{time:t0,value:h.przHigh},{time:futT,value:h.przHigh}],"PRZ");
+ hLine("#a78bfa",1,LS.Dashed,[{time:t0,value:h.przLow},{time:futT,value:h.przLow}],"PRZ");
+ if(!h.D)hLine("#a78bfa",1,LS.Dotted,[pt(h.C),{time:futT,value:(h.przLow+h.przHigh)/2}]);
+ const st=h.D?toCT(h.D.time):lastT;
+ if(st<futT){hLine("#ef5350",1,LS.Dotted,[{time:st,value:h.stop},{time:futT,value:h.stop}],"SL");
+  hLine("#26a69a",1,LS.Dotted,[{time:st,value:h.tp1},{time:futT,value:h.tp1}],"TP1");
+  hLine("#26a69a",1,LS.Dotted,[{time:st,value:h.tp2},{time:futT,value:h.tp2}],"TP2")}
+ const mk=[["X",h.X],["A",h.A],["B",h.B],["C",h.C]];if(h.D)mk.push(["D",h.D]);
+ state.candleSeries.setMarkers(mk.map(([l,p])=>({time:toCT(p.time),position:p.type==="H"?"aboveBar":"belowBar",color:l==="D"?(h.bullish?"#26a69a":"#ef5350"):"#38bdf8",shape:p.type==="H"?"arrowDown":"arrowUp",text:l+" "+fmtP(p.price)})));
+ $("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${h.name} ${h.bullish?"Bullish":"Bearish"} · ${h.status}`}
+
+/* ================= RENDER HARMONIC & INDIKATOR ================= */
+function fmtRange(r){return r[0]===r[1]?fmt(r[0],3):fmt(r[0],3)+" – "+fmt(r[1],3)}
+function renderHarmonic(h){
+ const sig=h?[h.name,h.status,h.X.time,h.C.time,h.D?h.D.time+":"+h.D.price:"p",h.przLow.toFixed(8),h.przHigh.toFixed(8)].join("|")+"|"+CONFIG.tol+"|"+state.showHarmonic:"none|"+state.showHarmonic;
+ if(!h){$("harmonicBadge").className="badge unknown";$("harmonicBadge").textContent="BELUM TERDETEKSI";$("harmonicName").textContent="Tidak ada pola valid";$("harmonicDirection").textContent="Menunggu pivot XABCD";$("harmonicScore").textContent="--";$("harmonicPRZ").textContent="--";$("harmonicDetails").textContent="Konfluensi XA & BC";$("harmonicPlan").textContent="--";$("harmonicTable").innerHTML='<tr><td colspan="5" class="muted text-center">Belum ada pola</td></tr>'}
+ else{
+  const cls=h.status==="SELESAI"?"pass":h.status==="TERBENTUK"?"warning":"unknown";
+  $("harmonicBadge").className="badge "+cls;$("harmonicBadge").textContent=h.status;
+  $("harmonicName").textContent=h.name;$("harmonicDirection").textContent=(h.bullish?"Bullish":"Bearish")+" reversal"+(h.status==="PROYEKSI"?" (D belum tercapai)":"");
+  $("harmonicScore").textContent=fmt(h.quality,0)+"/100";
+  $("harmonicPRZ").textContent=`${fmtP(h.przLow)} – ${fmtP(h.przHigh)}`;
+  $("harmonicDetails").textContent=h.cypher?"Zona 0,786 XC":(h.confluence?"Konfluensi XA & BC · AB=CD "+fmtP(h.eqCD):"Tanpa konfluensi BC");
+  $("harmonicPlan").innerHTML=`Entry ${fmtP(h.entry)}<br>SL ${fmtP(h.stop)}<br>TP1 ${fmtP(h.tp1)} (R:R ${fmt(h.rr1,2)})<br>TP2 ${fmtP(h.tp2)} (R:R ${fmt(h.rr2,2)})`;
+  $("harmonicTable").innerHTML=h.rows.map(r=>`<tr><td>${r.label}</td><td>${fmtRange(r.range)}</td><td>${fmt(r.value,3)}</td><td>${fmt(r.dev*100,2)}%</td><td><span class="badge ${r.dev===0?"pass":"warning"}">${r.dev===0?"Dalam rentang":"Dalam toleransi"}</span></td></tr>`).join("")+(h.D?"":'<tr><td colspan="5" class="muted">Rasio D (CD/BC dan AD/XA) dinilai setelah harga mencapai PRZ.</td></tr>')}
+ if(sig!==state.lastSig){state.lastSig=sig;drawHarmonic(h)}}
+function renderIndicators(){const i=state.indicators,p=state.currentPrice;if(!i)return;const cards=[["RSI Wilder (14)",fmt(i.rsi),i.rsi>70?"Overbought":i.rsi<30?"Oversold":"Netral"],["EMA (9 / 21)",`${fmt(i.ema9,5)} / ${fmt(i.ema21,5)}`,i.ema9>i.ema21?"Bullish":"Bearish"],["Stochastic (14)",fmt(i.stoch),i.stoch>80?"Overbought":i.stoch<20?"Oversold":"Netral"],["Volume Delta",fmt(i.volDelta,5),i.volDelta>0?"Taker Buy Dominan":i.volDelta<0?"Taker Sell Dominan":"Netral"],["MACD",fmt(i.macd.line,6),i.macd.histogram>0?"Histogram Positif":"Histogram Negatif"],["Bollinger Bands",finite(i.bb.width)?(i.bb.width*100).toFixed(3)+"%":"--",p>i.bb.upper?"Di atas band":p<i.bb.lower?"Di bawah band":"Dalam band"],["ATR (14)",fmtUSD(i.atr),p>0&&finite(i.atr)?(i.atr/p*100).toFixed(3)+"% volatilitas":"--"],["ADX (14)",fmt(i.adx.adx),i.adx.adx>=25?"Tren kuat":"Tren lemah"],["Support / Resistance",`${fmtUSD(i.support)} / ${fmtUSD(i.resistance)}`,"Rentang 50 candle"],["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP"]];$("indicatorsGrid").innerHTML=cards.map(([n,v,s])=>`<div class="indicator-card"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status">${s}</div></div>`).join("")}
+function recomputePivots(){const cs=state.candles;if(cs.length<30){state.pivots=[];return}const atr=TA.atr(cs.map(c=>c.high),cs.map(c=>c.low),cs.map(c=>c.close));state.pivots=pivots(cs,CONFIG.swing,finite(atr)?atr:0)}
+function refreshAnalysis(){const all=workingCandles();state.indicators=calculateIndicators(all);state.harmonic=scanHarmonic(state.pivots,all,CONFIG.tol,CONFIG.showProjection);renderIndicators();renderHarmonic(state.harmonic)}
+
+/* ================= MODEL PREDIKSI ================= */
+function runModel(cs,i){const price=cs[cs.length-1].close;if(!i||!finite(i.atr))return null;let score=0,w=0;function add(v,z){if(finite(v)){score+=v*z;w+=z}}
+ if(finite(i.rsi))add(i.rsi<30?1:i.rsi>70?-1:i.rsi>50?.35:-.35,1);
+ if(finite(i.ema9)&&finite(i.ema21))add(i.ema9>i.ema21?1:-1,1.2);
+ if(finite(i.macd.histogram))add(i.macd.histogram>0?1:-1,1);
+ if(finite(i.vwap))add(price>i.vwap?1:-1,.8);
+ if(finite(i.volDelta))add(i.volDelta>0?1:i.volDelta<0?-1:0,.6);
+ if(finite(i.stoch))add(i.stoch<20?.6:i.stoch>80?-.6:0,.5);
+ if(finite(i.adx.adx)&&i.adx.adx>=20)add(i.adx.plusDI>i.adx.minusDI?1:-1,.7);
+ const h=state.harmonic;if(h&&h.status!=="PROYEKSI"&&h.quality>=40)add((h.bullish?1:-1)*h.quality/100,h.status==="SELESAI"?1.2:.7);
+ const norm=w?clamp(score/w,-1,1):0,move=norm*i.atr*.35,pred=price+move,pct=(pred-price)/price*100;
+ return {startPrice:price,predPrice:pred,direction:pct>.01?"NAIK":pct<-.01?"TURUN":"NETRAL",returnPct:pct,signalStrength:clamp(Math.abs(norm)*100,0,100),lowerBound:pred-i.atr*.8,upperBound:pred+i.atr*.8}}
 function renderPrediction(p){$("predictedPrice").textContent=fmtUSD(p.predPrice);$("predChange").textContent=(p.returnPct>0?"+":"")+fmt(p.returnPct,4)+"%";const b=$("predDirection");b.textContent=p.direction;b.className="badge mt-2 "+(p.direction==="NAIK"?"up":p.direction==="TURUN"?"down":"neutral");$("predRange").textContent=`${fmtUSD(p.lowerBound)} – ${fmtUSD(p.upperBound)}`;$("confidenceScore").textContent=fmt(p.signalStrength,0)+"/100";$("confidenceBar").style.width=p.signalStrength+"%";$("targetTime").textContent=fmtTime(p.targetTime)+" · Target candle"}
-function createPrediction(c){const i=calculateIndicators(state.candles);if(!i)return;state.indicators=i;const r=runModel(state.candles,i);if(!r)return;if(state.predictions.some(p=>p.time===c.time&&p.symbol===CONFIG.symbol&&p.interval===CONFIG.interval))return;state.predictions.unshift({id:`${CONFIG.symbol}-${CONFIG.interval}-${c.time}`,symbol:CONFIG.symbol,interval:CONFIG.interval,time:c.time,targetTime:c.time+intervalMs(),...r,status:"PENDING",actualPrice:null,errorUsd:null,isDirCorrect:null});state.predictions=state.predictions.slice(0,CONFIG.maxPredictions);savePredictions();renderPrediction(state.predictions[0]);renderHistory()}
+function createPrediction(c){const i=calculateIndicators(state.candles);if(!i)return;const r=runModel(state.candles,i);if(!r)return;if(state.predictions.some(p=>p.time===c.time&&p.symbol===CONFIG.symbol&&p.interval===CONFIG.interval))return;state.predictions.unshift({id:`${CONFIG.symbol}-${CONFIG.interval}-${c.time}`,symbol:CONFIG.symbol,interval:CONFIG.interval,time:c.time,targetTime:c.time+intervalMs(),...r,status:"PENDING",actualPrice:null,errorUsd:null,isDirCorrect:null});state.predictions=state.predictions.slice(0,CONFIG.maxPredictions);savePredictions();renderPrediction(state.predictions[0]);renderHistory()}
 function actualDir(a,s){const ch=(a-s)/s;return ch>.0002?"NAIK":ch<-.0002?"TURUN":"NETRAL"}
 function evaluateCandle(c){let changed=false;for(const p of state.predictions){if(p.status!=="PENDING"||p.symbol!==CONFIG.symbol||p.interval!==CONFIG.interval||p.targetTime!==c.time)continue;p.actualPrice=c.close;p.errorUsd=c.close-p.predPrice;p.isDirCorrect=p.direction===actualDir(c.close,p.startPrice);p.status="EVALUATED";changed=true}if(changed){savePredictions();stats();renderHistory()}}
 function stats(){const a=state.predictions.filter(p=>p.status==="EVALUATED"&&p.symbol===CONFIG.symbol&&p.interval===CONFIG.interval&&finite(p.actualPrice));if(!a.length){["accArah","maeScore","rmseScore","baselineMAE"].forEach(id=>$(id).textContent="--");$("totalEval").textContent="0";return}const mae=mean(a.map(p=>Math.abs(p.actualPrice-p.predPrice))),rmse=Math.sqrt(mean(a.map(p=>(p.actualPrice-p.predPrice)**2))),base=mean(a.map(p=>Math.abs(p.actualPrice-p.startPrice)));$("maeScore").textContent=fmtUSD(mae);$("rmseScore").textContent=fmtUSD(rmse);$("baselineMAE").textContent=fmtUSD(base);$("accArah").textContent=(100*a.filter(p=>p.isDirCorrect).length/a.length).toFixed(1)+"%";$("totalEval").textContent=String(a.length)}
 function renderHistory(){const arr=state.predictions.filter(p=>p.symbol===CONFIG.symbol&&p.interval===CONFIG.interval).slice(0,Number($("historyLimit").value)||15);$("historyBody").innerHTML=arr.length?arr.map(p=>`<tr><td>${fmtTime(p.time)}</td><td>${p.symbol}</td><td>${p.interval}</td><td>${fmtUSD(p.startPrice)}</td><td>${fmtUSD(p.predPrice)}</td><td>${p.direction}</td><td>${fmtTime(p.targetTime)}</td><td>${finite(p.actualPrice)?fmtUSD(p.actualPrice):"--"}</td><td>${p.status}</td><td>${finite(p.errorUsd)?fmt(p.errorUsd,5):"--"}</td></tr>`).join(""):'<tr><td colspan="10" class="text-center muted">Belum ada riwayat untuk koin/timeframe ini</td></tr>'}
-async function fetchHistory(){const gen=++state.generation;setStatus("Memuat candle "+CONFIG.symbol+"...","yellow");try{const {data,base}=await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${encodeURIComponent(CONFIG.interval)}&limit=${CONFIG.historyLimit}`);if(gen!==state.generation)return;if(!Array.isArray(data))throw Error("Format candle tidak valid");const now=Date.now();state.candles=data.map(d=>({time:+d[0],open:+d[1],high:+d[2],low:+d[3],close:+d[4],volume:+d[5],closeTime:+d[6],takerBuyBase:+d[9]})).filter(c=>[c.time,c.open,c.high,c.low,c.close,c.volume,c.closeTime,c.takerBuyBase].every(finite)&&c.closeTime<now);if(state.candles.length<50)throw Error("Candle tertutup kurang dari 50");state.currentPrice=state.candles.at(-1).close;state.liveCandle=null;state.indicators=calculateIndicators(state.candles);$("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;$("currentPrice").textContent=fmtUSD(state.currentPrice);setChartData(state.candles);renderIndicators();stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS()}catch(e){if(gen!==state.generation)return;console.error(e);setStatus("Gagal memuat data","red");msg("Tidak dapat mengambil candle Binance: "+e.message);scheduleReconnect()}}
-function connectWS(){if(state.stopped)return;clearTimeout(state.reconnectTimer);if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}}setStatus("Menyambungkan stream...","yellow");let ws;try{ws=new WebSocket(CONFIG.websocketBase+CONFIG.symbol.toLowerCase()+"@kline_"+CONFIG.interval)}catch(e){scheduleReconnect();return}state.ws=ws;ws.onopen=()=>{if(state.ws===ws){state.reconnectDelay=1000;setStatus("Terhubung · "+CONFIG.symbol,"green")}};ws.onmessage=e=>{if(state.ws!==ws)return;try{const m=JSON.parse(e.data);if(m.k)processKline(m.k)}catch(err){console.warn(err)}};ws.onerror=()=>setStatus("WebSocket error","red");ws.onclose=()=>{if(state.ws===ws){state.ws=null;if(!state.stopped){setStatus("Koneksi terputus","yellow");scheduleReconnect()}}}}
-function scheduleReconnect(){if(state.stopped||state.reconnectTimer)return;const d=state.reconnectDelay;state.reconnectDelay=Math.min(30000,state.reconnectDelay*2);state.reconnectTimer=setTimeout(()=>{state.reconnectTimer=null;if(!state.stopped)fetchHistory()},d)}
-function processKline(k){const c={time:+k.t,open:+k.o,high:+k.h,low:+k.l,close:+k.c,volume:+k.v,takerBuyBase:+k.V,closeTime:+k.T,isClosed:!!k.x};if(![c.time,c.open,c.high,c.low,c.close,c.volume,c.takerBuyBase].every(finite))return;state.currentPrice=c.close;$("currentPrice").textContent=fmtUSD(c.close);state.liveCandle=c;const all=workingCandles();state.indicators=calculateIndicators(all);renderIndicators();if(state.candleSeries){state.candleSeries.update({time:Math.floor(c.time/1000),open:c.open,high:c.high,low:c.low,close:c.close});state.volumeSeries.update({time:Math.floor(c.time/1000),value:c.volume,color:c.close>=c.open?"rgba(34,197,94,.35)":"rgba(239,68,68,.35)"})}if(!c.isClosed)return;const idx=state.candles.findIndex(x=>x.time===c.time);if(idx>=0)state.candles[idx]=c;else state.candles.push(c);state.candles.sort((a,b)=>a.time-b.time);state.candles=state.candles.slice(-1500);state.liveCandle=null;state.indicators=calculateIndicators(state.candles);renderIndicators();evaluateCandle(c);createPrediction(c);setChartData(state.candles);stats();renderHistory()}
-function reconnectNow(){state.stopped=false;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;state.reconnectDelay=1000;state.generation++;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}state.ws=null}state.candles=[];state.liveCandle=null;state.indicators=null;fetchHistory()}
+
+/* ================= DATA & WEBSOCKET ================= */
+async function fetchHistory(){const gen=++state.generation;setStatus("Memuat candle "+CONFIG.symbol+"...","yellow");try{
+ const {data,base}=await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${encodeURIComponent(CONFIG.interval)}&limit=${CONFIG.historyLimit}`);
+ if(gen!==state.generation)return;if(!Array.isArray(data))throw Error("Format candle tidak valid");
+ const now=Date.now();
+ state.candles=data.map(d=>({time:+d[0],open:+d[1],high:+d[2],low:+d[3],close:+d[4],volume:+d[5],closeTime:+d[6],takerBuyBase:+d[9]})).filter(c=>[c.time,c.open,c.high,c.low,c.close,c.volume,c.closeTime,c.takerBuyBase].every(finite)&&c.closeTime<now);
+ if(state.candles.length<50)throw Error("Candle tertutup kurang dari 50");
+ state.currentPrice=state.candles[state.candles.length-1].close;state.liveCandle=null;
+ $("sourceText").textContent="REST: "+new URL(base).hostname+" · "+CONFIG.symbol+" · "+CONFIG.interval;$("currentPrice").textContent=fmtUSD(state.currentPrice);
+ clearHarmonic();state.lastSig="";setChartData(state.candles,true);recomputePivots();refreshAnalysis();
+ const ind=calculateIndicators(state.candles),r=runModel(state.candles,ind);if(r){r.targetTime=state.candles[state.candles.length-1].time+intervalMs();renderPrediction(r)}
+ stats();renderHistory();msg(`${state.candles.length} candle tertutup dimuat untuk ${CONFIG.symbol}.`);connectWS()
+ }catch(e){if(gen!==state.generation)return;console.error(e);setStatus("Gagal memuat data","red");msg("Tidak dapat mengambil candle Binance: "+e.message);scheduleReconnect()}}
+function connectWS(){if(state.stopped)return;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}}
+ setStatus("Menyambungkan stream...","yellow");let ws;
+ try{ws=new WebSocket(CONFIG.wsBases[state.wsIdx%CONFIG.wsBases.length]+CONFIG.symbol.toLowerCase()+"@kline_"+CONFIG.interval)}catch(e){scheduleReconnect();return}
+ state.ws=ws;
+ ws.onopen=()=>{if(state.ws===ws){state.reconnectDelay=1000;setStatus("Terhubung · "+CONFIG.symbol,"green")}};
+ ws.onmessage=e=>{if(state.ws!==ws)return;try{const m=JSON.parse(e.data);if(m.k)processKline(m.k)}catch(err){console.warn(err)}};
+ ws.onerror=()=>setStatus("WebSocket error","red");
+ ws.onclose=()=>{if(state.ws===ws){state.ws=null;if(!state.stopped){setStatus("Koneksi terputus","yellow");scheduleReconnect()}}}}
+function scheduleReconnect(){if(state.stopped||state.reconnectTimer)return;const d=state.reconnectDelay;state.reconnectDelay=Math.min(30000,state.reconnectDelay*2);state.wsIdx++;state.reconnectTimer=setTimeout(()=>{state.reconnectTimer=null;if(!state.stopped)fetchHistory()},d)}
+function processKline(k){const c={time:+k.t,open:+k.o,high:+k.h,low:+k.l,close:+k.c,volume:+k.v,takerBuyBase:+k.V,closeTime:+k.T,isClosed:!!k.x};
+ if(![c.time,c.open,c.high,c.low,c.close,c.volume,c.takerBuyBase].every(finite))return;
+ state.currentPrice=c.close;$("currentPrice").textContent=fmtUSD(c.close);state.liveCandle=c;
+ if(state.candleSeries){state.candleSeries.update({time:toCT(c.time),open:c.open,high:c.high,low:c.low,close:c.close});state.volumeSeries.update({time:toCT(c.time),value:c.volume,color:c.close>=c.open?"rgba(38,166,154,.35)":"rgba(239,83,80,.35)"})}
+ if(!c.isClosed){refreshAnalysis();return}
+ const idx=state.candles.findIndex(x=>x.time===c.time);if(idx>=0)state.candles[idx]=c;else state.candles.push(c);
+ state.candles.sort((a,b)=>a.time-b.time);state.candles=state.candles.slice(-1500);state.liveCandle=null;
+ recomputePivots();refreshAnalysis();evaluateCandle(c);createPrediction(c);stats();renderHistory()}
+function reconnectNow(){state.stopped=false;clearTimeout(state.reconnectTimer);state.reconnectTimer=null;state.reconnectDelay=1000;state.generation++;if(state.ws){try{state.ws.onclose=null;state.ws.close()}catch(_){}state.ws=null}
+ state.candles=[];state.liveCandle=null;state.indicators=null;state.pivots=[];state.harmonic=null;state.lastSig="";clearHarmonic();mountTV();fetchHistory()}
 function clearHistory(){if(!confirm("Hapus semua riwayat prediksi yang tersimpan?"))return;state.predictions=[];savePredictions();stats();renderHistory();msg("Riwayat prediksi dihapus.")}
+
+/* ================= WIDGET TRADINGVIEW ASLI ================= */
+function mountTV(){if(state.tab!=="tv")return;const box=$("tvWidget");box.innerHTML="";
+ const make=()=>{try{new TradingView.widget({autosize:true,symbol:"BINANCE:"+CONFIG.symbol,interval:TV_INTERVAL[CONFIG.interval]||"1",timezone:"Asia/Jakarta",theme:"dark",style:"1",locale:"id",toolbar_bg:"#131722",enable_publishing:false,allow_symbol_change:true,container_id:"tvWidget"})}catch(e){box.textContent="Widget TradingView gagal dibuat: "+e.message}};
+ if(window.TradingView)make();else{const s=document.createElement("script");s.src="https://s3.tradingview.com/tv.js";s.onload=make;s.onerror=()=>{box.textContent="Widget TradingView gagal dimuat (cek koneksi/pemblokir iklan)."};document.head.appendChild(s)}}
+function setTab(t){state.tab=t;$("paneChart").style.display=t==="chart"?"block":"none";$("paneTV").style.display=t==="tv"?"block":"none";$("tabChart").classList.toggle("active",t==="chart");$("tabTV").classList.toggle("active",t==="tv");
+ if(t==="tv")mountTV();else if(state.chart)setTimeout(()=>state.chart.applyOptions({width:$("chart").clientWidth,height:$("chart").clientHeight}),30)}
+
+/* ================= EVENT ================= */
 $("timeframeSelect").addEventListener("change",()=>{CONFIG.interval=$("timeframeSelect").value;updateTimeframeLabels();reconnectNow()});
 $("symbolSelect").addEventListener("change",()=>{CONFIG.symbol=$("symbolSelect").value;reconnectNow()});
+$("swingSelect").addEventListener("change",()=>{CONFIG.swing=Number($("swingSelect").value);state.lastSig="";recomputePivots();refreshAnalysis()});
+$("tolSelect").addEventListener("change",()=>{CONFIG.tol=Number($("tolSelect").value);state.lastSig="";refreshAnalysis()});
+$("projCheck").addEventListener("change",()=>{CONFIG.showProjection=$("projCheck").checked;state.lastSig="";refreshAnalysis()});
 $("reconnectButton").addEventListener("click",reconnectNow);$("refreshCoinsButton").addEventListener("click",loadTop100);$("clearButton").addEventListener("click",clearHistory);$("historyLimit").addEventListener("change",renderHistory);
-$("fitChartButton").addEventListener("click",()=>state.chart&&state.chart.timeScale().fitContent());
-$("toggleHarmonicButton").addEventListener("click",()=>{state.showHarmonic=!state.showHarmonic;if(state.showHarmonic)drawHarmonic(state.harmonic);else{clearHarmonicLines();if(state.candleSeries)state.candleSeries.setMarkers([])}});
-window.addEventListener("online",()=>reconnectNow());window.addEventListener("offline",()=>setStatus("Perangkat offline","red"));window.addEventListener("beforeunload",()=>{state.stopped=true;clearTimeout(state.reconnectTimer);if(state.ws)try{state.ws.close()}catch(_){}});
+$("fitChartButton").addEventListener("click",()=>{if(!state.chart)return;state.chart.timeScale().fitContent()});
+$("toggleHarmonicButton").addEventListener("click",()=>{state.showHarmonic=!state.showHarmonic;state.lastSig="";renderHarmonic(state.harmonic)});
+$("tabChart").addEventListener("click",()=>setTab("chart"));$("tabTV").addEventListener("click",()=>setTab("tv"));
+window.addEventListener("online",()=>reconnectNow());window.addEventListener("offline",()=>setStatus("Perangkat offline","red"));
+window.addEventListener("beforeunload",()=>{state.stopped=true;clearTimeout(state.reconnectTimer);if(state.ws)try{state.ws.close()}catch(_){}});
 loadPredictions();initChart();updateTimeframeLabels();stats();renderHistory();loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
 </script>
-</body></html>
+</body>
+</html>
