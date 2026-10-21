@@ -19,8 +19,16 @@
 .badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800}
 .up,.pass{color:#86efac;background:#123322}.down,.reject{color:#fca5a5;background:#431717}.neutral,.warning{color:#fde68a;background:#3b2e0a}.unknown{color:#cbd5e1;background:#293548}
 .stat-number{font-size:clamp(18px,2.2vw,26px);font-weight:800;overflow-wrap:anywhere}
-.indicator-card{background:#0b1220;border:1px solid var(--border);padding:12px;border-radius:9px;min-width:0}
+
+/* CSS Asal Indicator Card */
+.indicator-card{background:#0b1220;border:1px solid var(--border);padding:12px;border-radius:9px;min-width:0;transition:all 0.3s ease;}
 .indicator-value{font-weight:800;font-size:14px;overflow-wrap:anywhere}.indicator-status{font-size:10px;text-transform:uppercase;margin-top:6px;color:var(--muted)}
+
+/* KELAS CSS BAHARU UNTUK WARNA INDIKATOR DINAMIK */
+.card-bullish { background: rgba(22, 163, 74, 0.15) !important; border-color: rgba(22, 163, 74, 0.4) !important; }
+.card-bearish { background: rgba(220, 38, 38, 0.15) !important; border-color: rgba(220, 38, 38, 0.4) !important; }
+.card-neutral { background: rgba(202, 138, 4, 0.15) !important; border-color: rgba(202, 138, 4, 0.4) !important; }
+
 table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
 #connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}#confidenceBar{height:100%;width:0;background:#facc15;transition:width .25s}
 input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
@@ -105,7 +113,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <div class="muted text-xs mb-2 uppercase font-bold">Catatan Keamanan Resmi</div>
     <div class="text-sm text-gray-300 leading-relaxed">
       Sesuai dokumentasi resmi TradingView, tidak ada metode OAuth publik untuk menyematkan sesi login privat Anda ke dalam aplikasi HTML pihak ketiga (GitHub Pages). 
-      <strong class="text-yellow-500">AUTENTIKASI AKUN TIDAK DAPAT DIVERIFIKASI</strong> secara otomatis di sini. Meminta kata sandi Anda di situs ini akan menjadi pelanggaran keamanan (Phishing).
+      <strong class="text-yellow-500">AUTENTIKASI AKUN TIDAK DAPAT DIVERIFIKASI</strong> secara otomatis di sini. Meminta kata sandi Anda di tapak ini akan menjadi pelanggaran keselamatan (Phishing).
     </div>
   </div>
 </div>
@@ -362,7 +370,7 @@ function drawHarmonic(h){clearHarmonic();if(!state.chart||!state.showHarmonic||!
  state.candleSeries.setMarkers(mk.map(([l,p])=>({time:toCT(p.time),position:p.type==="H"?"aboveBar":"belowBar",color:l==="D"?(h.bullish?"#26a69a":"#ef5350"):"#38bdf8",shape:p.type==="H"?"arrowDown":"arrowUp",text:l+" "+fmtP(p.price)})));
  $("chartStatus").textContent=`${CONFIG.symbol} · ${CONFIG.interval} · ${h.name} ${h.bullish?"Bullish":"Bearish"} · ${h.status}`}
 
-/* ================= RENDER HARMONIC & INDIKATOR ================= */
+/* ================= RENDER HARMONIC & INDIKATOR (DIKEMAS KINI DENGAN WARNA) ================= */
 function fmtRange(r){return r[0]===r[1]?fmt(r[0],3):fmt(r[0],3)+" – "+fmt(r[1],3)}
 function renderHarmonic(h){
  const sig=h?[h.name,h.status,h.X.time,h.C.time,h.D?h.D.time+":"+h.D.price:"p",h.przLow.toFixed(8),h.przHigh.toFixed(8)].join("|")+"|"+CONFIG.tol+"|"+state.showHarmonic:"none|"+state.showHarmonic;
@@ -377,7 +385,39 @@ function renderHarmonic(h){
   $("harmonicPlan").innerHTML=`Entry ${fmtP(h.entry)}<br>SL ${fmtP(h.stop)}<br>TP1 ${fmtP(h.tp1)} (R:R ${fmt(h.rr1,2)})<br>TP2 ${fmtP(h.tp2)} (R:R ${fmt(h.rr2,2)})`;
   $("harmonicTable").innerHTML=h.rows.map(r=>`<tr><td>${r.label}</td><td>${fmtRange(r.range)}</td><td>${fmt(r.value,3)}</td><td>${fmt(r.dev*100,2)}%</td><td><span class="badge ${r.dev===0?"pass":"warning"}">${r.dev===0?"Dalam rentang":"Dalam toleransi"}</span></td></tr>`).join("")+(h.D?"":'<tr><td colspan="5" class="muted">Rasio D (CD/BC dan AD/XA) dinilai setelah harga mencapai PRZ.</td></tr>')}
  if(sig!==state.lastSig){state.lastSig=sig;drawHarmonic(h)}}
-function renderIndicators(){const i=state.indicators,p=state.currentPrice;if(!i)return;const cards=[["RSI Wilder (14)",fmt(i.rsi),i.rsi>70?"Overbought":i.rsi<30?"Oversold":"Netral"],["EMA (9 / 21)",`${fmt(i.ema9,5)} / ${fmt(i.ema21,5)}`,i.ema9>i.ema21?"Bullish":"Bearish"],["Stochastic (14)",fmt(i.stoch),i.stoch>80?"Overbought":i.stoch<20?"Oversold":"Netral"],["Volume Delta",fmt(i.volDelta,5),i.volDelta>0?"Taker Buy Dominan":i.volDelta<0?"Taker Sell Dominan":"Netral"],["MACD",fmt(i.macd.line,6),i.macd.histogram>0?"Histogram Positif":"Histogram Negatif"],["Bollinger Bands",finite(i.bb.width)?(i.bb.width*100).toFixed(3)+"%":"--",p>i.bb.upper?"Di atas band":p<i.bb.lower?"Di bawah band":"Dalam band"],["ATR (14)",fmtUSD(i.atr),p>0&&finite(i.atr)?(i.atr/p*100).toFixed(3)+"% volatilitas":"--"],["ADX (14)",fmt(i.adx.adx),i.adx.adx>=25?"Tren kuat":"Tren lemah"],["Support / Resistance",`${fmtUSD(i.support)} / ${fmtUSD(i.resistance)}`,"Rentang 50 candle"],["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP"]];$("indicatorsGrid").innerHTML=cards.map(([n,v,s])=>`<div class="indicator-card"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status">${s}</div></div>`).join("")}
+
+function renderIndicators(){
+ const i=state.indicators,p=state.currentPrice;if(!i)return;
+
+ // Logik penentuan warna kelas untuk latar belakang kad
+ const getRsiClass = r => r>70 ? "card-bearish" : r<30 ? "card-bullish" : "card-neutral";
+ const getEmaClass = (e9, e21) => e9>e21 ? "card-bullish" : "card-bearish";
+ const getStochClass = s => s>80 ? "card-bearish" : s<20 ? "card-bullish" : "card-neutral";
+ const getVolClass = v => v>0 ? "card-bullish" : v<0 ? "card-bearish" : "card-neutral";
+ const getMacdClass = m => m>0 ? "card-bullish" : m<0 ? "card-bearish" : "card-neutral";
+ const getBbClass = (pr, u, l) => pr>u ? "card-bearish" : pr<l ? "card-bullish" : "card-neutral";
+ const getAdxClass = (adxObj) => (adxObj.adx>=25 && adxObj.plusDI>adxObj.minusDI) ? "card-bullish" : (adxObj.adx>=25 && adxObj.minusDI>adxObj.plusDI) ? "card-bearish" : "card-neutral";
+ const getVwapClass = (pr, v) => pr>v ? "card-bullish" : pr<v ? "card-bearish" : "card-neutral";
+ 
+ const adxStatus = i.adx.adx>=25 ? (i.adx.plusDI>i.adx.minusDI?"Tren Naik Kuat":"Tren Turun Kuat") : "Tren Lemah";
+
+ const cards=[
+  ["RSI Wilder (14)",fmt(i.rsi),i.rsi>70?"Overbought":i.rsi<30?"Oversold":"Netral", getRsiClass(i.rsi)],
+  ["EMA (9 / 21)",`${fmt(i.ema9,5)} / ${fmt(i.ema21,5)}`,i.ema9>i.ema21?"Bullish":"Bearish", getEmaClass(i.ema9, i.ema21)],
+  ["Stochastic (14)",fmt(i.stoch),i.stoch>80?"Overbought":i.stoch<20?"Oversold":"Netral", getStochClass(i.stoch)],
+  ["Volume Delta",fmt(i.volDelta,5),i.volDelta>0?"Taker Buy Dominan":i.volDelta<0?"Taker Sell Dominan":"Netral", getVolClass(i.volDelta)],
+  ["MACD",fmt(i.macd.line,6),i.macd.histogram>0?"Histogram Positif":"Histogram Negatif", getMacdClass(i.macd.histogram)],
+  ["Bollinger Bands",finite(i.bb.width)?(i.bb.width*100).toFixed(3)+"%":"--",p>i.bb.upper?"Di atas band":p<i.bb.lower?"Di bawah band":"Dalam band", getBbClass(p, i.bb.upper, i.bb.lower)],
+  ["ATR (14)",fmtUSD(i.atr),p>0&&finite(i.atr)?(i.atr/p*100).toFixed(3)+"% volatilitas":"--", "card-neutral"],
+  ["ADX (14)",fmt(i.adx.adx),adxStatus, getAdxClass(i.adx)],
+  ["Support / Resistance",`${fmtUSD(i.support)} / ${fmtUSD(i.resistance)}`,"Rentang 50 candle", "card-neutral"],
+  ["VWAP",fmtUSD(i.vwap),p>i.vwap?"Harga di atas VWAP":"Harga di bawah VWAP", getVwapClass(p, i.vwap)]
+ ];
+ 
+ // Render setiap kad dengan menambahkan kelas warna (cls)
+ $("indicatorsGrid").innerHTML=cards.map(([n,v,s,cls])=>`<div class="indicator-card ${cls}"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status">${s}</div></div>`).join("")
+}
+
 function recomputePivots(){const cs=state.candles;if(cs.length<30){state.pivots=[];return}const atr=TA.atr(cs.map(c=>c.high),cs.map(c=>c.low),cs.map(c=>c.close));state.pivots=pivots(cs,CONFIG.swing,finite(atr)?atr:0)}
 function refreshAnalysis(){const all=workingCandles();state.indicators=calculateIndicators(all);state.harmonic=scanHarmonic(state.pivots,all,CONFIG.tol,CONFIG.showProjection);renderIndicators();renderHarmonic(state.harmonic)}
 
