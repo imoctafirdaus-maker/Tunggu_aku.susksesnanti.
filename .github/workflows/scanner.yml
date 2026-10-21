@@ -16,6 +16,7 @@ jobs:
   scan:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -23,7 +24,30 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
+
+      - name: Check scanner files
+        run: |
+          echo "Memeriksa file scanner..."
+          test -f scanner/scan.js || {
+            echo "ERROR: scanner/scan.js tidak ditemukan"
+            exit 1
+          }
+          test -f scanner/package.json || {
+            echo "ERROR: scanner/package.json tidak ditemukan"
+            exit 1
+          }
+          echo "File scanner ditemukan."
+
+      - name: Check Firebase Secret
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$FIREBASE_SERVICE_ACCOUNT" ]; then
+            echo "ERROR: Secret FIREBASE_SERVICE_ACCOUNT belum diatur."
+            exit 1
+          fi
+          echo "Firebase Secret tersedia."
 
       - name: Install scanner dependencies
         run: npm install --prefix scanner --no-audit --no-fund
