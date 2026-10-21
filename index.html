@@ -162,14 +162,32 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <!-- PANEL NOTIFIKASI TELEGRAM DENGAN SCANNER TOP 500 -->
 <section class="panel p-5 mb-6" id="tgConfigSection">
 <h2 class="text-lg font-bold mb-4">Notifikasi Telegram · Scanner Pemindai Dinamis (Top 500)</h2>
-<p class="muted text-xs mb-4">Sistem akan memindai <b class="text-sky-400">seluruh koin Top 500 Binance</b> secara otomatis di latar belakang. Koin yang diprioritaskan meliputi koin dengan volume terbesar, **Top Gainers / Kenaikan Pertumbuhan Harga Tertinggi** (seperti daftar 'Tertinggi' pada aplikasi Binance), serta koin yang terdeteksi *Early Volume Surge*. Jika ada konfirmasi sinyal BUY/SELL, notifikasi rincian lengkap akan langsung dikirim ke bot Telegram Anda.</p>
+<p class="muted text-xs mb-4">Sistem akan memindai <b class="text-sky-400">seluruh koin Top 500 Binance</b> secara otomatis. Koin yang diprioritaskan meliputi Top Volume, Top Gainers, & koin yang terdeteksi <i>Early Volume Surge</i>. Notifikasi hanya akan dikirim jika koin tersebut memiliki konfirmasi sinyal dengan <b>Akurasi Backtest > 60%</b>.</p>
 <div class="flex flex-wrap items-end gap-3">
 <label class="text-sm">Bot Token<br><input id="tgToken" type="password" placeholder="123456:ABC-DEF..." style="width:250px"></label>
 <label class="text-sm">Chat ID<br><input id="tgChatId" type="text" placeholder="-10012345678" style="width:150px"></label>
-<button id="tgSaveBtn" class="btn text-sm">Simpan & Aktifkan</button>
-<button id="tgTestBtn" class="btn text-sm">Tes Pesan</button>
+<button id="tgSaveBtn" class="btn text-sm">Simpan Kredensial</button>
+<button id="tgTestBtn" class="btn text-sm bg-slate-700 hover:bg-slate-600">Tes Pesan</button>
 </div>
-<div id="tgStatus" class="muted text-xs mt-3">Status: Menunggu konfigurasi...</div>
+<div class="flex flex-wrap items-end gap-3 mt-4 pt-4 border-t border-slate-700">
+<label class="text-sm">Timeframe Bot Sinyal<br>
+  <select id="tgTf" class="w-32">
+    <option value="1m">1 Menit</option>
+    <option value="5m">5 Menit</option>
+    <option value="15m">15 Menit</option>
+    <option value="1h">1 Jam</option>
+    <option value="4h">4 Jam</option>
+  </select>
+</label>
+<label class="text-sm">Status Auto-Scan<br>
+  <select id="tgAuto" class="w-36">
+    <option value="off">Mati (Manual)</option>
+    <option value="on">Aktif (Otomatis)</option>
+  </select>
+</label>
+<button id="tgRunNowBtn" class="btn text-sm bg-sky-600 hover:bg-sky-500">Scan & Kirim Sekarang (Manual)</button>
+</div>
+<div id="tgStatus" class="muted text-xs mt-4">Status: Menunggu konfigurasi...</div>
 </section>
 
 <section class="panel p-5 mb-6"><h2 class="text-lg font-bold mb-4">Riwayat Prediksi dan Evaluasi</h2><div class="overflow-x-auto"><table><thead><tr><th>Waktu</th><th>Koin</th><th>TF</th><th>Harga Awal</th><th>Prediksi</th><th>Arah</th><th>Target</th><th>Aktual</th><th>Status</th><th>Error USD</th></tr></thead><tbody id="historyBody"><tr><td colspan="10" class="text-center muted">Menunggu data prediksi</td></tr></tbody></table></div></section>
@@ -602,59 +620,73 @@ async function sendTelegramMsg(token, chatId, text) {
 function getDynamicTgCoins() {
     if (!state.coinList || !state.coinList.length) return ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
     
-    // 1. Koin Volume Terbesar 24 Jam (Top 10 Volume)
+    // 1. Koin Volume Terbesar 24 Jam
     const topVol = state.coinList.slice(0, 10).map(c => c.symbol);
-    
-    // 2. Top Gainers / Kenaikan Tertinggi (seperti pada contoh tampilan Binance Anda)
+    // 2. Top Gainers / Kenaikan Tertinggi 
     const topGainers = [...state.coinList].sort((a,b) => b.chg - a.chg).slice(0, 10).map(c => c.symbol);
-    
     // 3. Early Volume Surge / Breakout dari Radar Pemindai
     const topRadar = radar.rows ? radar.rows.filter(r => r.status === "EB" || r.status === "EE" || r.status === "VS" || r.status === "BW").slice(0, 10).map(r => r.sym) : [];
     
-    // Gabungkan seluruh kandidat koin potensial (tanpa duplikat)
+    // Gabungkan tanpa duplikat
     const candidates = [...new Set([...topVol, ...topGainers, ...topRadar])];
     return candidates.length ? candidates : ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 }
 
-async function runTgMonitor() {
+// Tambahkan parameter boolean untuk mendeteksi trigger klik manual
+async function runTgMonitor(isManualTrigger = false) {
     const conf = JSON.parse(localStorage.getItem("tg_bot_config") || "{}");
     if(!conf.token || !conf.chatId) {
         $("tgStatus").textContent = "Status: Konfigurasi belum lengkap, pemantauan tidak aktif.";
         return;
     }
+    
+    // Hentikan proses jika dalam mode mati (kecuali sedang memencet tombol manual scan)
+    if (!isManualTrigger && conf.auto !== "on") {
+        $("tgStatus").textContent = "Status: Bot Auto-Scan MATI. Gunakan tombol manual untuk mengirim sinyal.";
+        return;
+    }
 
+    const tf = conf.tf || "5m";
     const coinsToScan = getDynamicTgCoins();
-    $("tgStatus").textContent = `Status: Memantau ${coinsToScan.length} koin potensial (Top Volume, Top Gainers & Early Volume Surge) secara otomatis... (Cek terakhir: ${new Date().toLocaleTimeString("id-ID")})`;
+    let sentCount = 0;
+    
+    $("tgStatus").textContent = `Status: Memindai ${coinsToScan.length} koin (TF: ${tf}, Wajib Akurasi > 60%)... (Mulai: ${new Date().toLocaleTimeString("id-ID")})`;
 
     for(const sym of coinsToScan) {
-        for(const tf of ["1m", "5m"]) {
-            try {
-                const data = await fetchKlinesTG(sym, tf);
-                const now = Date.now();
-                const cs = data.map(d=>({
-                    time:+d[0], open:+d[1], high:+d[2], low:+d[3], close:+d[4],
-                    volume:+d[5], closeTime:+d[6], takerBuyBase:+d[9]
-                })).filter(c => c.closeTime < now);
+        try {
+            const data = await fetchKlinesTG(sym, tf);
+            const now = Date.now();
+            const cs = data.map(d=>({
+                time:+d[0], open:+d[1], high:+d[2], low:+d[3], close:+d[4],
+                volume:+d[5], closeTime:+d[6], takerBuyBase:+d[9]
+            })).filter(c => c.closeTime < now);
 
-                if(cs.length < SIG.minCandles) continue;
+            if(cs.length < SIG.minCandles) continue;
 
-                const signal = computeSignal(cs);
-                if(signal && (signal.status === "BUY" || signal.status === "SELL")) {
+            const signal = computeSignal(cs);
+            if(signal && (signal.status === "BUY" || signal.status === "SELL")) {
+                
+                // FILTER BARU: Pastikan memiliki akurasi di atas 60% melalui fungsi Backtest
+                const bt = runBacktest(cs);
+                const winRate = (bt && bt.all && bt.all.n > 0) ? bt.all.winRate : 0;
+                
+                if (winRate > 60) {
                     const sigKey = `${sym}-${tf}-${signal.time}-${signal.status}`;
-                    if(state.tgSent[sigKey]) continue; // Hindari notifikasi ganda untuk candle yang sama
+                    if(state.tgSent[sigKey]) continue; // Hindari notifikasi ganda
 
                     state.tgSent[sigKey] = true;
+                    sentCount++;
                     
                     const lv = signal.levels;
                     const dirIcon = signal.status === "BUY" ? "🟢 BUY" : "🔴 SELL/SHORT";
                     
-                    // Informasi tambahan perubahan 24j jika tersedia
                     const coinMeta = state.coinList.find(c => c.symbol === sym);
                     const chg24Text = coinMeta ? ` (24h: ${coinMeta.chg >= 0 ? '+' : ''}${coinMeta.chg.toFixed(2)}%)` : '';
 
-                    const text = `🚨 *SINYAL ${dirIcon}* 🚨\n\n` +
+                    const text = `🚨 *SINYAL TERVERIFIKASI ${dirIcon}* 🚨\n\n` +
                                  `🪙 *${sym}*${chg24Text}\n` +
                                  `⏱ Timeframe: *${tf}*\n` +
+                                 `🎯 *Akurasi Win Rate:* *${fmt(winRate, 1)}%*\n` +
                                  `💵 Harga Sinyal: $${fmtP(signal.price)}\n` +
                                  `📊 Skor Sinyal: ${signal.strength}/100\n\n` +
                                  `🎯 *ENTRY RANGE:* ${fmtP(lv.low)} - ${fmtP(lv.high)}\n` +
@@ -666,25 +698,41 @@ async function runTgMonitor() {
 
                     await sendTelegramMsg(conf.token, conf.chatId, text);
                 }
-            } catch(e) {
-                console.warn("TG Monitor Error untuk", sym, tf, e);
             }
+        } catch(e) {
+            console.warn("TG Monitor Error untuk", sym, tf, e);
         }
     }
+    $("tgStatus").textContent = `Status: Pemindaian selesai. Mengirim ${sentCount} sinyal (>60% Akurasi). (Terakhir: ${new Date().toLocaleTimeString("id-ID")})`;
 }
 
 function initTelegram() {
     const conf = JSON.parse(localStorage.getItem("tg_bot_config") || "{}");
     if(conf.token) $("tgToken").value = conf.token;
     if(conf.chatId) $("tgChatId").value = conf.chatId;
+    if(conf.tf) $("tgTf").value = conf.tf;
+    if(conf.auto) $("tgAuto").value = conf.auto;
 
     $("tgSaveBtn").addEventListener("click", () => {
         localStorage.setItem("tg_bot_config", JSON.stringify({
             token: $("tgToken").value.trim(),
-            chatId: $("tgChatId").value.trim()
+            chatId: $("tgChatId").value.trim(),
+            tf: $("tgTf").value,
+            auto: $("tgAuto").value
         }));
-        runTgMonitor();
-        alert("Konfigurasi Telegram disimpan! Scanner dinamis Top 500 sekarang aktif.");
+        
+        if ($("tgAuto").value === "on") {
+            runTgMonitor(); // Picu langsung jika dihidupkan
+            alert("Konfigurasi disimpan. Auto-Scan AKTIF.");
+        } else {
+            $("tgStatus").textContent = "Status: Konfigurasi disimpan. Auto-Scan MATI (Mode Manual).";
+            alert("Konfigurasi disimpan. Mode Manual aktif.");
+        }
+    });
+    
+    // Fitur baru: Trigger Manual Scan
+    $("tgRunNowBtn").addEventListener("click", () => {
+        runTgMonitor(true);
     });
 
     $("tgTestBtn").addEventListener("click", async () => {
@@ -693,7 +741,7 @@ function initTelegram() {
         if(!t || !c) return alert("Harap isi Bot Token dan Chat ID!");
         try {
             $("tgTestBtn").textContent = "Mengirim...";
-            await sendTelegramMsg(t, c, `✅ *TES KONEKSI BERHASIL*\n\nSistem Pemindai Dinamis Top 500 Aktif!\nBot secara otomatis akan memantau koin berpotensi tinggi (Top Volume, Kenaikan Pertumbuhan Tertinggi / Top Gainers, & Early Volume Surge).`);
+            await sendTelegramMsg(t, c, `✅ *TES KONEKSI BERHASIL*\n\nSistem Pemindai Dinamis Aktif!\nKonfigurasi Anda: Timeframe *${$("tgTf").value}*, Auto-Scan: *${$("tgAuto").value}*\nBot sekarang difilter HANYA mengirim koin dengan histori kemenangan di atas 60%.`);
             alert("Pesan tes berhasil terkirim ke Telegram Anda!");
         } catch(e) {
             alert("Gagal mengirim pesan: " + e.message);
@@ -702,9 +750,9 @@ function initTelegram() {
         }
     });
 
-    // Jalankan pemindaian otomatis berkala setiap 30 detik
-    setInterval(runTgMonitor, 30000); 
-    setTimeout(runTgMonitor, 3000); 
+    // Cek latar belakang rutin 
+    setInterval(() => runTgMonitor(false), 30000); 
+    setTimeout(() => runTgMonitor(false), 3000); 
 }
 
 /* EVENT BINDING */
