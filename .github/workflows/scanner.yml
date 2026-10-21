@@ -1,0 +1,26 @@
+name: Crypto Signal Scanner
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "*/5 * * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Check scanner configuration
+        run: |
+          echo "GitHub Actions berhasil dijalankan."
+          echo "Tahap berikutnya adalah menghubungkan mesin scanner."
