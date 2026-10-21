@@ -8,9 +8,14 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: crypto-signal-scanner
+  cancel-in-progress: false
+
 jobs:
   scan:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -20,7 +25,11 @@ jobs:
         with:
           node-version: "20"
 
-      - name: Check scanner configuration
-        run: |
-          echo "GitHub Actions berhasil dijalankan."
-          echo "Tahap berikutnya adalah menghubungkan mesin scanner."
+      - name: Install scanner dependencies
+        run: npm install --prefix scanner --no-audit --no-fund
+
+      - name: Run scanner
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          FIREBASE_DB_URL: https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app
+        run: node scanner/scan.js
