@@ -9,6 +9,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
+const { getFuturesSnapshot, executeSignalTrade } = require("./autoTrader");
 
 const DB_URL = process.env.FIREBASE_DB_URL ||
   "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
