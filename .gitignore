@@ -2,3 +2,4 @@ scanner/serviceAccountKey.json
 bot.pid
 bot.log
 scanner/telegramConfig.json
+scanner/binanceConfig.json

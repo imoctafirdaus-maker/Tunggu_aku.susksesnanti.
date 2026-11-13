@@ -5,6 +5,7 @@
    2. EMA Expert MTF -> menulis ke emaSignals/{SYMBOL}_MTF & emaScannerStatus/{source}
    =========================================================================== */
 const admin = require("firebase-admin");
+const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
@@ -157,6 +158,18 @@ function initFirebase() {
 }
 
 async function main() {
+
+  if (process.argv.includes("--test-futures")) {
+    const snap = await getFuturesSnapshot();
+    if (!snap || !snap.ok) { console.error("❌ Gagal Futures:", snap ? snap.error : "config kosong"); process.exit(1); }
+    console.log("✅ Koneksi Binance USDⓈ-M Futures Berhasil! (Leverage: " + snap.leverage + "x)");
+    console.log("   Total Margin Balance : $" + snap.totalMargin.toFixed(2) + " USDT");
+    console.log("   Available Balance    : $" + snap.available.toFixed(2) + " USDT");
+    console.log("   Unrealized PnL       : $" + snap.unrealizedPnl.toFixed(2) + " USDT");
+    console.log("   Posisi Aktif         : " + snap.openPositions.length + " posisi");
+    return;
+  }
+  
   const t0 = Date.now();
   const dryRun = process.argv.includes("--dry-run");
   let db = null;
