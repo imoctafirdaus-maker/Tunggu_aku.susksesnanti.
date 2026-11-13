@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#070b14">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="1791748937891.jpg">
-<title>Binance Top 500 · Predictor + Sinyal + Early Volume Radar</title>
+<title>Binance Top 500 · Predictor + Sinyal + Early Volume Radar + EMA Expert</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
 <style>
@@ -45,7 +45,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div><div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE MARKET ANALYSIS</div>
 <h1 class="text-3xl md:text-4xl font-extrabold mt-2">Binance Top 500 · Multi-Timeframe Predictor</h1>
-<p class="muted mt-2 text-sm">10 indikator teknikal + sinyal BUY / SELL-SHORT / NETRAL berbasis suara indikator, filter tren, dan backtest historis, plus radar lonjakan volume awal untuk 500 pasangan</p></div>
+<p class="muted mt-2 text-sm">10 indikator teknikal + sinyal BUY / SELL-SHORT / NETRAL berbasis suara indikator, filter tren, backtest historis, radar awal volume & strategi EMA Expert.</p></div>
 <div class="panel p-4 min-w-[240px]"><div class="muted text-sm">Status Market</div><div class="flex items-center gap-2 mt-2"><span id="connectionDot"></span><span id="connectionText" class="font-bold">Memuat...</span></div>
 <div id="lastUpdate" class="muted text-xs mt-2">Menunggu data</div><div id="sourceText" class="muted text-xs mt-1">Sumber: Binance Spot</div></div>
 </header>
@@ -69,7 +69,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <!-- GRAFIK CHART -->
 <section class="panel p-4 mb-6">
 <div class="flex flex-wrap justify-between items-center gap-3 mb-3">
-<div><h2 class="text-lg font-bold">Grafik Candlestick · Gaya TradingView</h2><p class="muted text-xs mt-1">Level Entry, Stop Loss, dan Target 1–3 dari sinyal BUY/SELL aktif digambar otomatis di chart.</p></div>
+<div><h2 class="text-lg font-bold">Grafik Candlestick · Gaya TradingView</h2><p class="muted text-xs mt-1">Level Entry, Stop Loss, dan Target 1–3 dari sinyal aktif digambar otomatis di chart.</p></div>
 <span id="chartStatus" class="badge unknown">Memuat chart...</span></div>
 <div class="flex flex-wrap gap-2 mb-3">
 <button class="btn text-sm active" id="tabChart">Chart + Level Sinyal</button>
@@ -85,7 +85,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 
 <section class="panel p-5 mb-6"><div class="flex flex-wrap justify-between gap-3 mb-5"><h2 class="text-lg font-bold">Indikator Pendukung Prediksi</h2><span id="timeframeLabel" class="muted text-xs">Timeframe 1 menit</span></div><div id="indicatorsGrid" class="grid grid-cols-2 md:grid-cols-5 gap-3"></div></section>
 
-<!-- PANEL SINYAL MULTI-INDIKATOR -->
+<!-- PANEL SINYAL MULTI-INDIKATOR (ALGORITMA LAMA) -->
 <section class="panel p-5 mb-6" id="signalSection">
 <div class="flex flex-wrap justify-between gap-3 mb-4"><h2 class="text-lg font-bold">Sinyal Multi-Indikator · BUY / SELL / NETRAL</h2><span id="sgBadge" class="badge unknown">MENUNGGU DATA</span></div>
 <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -117,6 +117,40 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <div id="sgAccDetail" class="chart-note mt-3"></div>
 <div id="sgUpdated" class="chart-note mt-1"></div>
 <div class="overflow-x-auto mt-4"><table><thead><tr><th>Indikator</th><th>Nilai</th><th>Arah</th><th>Warna</th><th>Keterangan</th></tr></thead><tbody id="sgTable"><tr><td colspan="5" class="muted text-center">Menunggu data candle tertutup</td></tr></tbody></table></div>
+</section>
+
+<!-- PANEL EMA EXPERT STRATEGY (MODUL BARU) -->
+<section class="panel p-5 mb-6" id="emaExpertSection">
+    <div class="flex flex-wrap justify-between gap-3 mb-4">
+        <div>
+            <h2 class="text-lg font-bold">EMA Expert Strategy · Multi-Timeframe</h2>
+            <p class="muted text-xs mt-1">Modul independen: Filter Trend (EMA 125), Pullback (EMA 8/21), Konfirmasi (Break HH/LL).</p>
+        </div>
+        <span id="emaBadge" class="badge unknown">MENUNGGU MTF...</span>
+    </div>
+
+    <div class="flex flex-wrap items-end gap-3 mb-4 border-b border-slate-700 pb-4">
+        <label class="text-sm">Trend TF<br><select id="emaTrendTf"><option value="1h" selected>1 Jam (1h)</option><option value="4h">4 Jam (4h)</option><option value="1d">1 Hari (1d)</option></select></label>
+        <label class="text-sm">Pullback TF<br><select id="emaPullTf"><option value="15m" selected>15 Menit (15m)</option><option value="30m">30 Menit (30m)</option><option value="1h">1 Jam (1h)</option></select></label>
+        <label class="text-sm">Entry TF<br><select id="emaEntryTf"><option value="5m" selected>5 Menit (5m)</option><option value="1m">1 Menit (1m)</option><option value="15m">15 Menit (15m)</option></select></label>
+        <button id="emaRefreshBtn" class="btn text-sm bg-sky-600 hover:bg-sky-500">Refresh & Sinkronisasi MTF</button>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div class="indicator-card"><div class="muted text-xs mb-2">Tahapan Strategi</div><div id="emaState" class="indicator-value">--</div><div id="emaStateSub" class="indicator-status">--</div></div>
+        <div id="emaTrendCard" class="indicator-card"><div class="muted text-xs mb-2">Trend Utama (EMA 125)</div><div id="emaTrend" class="indicator-value">--</div><div id="emaTrendSub" class="indicator-status">--</div></div>
+        <div id="emaPullCard" class="indicator-card"><div class="muted text-xs mb-2">Pullback (EMA 8 & 21)</div><div id="emaPull" class="indicator-value">--</div><div id="emaPullSub" class="indicator-status">--</div></div>
+        <div id="emaSigCard" class="indicator-card"><div class="muted text-xs mb-2">Sinyal Konfirmasi</div><div id="emaSig" class="indicator-value">--</div><div id="emaSigSub" class="indicator-status">--</div></div>
+    </div>
+
+    <div id="emaPlan" class="mt-4" style="display:none">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div class="indicator-card"><div class="muted text-xs mb-2">ENTRY PRICE</div><div id="emaEntryVal" class="indicator-value font-bold text-sky-400">--</div></div>
+            <div class="indicator-card card-bearish"><div class="muted text-xs mb-2">STOP LOSS</div><div id="emaSlVal" class="indicator-value">--</div></div>
+            <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TAKE PROFIT (1:1)</div><div id="emaTpVal" class="indicator-value">--</div></div>
+            <div class="indicator-card"><div class="muted text-xs mb-2">HISTORI BACKTEST MTF</div><div id="emaBtVal" class="indicator-value">--</div><div id="emaBtSub" class="indicator-status">--</div></div>
+        </div>
+    </div>
 </section>
 
 <!-- BINANCE TOP 500 EARLY VOLUME RADAR -->
@@ -162,7 +196,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <!-- PANEL NOTIFIKASI TELEGRAM DENGAN SCANNER TOP 500 -->
 <section class="panel p-5 mb-6" id="tgConfigSection">
 <h2 class="text-lg font-bold mb-4">Notifikasi Telegram · Scanner Pemindai Dinamis (Top 500)</h2>
-<p class="muted text-xs mb-4">Sistem akan memindai <b class="text-sky-400">seluruh koin Top 500 Binance</b> secara otomatis. Koin yang diprioritaskan meliputi Top Volume, Top Gainers, & koin yang terdeteksi <i>Early Volume Surge</i>. Notifikasi hanya akan dikirim jika koin tersebut memiliki konfirmasi sinyal dengan <b>Akurasi Backtest > 60%</b>.</p>
+<p class="muted text-xs mb-4">Sistem memindai <b class="text-sky-400">seluruh koin Top 500 Binance</b> secara otomatis. Koin yang diprioritaskan meliputi Top Volume, Top Gainers, & Early Volume Surge. Notifikasi dikirim jika koin memiliki konfirmasi dengan <b>Akurasi Backtest > 60%</b>.</p>
 <div class="flex flex-wrap items-end gap-3">
 <label class="text-sm">Bot Token<br><input id="tgToken" type="password" placeholder="123456:ABC-DEF..." style="width:250px"></label>
 <label class="text-sm">Chat ID<br><input id="tgChatId" type="text" placeholder="-10012345678" style="width:150px"></label>
@@ -172,17 +206,12 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <div class="flex flex-wrap items-end gap-3 mt-4 pt-4 border-t border-slate-700">
 <label class="text-sm">Timeframe Bot Sinyal<br>
   <select id="tgTf" class="w-32">
-    <option value="1m">1 Menit</option>
-    <option value="5m">5 Menit</option>
-    <option value="15m">15 Menit</option>
-    <option value="1h">1 Jam</option>
-    <option value="4h">4 Jam</option>
+    <option value="1m">1 Menit</option><option value="5m">5 Menit</option><option value="15m">15 Menit</option><option value="1h">1 Jam</option><option value="4h">4 Jam</option>
   </select>
 </label>
 <label class="text-sm">Status Auto-Scan<br>
   <select id="tgAuto" class="w-36">
-    <option value="off">Mati (Manual)</option>
-    <option value="on">Aktif (Otomatis)</option>
+    <option value="off">Mati (Manual)</option><option value="on">Aktif (Otomatis)</option>
   </select>
 </label>
 <button id="tgRunNowBtn" class="btn text-sm bg-sky-600 hover:bg-sky-500">Scan & Kirim Sekarang (Manual)</button>
@@ -471,7 +500,7 @@ const cards=[
 ];
 $("indicatorsGrid").innerHTML=cards.map(([n,v,s,cls])=>`<div class="indicator-card ${cls}"><div class="muted text-xs mb-2">${n}</div><div class="indicator-value">${v}</div><div class="indicator-status">${s}</div></div>`).join("")
 }
-function refreshAnalysis(){const all=workingCandles();state.indicators=calculateIndicators(all);renderIndicators();updateSignal()}
+function refreshAnalysis(){const all=workingCandles();state.indicators=calculateIndicators(all);renderIndicators();updateSignal();}
 function runModel(cs,i){const price=cs[cs.length-1].close;if(!i||!finite(i.atr))return null;let score=0,w=0;function add(v,z){if(finite(v)){score+=v*z;w+=z}}
 if(finite(i.rsi))add(i.rsi<30?1:i.rsi>70?-1:0,1);
 if(finite(i.ema9)&&finite(i.ema21))add(i.ema9>i.ema21?1:-1,1.2);
@@ -482,6 +511,7 @@ function createPrediction(c){const i=calculateIndicators(state.candles);if(!i)re
 function evaluateCandle(c){let changed=false;for(const p of state.predictions){if(p.status!=="PENDING"||p.symbol!==CONFIG.symbol||p.targetTime!==c.time)continue;p.actualPrice=c.close;p.errorUsd=c.close-p.predPrice;p.isDirCorrect=(c.close>p.startPrice&&p.direction==="NAIK")||(c.close<p.startPrice&&p.direction==="TURUN");p.status="EVALUATED";changed=true}if(changed){savePredictions();stats();renderHistory()}}
 function stats(){const a=state.predictions.filter(p=>p.status==="EVALUATED"&&p.symbol===CONFIG.symbol);if(!a.length)return;const mae=mean(a.map(p=>Math.abs(p.actualPrice-p.predPrice))),rmse=Math.sqrt(mean(a.map(p=>(p.actualPrice-p.predPrice)**2)));$("maeScore").textContent=fmtUSD(mae);$("rmseScore").textContent=fmtUSD(rmse);$("accArah").textContent=(100*a.filter(p=>p.isDirCorrect).length/a.length).toFixed(1)+"%";$("totalEval").textContent=String(a.length)}
 function renderHistory(){const arr=state.predictions.filter(p=>p.symbol===CONFIG.symbol).slice(0,Number($("historyLimit").value)||15);$("historyBody").innerHTML=arr.length?arr.map(p=>`<tr><td>${fmtTime(p.time)}</td><td>${p.symbol}</td><td>${p.interval}</td><td>${fmtUSD(p.startPrice)}</td><td>${fmtUSD(p.predPrice)}</td><td>${p.direction}</td><td>${fmtTime(p.targetTime)}</td><td>${finite(p.actualPrice)?fmtUSD(p.actualPrice):"--"}</td><td>${p.status}</td><td>${finite(p.errorUsd)?fmt(p.errorUsd,4):"--"}</td></tr>`).join(""):'<tr><td colspan="10" class="text-center muted">Belum ada riwayat</td></tr>'}
+
 async function fetchHistory(){const gen=++state.generation;try{
 const {data,base}=await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${encodeURIComponent(CONFIG.interval)}&limit=${CONFIG.historyLimit}`);
 if(gen!==state.generation)return;
@@ -490,9 +520,11 @@ state.candles=data.map(d=>({time:+d[0],open:+d[1],high:+d[2],low:+d[3],close:+d[
 state.currentPrice=state.candles[state.candles.length-1].close;state.liveCandle=null;
 $("currentPrice").textContent=fmtUSD(state.currentPrice);
 clearSignalLines();state.sigKey="";state.signal=null;state.bt=null;setChartData(state.candles,true);refreshAnalysis();scheduleBacktest();
+EMA_EXP.init(); // Jalankan sinkronisasi Multi-Timeframe EMA Expert
 const ind=calculateIndicators(state.candles),r=runModel(state.candles,ind);if(r){r.targetTime=state.candles[state.candles.length-1].time+intervalMs();renderPrediction(r)}
 stats();renderHistory();msg(`${state.candles.length} candle dimuat untuk ${CONFIG.symbol}.`);connectWS()
 }catch(e){console.error(e);scheduleReconnect()}}
+
 function connectWS(){if(state.stopped)return;if(state.ws){try{state.ws.close()}catch(_){}}
 let ws;try{ws=new WebSocket(CONFIG.wsBases[state.wsIdx%CONFIG.wsBases.length]+CONFIG.symbol.toLowerCase()+"@kline_"+CONFIG.interval)}catch(e){scheduleReconnect();return}
 state.ws=ws;
@@ -505,7 +537,9 @@ state.currentPrice=c.close;$("currentPrice").textContent=fmtUSD(c.close);state.l
 if(state.candleSeries){state.candleSeries.update({time:toCT(c.time),open:c.open,high:c.high,low:c.low,close:c.close});state.volumeSeries.update({time:toCT(c.time),value:c.volume,color:c.close>=c.open?"rgba(38,166,154,.35)":"rgba(239,83,80,.35)"})}
 if(!c.isClosed){refreshAnalysis();return}
 const idx=state.candles.findIndex(x=>x.time===c.time);if(idx>=0)state.candles[idx]=c;else state.candles.push(c);
-state.liveCandle=null;refreshAnalysis();evaluateCandle(c);createPrediction(c);stats();renderHistory();scheduleBacktest()}
+state.liveCandle=null;refreshAnalysis();evaluateCandle(c);createPrediction(c);stats();renderHistory();scheduleBacktest();
+if (idx < 0) EMA_EXP.init(); // Refresh MTF on new candle
+}
 function reconnectNow(){state.stopped=false;state.generation++;if(state.ws)try{state.ws.close()}catch(_){}
 state.candles=[];fetchHistory()}
 function clearHistory(){state.predictions=[];savePredictions();stats();renderHistory()}
@@ -513,6 +547,201 @@ function mountTV(){if(state.tab!=="tv")return;$("tvWidget").innerHTML="";
 const make=()=>{try{new TradingView.widget({autosize:true,symbol:"BINANCE:"+CONFIG.symbol,interval:TV_INTERVAL[CONFIG.interval]||"1",theme:"dark",container_id:"tvWidget"})}catch(_){}};
 if(window.TradingView)make();else{const s=document.createElement("script");s.src="https://s3.tradingview.com/tv.js";s.onload=make;document.head.appendChild(s)}}
 function setTab(t){state.tab=t;$("paneChart").style.display=t==="chart"?"block":"none";$("paneTV").style.display=t==="tv"?"block":"none";$("tabChart").classList.toggle("active",t==="chart");$("tabTV").classList.toggle("active",t==="tv");if(t==="tv")mountTV()}
+
+
+/* ================= EMA EXPERT STRATEGY MODULE ================= */
+const EMA_EXP = {
+    data: null, stateStatus: 'WAITING', latestSignal: null, btStats: null,
+    
+    async init() {
+        const trTf = $("emaTrendTf").value, puTf = $("emaPullTf").value, enTf = $("emaEntryTf").value;
+        $("emaBadge").textContent = "MEMUAT MTF..."; $("emaBadge").className = "badge warning";
+        try {
+            const fetchTf = async (tf) => {
+                const {data} = await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${tf}&limit=500`);
+                return data.map(d=>({time:+d[0], open:+d[1], high:+d[2], low:+d[3], close:+d[4]}));
+            };
+            const [dt, dp, de] = await Promise.all([fetchTf(trTf), fetchTf(puTf), fetchTf(enTf)]);
+            
+            // Kalkulasi Indikator Natively per TF
+            const calcInd = (cs) => {
+                const c = cs.map(x=>x.close), h = cs.map(x=>x.high), l = cs.map(x=>x.low);
+                const e8 = TA.emaSeries(c, 8), e21 = TA.emaSeries(c, 21), e125 = TA.emaSeries(c, 125);
+                const atr = TA.atrSeries(h, l, c, 14);
+                return cs.map((candle, i) => ({ ...candle, e8: e8[i], e21: e21[i], e125: e125[i], atr: atr[i] }));
+            };
+
+            this.runLogic(calcInd(dt), calcInd(dp), calcInd(de));
+        } catch(e) {
+            console.error("EMA MTF Err:", e);
+            $("emaBadge").textContent = "GAGAL SINKRONISASI"; $("emaBadge").className = "badge reject";
+        }
+    },
+
+    runLogic(dt, dp, de) {
+        let tIdx = 0, pIdx = 0;
+        let state = 'WAITING';
+        let trades = [], activeTrade = null, lastSignal = null;
+
+        for (let i = 0; i < de.length; i++) {
+            const centry = de[i];
+            const prevEntry = i > 0 ? de[i-1] : centry;
+
+            // Sync Mapping berdasarkan Timestamp
+            while (tIdx < dt.length - 1 && dt[tIdx+1].time <= centry.time) tIdx++;
+            while (pIdx < dp.length - 1 && dp[pIdx+1].time <= centry.time) pIdx++;
+
+            const ctrend = dt[tIdx], cpull = dp[pIdx];
+            if(!ctrend.e125 || !cpull.e21 || !centry.atr) continue;
+
+            // 1. Backtest Simulasi Keluar Trade (SL / TP 1:1)
+            if (activeTrade) {
+                const hitSL = activeTrade.dir === 'BUY' ? centry.low <= activeTrade.sl : centry.high >= activeTrade.sl;
+                const hitTP = activeTrade.dir === 'BUY' ? centry.high >= activeTrade.tp : centry.low <= activeTrade.tp;
+                if (hitSL || hitTP) {
+                    activeTrade.out = hitTP ? 'TP' : 'SL';
+                    activeTrade.exitTime = centry.time;
+                    trades.push(activeTrade);
+                    activeTrade = null;
+                    state = 'WAITING';
+                }
+                if (activeTrade) continue; 
+            }
+
+            // 2. Trend Filter (EMA 125, EMA 8 > 21)
+            const prevTrend = tIdx > 0 ? dt[tIdx-1] : ctrend;
+            const prev2Trend = tIdx > 1 ? dt[tIdx-2] : prevTrend;
+            
+            // Proxy struktur harga (HH/HL) menggunakan perbandingan antar swing
+            const structureBull = ctrend.high >= prevTrend.high && ctrend.low >= prev2Trend.low;
+            const structureBear = ctrend.low <= prevTrend.low && ctrend.high <= prev2Trend.high;
+
+            const trendBull = ctrend.close > ctrend.e125 && ctrend.e8 > ctrend.e21 && ctrend.e21 > prevTrend.e21 && structureBull;
+            const trendBear = ctrend.close < ctrend.e125 && ctrend.e8 < ctrend.e21 && ctrend.e21 < prevTrend.e21 && structureBear;
+
+            // 3. State Machine Engine
+            if (state === 'WAITING' || state.startsWith('TREND')) {
+                if (trendBull) state = 'TREND_DETECTED_BULL';
+                else if (trendBear) state = 'TREND_DETECTED_BEAR';
+                else state = 'WAITING';
+
+                // Pullback Check (Low sentuh EMA 8/21 + toleransi ATR)
+                if (state === 'TREND_DETECTED_BULL') {
+                    const tol = cpull.atr * 0.2;
+                    if (cpull.low <= cpull.e8 + tol || cpull.low <= cpull.e21 + tol) state = 'PULLBACK_DETECTED_BULL';
+                } else if (state === 'TREND_DETECTED_BEAR') {
+                    const tol = cpull.atr * 0.2;
+                    if (cpull.high >= cpull.e8 - tol || cpull.high >= cpull.e21 - tol) state = 'PULLBACK_DETECTED_BEAR';
+                }
+            }
+            else if (state === 'PULLBACK_DETECTED_BULL') {
+                if (!trendBull || centry.close < cpull.e21 - cpull.atr) state = 'WAITING'; // Invalidasi
+                else {
+                    // Konfirmasi (Candle Bullish dan Break High sebelumnya)
+                    if (centry.close > centry.open && centry.close > prevEntry.high) {
+                        state = 'BUY_CONFIRMED';
+                        const sl = Math.min(centry.low, prevEntry.low) - (centry.atr * 0.5);
+                        const risk = centry.close - sl;
+                        activeTrade = { dir: 'BUY', entry: centry.close, sl, tp: centry.close + risk, risk, time: centry.time, idx: i };
+                        lastSignal = { ...activeTrade, trEma: ctrend.e125, puEma8: cpull.e8, puEma21: cpull.e21 };
+                        state = 'WAITING';
+                    }
+                }
+            }
+            else if (state === 'PULLBACK_DETECTED_BEAR') {
+                if (!trendBear || centry.close > cpull.e21 + cpull.atr) state = 'WAITING'; // Invalidasi
+                else {
+                    // Konfirmasi (Candle Bearish dan Break Low sebelumnya)
+                    if (centry.close < centry.open && centry.close < prevEntry.low) {
+                        state = 'SELL_CONFIRMED';
+                        const sl = Math.max(centry.high, prevEntry.high) + (centry.atr * 0.5);
+                        const risk = sl - centry.close;
+                        activeTrade = { dir: 'SELL', entry: centry.close, sl, tp: centry.close - risk, risk, time: centry.time, idx: i };
+                        lastSignal = { ...activeTrade, trEma: ctrend.e125, puEma8: cpull.e8, puEma21: cpull.e21 };
+                        state = 'WAITING';
+                    }
+                }
+            }
+        }
+
+        // Final State Record
+        this.data = { trend: dt[dt.length-1], pull: dp[dp.length-1], entry: de[de.length-1] };
+        this.stateStatus = state;
+        
+        // Cek jika sinyal valid masih baru (misal dalam 5 candle entry terakhir)
+        if (lastSignal && (de.length - lastSignal.idx <= 5)) this.latestSignal = lastSignal;
+        else this.latestSignal = null;
+
+        const w = trades.filter(t=>t.out==='TP');
+        this.btStats = { total: trades.length, winRate: trades.length ? (w.length / trades.length * 100) : 0 };
+
+        this.renderUI();
+        this.triggerFirebase();
+    },
+
+    renderUI() {
+        $("emaBadge").textContent = "TERHUBUNG (MTF)"; $("emaBadge").className = "badge pass";
+        
+        const st = this.stateStatus;
+        $("emaState").textContent = st.replace(/_/g, ' ');
+        $("emaStateSub").textContent = "Pemantauan real-time berjalan";
+
+        const dt = this.data.trend, dp = this.data.pull;
+        $("emaTrend").textContent = fmtP(dt.e125);
+        $("emaTrendSub").textContent = dt.close > dt.e125 ? "Harga > EMA 125 (Bullish)" : dt.close < dt.e125 ? "Harga < EMA 125 (Bearish)" : "Netral";
+        setCard("emaTrendCard", dt.close > dt.e125 ? "card-bullish" : dt.close < dt.e125 ? "card-bearish" : "card-neutral");
+
+        $("emaPull").textContent = `8: ${fmtP(dp.e8)} | 21: ${fmtP(dp.e21)}`;
+        $("emaPullSub").textContent = dp.e8 > dp.e21 ? "EMA 8 > EMA 21" : "EMA 8 < EMA 21";
+        setCard("emaPullCard", dp.e8 > dp.e21 ? "card-bullish" : "card-bearish");
+
+        if (this.latestSignal) {
+            const sig = this.latestSignal;
+            $("emaSig").textContent = `Sinyal ${sig.dir}`;
+            $("emaSigSub").textContent = `Dikonfirmasi pd ${fmtTime(sig.time)}`;
+            setCard("emaSigCard", sig.dir === "BUY" ? "card-bullish" : "card-bearish");
+
+            $("emaPlan").style.display = "block";
+            $("emaEntryVal").textContent = fmtP(sig.entry);
+            $("emaSlVal").textContent = fmtP(sig.sl);
+            $("emaTpVal").textContent = fmtP(sig.tp);
+        } else {
+            $("emaSig").textContent = "MENUNGGU";
+            $("emaSigSub").textContent = "Belum ada entry valid";
+            setCard("emaSigCard", "card-neutral");
+            $("emaPlan").style.display = "none";
+        }
+
+        if (this.btStats) {
+            $("emaBtVal").textContent = `Winrate ${fmt(this.btStats.winRate, 1)}%`;
+            $("emaBtSub").textContent = `Dari ${this.btStats.total} trade historis`;
+        }
+    },
+
+    triggerFirebase() {
+        if (!this.latestSignal) return;
+        const payload = {
+            symbol: CONFIG.symbol,
+            timestamp: Date.now(),
+            strategy: "EMA_EXPERT_MTF",
+            trendTf: $("emaTrendTf").value, pullbackTf: $("emaPullTf").value, entryTf: $("emaEntryTf").value,
+            trendEma125: this.latestSignal.trEma,
+            pullbackEma8: this.latestSignal.puEma8,
+            pullbackEma21: this.latestSignal.puEma21,
+            signal: this.latestSignal.dir,
+            entryPrice: this.latestSignal.entry,
+            stopLoss: this.latestSignal.sl,
+            takeProfit: this.latestSignal.tp,
+            riskReward: "1:1",
+            status: this.stateStatus
+        };
+        window.emaExpertLastPayload = payload;
+        window.dispatchEvent(new CustomEvent('onEmaExpertSignal', { detail: payload }));
+    }
+};
+
+$("emaRefreshBtn").addEventListener("click", () => EMA_EXP.init());
+
 
 /* RADAR SYSTEM */
 const RADAR_KEY="binance_early_volume_radar_cfg_v1";
@@ -632,7 +861,6 @@ function getDynamicTgCoins() {
     return candidates.length ? candidates : ["BTCUSDT", "ETHUSDT", "SOLUSDT"];
 }
 
-// Tambahkan parameter boolean untuk mendeteksi trigger klik manual
 async function runTgMonitor(isManualTrigger = false) {
     const conf = JSON.parse(localStorage.getItem("tg_bot_config") || "{}");
     if(!conf.token || !conf.chatId) {
@@ -640,7 +868,6 @@ async function runTgMonitor(isManualTrigger = false) {
         return;
     }
     
-    // Hentikan proses jika dalam mode mati (kecuali sedang memencet tombol manual scan)
     if (!isManualTrigger && conf.auto !== "on") {
         $("tgStatus").textContent = "Status: Bot Auto-Scan MATI. Gunakan tombol manual untuk mengirim sinyal.";
         return;
@@ -665,14 +892,12 @@ async function runTgMonitor(isManualTrigger = false) {
 
             const signal = computeSignal(cs);
             if(signal && (signal.status === "BUY" || signal.status === "SELL")) {
-                
-                // FILTER BARU: Pastikan memiliki akurasi di atas 60% melalui fungsi Backtest
                 const bt = runBacktest(cs);
                 const winRate = (bt && bt.all && bt.all.n > 0) ? bt.all.winRate : 0;
                 
                 if (winRate > 60) {
                     const sigKey = `${sym}-${tf}-${signal.time}-${signal.status}`;
-                    if(state.tgSent[sigKey]) continue; // Hindari notifikasi ganda
+                    if(state.tgSent[sigKey]) continue; 
 
                     state.tgSent[sigKey] = true;
                     sentCount++;
@@ -722,7 +947,7 @@ function initTelegram() {
         }));
         
         if ($("tgAuto").value === "on") {
-            runTgMonitor(); // Picu langsung jika dihidupkan
+            runTgMonitor();
             alert("Konfigurasi disimpan. Auto-Scan AKTIF.");
         } else {
             $("tgStatus").textContent = "Status: Konfigurasi disimpan. Auto-Scan MATI (Mode Manual).";
@@ -730,27 +955,19 @@ function initTelegram() {
         }
     });
     
-    // Fitur baru: Trigger Manual Scan
-    $("tgRunNowBtn").addEventListener("click", () => {
-        runTgMonitor(true);
-    });
+    $("tgRunNowBtn").addEventListener("click", () => runTgMonitor(true));
 
     $("tgTestBtn").addEventListener("click", async () => {
-        const t = $("tgToken").value.trim();
-        const c = $("tgChatId").value.trim();
+        const t = $("tgToken").value.trim(), c = $("tgChatId").value.trim();
         if(!t || !c) return alert("Harap isi Bot Token dan Chat ID!");
         try {
             $("tgTestBtn").textContent = "Mengirim...";
-            await sendTelegramMsg(t, c, `✅ *TES KONEKSI BERHASIL*\n\nSistem Pemindai Dinamis Aktif!\nKonfigurasi Anda: Timeframe *${$("tgTf").value}*, Auto-Scan: *${$("tgAuto").value}*\nBot sekarang difilter HANYA mengirim koin dengan histori kemenangan di atas 60%.`);
+            await sendTelegramMsg(t, c, `✅ *TES KONEKSI BERHASIL*\n\nSistem Pemindai Dinamis Aktif!`);
             alert("Pesan tes berhasil terkirim ke Telegram Anda!");
-        } catch(e) {
-            alert("Gagal mengirim pesan: " + e.message);
-        } finally {
-            $("tgTestBtn").textContent = "Tes Pesan";
-        }
+        } catch(e) { alert("Gagal mengirim pesan: " + e.message); } 
+        finally { $("tgTestBtn").textContent = "Tes Pesan"; }
     });
 
-    // Cek latar belakang rutin 
     setInterval(() => runTgMonitor(false), 30000); 
     setTimeout(() => runTgMonitor(false), 3000); 
 }
