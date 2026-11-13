@@ -8,6 +8,13 @@
     },
     "scannerStatus": {
       ".read": true
+    },
+    "emaSignals": {
+      ".read": true,
+      ".indexOn": ["updatedAt"]
+    },
+    "emaScannerStatus": {
+      ".read": true
     }
   }
 }
