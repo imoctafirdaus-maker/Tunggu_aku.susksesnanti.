@@ -41,6 +41,86 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </style>
 </head>
 <body>
+
+<!-- Binance Futures Portfolio Widget -->
+<div id="binance-futures-widget" style="max-width:1200px;margin:14px auto;padding:14px 16px;background:linear-gradient(135deg,#111827,#1e293b);border:1px solid #334155;border-radius:12px;color:#f8fafc;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
+  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #334155;padding-bottom:10px;margin-bottom:10px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:18px;">💼</span>
+      <strong style="font-size:15px;letter-spacing:0.3px;">BINANCE USDⓈ-M FUTURES</strong>
+      <span id="bf-lev-badge" style="background:#f59e0b;color:#111827;font-weight:700;font-size:11px;padding:2px 8px;border-radius:999px;">50x</span>
+    </div>
+    <div id="bf-updated" style="font-size:11px;color:#94a3b8;">Memuat data dompet...</div>
+  </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Total Margin Balance</div>
+      <div id="bf-margin" style="font-size:17px;font-weight:700;color:#38bdf8;margin-top:2px;">$--</div>
+    </div>
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Available Balance</div>
+      <div id="bf-avail" style="font-size:17px;font-weight:700;color:#4ade80;margin-top:2px;">$--</div>
+    </div>
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Unrealized PnL</div>
+      <div id="bf-pnl" style="font-size:17px;font-weight:700;color:#e2e8f0;margin-top:2px;">$--</div>
+    </div>
+  </div>
+  <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+    <div style="font-size:12px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">📌 Posisi Terbuka Saat Ini</div>
+    <div id="bf-positions" style="font-size:12px;color:#94a3b8;">Menunggu sinkronisasi...</div>
+  </div>
+</div>
+<script>
+(function() {
+  const DB_REST = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json";
+  async function refreshFuturesWidget() {
+    try {
+      const res = await fetch(DB_REST + "?t=" + Date.now());
+      const d = await res.json();
+      if (!d || typeof d.totalMargin !== "number") {
+        document.getElementById("bf-updated").textContent = "Menunggu siklus scan bot pertama...";
+        return;
+      }
+      document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
+      document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
+      document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
+      const pnlEl = document.getElementById("bf-pnl");
+      const pnlVal = Number(d.unrealizedPnl || 0);
+      pnlEl.textContent = (pnlVal >= 0 ? "+" : "") + "$" + pnlVal.toFixed(2) + " USDT";
+      pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
+
+      if (d.updatedAt) {
+        const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+        document.getElementById("bf-updated").textContent = "Update: " + dt + " WIB";
+      }
+
+      const posEl = document.getElementById("bf-positions");
+      const list = Array.isArray(d.openPositions) ? d.openPositions : [];
+      if (!list.length) {
+        posEl.innerHTML = "<span style="color:#64748b;">Tidak ada posisi Futures yang sedang dibuka.</span>";
+      } else {
+        posEl.innerHTML = list.map(p => {
+          const isLong = p.side === "LONG";
+          const badge = isLong
+            ? "<span style="background:#14532d;color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700;">LONG</span>"
+            : "<span style="background:#7f1d1d;color:#fca5a5;padding:1px 6px;border-radius:4px;font-weight:700;">SHORT</span>";
+          const pColor = p.pnl >= 0 ? "#4ade80" : "#f87171";
+          return "<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;">" +
+            "<div>" + badge + " <strong>" + p.symbol + "</strong> · Qty: <code>" + Math.abs(p.amt) + "</code> @ $" + p.entryPrice + " (" + p.leverage + "x)</div>" +
+            "<div style="font-weight:700;color:" + pColor + ";">" + (p.pnl >= 0 ? "+" : "") + "$" + Number(p.pnl).toFixed(2) + "</div>" +
+          "</div>";
+        }).join("");
+      }
+    } catch (e) {
+      document.getElementById("bf-updated").textContent = "Gagal memuat data dompet";
+    }
+  }
+  refreshFuturesWidget();
+  setInterval(refreshFuturesWidget, 15000);
+})();
+</script>
+
 <main class="max-w-7xl mx-auto px-4 py-6">
 <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
 <div><div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE MARKET ANALYSIS</div>
