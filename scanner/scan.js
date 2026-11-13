@@ -259,6 +259,7 @@ async function main() {
       };
       await db.ref("futuresPortfolio").set(fPayload);
       await db.ref("scannerStatus/futures").set(fPayload);
+      await db.ref("emaSignals/_futuresPortfolio").set(fPayload);
     }
     const snapEma = await db.ref("emaSignals").get();
     const exEma = (snapEma.val() && typeof snapEma.val() === "object") ? snapEma.val() : {};

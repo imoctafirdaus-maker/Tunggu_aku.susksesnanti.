@@ -74,23 +74,11 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <script>
 (function() {
   const DB_URLS = [
-    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json",
-    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/scannerStatus/futures.json"
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_futuresPortfolio.json",
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json"
   ];
-  async function refreshFuturesWidget() {
-    let d = null, lastErr = "";
-    for (const u of DB_URLS) {
-      try {
-        const res = await fetch(u + "?t=" + Date.now());
-        if (!res.ok) { lastErr = "HTTP " + res.status; continue; }
-        const json = await res.json();
-        if (json && typeof json.totalMargin === "number") { d = json; break; }
-      } catch (e) { lastErr = e.message; }
-    }
-    if (!d) {
-      document.getElementById("bf-updated").textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi pertama...";
-      return;
-    }
+  function renderFuturesData(d) {
+    if (!d || typeof d.totalMargin !== "number") return false;
     document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
     document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
     document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
@@ -119,6 +107,25 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         "</div>";
       }).join("");
     }
+    return true;
+  }
+  async function refreshFuturesWidget() {
+    try {
+      if (window.firebase && firebase.apps && firebase.apps.length && firebase.database) {
+        const snap = await firebase.database().ref("emaSignals/_futuresPortfolio").get();
+        if (snap.exists() && renderFuturesData(snap.val())) return;
+      }
+    } catch (_) {}
+    let lastErr = "";
+    for (const u of DB_URLS) {
+      try {
+        const res = await fetch(u + "?t=" + Date.now());
+        if (!res.ok) { lastErr = "HTTP " + res.status; continue; }
+        const json = await res.json();
+        if (renderFuturesData(json)) return;
+      } catch (e) { lastErr = e.message; }
+    }
+    document.getElementById("bf-updated").textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi...";
   }
   refreshFuturesWidget();
   setInterval(refreshFuturesWidget, 15000);
