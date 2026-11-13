@@ -318,8 +318,9 @@ function evaluateEmaExpertHistory(data, opts = {}) {
   const lastTrend = dt[dt.length - 1];
   const isFreshSignal = latestConfirmed && (de.length - 1 - latestConfirmed.index <= 2);
 
-  const _lastIdx = (entry || candles5m || []).length - 1;
-  const _volCheck = evaluateVolumeConfirmation(entry || candles5m, _lastIdx, (opts && opts.minRvol) || 1.15);
+  const _arr5m = Array.isArray(data) ? data : (data && (data.entry || data["5m"] || data.candles5m)) || [];
+  const _lastIdx = _arr5m.length - 1;
+  const _volCheck = evaluateVolumeConfirmation(_arr5m, _lastIdx, (opts && opts.minRvol) || 1.15);
   if ((signal === "BUY" || signal === "SELL") && !_volCheck.ok) {
     signal = "WAIT";
     confirmationStatus = "Menunggu konfirmasi volume (RVOL " + _volCheck.rvol + "x < 1.15x)";
