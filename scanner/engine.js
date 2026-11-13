@@ -318,14 +318,8 @@ function evaluateEmaExpertHistory(data, opts = {}) {
   const lastTrend = dt[dt.length - 1];
   const isFreshSignal = latestConfirmed && (de.length - 1 - latestConfirmed.index <= 2);
 
-  const _arr5m = Array.isArray(data) ? data : (data && (data.entry || data["5m"] || data.candles5m)) || [];
-  const _lastIdx = _arr5m.length - 1;
-  const _volCheck = evaluateVolumeConfirmation(_arr5m, _lastIdx, (opts && opts.minRvol) || 1.15);
-  if ((signal === "BUY" || signal === "SELL") && !_volCheck.ok) {
-    signal = "WAIT";
-    confirmationStatus = "Menunggu konfirmasi volume (RVOL " + _volCheck.rvol + "x < 1.15x)";
-  }
-  return { ready: true, volRatio: _volCheck.rvol,
+  return {
+    ready: true,
     strategy: "EMA_EXPERT",
     trend: trendDir,
     ema8: lastEntry.e8,
@@ -385,32 +379,43 @@ function backtestEmaExpertMTF(data, opts = {}) {
   };
 }
 
-
-function evaluateVolumeConfirmation(candles, idx, minRvol = 1.15) {
-  if (!Array.isArray(candles) || idx < 20 || !candles[idx]) {
-    return { ok: false, rvol: 0, surge: false };
-  }
-  let sum = 0;
-  for (let i = idx - 20; i < idx; i++) {
-    sum += Number(candles[i].volume) || 0;
-  }
-  const avgVol = sum / 20;
-  const curVol = Number(candles[idx].volume) || 0;
-  const prevVol = Number(candles[idx - 1].volume) || 0;
-  const rvol = avgVol > 0 ? curVol / avgVol : 0;
-  const surge = curVol > prevVol;
-  return {
-    ok: rvol >= minRvol && surge,
-    rvol: Number(rvol.toFixed(2)),
-    surge
-  };
-}
-
 function computeEmaExpertMTF(data, opts = {}) {
   const evalRes = evaluateEmaExpertHistory(data, opts);
   if (!evalRes.ready) return evalRes;
   const bt = backtestEmaExpertMTF(data, opts);
   return { ...evalRes, backtest: bt.ok ? bt : null };
 }
+
+
+function evaluateVolumeConfirmation(candles, minRvol = 1.15) {
+  const idx = Array.isArray(candles) ? candles.length - 1 : -1;
+  if (idx < 20 || !candles[idx]) return { ok: false, rvol: 0 };
+  let sum = 0;
+  for (let i = idx - 20; i < idx; i++) sum += Number(candles[i].volume) || 0;
+  const avgVol = sum / 20;
+  const curVol = Number(candles[idx].volume) || 0;
+  const prevVol = Number(candles[idx - 1].volume) || 0;
+  const rvol = avgVol > 0 ? curVol / avgVol : 0;
+  return {
+    ok: rvol >= minRvol && curVol > prevVol,
+    rvol: Number(rvol.toFixed(2))
+  };
+}
+
+const _origComputeEmaExpertMTF = computeEmaExpertMTF;
+computeEmaExpertMTF = function(data, opts) {
+  const res = _origComputeEmaExpertMTF(data, opts);
+  if (!res || !res.ready) return res;
+  const arr5m = Array.isArray(data) ? data : (data && (data.entry || data["5m"] || data.candles5m)) || [];
+  const minRvol = (opts && Number.isFinite(+opts.minRvol)) ? +opts.minRvol : 1.15;
+  const vol = evaluateVolumeConfirmation(arr5m, minRvol);
+  res.volRatio = vol.rvol;
+  if ((res.signal === "BUY" || res.signal === "SELL") && !vol.ok) {
+    res.signal = "WAIT";
+    res.signalStatus = "WAIT";
+    res.confirmationStatus = "Menunggu konfirmasi volume (RVOL " + vol.rvol + "x < " + minRvol + "x)";
+  }
+  return res;
+};
 
 module.exports = { computeSignal, SIG, TA, computeEmaExpertMTF, backtestEmaExpertMTF };
