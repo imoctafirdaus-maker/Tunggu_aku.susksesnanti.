@@ -117,6 +117,7 @@ function buildEmaExpertRecord(sym, emaRes, chg24) {
     stopLoss: emaRes.stopLoss,
     takeProfit: emaRes.takeProfit,
     riskReward: emaRes.riskReward,
+    volRatio: Number.isFinite(emaRes.volRatio) ? emaRes.volRatio : 0,
     signalStatus: emaRes.signalStatus,
     candleTime: emaRes.candleTime,
     winRate: btAll ? btAll.winRate : 0,
