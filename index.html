@@ -73,47 +73,51 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </div>
 <script>
 (function() {
-  const DB_REST = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json";
+  const DB_URLS = [
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json",
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/scannerStatus/futures.json"
+  ];
   async function refreshFuturesWidget() {
-    try {
-      const res = await fetch(DB_REST + "?t=" + Date.now());
-      const d = await res.json();
-      if (!d || typeof d.totalMargin !== "number") {
-        document.getElementById("bf-updated").textContent = "Menunggu siklus scan bot pertama...";
-        return;
-      }
-      document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
-      document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
-      document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
-      const pnlEl = document.getElementById("bf-pnl");
-      const pnlVal = Number(d.unrealizedPnl || 0);
-      pnlEl.textContent = (pnlVal >= 0 ? "+" : "") + "$" + pnlVal.toFixed(2) + " USDT";
-      pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
-
-      if (d.updatedAt) {
-        const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-        document.getElementById("bf-updated").textContent = "Update: " + dt + " WIB";
-      }
-
-      const posEl = document.getElementById("bf-positions");
-      const list = Array.isArray(d.openPositions) ? d.openPositions : [];
-      if (!list.length) {
-        posEl.innerHTML = "<span style="color:#64748b;">Tidak ada posisi Futures yang sedang dibuka.</span>";
-      } else {
-        posEl.innerHTML = list.map(p => {
-          const isLong = p.side === "LONG";
-          const badge = isLong
-            ? "<span style="background:#14532d;color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700;">LONG</span>"
-            : "<span style="background:#7f1d1d;color:#fca5a5;padding:1px 6px;border-radius:4px;font-weight:700;">SHORT</span>";
-          const pColor = p.pnl >= 0 ? "#4ade80" : "#f87171";
-          return "<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;">" +
-            "<div>" + badge + " <strong>" + p.symbol + "</strong> · Qty: <code>" + Math.abs(p.amt) + "</code> @ $" + p.entryPrice + " (" + p.leverage + "x)</div>" +
-            "<div style="font-weight:700;color:" + pColor + ";">" + (p.pnl >= 0 ? "+" : "") + "$" + Number(p.pnl).toFixed(2) + "</div>" +
-          "</div>";
-        }).join("");
-      }
-    } catch (e) {
-      document.getElementById("bf-updated").textContent = "Gagal memuat data dompet";
+    let d = null, lastErr = "";
+    for (const u of DB_URLS) {
+      try {
+        const res = await fetch(u + "?t=" + Date.now());
+        if (!res.ok) { lastErr = "HTTP " + res.status; continue; }
+        const json = await res.json();
+        if (json && typeof json.totalMargin === "number") { d = json; break; }
+      } catch (e) { lastErr = e.message; }
+    }
+    if (!d) {
+      document.getElementById("bf-updated").textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi pertama...";
+      return;
+    }
+    document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
+    document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
+    document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
+    const pnlEl = document.getElementById("bf-pnl");
+    const pnlVal = Number(d.unrealizedPnl || 0);
+    pnlEl.textContent = (pnlVal >= 0 ? "+" : "") + "$" + pnlVal.toFixed(2) + " USDT";
+    pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
+    if (d.updatedAt) {
+      const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      document.getElementById("bf-updated").textContent = "Update: " + dt + " WIB";
+    }
+    const posEl = document.getElementById("bf-positions");
+    const list = Array.isArray(d.openPositions) ? d.openPositions : [];
+    if (!list.length) {
+      posEl.innerHTML = "<span style=\"color:#64748b;\">Tidak ada posisi Futures yang sedang dibuka.</span>";
+    } else {
+      posEl.innerHTML = list.map(p => {
+        const isLong = p.side === "LONG";
+        const badge = isLong
+          ? "<span style=\"background:#14532d;color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700;\">LONG</span>"
+          : "<span style=\"background:#7f1d1d;color:#fca5a5;padding:1px 6px;border-radius:4px;font-weight:700;\">SHORT</span>";
+        const pColor = p.pnl >= 0 ? "#4ade80" : "#f87171";
+        return "<div style=\"display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;\">" +
+          "<div>" + badge + " <strong>" + p.symbol + "</strong> · Qty: <code>" + Math.abs(p.amt) + "</code> @ $" + p.entryPrice + " (" + p.leverage + "x)</div>" +
+          "<div style=\"font-weight:700;color:" + pColor + ";\">" + (p.pnl >= 0 ? "+" : "") + "$" + Number(p.pnl).toFixed(2) + "</div>" +
+        "</div>";
+      }).join("");
     }
   }
   refreshFuturesWidget();

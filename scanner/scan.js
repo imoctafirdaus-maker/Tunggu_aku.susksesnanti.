@@ -246,6 +246,20 @@ async function main() {
     st.written = Object.keys(upOld).length;
 
     // Simpan EMA Expert ke path terpisah emaSignals/ (anti-duplikat)
+    const futuresSnap = await getFuturesSnapshot();
+    if (futuresSnap && futuresSnap.ok) {
+      const fPayload = {
+        totalMargin: futuresSnap.totalMargin,
+        available: futuresSnap.available,
+        unrealizedPnl: futuresSnap.unrealizedPnl,
+        leverage: futuresSnap.leverage || 50,
+        riskPct: futuresSnap.riskPct || 1.0,
+        openPositions: futuresSnap.openPositions || [],
+        updatedAt: admin.database.ServerValue.TIMESTAMP
+      };
+      await db.ref("futuresPortfolio").set(fPayload);
+      await db.ref("scannerStatus/futures").set(fPayload);
+    }
     const snapEma = await db.ref("emaSignals").get();
     const exEma = (snapEma.val() && typeof snapEma.val() === "object") ? snapEma.val() : {};
     const upEma = {};
