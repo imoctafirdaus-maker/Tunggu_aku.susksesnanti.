@@ -11,6 +11,7 @@ const path = require("path");
 const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
 const { getFuturesSnapshot, executeSignalTrade } = require("./autoTrader");
 const { syncControlWithFirebase } = require("./botControl");
+const { notifyNewSignalsToTelegram } = require("./telegramNotifier");
 
 const DB_URL = process.env.FIREBASE_DB_URL ||
   "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -279,6 +280,8 @@ async function main() {
       upEma[id] = { ...rec, updatedAt: admin.database.ServerValue.TIMESTAMP };
     }
     if (Object.keys(upEma).length) await db.ref("emaSignals").update(upEma);
+    const tgSent = await notifyNewSignalsToTelegram(upEma, typeof up !== "undefined" ? up : {});
+    if (tgSent > 0) console.log(`📲 ${tgSent} notifikasi sinyal baru terkirim ke Telegram!`);
     emaSt.written = Object.keys(upEma).length;
 
     st.ok = st.scanned > 0;
