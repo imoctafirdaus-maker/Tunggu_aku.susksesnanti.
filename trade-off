@@ -10,9 +10,7 @@ admin.initializeApp({
 });
 (async () => {
   await syncControlWithFirebase(admin.database(), admin, false);
-  console.log("⏸ Master Auto-Trade dimatikan (PWA & Termux sinkron OFF/STANDBY)!");
+  console.log("⏸ Master Auto-Trade dimatikan (Mode Standby — siap dinyalakan lagi kapan saja dari PWA atau ./trade-on)!");
   process.exit(0);
 })();
 '
-cd ~/octa-analyzer
-./bot.sh stop
