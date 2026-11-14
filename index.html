@@ -1088,40 +1088,6 @@ loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
 
 </script>
 <script type="module" src="firebase-signals.js"></script>
-<script>
-  (function() {
-    const URL = "https://octa-analyzer-default-rtdb.firebaseio.com/emaSignals/_botControl.json";
-    let state = true;
-    function render(on) {
-      state = Boolean(on);
-      const txt = document.getElementById("masterTradeStatusText");
-      const btn = document.getElementById("masterTradeToggleBtn");
-      if (!txt || !btn) return;
-      txt.textContent = state ? "🟢 AKTIF — Scanner + Dual-AI + Eksekusi 50x Berjalan" : "⏸ NONAKTIF (STANDBY) — Tidak Ada Order Baru";
-      txt.style.color = state ? "#22c55e" : "#f59e0b";
-      btn.textContent = state ? "⏸ Matikan Auto-Trade (OFF)" : "▶️ Aktifkan Kembali (ON)";
-      btn.style.background = state ? "#ef4444" : "#10b981";
-    }
-    async function load() {
-      try {
-        const r = await fetch(URL);
-        const d = await r.json();
-        render(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
-      } catch (_) { render(true); }
-    }
-    window.toggleMasterAutoTrade = async function() {
-      const btn = document.getElementById("masterTradeToggleBtn");
-      if (btn) btn.textContent = "⏳ Menyimpan...";
-      await fetch(URL, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoTrade: !state, source: "pwa", updatedAt: Date.now() })
-      });
-      render(!state);
-    };
-    load();
-    setInterval(load, 5000);
-  })();
-  </script>
+
 </body>
 </html>
