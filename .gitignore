@@ -3,3 +3,6 @@ bot.pid
 bot.log
 scanner/telegramConfig.json
 scanner/binanceConfig.json
+
+scanner/aiConfig.json
+scanner/aiQuotaState.json
