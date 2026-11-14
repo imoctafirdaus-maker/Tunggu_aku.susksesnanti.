@@ -245,7 +245,7 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
 
   const marketBrief = [
     `Koin: ${rec.symbol} | Arah Sinyal: ${rec.signal}`,
-    `Entry: $${rec.entryPrice} | Stop Loss: $${rec.stopLoss} (${slPct}%) | Take Profit: $${rec.takeProfit} (${tpPct}%)`,
+    `Entry: ${rec.entryPrice} | Stop Loss: ${rec.stopLoss} (${slPct}%) | Take Profit: ${rec.takeProfit} (${tpPct}%) | Risk-Reward: 1:${(Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(1)}`,
     `Struktur Tren: EMA Expert MTF (1h > 15m > 5m) searah`,
     `Volume Relatif (RVOL): ${rec.rvol || "≥1.15"}x | Backtest Winrate: ${rec.winrate || "-"}%`,
     tmResult && tmResult.winProb ? `Simulasi Monte Carlo (2000 skenario): Probabilitas TP ${tmResult.winProb}%` : ""

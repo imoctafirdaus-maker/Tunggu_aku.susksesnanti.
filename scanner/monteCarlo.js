@@ -43,7 +43,7 @@ function randNormal() {
   return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
 }
 
-async function runTimeMachineCheck(rec, minWinProb = 52.0, paths = 2000, horizonCandles = 24) {
+async function runTimeMachineCheck(rec, minWinProb = 38.0, paths = 2000, horizonCandles = 48) {
   if (!rec || !rec.symbol || !rec.entryPrice || !rec.stopLoss || !rec.takeProfit) {
     return { pass: true, winProb: null, note: "Data harga tidak lengkap, dilewati" };
   }

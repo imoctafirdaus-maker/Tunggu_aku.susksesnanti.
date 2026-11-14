@@ -1,3 +1,11 @@
+function computeDynamicRR(rvol, winrate) {
+  const v = Number(rvol) || 1.15;
+  const w = Number(winrate) || 50;
+  if (v >= 2.40 && w >= 65) return 5.0;
+  if (v >= 1.65 && w >= 60) return 3.0;
+  return 2.0;
+}
+
 "use strict";
 /* ===========================================================================
    engine.js — Mesin Analisis Octa Analyzer
