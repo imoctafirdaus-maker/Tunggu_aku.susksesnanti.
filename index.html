@@ -104,6 +104,22 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       btn.textContent = "▶️ Aktifkan Kembali (ON)";
       btn.style.background = "#10b981";
     }
+
+      // Sinkronkan juga badge status scanner di PWA saat Master Switch OFF
+      document.querySelectorAll("span, div, badge").forEach(el => {
+        if (el.children.length === 0 && /Scanner:\s*(aktif|nonaktif)/i.test(el.textContent)) {
+          if (currentAutoState) {
+            el.textContent = "Scanner: aktif";
+            el.style.background = "#166534";
+            el.style.color = "#86efac";
+          } else {
+            el.textContent = "Scanner: nonaktif (standby)";
+            el.style.background = "#78350f";
+            el.style.color = "#fcd34d";
+          }
+        }
+      });
+
   }
 
   async function syncFromServer() {
