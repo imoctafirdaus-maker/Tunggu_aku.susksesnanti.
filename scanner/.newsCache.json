@@ -1,0 +1,130 @@
+{
+  "fetchedAt": 1794622193275,
+  "events": [
+    {
+      "title": "FOMC Member Bowman Speaks",
+      "impact": "Low",
+      "timestamp": 1794231600000
+    },
+    {
+      "title": "FOMC Member Goolsbee Speaks",
+      "impact": "Low",
+      "timestamp": 1794236400000
+    },
+    {
+      "title": "FOMC Member Barkin Speaks",
+      "impact": "Low",
+      "timestamp": 1794244500000
+    },
+    {
+      "title": "FOMC Member Waller Speaks",
+      "impact": "Medium",
+      "timestamp": 1794301200000
+    },
+    {
+      "title": "Core CPI m/m",
+      "impact": "High",
+      "timestamp": 1794317400000
+    },
+    {
+      "title": "CPI m/m",
+      "impact": "High",
+      "timestamp": 1794317400000
+    },
+    {
+      "title": "FOMC Member Logan Speaks",
+      "impact": "Low",
+      "timestamp": 1794325800000
+    },
+    {
+      "title": "FOMC Member Schmid Speaks",
+      "impact": "Low",
+      "timestamp": 1794335400000
+    },
+    {
+      "title": "FOMC Member Bowman Speaks",
+      "impact": "Low",
+      "timestamp": 1794342600000
+    },
+    {
+      "title": "FOMC Member Bowman Speaks",
+      "impact": "Low",
+      "timestamp": 1794353400000
+    },
+    {
+      "title": "FOMC Member Paulson Speaks",
+      "impact": "Low",
+      "timestamp": 1794353400000
+    },
+    {
+      "title": "FOMC Member Hammack Speaks",
+      "impact": "Low",
+      "timestamp": 1794490200000
+    },
+    {
+      "title": "FOMC Member Barr Speaks",
+      "impact": "Low",
+      "timestamp": 1794495600000
+    },
+    {
+      "title": "FOMC Member Goolsbee Speaks",
+      "impact": "Low",
+      "timestamp": 1794500100000
+    },
+    {
+      "title": "FOMC Member Daly Speaks",
+      "impact": "Low",
+      "timestamp": 1794507000000
+    },
+    {
+      "title": "FOMC Member Schmid Speaks",
+      "impact": "Low",
+      "timestamp": 1794508200000
+    },
+    {
+      "title": "FOMC Member Williams Speaks",
+      "impact": "Low",
+      "timestamp": 1794526200000
+    },
+    {
+      "title": "Core PPI m/m",
+      "impact": "High",
+      "timestamp": 1794576600000
+    },
+    {
+      "title": "PPI m/m",
+      "impact": "High",
+      "timestamp": 1794576600000
+    },
+    {
+      "title": "FOMC Member Collins Speaks",
+      "impact": "Low",
+      "timestamp": 1794579000000
+    },
+    {
+      "title": "FOMC Member Logan Speaks",
+      "impact": "Low",
+      "timestamp": 1794580800000
+    },
+    {
+      "title": "FOMC Member Bowman Speaks",
+      "impact": "Low",
+      "timestamp": 1794585000000
+    },
+    {
+      "title": "FOMC Member Daly Speaks",
+      "impact": "Low",
+      "timestamp": 1794589200000
+    },
+    {
+      "title": "FOMC Financial Stability Report",
+      "impact": "Low",
+      "timestamp": 1794603600000
+    },
+    {
+      "title": "FOMC Member Jefferson Speaks",
+      "impact": "Low",
+      "timestamp": 1794614400000
+    }
+  ]
+}
