@@ -4,6 +4,7 @@ const https = require("https");
 const dns = require("dns");
 const fs = require("fs");
 const path = require("path");
+const { checkNewsSafety } = require("./newsGuard");
 
 const FAPI_HOSTS = [
   "fapi.binance.com",
@@ -183,6 +184,10 @@ async function executeSignalTrade(rec, snap) {
   if (!creds || !creds.autoTrade) return { executed: false, reason: "Auto-Trade nonaktif" };
   if (!snap || !snap.ok) return { executed: false, reason: "Koneksi Futures gagal" };
 
+  const newsCheck = await checkNewsSafety(rec, 30);
+  if (!newsCheck.safe) {
+    return { executed: false, reason: newsCheck.reason };
+  }
   if (snap.openPositions.length >= creds.maxPositions) {
     return { executed: false, reason: `Batas maksimal ${creds.maxPositions} posisi aktif tercapai` };
   }
