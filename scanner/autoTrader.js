@@ -6,6 +6,7 @@ const fs = require("fs");
 const path = require("path");
 const { checkNewsSafety } = require("./newsGuard");
 const { runTimeMachineCheck } = require("./monteCarlo");
+const { evaluateDualAiConsensus } = require("./dualAiGatekeeper");
 
 const FAPI_HOSTS = [
   "fapi.binance.com",
@@ -200,6 +201,11 @@ async function executeSignalTrade(rec, snap) {
   if (!tm.pass) {
     return { executed: false, reason: `TimeMachine Probabilitas rendah (${tm.winProb}% < 52%)` };
   }
+  const aiCheck = await evaluateDualAiConsensus(rec, tm);
+  if (!aiCheck.approved) {
+    return { executed: false, reason: aiCheck.reason };
+  }
+  rec._aiNote = aiCheck.summary;
   const filters = await getSymbolFilters(rec.symbol);
   if (!filters) return { executed: false, reason: `${rec.symbol} tidak tersedia di USDⓈ-M Futures` };
 
@@ -270,7 +276,8 @@ async function executeSignalTrade(rec, snap) {
     leverage: creds.leverage,
     marginUsed: reqMargin,
     slStatus,
-    tpStatus
+    tpStatus,
+    aiNote: aiCheck.summary
   };
 }
 
