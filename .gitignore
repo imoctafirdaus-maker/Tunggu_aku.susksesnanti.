@@ -6,3 +6,12 @@ scanner/binanceConfig.json
 
 scanner/aiConfig.json
 scanner/aiQuotaState.json
+
+scanner/binanceConfig.json
+scanner/telegramConfig.json
+scanner/serviceAccountKey.json
+scanner/*.log
+scanner/bot.pid
+
+analyzer.log
+scanner/.tgSentCache.json
