@@ -52,8 +52,160 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     </div>
     <div id="bf-updated" style="font-size:11px;color:#94a3b8;">Memuat data dompet...</div>
   </div>
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Total Margin Balance</div>
+      <div id="bf-margin" style="font-size:17px;font-weight:700;color:#38bdf8;margin-top:2px;">$--</div>
+    </div>
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Available Balance</div>
+      <div id="bf-avail" style="font-size:17px;font-weight:700;color:#4ade80;margin-top:2px;">$--</div>
+    </div>
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Unrealized PnL</div>
+      <div id="bf-pnl" style="font-size:17px;font-weight:700;color:#e2e8f0;margin-top:2px;">$--</div>
+    </div>
+  </div>
+  <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+    <div style="font-size:12px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">📌 Posisi Terbuka Saat Ini</div>
+    <div id="bf-positions" style="font-size:12px;color:#94a3b8;">Menunggu sinkronisasi...</div>
+  </div>
+</div>
+<!-- MASTER AUTO-TRADE CONTROL BAR -->
+<div id="masterTradeBar" style="margin:12px 0;padding:12px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(148,163,184,0.25);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">Kontrol Master Rangkaian Bot</div>
+    <div id="masterTradeStatusText" style="font-size:13px;font-weight:700;color:#94a3b8;margin-top:3px;">Memuat status bot...</div>
+  </div>
+  <button id="masterTradeToggleBtn" type="button" onclick="toggleMasterAutoTrade()" style="padding:10px 16px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#334155;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+    ⏳ Memuat...
+  </button>
+</div>
+<script>
+(function() {
+  const CTRL_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
+  let currentAutoState = true;
+  let busy = false;
 
+  function renderMasterBtn(isOn) {
+    currentAutoState = Boolean(isOn);
+    const txt = document.getElementById("masterTradeStatusText");
+    const btn = document.getElementById("masterTradeToggleBtn");
+    if (!txt || !btn) return;
+    btn.disabled = false;
+    if (currentAutoState) {
+      txt.textContent = "🟢 AKTIF — Scanner + Dual-AI + Eksekusi 50x Berjalan";
+      txt.style.color = "#22c55e";
+      btn.textContent = "⏸ Matikan Auto-Trade (OFF)";
+      btn.style.background = "#ef4444";
+    } else {
+      txt.textContent = "⏸ NONAKTIF (STANDBY) — Tidak Ada Order Baru";
+      txt.style.color = "#f59e0b";
+      btn.textContent = "▶️ Aktifkan Kembali (ON)";
+      btn.style.background = "#10b981";
+    }
+  }
 
+  async function syncFromServer() {
+    if (busy) return;
+    try {
+      const res = await fetch(CTRL_URL + "?t=" + Date.now());
+      if (res.ok) {
+        const d = await res.json();
+        renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
+      }
+    } catch (_) {}
+  }
+
+  window.toggleMasterAutoTrade = async function() {
+    if (busy) return;
+    busy = true;
+    const btn = document.getElementById("masterTradeToggleBtn");
+    const txt = document.getElementById("masterTradeStatusText");
+    const nextState = !currentAutoState;
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Menyimpan..."; }
+
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoTrade: nextState, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status + " (Rules Firebase terkunci)");
+      renderMasterBtn(nextState);
+    } catch (err) {
+      if (txt) { txt.textContent = "⚠️ " + err.message; txt.style.color = "#f87171"; }
+      if (btn) { btn.disabled = false; btn.textContent = currentAutoState ? "⏸ Matikan Auto-Trade (OFF)" : "▶️ Aktifkan Kembali (ON)"; }
+    } finally {
+      busy = false;
+    }
+  };
+
+  syncFromServer();
+  setInterval(syncFromServer, 6000);
+})();
+</script>
+
+<script>
+(function() {
+  const DB_URLS = [
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_futuresPortfolio.json",
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json"
+  ];
+  function renderFuturesData(d) {
+    if (!d || typeof d.totalMargin !== "number") return false;
+    document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
+    document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
+    document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
+    const pnlEl = document.getElementById("bf-pnl");
+    const pnlVal = Number(d.unrealizedPnl || 0);
+    pnlEl.textContent = (pnlVal >= 0 ? "+" : "") + "$" + pnlVal.toFixed(2) + " USDT";
+    pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
+    if (d.updatedAt) {
+      const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      document.getElementById("bf-updated").textContent = "Update: " + dt + " WIB";
+    }
+    const posEl = document.getElementById("bf-positions");
+    const list = Array.isArray(d.openPositions) ? d.openPositions : [];
+    if (!list.length) {
+      posEl.innerHTML = "<span style=\"color:#64748b;\">Tidak ada posisi Futures yang sedang dibuka.</span>";
+    } else {
+      posEl.innerHTML = list.map(p => {
+        const isLong = p.side === "LONG";
+        const badge = isLong
+          ? "<span style=\"background:#14532d;color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700;\">LONG</span>"
+          : "<span style=\"background:#7f1d1d;color:#fca5a5;padding:1px 6px;border-radius:4px;font-weight:700;\">SHORT</span>";
+        const pColor = p.pnl >= 0 ? "#4ade80" : "#f87171";
+        return "<div style=\"display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;\">" +
+          "<div>" + badge + " <strong>" + p.symbol + "</strong> · Qty: <code>" + Math.abs(p.amt) + "</code> @ $" + p.entryPrice + " (" + p.leverage + "x)</div>" +
+          "<div style=\"font-weight:700;color:" + pColor + ";\">" + (p.pnl >= 0 ? "+" : "") + "$" + Number(p.pnl).toFixed(2) + "</div>" +
+        "</div>";
+      }).join("");
+    }
+    return true;
+  }
+  async function refreshFuturesWidget() {
+    try {
+      if (window.firebase && firebase.apps && firebase.apps.length && firebase.database) {
+        const snap = await firebase.database().ref("emaSignals/_futuresPortfolio").get();
+        if (snap.exists() && renderFuturesData(snap.val())) return;
+      }
+    } catch (_) {}
+    let lastErr = "";
+    for (const u of DB_URLS) {
+      try {
+        const res = await fetch(u + "?t=" + Date.now());
+        if (!res.ok) { lastErr = "HTTP " + res.status; continue; }
+        const json = await res.json();
+        if (renderFuturesData(json)) return;
+      } catch (e) { lastErr = e.message; }
+    }
+    document.getElementById("bf-updated").textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi...";
+  }
+  refreshFuturesWidget();
+  setInterval(refreshFuturesWidget, 15000);
+})();
+</script>
 
 <main class="max-w-7xl mx-auto px-4 py-6">
 <header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -998,6 +1150,5 @@ loadTop100().then(()=>{if(!state.candles.length)fetchHistory()});
 
 </script>
 <script type="module" src="firebase-signals.js"></script>
-
 </body>
 </html>
