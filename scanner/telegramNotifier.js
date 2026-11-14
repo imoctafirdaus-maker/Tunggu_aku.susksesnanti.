@@ -96,7 +96,7 @@ async function notifyNewSignalsToTelegram(upEma, upOld = {}) {
 
   // 2. Sinyal Kuat Algoritma Lama (Skor >= 78/100) sebagai radar peluang tambahan
   for (const [id, rec] of Object.entries(upOld || {})) {
-    if (!rec || !rec.symbol || !rec.signal || Number(rec.score || 0) < 78) continue;
+    if (!rec || !rec.symbol || !rec.signal || Number(rec.score || 0) < 75) continue;
     const dedupKey = `OLD_${rec.symbol}_${rec.timeframe || "5m"}_${rec.signal}_${rec.candleTime || ""}`;
     if (cache[dedupKey]) continue;
     cache[dedupKey] = Date.now();
@@ -125,7 +125,7 @@ if (require.main === module && process.argv.includes("--test")) {
     const res = await sendTelegramAlert(
       "🤖 *TERMUX BOT TERHUBUNG KE TELEGRAM*\n\n" +
       "✅ Pengiriman otomatis 24/7 aktif langsung dari Termux (tanpa perlu membuka browser PWA).\n" +
-      "📡 Anda akan menerima notifikasi setiap ada sinyal *EMA Expert* atau *Radar Skor ≥ 78* baru."
+      "📡 Anda akan menerima notifikasi setiap ada sinyal *EMA Expert* atau *Radar Probabilitas/Skor ≥ 75%* baru."
     );
     console.log("Hasil Tes Telegram Termux:", res);
     process.exit(res.ok ? 0 : 1);

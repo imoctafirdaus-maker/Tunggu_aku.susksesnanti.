@@ -15,7 +15,7 @@ function loadAiConfig() {
         groqModel: raw.groqModel || "llama-3.3-70b-versatile",
         geminiModel: raw.geminiModel || "gemini-3.8-flash",
         minGroqScore: Number(raw.minGroqScore) || 65,
-        minGeminiConfidence: Number(raw.minGeminiConfidence) || 70,
+        minGeminiConfidence: Number(raw.minGeminiConfidence) || 75,
         groqKeys: [...new Set((raw.groqKeys || []).map(k => String(k).trim()).filter(Boolean))],
         geminiKeys: [...new Set((raw.geminiKeys || []).map(k => String(k).trim()).filter(Boolean))]
       };

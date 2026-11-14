@@ -182,6 +182,14 @@ async function getSymbolFilters(symbol) {
 }
 
 async function executeSignalTrade(rec, snap) {
+
+  // Gerbang Probabilitas Minimal 75% (Selaras dengan ambang notifikasi Telegram)
+  const MIN_EXEC_PROB = 75;
+  const sigProb = Number(rec.probability ?? rec.winrate ?? rec.score ?? 0);
+  if (sigProb < MIN_EXEC_PROB) {
+    return { executed: false, skipped: true, reason: `Probabilitas/Skor ${sigProb}% < ${MIN_EXEC_PROB}% (Mode Pantau)` };
+  }
+
   const creds = loadBinanceConfig();
   if (!creds || !creds.autoTrade) return { executed: false, reason: "Auto-Trade nonaktif" };
   if (!snap || !snap.ok) return { executed: false, reason: "Koneksi Futures gagal" };
