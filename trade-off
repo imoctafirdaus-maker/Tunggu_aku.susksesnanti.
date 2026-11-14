@@ -1,14 +1,18 @@
 #!/data/data/com.termux/files/usr/bin/bash
-cd ~/octa-analyzer
+cd ~/octa-analyzer/scanner
 node -e '
 const admin = require("firebase-admin");
-const sa = require("./scanner/serviceAccountKey.json");
-const { syncControlWithFirebase } = require("./scanner/botControl");
-admin.initializeApp({ credential: admin.credential.cert(sa), databaseURL: "https://" + sa.project_id + "-default-rtdb.firebaseio.com" });
+const sa = require("./serviceAccountKey.json");
+const { syncControlWithFirebase } = require("./botControl");
+admin.initializeApp({
+  credential: admin.credential.cert(sa),
+  databaseURL: "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app"
+});
 (async () => {
   await syncControlWithFirebase(admin.database(), admin, false);
   console.log("⏸ Master Auto-Trade dimatikan (PWA & Termux sinkron OFF/STANDBY)!");
   process.exit(0);
 })();
 '
+cd ~/octa-analyzer
 ./bot.sh stop
