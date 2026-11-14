@@ -5,6 +5,7 @@ const dns = require("dns");
 const fs = require("fs");
 const path = require("path");
 const { checkNewsSafety } = require("./newsGuard");
+const { runTimeMachineCheck } = require("./monteCarlo");
 
 const FAPI_HOSTS = [
   "fapi.binance.com",
@@ -195,6 +196,10 @@ async function executeSignalTrade(rec, snap) {
     return { executed: false, reason: `Sudah ada posisi aktif pada ${rec.symbol}` };
   }
 
+  const tm = await runTimeMachineCheck(rec, 52.0);
+  if (!tm.pass) {
+    return { executed: false, reason: `TimeMachine Probabilitas rendah (${tm.winProb}% < 52%)` };
+  }
   const filters = await getSymbolFilters(rec.symbol);
   if (!filters) return { executed: false, reason: `${rec.symbol} tidak tersedia di USDⓈ-M Futures` };
 
