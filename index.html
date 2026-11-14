@@ -161,6 +161,72 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   setInterval(syncFromServer, 6000);
 })();
 </script>
+<!-- AI QUOTA MONITOR WIDGET -->
+<div id="aiQuotaPanel" style="margin:12px 0;padding:14px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(148,163,184,0.22);">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">🧠 Monitor Kuota & Rate Limit Dual-AI</div>
+    <div id="aiQuotaUpdated" style="font-size:11px;color:#64748b;">Sinkronisasi...</div>
+  </div>
+  <div id="aiQuotaGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+    <div style="font-size:12px;color:#94a3b8;">Memuat status kuota API Key...</div>
+  </div>
+</div>
+<script>
+(function() {
+  const QUOTA_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiQuota.json";
+
+  function barColor(pct) {
+    if (pct >= 60) return "#22c55e";
+    if (pct >= 25) return "#f59e0b";
+    return "#ef4444";
+  }
+
+  function renderQuotaCard(item) {
+    const pct = Math.max(0, Math.min(100, Number(item.pct ?? 100)));
+    const col = barColor(pct);
+    const isStandby = /Standby/i.test(item.status || "");
+    const badgeBg = pct === 0 ? "rgba(239,68,68,0.18)" : (isStandby ? "rgba(56,189,248,0.15)" : "rgba(34,197,94,0.16)");
+    const badgeCol = pct === 0 ? "#fca5a5" : (isStandby ? "#7dd3fc" : "#86efac");
+
+    return `
+      <div style="background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:700;color:#e2e8f0;">${item.name}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:${badgeBg};color:${badgeCol};">${pct}%</span>
+        </div>
+        <div style="width:100%;height:7px;background:#1e293b;border-radius:999px;overflow:hidden;margin-bottom:6px;">
+          <div style="width:${pct}%;height:100%;background:${col};border-radius:999px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
+          <span>${item.status || "Standby (100%)"}</span>
+          <span style="font-family:monospace;color:#64748b;">${item.mask || ""}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  async function refreshAiQuota() {
+    try {
+      const res = await fetch(QUOTA_URL + "?t=" + Date.now());
+      if (!res.ok) return;
+      const d = await res.json();
+      if (!d || (!Array.isArray(d.groq) && !Array.isArray(d.gemini))) return;
+      const all = [...(d.groq || []), ...(d.gemini || [])];
+      const grid = document.getElementById("aiQuotaGrid");
+      const upd = document.getElementById("aiQuotaUpdated");
+      if (grid) grid.innerHTML = all.map(renderQuotaCard).join("");
+      if (upd && d.updatedAt) {
+        const dt = new Date(d.updatedAt);
+        upd.textContent = "Update: " + dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      }
+    } catch (_) {}
+  }
+
+  refreshAiQuota();
+  setInterval(refreshAiQuota, 8000);
+})();
+</script>
+
 
 <script>
 (function() {
