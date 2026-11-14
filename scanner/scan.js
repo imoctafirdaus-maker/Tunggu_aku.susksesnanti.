@@ -10,6 +10,7 @@ const fs = require("fs");
 const path = require("path");
 const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
 const { getFuturesSnapshot, executeSignalTrade } = require("./autoTrader");
+const { syncControlWithFirebase } = require("./botControl");
 
 const DB_URL = process.env.FIREBASE_DB_URL ||
   "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -247,6 +248,7 @@ async function main() {
     st.written = Object.keys(upOld).length;
 
     // Simpan EMA Expert ke path terpisah emaSignals/ (anti-duplikat)
+    const isAutoTradeEnabled = await syncControlWithFirebase(db, admin, null);
     const futuresSnap = await getFuturesSnapshot();
     if (futuresSnap && futuresSnap.ok) {
       const fPayload = {

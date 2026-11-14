@@ -52,6 +52,58 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     </div>
     <div id="bf-updated" style="font-size:11px;color:#94a3b8;">Memuat data dompet...</div>
   </div>
+
+<!-- MASTER AUTO-TRADE CONTROL BAR -->
+<div id="masterTradeBar" style="margin:12px 0;padding:12px 16px;border-radius:12px;background:rgba(15,23,42,0.85);border:1px solid rgba(148,163,184,0.22);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">Kontrol Master Rangkaian Bot</div>
+    <div id="masterTradeStatusText" style="font-size:14px;font-weight:700;color:#22c55e;margin-top:2px;">Memuat status bot...</div>
+  </div>
+  <button id="masterTradeToggleBtn" onclick="toggleMasterAutoTrade()" style="padding:10px 18px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#ef4444;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);transition:all 0.2s;">
+    ⏸ Matikan Auto-Trade (OFF)
+  </button>
+</div>
+<script>
+(function initMasterBotControl() {
+  let currentAutoState = true;
+  function renderMasterBtn(isOn) {
+    currentAutoState = Boolean(isOn);
+    const txt = document.getElementById("masterTradeStatusText");
+    const btn = document.getElementById("masterTradeToggleBtn");
+    if (!txt || !btn) return;
+    if (currentAutoState) {
+      txt.textContent = "🟢 AKTIF — Scanner + Dual-AI + Eksekusi 50x Berjalan";
+      txt.style.color = "#22c55e";
+      btn.textContent = "⏸ Matikan Auto-Trade (OFF)";
+      btn.style.background = "#ef4444";
+    } else {
+      txt.textContent = "⏸ NONAKTIF (STANDBY) — Tidak Ada Order Baru";
+      txt.style.color = "#f59e0b";
+      btn.textContent = "▶️ Aktifkan Kembali (ON)";
+      btn.style.background = "#10b981";
+    }
+  }
+  window.toggleMasterAutoTrade = function() {
+    if (typeof firebase === "undefined" || !firebase.database) return;
+    const nextState = !currentAutoState;
+    firebase.database().ref("emaSignals/_botControl").set({
+      autoTrade: nextState,
+      source: "pwa",
+      updatedAt: Date.now()
+    });
+  };
+  const waitFb = setInterval(() => {
+    if (typeof firebase !== "undefined" && firebase.database) {
+      clearInterval(waitFb);
+      firebase.database().ref("emaSignals/_botControl").on("value", (snap) => {
+        const d = snap.val();
+        renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
+      });
+    }
+  }, 500);
+})();
+</script>
+
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
     <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
       <div style="font-size:11px;color:#94a3b8;">Total Margin Balance</div>

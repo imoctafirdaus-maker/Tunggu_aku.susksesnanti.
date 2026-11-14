@@ -1,0 +1,14 @@
+#!/data/data/com.termux/files/usr/bin/bash
+cd ~/octa-analyzer
+node -e '
+const admin = require("firebase-admin");
+const sa = require("./scanner/serviceAccountKey.json");
+const { syncControlWithFirebase } = require("./scanner/botControl");
+admin.initializeApp({ credential: admin.credential.cert(sa), databaseURL: "https://" + sa.project_id + "-default-rtdb.firebaseio.com" });
+(async () => {
+  await syncControlWithFirebase(admin.database(), admin, false);
+  console.log("⏸ Master Auto-Trade dimatikan (PWA & Termux sinkron OFF/STANDBY)!");
+  process.exit(0);
+})();
+'
+./bot.sh stop
