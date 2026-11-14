@@ -249,6 +249,12 @@ async function main() {
 
     // Simpan EMA Expert ke path terpisah emaSignals/ (anti-duplikat)
     const isAutoTradeEnabled = await syncControlWithFirebase(db, admin, null);
+    if (!isAutoTradeEnabled) {
+      console.log("⏸ [STANDBY] Master Bot OFF dari PWA/Termux — pemindaian koin, AI, & eksekusi dihentikan total.");
+      await db.ref("scannerStatus").update({ state: "standby", updatedAt: admin.database.ServerValue.TIMESTAMP }).catch(() => {});
+      await db.ref("emaScannerStatus").update({ state: "standby", updatedAt: admin.database.ServerValue.TIMESTAMP }).catch(() => {});
+      process.exit(0);
+    }
     const futuresSnap = await getFuturesSnapshot();
     if (futuresSnap && futuresSnap.ok) {
       const fPayload = {
