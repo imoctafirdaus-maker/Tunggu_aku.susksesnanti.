@@ -1013,22 +1013,32 @@ const EMA_EXP = {
 };
 </script>
 
-  <!-- ISOLATED ZTE WIFI TRIGGER & MODAL -->
-  <div id="wifi-overlay-toggle" style="position:fixed; bottom:20px; right:20px; z-index:999999;">
-    <button onclick="const m=document.getElementById('wifi-modal-frame'); m.style.display = m.style.display === 'block' ? 'none' : 'block';" style="background:#161b22; color:#10b981; border:1px solid #30363d; padding:10px 16px; border-radius:30px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 6px 16px rgba(0,0,0,0.6); display:flex; align-items:center; gap:8px;">
-      <span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block;"></span> 📶 Setup Wi-Fi ZTE
+  <!-- VOLTAGENT ISOLATED TRIGGER & OVERLAY -->
+  <div id="voltagent-launcher" style="position:fixed; bottom:20px; right:20px; z-index:999999;">
+    <button onclick="toggleWifiModal()" style="background:#161b22; color:#10b981; border:1px solid #30363d; padding:10px 16px; border-radius:30px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,0.7); display:flex; align-items:center; gap:8px;">
+      <span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block;"></span> 📶 VoltAgent Wi-Fi
     </button>
   </div>
 
-  <div id="wifi-modal-frame" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0d1117; z-index:999998; box-sizing:border-box;">
+  <div id="voltagent-wifi-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0d1117; z-index:999998; box-sizing:border-box;">
     <div style="background:#161b22; border-bottom:1px solid #30363d; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#f0f6fc;">
-        <span style="color:#58a6ff;">VoltAgent</span> / <span style="color:#10b981;">ZTE-F672Y-Gateway</span>
+      <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#f0f6fc; display:flex; align-items:center; gap:8px;">
+        <span style="color:#58a6ff;">VoltAgent</span>
+        <span style="color:#6e7681;">/</span>
+        <span style="color:#10b981;">smart-wifi-connection</span>
+        <span style="font-size:10px; background:#21262d; border:1px solid #30363d; color:#06b6d4; padding:2px 6px; border-radius:10px;">ZTE F672Y</span>
       </div>
-      <button onclick="document.getElementById('wifi-modal-frame').style.display='none'" style="background:#21262d; color:#f85149; border:1px solid #30363d; padding:6px 14px; border-radius:6px; font-family:sans-serif; font-size:12px; font-weight:bold; cursor:pointer;">✕ Tutup Panel</button>
+      <button onclick="toggleWifiModal()" style="background:#21262d; color:#f85149; border:1px solid #30363d; padding:6px 14px; border-radius:6px; font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer;">✕ Tutup</button>
     </div>
-    <iframe src="./swc/public.html" style="width:100%; height:calc(100vh - 50px); border:none; background:#0d1117;"></iframe>
+    <iframe src="./swc/public.html" style="width:100%; height:calc(100vh - 48px); border:none; background:#0d1117;"></iframe>
   </div>
+
+  <script>
+    function toggleWifiModal() {
+      const modal = document.getElementById("voltagent-wifi-modal");
+      modal.style.display = modal.style.display === "block" ? "none" : "block";
+    }
+  </script>
   
 </body>
 </html>

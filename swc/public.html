@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ZTE F672Y Gateway NOC Panel</title>
+  <title>VoltAgent · Smart Wi-Fi Connection</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
@@ -14,7 +14,9 @@
       --border-default: #30363d;
       --accent-emerald: #10b981;
       --accent-cyan: #06b6d4;
+      --accent-blue: #58a6ff;
       --status-rose: #f85149;
+      --status-amber: #d29922;
       --text-primary: #f0f6fc;
       --text-secondary: #8b949e;
       --text-muted: #6e7681;
@@ -23,6 +25,7 @@
     }
 
     * { box-sizing: border-box; margin: 0; padding: 0; }
+    
     body {
       background-color: var(--bg-canvas);
       color: var(--text-primary);
@@ -31,142 +34,198 @@
       -webkit-font-smoothing: antialiased;
     }
 
-    .container { max-width: 900px; margin: 0 auto; }
-    
+    .container { max-width: 960px; margin: 0 auto; }
+
+    /* Header Bar */
+    .vault-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+      border-bottom: 1px solid var(--border-default);
+    }
+    .vault-title {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .badge-live {
+      font-size: 10px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      color: var(--accent-emerald);
+      padding: 2px 7px;
+      border-radius: 10px;
+    }
+
+    /* Stat Cards Grid */
+    .grid-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stat-card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-default);
+      border-radius: 6px;
+      padding: 12px 14px;
+    }
+    .stat-label {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
+      text-transform: uppercase;
+    }
+    .stat-value {
+      font-size: 22px;
+      font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--accent-cyan);
+      margin-top: 4px;
+    }
+
+    /* Device List Panel */
     .panel-card {
       background: var(--bg-surface);
       border: 1px solid var(--border-default);
       border-radius: 6px;
       padding: 16px;
-      margin-bottom: 16px;
     }
-
-    .panel-header {
+    .panel-top {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: 12px;
-      border-bottom: 1px solid var(--border-default);
-      padding-bottom: 8px;
     }
-
-    .panel-title {
-      font-size: 13px;
+    .panel-label {
+      font-size: 12px;
       font-weight: 700;
+      font-family: var(--font-mono);
+      color: var(--text-secondary);
       text-transform: uppercase;
       letter-spacing: 0.5px;
-      color: var(--text-secondary);
-      font-family: var(--font-mono);
-      display: flex;
-      align-items: center;
-      gap: 6px;
     }
-
-    .grid-stats {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-      gap: 12px;
-      margin-bottom: 16px;
-    }
-
-    .stat-box {
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-default);
-      border-radius: 6px;
-      padding: 12px;
-    }
-    .stat-label { font-size: 11px; color: var(--text-secondary); font-family: var(--font-mono); }
-    .stat-val { font-size: 20px; font-weight: 700; font-family: var(--font-mono); color: var(--accent-cyan); margin-top: 4px; }
 
     .device-list { display: flex; flex-direction: column; gap: 8px; }
-    
-    .device-item {
+
+    .device-row {
       background: var(--bg-subtle);
       border: 1px solid var(--border-default);
       border-radius: 6px;
-      padding: 12px;
+      padding: 12px 14px;
       display: flex;
       justify-content: space-between;
       align-items: center;
+      transition: border-color 0.15s ease;
+    }
+    .device-row:hover { border-color: var(--accent-cyan); }
+    .device-row.blocked { border-left: 3px solid var(--status-rose); }
+
+    .device-details { display: flex; flex-direction: column; gap: 3px; }
+    .device-hostname {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .device-net {
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
     }
 
-    .device-info { display: flex; flex-direction: column; gap: 2px; }
-    .device-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-    .device-meta { font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); }
-
-    .btn-action {
-      padding: 6px 12px;
+    /* VoltAgent Action Buttons */
+    .btn-va {
+      padding: 6px 14px;
       font-size: 11px;
-      font-family: var(--font-sans);
-      font-weight: 600;
+      font-family: var(--font-mono);
+      font-weight: 700;
       border-radius: 6px;
       cursor: pointer;
       border: 1px solid transparent;
-      transition: all 0.2s;
+      transition: all 0.2s ease;
     }
+    .btn-rescan {
+      background: var(--bg-subtle);
+      color: var(--text-primary);
+      border-color: var(--border-default);
+    }
+    .btn-rescan:hover { background: var(--border-default); }
 
-    .btn-deny {
-      background: rgba(248, 81, 73, 0.15);
+    .btn-block {
+      background: rgba(248, 81, 73, 0.12);
       border-color: rgba(248, 81, 73, 0.3);
       color: var(--status-rose);
     }
+    .btn-block:hover { background: rgba(248, 81, 73, 0.25); }
 
     .btn-allow {
-      background: rgba(16, 185, 129, 0.15);
+      background: rgba(16, 185, 129, 0.12);
       border-color: rgba(16, 185, 129, 0.3);
       color: var(--accent-emerald);
     }
+    .btn-allow:hover { background: rgba(16, 185, 129, 0.25); }
 
-    .badge-blocked {
+    .badge-deny {
       font-size: 9px;
       font-family: var(--font-mono);
-      background: rgba(248, 81, 73, 0.2);
+      background: rgba(248, 81, 73, 0.15);
       color: var(--status-rose);
-      border: 1px solid var(--status-rose);
-      padding: 1px 5px;
+      border: 1px solid rgba(248, 81, 73, 0.4);
+      padding: 1px 6px;
       border-radius: 4px;
-      margin-left: 6px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <div class="panel-card">
-      <div class="panel-header">
-        <div class="panel-title">
-          <svg width="14" height="14" viewBox="0 0 16 16" fill="var(--accent-cyan)"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0z"/></svg>
-          ZTE F672Y Gateway NOC Panel
-        </div>
-        <button onclick="loadDevices()" class="btn-action" style="background:var(--bg-subtle); color:var(--text-secondary); border:1px solid var(--border-default);">
-          🔄 Rescan ARP
-        </button>
+    
+    <div class="vault-header">
+      <div class="vault-title">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="var(--accent-emerald)"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0z"/></svg>
+        VoltAgent Smart Wi-Fi Gateway
+        <span class="badge-live">ZTE F672Y ACL</span>
       </div>
+      <button onclick="fetchDevices()" class="btn-va btn-rescan">🔄 Rescan Subnet</button>
+    </div>
 
-      <div class="grid-stats">
-        <div class="stat-box">
-          <div class="stat-label">ACTIVE CLIENTS</div>
-          <div class="stat-val" id="statActive">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">ACL FILTERED</div>
-          <div class="stat-val" id="statBlocked" style="color:var(--status-rose)">0</div>
-        </div>
-        <div class="stat-box">
-          <div class="stat-label">ROUTER STATUS</div>
-          <div class="stat-val" style="color:var(--accent-emerald); font-size:14px; margin-top:8px;">ONLINE (F672Y)</div>
-        </div>
+    <div class="grid-stats">
+      <div class="stat-card">
+        <div class="stat-label">CONNECTED CLIENTS</div>
+        <div class="stat-value" id="valTotal">0</div>
       </div>
-
-      <div class="panel-title" style="margin-bottom:8px;">SUBNET NODES</div>
-      <div id="deviceList" class="device-list">
-        <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">Memuat daftar perangkat terhubung...</div>
+      <div class="stat-card">
+        <div class="stat-label">ACL BLOCKED</div>
+        <div class="stat-value" id="valBlocked" style="color:var(--status-rose)">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">GATEWAY STATUS</div>
+        <div class="stat-value" style="color:var(--accent-emerald); font-size:14px; margin-top:8px;">ONLINE (192.168.1.1)</div>
       </div>
     </div>
+
+    <div class="panel-card">
+      <div class="panel-top">
+        <div class="panel-label">ACTIVE NETWORK NODES</div>
+      </div>
+      <div id="deviceContainer" class="device-list">
+        <div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">Memuat daftar klien Wi-Fi...</div>
+      </div>
+    </div>
+
   </div>
 
   <script>
-    async function loadDevices() {
-      const container = document.getElementById("deviceList");
+    async function fetchDevices() {
+      const container = document.getElementById("deviceContainer");
       try {
         const res = await fetch("/api/swc/devices");
         const data = await res.json();
@@ -175,38 +234,38 @@
         container.innerHTML = "";
 
         if (!data.devices || data.devices.length === 0) {
-          container.innerHTML = `<div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">Tidak ada perangkat terdeteksi.</div>`;
+          container.innerHTML = `<div style="font-size:12px; color:var(--text-muted); font-family:var(--font-mono);">Tidak ada perangkat terdeteksi di subnet.</div>`;
           return;
         }
 
-        document.getElementById("statActive").innerText = data.devices.length;
+        document.getElementById("valTotal").innerText = data.devices.length;
 
         data.devices.forEach(dev => {
           const isBlocked = dev.block_mode === "blocked";
           if (isBlocked) blockedCount++;
 
-          const item = document.createElement("div");
-          item.className = "device-item";
-          item.innerHTML = `
-            <div class="device-info">
-              <div class="device-name">
+          const row = document.createElement("div");
+          row.className = `device-row ${isBlocked ? 'blocked' : ''}`;
+          row.innerHTML = `
+            <div class="device-details">
+              <div class="device-hostname">
                 ${dev.hostname || "Perangkat Tanpa Nama"}
-                ${isBlocked ? '<span class="badge-blocked">ACL DENY</span>' : ''}
+                ${isBlocked ? '<span class="badge-deny">ACL BLOCKED</span>' : ''}
               </div>
-              <div class="device-meta">${dev.ip} • ${dev.mac} • ${dev.conn_type || 'WLAN'}</div>
+              <div class="device-net">${dev.ip} • ${dev.mac} • ${dev.conn_type || 'WLAN'}</div>
             </div>
             <div>
-              <button onclick="toggleBlock('${dev.mac}', ${isBlocked})" class="btn-action ${isBlocked ? 'btn-allow' : 'btn-deny'}">
-                ${isBlocked ? 'Restore Access' : 'Deny Access'}
+              <button onclick="toggleBlock('${dev.mac}', ${isBlocked})" class="btn-va ${isBlocked ? 'btn-allow' : 'btn-block'}">
+                ${isBlocked ? 'Buka Blokir' : 'Blokir Akses'}
               </button>
             </div>
           `;
-          container.appendChild(item);
+          container.appendChild(row);
         });
 
-        document.getElementById("statBlocked").innerText = blockedCount;
+        document.getElementById("valBlocked").innerText = blockedCount;
       } catch (err) {
-        container.innerHTML = `<div style="font-size:12px; color:var(--status-rose); font-family:var(--font-mono);">Gagal terhubung ke backend server lokal.</div>`;
+        container.innerHTML = `<div style="font-size:12px; color:var(--status-rose); font-family:var(--font-mono);">Gagal terhubung ke daemon backend lokal: ${err.message}</div>`;
       }
     }
 
@@ -216,16 +275,16 @@
         const res = await fetch(`/api/swc/devices/${encodeURIComponent(mac)}/${action}`, { method: "POST" });
         const data = await res.json();
         if (data.ok) {
-          loadDevices();
+          fetchDevices();
         } else {
-          alert("Gagal memperbarui ACL Router: " + (data.error || "Unknown Error"));
+          alert("Gagal memperbarui ACL Router ZTE: " + (data.error || "Unknown error"));
         }
       } catch (err) {
         alert("Error koneksi backend: " + err.message);
       }
     }
 
-    loadDevices();
+    fetchDevices();
   </script>
 </body>
 </html>
