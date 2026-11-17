@@ -94,9 +94,15 @@ function broadcast() {
   }
 }
 
-async function applyRouterBlocks() {
-  const blocked = db.prepare("SELECT mac FROM devices WHERE block_mode = 'blocked'").all().map(r => r.mac);
-  await router.syncBlockedMacs(blocked);
+let blockSyncQueue = Promise.resolve();
+function applyRouterBlocks() {
+  const task = async () => {
+    const blocked = db.prepare("SELECT mac FROM devices WHERE block_mode = 'blocked'").all().map(r => r.mac);
+    await router.syncBlockedMacs(blocked);
+  };
+  const next = blockSyncQueue.then(task, task);
+  blockSyncQueue = next.catch(() => {});
+  return next;
 }
 
 async function pollDevices() {
@@ -225,11 +231,17 @@ const server = http.createServer(async (req, res) => {
       if (!mac) return sendJson(400, { error: "MAC wajib diisi" });
       const normMac = mac.toLowerCase();
       const mode = block ? "blocked" : "none";
-      db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(mode, normMac);
       const dev = db.prepare("SELECT * FROM devices WHERE mac = ?").get(normMac);
+      const prevMode = dev ? dev.block_mode : "none";
       const label = dev ? (dev.alias || dev.hostname) : normMac;
+      db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(mode, normMac);
 
-      await applyRouterBlocks();
+      try {
+        await applyRouterBlocks();
+      } catch (syncErr) {
+        db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(prevMode, normMac);
+        throw syncErr;
+      }
       logEvent(normMac, block ? "BLOCK" : "UNBLOCK", `${block ? "Memblokir" : "Membuka blokir"} ${label}`);
       sendTelegram(
         `${block ? "🚫" : "✅"} <b>SWC Wi-Fi — ${block ? "Perangkat Diblokir" : "Blokir Dibuka"}</b>\n` +
