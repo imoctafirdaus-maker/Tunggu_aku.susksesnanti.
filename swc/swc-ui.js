@@ -2,236 +2,257 @@
 (function () {
   const CANDIDATE_BASES = [
     window.location.protocol === "http:" ? "" : "https://127.0.0.1:8766",
-    "http://127.0.0.1:8765",
-    "http://127.0.0.1:8765",
-    "http://localhost:8765"
+    "http://127.0.0.1:8765"
   ];
-  let API_BASE = window.location.protocol === "http:" ? "" : "http://127.0.0.1:8765";
+  let API_BASE = window.location.protocol === "http:" ? "" : "https://127.0.0.1:8766";
   let currentTab = localStorage.getItem("swc_active_tab") || "crypto";
   let filterMode = "all";
   let searchQuery = "";
   let isMutating = false;
   let swcData = {
-    state: { routerOnline: false, lastScanAt: null, lastError: "MENGHUBUNGKAN KE NODE LOKAL..." },
+    state: { routerOnline: false, lastScanAt: null, lastError: "MENGHUBUNGKAN KE GATEWAY..." },
     devices: [],
     logs: [],
     schedules: []
   };
 
-  // Ikon vektor SVG teknis murni (stroke 1.75px, presisi grid 24x24, nol emoji)
   const SVG = {
-    telemetry: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M2 12h4l3-7 4 14 3-7h6"/></svg>',
-    gateway: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><rect x="2" y="13" width="20" height="7" rx="1"/><path d="M6 13V9M18 13V9M14 6.5a5.5 5.5 0 0 1 7 0M16 8.8a2.5 2.5 0 0 1 3 0"/><rect x="5" y="16" width="2" height="1.5" fill="currentColor" stroke="none"/><rect x="9" y="16" width="2" height="1.5" fill="currentColor" stroke="none"/></svg>',
-    sync: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="square"><path d="M21 12a9 9 0 0 0-15.36-6.36L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15.36 6.36L21 16"/><path d="M16 16h5v5"/></svg>',
-    search: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.35-4.35"/></svg>',
-    ban: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="square"><circle cx="12" cy="12" r="9"/><path d="M5.7 5.7 18.3 18.3"/></svg>',
-    allow: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="square"><path d="M12 21s7-3.5 7-9V5l-7-2.5L5 5v7c0 5.5 7 9 7 9z"/><path d="m9 12 2 2 4-4"/></svg>',
-    edit: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M4 20h16"/><path d="M14.5 4.5 19.5 9.5 9 20H4v-5L14.5 4.5z"/></svg>',
-    verify: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="m8 12 2.5 2.5L16 9"/></svg>',
-    flag: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M12 8v5"/><path d="M12 16.5h.01"/><path d="M10.3 3.8 2.4 18a1.8 1.8 0 0 0 1.6 2.7h16a1.8 1.8 0 0 0 1.6-2.7L13.7 3.8a1.9 1.9 0 0 0-3.4 0z"/></svg>',
-    clock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>',
-    plus: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="square"><path d="M12 5v14M5 12h14"/></svg>',
-    trash: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>',
-    log: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="square"><rect x="3" y="4" width="18" height="16" rx="1"/><path d="M7 9h10M7 13h7M7 17h4"/></svg>',
-    ext: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="square"><path d="M14 4h6v6M20 4 10 14M18 13v6H5V6h6"/></svg>',
-    spin: '<svg class="isp-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>'
+    radar: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    gateway: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="20" height="6" rx="1.5"/><path d="M6 14V9M18 14V9M9.5 6.5a4.5 4.5 0 0 1 5 0M7 4a8 8 0 0 1 10 0"/><circle cx="6" cy="17" r="0.8" fill="currentColor"/><circle cx="9.5" cy="17" r="0.8" fill="currentColor"/></svg>',
+    scan: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-15-6.7L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 15 6.7L21 16"/><path d="M16 16h5v5"/></svg>',
+    search: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><line x1="20" y1="20" x2="16.2" y2="16.2"/></svg>',
+    block: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><line x1="5.7" y1="5.7" x2="18.3" y2="18.3"/></svg>',
+    allow: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><polyline points="9 12 11 14 15 10"/></svg>',
+    edit: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    verify: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><polyline points="8.5 12 11 14.5 16 9.5"/></svg>',
+    flag: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>',
+    clock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',
+    plus: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    trash: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>',
+    log: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.65" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><line x1="7" y1="9" x2="17" y2="9"/><line x1="7" y1="13" x2="14" y2="13"/><line x1="7" y1="17" x2="11" y2="17"/></svg>',
+    ext: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>',
+    spin: '<svg class="ag-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-6.22-8.56"/></svg>'
   };
 
   const style = document.createElement("style");
   style.textContent = `
     :root {
-      --isp-bg: #07090d;
-      --isp-panel: #0c1017;
-      --isp-card: #111620;
-      --isp-hover: #171e2b;
-      --isp-line: #1c2432;
-      --isp-line-strong: #2a3548;
-      --isp-text: #eef2f6;
-      --isp-sub: #8b9bb4;
-      --isp-dim: #5c6b82;
-      --isp-blue: #2563eb;
-      --isp-sky: #38bdf8;
-      --isp-ok: #10b981;
-      --isp-err: #ef4444;
-      --isp-warn: #f59e0b;
-      --isp-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
-      --isp-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      --ag-canvas: #06080d;
+      --ag-glass-1: rgba(14, 19, 29, 0.78);
+      --ag-glass-2: rgba(21, 28, 42, 0.68);
+      --ag-glass-hover: rgba(30, 40, 58, 0.85);
+      --ag-stroke: rgba(148, 163, 184, 0.14);
+      --ag-stroke-hi: rgba(148, 163, 184, 0.26);
+      --ag-ink: #f1f5f9;
+      --ag-ink-muted: #94a3b8;
+      --ag-ink-dim: #64748b;
+      --ag-accent: #38bdf8;
+      --ag-accent-fill: #0284c7;
+      --ag-ok: #10b981;
+      --ag-err: #ef4444;
+      --ag-warn: #f59e0b;
+      --ag-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      --ag-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
-    body { padding-top: 48px !important; background: var(--isp-bg); }
+    body {
+      padding-top: 52px !important;
+      background:
+        radial-gradient(110% 55% at 50% -10%, rgba(56, 189, 248, 0.11) 0%, rgba(6, 8, 13, 0) 65%),
+        var(--ag-canvas) !important;
+    }
     #swc-top-switcher {
-      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 48px !important;
-      z-index: 999999 !important; background: #07090d !important;
-      border-bottom: 1px solid var(--isp-line) !important;
+      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 52px !important;
+      z-index: 999999 !important;
+      background: rgba(6, 8, 13, 0.82) !important;
+      backdrop-filter: blur(18px) saturate(150%) !important;
+      -webkit-backdrop-filter: blur(18px) saturate(150%) !important;
+      border-bottom: 1px solid var(--ag-stroke) !important;
       display: flex !important; align-items: center !important; justify-content: space-between !important;
-      padding: 0 12px !important; font-family: var(--isp-sans) !important; box-sizing: border-box;
+      padding: 0 14px !important; font-family: var(--ag-sans) !important; box-sizing: border-box;
     }
-    .isp-nav {
-      display: flex; gap: 2px; background: var(--isp-panel);
-      padding: 3px; border-radius: 4px; border: 1px solid var(--isp-line);
+    .ag-seg {
+      display: inline-flex; gap: 3px; padding: 3px; border-radius: 9px;
+      background: rgba(15, 23, 42, 0.72); border: 1px solid var(--ag-stroke);
     }
     .swc-tab-btn {
       display: inline-flex; align-items: center; gap: 6px;
-      border: 1px solid transparent; background: transparent; color: var(--isp-sub);
-      font-size: 11.5px; font-weight: 600; padding: 5px 10px; border-radius: 3px;
-      cursor: pointer; transition: background 0.12s ease, color 0.12s ease;
+      border: 1px solid transparent; background: transparent; color: var(--ag-ink-muted);
+      font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
+      padding: 5px 11px; border-radius: 6px; cursor: pointer;
+      transition: all 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
     }
     .swc-tab-btn.active {
-      background: var(--isp-hover); color: #ffffff; border-color: var(--isp-line-strong);
+      background: linear-gradient(180deg, rgba(30, 41, 59, 0.92), rgba(15, 23, 42, 0.92));
+      color: #ffffff; border-color: var(--ag-stroke-hi);
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     }
-    .swc-tab-btn.active svg { color: var(--isp-sky); }
-    .isp-led {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--isp-err); flex-shrink: 0;
+    .swc-tab-btn.active svg { color: var(--ag-accent); }
+    .ag-led {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--ag-err);
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.65); flex-shrink: 0;
     }
-    .isp-led.on { background: var(--isp-ok); }
-    .isp-proto {
-      font-family: var(--isp-mono); font-size: 10px; color: var(--isp-dim);
-      letter-spacing: 0.05em; text-transform: uppercase;
+    .ag-led.on { background: var(--ag-ok); box-shadow: 0 0 8px rgba(16, 185, 129, 0.7); }
+    .ag-badge-env {
+      font-family: var(--ag-mono); font-size: 10px; font-weight: 600; color: var(--ag-ink-dim);
+      padding: 3px 7px; border-radius: 5px; border: 1px solid var(--ag-stroke);
+      background: rgba(15, 23, 42, 0.5); letter-spacing: 0.04em;
     }
-    #swc-panel {
-      display: none; min-height: calc(100vh - 48px);
-      background: var(--isp-bg); color: var(--isp-text);
-      font-family: var(--isp-sans); padding: 12px; box-sizing: border-box;
-    }
-    .isp-shell { max-width: 820px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
 
-    /* Banner peringatan jika dibuka via HTTPS dan Chrome memblokir HTTP lokal */
-    .isp-https-alert {
-      background: #14110b; border: 1px solid rgba(245, 158, 11, 0.35);
-      border-left: 3px solid var(--isp-warn); border-radius: 4px; padding: 10px 12px;
+    #swc-panel {
+      display: none; min-height: calc(100vh - 52px);
+      color: var(--ag-ink); font-family: var(--ag-sans);
+      padding: 14px 12px 28px; box-sizing: border-box;
+    }
+    .ag-container { max-width: 800px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+
+    .ag-glass {
+      background: var(--ag-glass-1);
+      backdrop-filter: blur(16px) saturate(135%);
+      -webkit-backdrop-filter: blur(16px) saturate(135%);
+      border: 1px solid var(--ag-stroke);
+      border-radius: 12px; padding: 14px;
+      box-shadow: 0 8px 24px -8px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    .ag-alert {
+      background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: 10px; padding: 10px 12px;
       display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap;
     }
-    .isp-https-text { font-size: 11.5px; color: #fde68a; line-height: 1.4; }
-    .isp-https-sub { font-family: var(--isp-mono); font-size: 10px; color: #d97706; margin-top: 2px; }
+    .ag-alert-title { font-size: 12px; font-weight: 600; color: #fde68a; }
+    .ag-alert-sub { font-family: var(--ag-mono); font-size: 10px; color: #fbbf24; margin-top: 2px; opacity: 0.85; }
 
-    /* Header Gateway CPE */
-    .isp-box {
-      background: var(--isp-panel); border: 1px solid var(--isp-line); border-radius: 4px; padding: 13px;
-    }
-    .isp-head-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-    .isp-kicker {
+    .ag-hdr { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .ag-overline {
       display: inline-flex; align-items: center; gap: 6px;
-      font-family: var(--isp-mono); font-size: 10px; font-weight: 700;
-      letter-spacing: 0.08em; text-transform: uppercase; color: var(--isp-sky);
+      font-family: var(--ag-mono); font-size: 10px; font-weight: 700;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--ag-accent);
     }
-    .isp-title { margin: 4px 0 0; font-size: 15.5px; font-weight: 700; letter-spacing: -0.01em; color: #f8fafc; }
-    .isp-link-pill {
-      display: inline-flex; align-items: center; gap: 6px; margin-top: 7px;
-      font-family: var(--isp-mono); font-size: 10.5px; color: var(--isp-sub);
-      background: var(--isp-card); border: 1px solid var(--isp-line); padding: 3px 8px; border-radius: 3px;
+    .ag-h1 { margin: 4px 0 0; font-size: 16.5px; font-weight: 700; letter-spacing: -0.02em; color: #f8fafc; }
+    .ag-status-chip {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 8px;
+      font-family: var(--ag-mono); font-size: 10.5px; color: var(--ag-ink-muted);
+      background: var(--ag-glass-2); border: 1px solid var(--ag-stroke);
+      padding: 4px 9px; border-radius: 6px;
     }
-    .isp-link-pill.err { color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); }
+    .ag-status-chip.err { color: #fca5a5; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.1); }
 
-    /* Telemetry Grid */
-    .isp-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
-    .isp-metric {
-      background: var(--isp-card); border: 1px solid var(--isp-line);
-      border-top: 2px solid var(--m-color, var(--isp-line-strong));
-      border-radius: 4px; padding: 9px 10px;
+    .ag-kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 13px; }
+    .ag-kpi {
+      background: var(--ag-glass-2); border: 1px solid var(--ag-stroke);
+      border-radius: 9px; padding: 10px 11px; position: relative; overflow: hidden;
     }
-    .isp-m-lbl { font-family: var(--isp-mono); font-size: 9.5px; font-weight: 700; color: var(--isp-dim); letter-spacing: 0.06em; }
-    .isp-m-val { font-family: var(--isp-mono); font-size: 20px; font-weight: 700; color: #f8fafc; margin-top: 2px; font-variant-numeric: tabular-nums; }
-    .isp-m-desc { font-size: 10.5px; color: var(--isp-sub); margin-top: 1px; }
+    .ag-kpi::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--kpi-tint, var(--ag-accent)); opacity: 0.85;
+    }
+    .ag-kpi-lbl { font-family: var(--ag-mono); font-size: 9.5px; font-weight: 700; color: var(--ag-ink-dim); letter-spacing: 0.06em; }
+    .ag-kpi-num { font-family: var(--ag-mono); font-size: 21px; font-weight: 700; color: #ffffff; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .ag-kpi-sub { font-size: 10.5px; color: var(--ag-ink-muted); margin-top: 1px; }
 
-    /* Filter & Search */
-    .isp-controls { display: flex; flex-direction: column; gap: 8px; }
-    .isp-search-box { position: relative; display: flex; align-items: center; }
-    .isp-search-box svg { position: absolute; left: 10px; color: var(--isp-dim); pointer-events: none; }
-    .isp-search-input {
-      width: 100%; background: var(--isp-panel); border: 1px solid var(--isp-line);
-      border-radius: 4px; padding: 8px 10px 8px 31px; color: var(--isp-text);
-      font-family: var(--isp-sans); font-size: 12.5px; outline: none; box-sizing: border-box;
+    .ag-toolbar { display: flex; flex-direction: column; gap: 8px; }
+    .ag-search { position: relative; display: flex; align-items: center; }
+    .ag-search svg { position: absolute; left: 11px; color: var(--ag-ink-dim); pointer-events: none; }
+    .ag-search input {
+      width: 100%; background: var(--ag-glass-1); border: 1px solid var(--ag-stroke);
+      border-radius: 9px; padding: 9px 12px 9px 33px; color: var(--ag-ink);
+      font-family: var(--ag-sans); font-size: 12.5px; outline: none; box-sizing: border-box;
     }
-    .isp-search-input:focus { border-color: var(--isp-blue); }
-    .isp-tabs-filter {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 3px;
-      background: var(--isp-panel); border: 1px solid var(--isp-line); padding: 3px; border-radius: 4px;
+    .ag-search input:focus { border-color: var(--ag-accent); box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12); }
+
+    .ag-filter-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+      background: var(--ag-glass-1); border: 1px solid var(--ag-stroke); padding: 4px; border-radius: 9px;
     }
     .swc-chip {
-      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-      background: transparent; border: 1px solid transparent; color: var(--isp-sub);
-      font-size: 11px; font-weight: 600; padding: 5px 4px; border-radius: 3px; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center; gap: 4px;
+      background: transparent; border: 1px solid transparent; color: var(--ag-ink-muted);
+      font-size: 11px; font-weight: 600; padding: 6px 4px; border-radius: 6px; cursor: pointer;
     }
-    .swc-chip.active { background: var(--isp-hover); color: #ffffff; border-color: var(--isp-line-strong); }
-    .isp-num { font-family: var(--isp-mono); font-size: 10px; color: var(--isp-dim); }
-    .swc-chip.active .isp-num { color: var(--isp-sky); }
+    .swc-chip.active { background: var(--ag-glass-hover); color: #ffffff; border-color: var(--ag-stroke-hi); }
+    .ag-cnt { font-family: var(--ag-mono); font-size: 10px; color: var(--ag-ink-dim); }
+    .swc-chip.active .ag-cnt { color: var(--ag-accent); }
 
-    /* Buttons */
     .swc-btn {
       display: inline-flex; align-items: center; justify-content: center; gap: 5px;
-      background: var(--isp-card); border: 1px solid var(--isp-line-strong);
-      color: var(--isp-text); font-family: var(--isp-sans); font-size: 11.5px; font-weight: 600;
-      padding: 6px 10px; border-radius: 4px; cursor: pointer; text-decoration: none; white-space: nowrap;
+      background: var(--ag-glass-2); border: 1px solid var(--ag-stroke-hi);
+      color: var(--ag-ink); font-family: var(--ag-sans); font-size: 11.5px; font-weight: 600;
+      padding: 6px 11px; border-radius: 7px; cursor: pointer; text-decoration: none; white-space: nowrap;
+      transition: background 0.14s ease, border-color 0.14s ease;
     }
-    .swc-btn:hover:not(:disabled) { background: var(--isp-hover); }
-    .swc-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-    .swc-btn-primary { background: #1d4ed8; border-color: #2563eb; color: #ffffff; }
-    .swc-btn-danger { background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.35); color: #fca5a5; }
-    .swc-btn-success { background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.35); color: #6ee7b7; }
-    .swc-btn-warn { background: rgba(245, 158, 11, 0.14); border-color: rgba(245, 158, 11, 0.4); color: #fde68a; }
+    .swc-btn:hover:not(:disabled) { background: var(--ag-glass-hover); }
+    .swc-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+    .swc-btn-primary {
+      background: linear-gradient(180deg, #0ea5e9, #0284c7);
+      border-color: rgba(125, 211, 252, 0.45); color: #ffffff;
+      box-shadow: 0 2px 10px rgba(2, 132, 199, 0.35);
+    }
+    .swc-btn-danger { background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.35); color: #fca5a5; }
+    .swc-btn-success { background: rgba(16, 185, 129, 0.14); border-color: rgba(16, 185, 129, 0.35); color: #6ee7b7; }
+    .swc-btn-warn { background: rgba(245, 158, 11, 0.16); border-color: rgba(245, 158, 11, 0.4); color: #fde68a; }
 
-    /* Client Rows */
-    .isp-dev-list { display: flex; flex-direction: column; gap: 7px; }
-    .isp-dev {
-      background: var(--isp-panel); border: 1px solid var(--isp-line);
-      border-left: 3px solid #2c384b; border-radius: 4px; padding: 10px 12px;
-      display: flex; flex-direction: column; gap: 8px;
+    .ag-list { display: flex; flex-direction: column; gap: 8px; }
+    .ag-node {
+      background: var(--ag-glass-1); border: 1px solid var(--ag-stroke);
+      border-radius: 10px; padding: 11px 13px;
+      display: flex; flex-direction: column; gap: 9px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
     }
-    .isp-dev.online { border-left-color: var(--isp-ok); }
-    .isp-dev.blocked { background: #130c0f; border-color: rgba(239, 68, 68, 0.28); border-left-color: var(--isp-err); }
-    .isp-dev-main { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
-    .isp-dev-title { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .isp-dev-name { font-size: 13.5px; font-weight: 700; color: #f8fafc; max-width: 185px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .isp-tag {
-      font-family: var(--isp-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
-      padding: 2px 5px; border-radius: 2px; text-transform: uppercase;
+    .ag-node.online { border-color: rgba(16, 185, 129, 0.25); }
+    .ag-node.blocked { background: rgba(28, 12, 16, 0.82); border-color: rgba(239, 68, 68, 0.35); }
+    .ag-node-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .ag-node-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .ag-node-name { font-size: 13.5px; font-weight: 700; color: #f8fafc; max-width: 185px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .ag-pill {
+      font-family: var(--ag-mono); font-size: 9px; font-weight: 700; letter-spacing: 0.05em;
+      padding: 2px 6px; border-radius: 4px; text-transform: uppercase;
     }
-    .t-on { background: rgba(16, 185, 129, 0.12); color: #34d399; }
-    .t-off { background: rgba(100, 116, 139, 0.14); color: #94a3b8; }
-    .t-blk { background: rgba(239, 68, 68, 0.16); color: #f87171; }
-    .t-ver { background: rgba(56, 189, 248, 0.1); color: #7dd3fc; }
-    .t-unv { background: rgba(245, 158, 11, 0.12); color: #fbbf24; }
-    .isp-dev-spec {
-      font-family: var(--isp-mono); font-size: 11px; color: var(--isp-sub);
+    .p-on { background: rgba(16, 185, 129, 0.14); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.25); }
+    .p-off { background: rgba(100, 116, 139, 0.14); color: #94a3b8; border: 1px solid rgba(100, 116, 139, 0.2); }
+    .p-blk { background: rgba(239, 68, 68, 0.16); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+    .p-ver { background: rgba(56, 189, 248, 0.12); color: #7dd3fc; }
+    .p-unv { background: rgba(245, 158, 11, 0.14); color: #fbbf24; }
+    .ag-node-meta {
+      font-family: var(--ag-mono); font-size: 11px; color: var(--ag-ink-muted);
       margin-top: 4px; display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
     }
-    .isp-dev-foot {
-      display: flex; align-items: center; gap: 6px; padding-top: 7px;
-      border-top: 1px solid rgba(28, 36, 50, 0.85);
+    .ag-node-actions {
+      display: flex; align-items: center; gap: 6px; padding-top: 8px;
+      border-top: 1px solid rgba(148, 163, 184, 0.1);
     }
-    .isp-dev-foot .swc-btn { padding: 4px 8px; font-size: 11px; color: var(--isp-sub); }
+    .ag-node-actions .swc-btn { padding: 4px 9px; font-size: 11px; color: var(--ag-ink-muted); }
 
-    /* Section Header */
-    .isp-sec-hdr {
+    .ag-sec-title {
       display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: 0.04em; color: #cbd5e1;
-      padding-bottom: 8px; margin-bottom: 9px; border-bottom: 1px solid var(--isp-line);
+      text-transform: uppercase; letter-spacing: 0.05em; color: #cbd5e1;
+      padding-bottom: 9px; margin-bottom: 10px; border-bottom: 1px solid var(--ag-stroke);
     }
-    .isp-sec-hdr svg { color: var(--isp-sky); }
-    .isp-form-grid { display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; }
+    .ag-sec-title svg { color: var(--ag-accent); }
+    .ag-form { display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; }
     @media (max-width: 540px) {
-      .isp-form-grid { grid-template-columns: 1fr 1fr; }
-      .isp-form-grid select, .isp-form-grid button { grid-column: span 2; }
+      .ag-form { grid-template-columns: 1fr 1fr; }
+      .ag-form select, .ag-form button { grid-column: span 2; }
     }
-    .isp-input {
-      background: var(--isp-card); border: 1px solid var(--isp-line); color: var(--isp-text);
-      border-radius: 4px; padding: 6px 8px; font-family: var(--isp-mono); font-size: 11.5px; outline: none;
+    .ag-field {
+      background: var(--ag-glass-2); border: 1px solid var(--ag-stroke); color: var(--ag-ink);
+      border-radius: 7px; padding: 7px 9px; font-family: var(--ag-mono); font-size: 11.5px; outline: none;
     }
-    .isp-row {
+    .ag-item-row {
       display: flex; align-items: center; justify-content: space-between; gap: 8px;
-      background: var(--isp-card); border: 1px solid var(--isp-line);
-      padding: 6px 9px; border-radius: 3px; font-size: 11.5px; margin-top: 6px;
+      background: var(--ag-glass-2); border: 1px solid var(--ag-stroke);
+      padding: 7px 10px; border-radius: 7px; font-size: 11.5px; margin-top: 6px;
     }
-    .isp-log {
-      font-family: var(--isp-mono); font-size: 10.5px; color: var(--isp-sub);
-      padding: 5px 4px; border-bottom: 1px solid rgba(28, 36, 50, 0.6);
+    .ag-log-line {
+      font-family: var(--ag-mono); font-size: 10.5px; color: var(--ag-ink-muted);
+      padding: 6px 4px; border-bottom: 1px solid rgba(148, 163, 184, 0.08);
       display: flex; gap: 7px; align-items: baseline;
     }
-    .isp-empty {
-      text-align: center; padding: 14px; font-family: var(--isp-mono); font-size: 11px;
-      color: var(--isp-dim); border: 1px dashed var(--isp-line); border-radius: 4px;
+    .ag-empty {
+      text-align: center; padding: 15px; font-family: var(--ag-mono); font-size: 11px;
+      color: var(--ag-ink-dim); border: 1px dashed var(--ag-stroke); border-radius: 8px;
     }
-    @keyframes ispSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-    .isp-spin { animation: ispSpin 0.8s linear infinite; }
+    @keyframes agSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    .ag-spin { animation: agSpin 0.8s linear infinite; }
   `;
   document.head.appendChild(style);
 
@@ -249,11 +270,11 @@
     const switcher = document.createElement("div");
     switcher.id = "swc-top-switcher";
     switcher.innerHTML = `
-      <div class="isp-nav">
-        <button class="swc-tab-btn" data-tab="crypto">${SVG.telemetry}<span>Radar Sinyal</span></button>
-        <button class="swc-tab-btn" data-tab="wifi"><span class="isp-led" id="swc-router-dot"></span>${SVG.gateway}<span>Gateway Wi-Fi</span></button>
+      <div class="ag-seg">
+        <button class="swc-tab-btn" data-tab="crypto">${SVG.radar}<span>Radar Sinyal</span></button>
+        <button class="swc-tab-btn" data-tab="wifi"><span class="ag-led" id="swc-router-dot"></span>${SVG.gateway}<span>Gateway Wi-Fi</span></button>
       </div>
-      <span class="isp-proto">${window.location.protocol === "https:" ? "HTTPS/PWA" : "LOCAL/NOC"}</span>
+      <span class="ag-badge-env">${window.location.protocol === "https:" ? "HTTPS:8766" : "HTTP:8765"}</span>
     `;
     document.body.prepend(switcher);
 
@@ -274,7 +295,6 @@
       btn.addEventListener("click", () => switchTab(btn.dataset.tab));
     });
 
-    // Gesture geser horizontal
     let touchStartX = 0, touchStartY = 0;
     document.addEventListener("touchstart", e => {
       if (e.touches.length === 1) {
@@ -316,16 +336,14 @@
     const bases = [API_BASE, ...CANDIDATE_BASES.filter(b => b !== API_BASE)];
     for (const base of bases) {
       try {
-        const res = await fetch(base + path, {
-          ...options
-        });
+        const res = await fetch(base + path, options);
         API_BASE = base;
         return res;
       } catch (err) {
         lastErr = err;
       }
     }
-    throw lastErr || new Error("Tidak dapat menjangkau server lokal 127.0.0.1:8765");
+    throw lastErr || new Error("Tidak dapat menjangkau server lokal 127.0.0.1:8766");
   }
 
   async function apiPost(path, payload = {}) {
@@ -370,7 +388,7 @@
         ...swcData.state,
         routerOnline: false,
         lastError: window.location.protocol === "https:"
-          ? "HTTPS_BLOCKED: Chrome memblokir akses ke http://127.0.0.1:8765"
+          ? "CERT_REQUIRED: Buka https://127.0.0.1:8766/api/state & izinkan sertifikat lokal"
           : (err.message || "BACKEND LOKAL OFFLINE")
       };
       renderSwc();
@@ -410,7 +428,7 @@
 
     const isOnline = !!swcData.state?.routerOnline;
     const errMsg = swcData.state?.lastError || "";
-    const isHttpsBlocked = window.location.protocol === "https:" && !isOnline;
+    const needCert = window.location.protocol === "https:" && !isOnline;
     const statusText = isOnline
       ? `CPE ONLINE • SYNC ${fmtTime(swcData.state.lastScanAt)}`
       : esc(errMsg || "MENGHUBUNGKAN...");
@@ -418,89 +436,89 @@
     const devMap = new Map(devs.map(d => [d.mac, d.alias || d.hostname || d.mac]));
 
     swcPanel.innerHTML = `
-      <div class="isp-shell">
-        ${isHttpsBlocked ? `
-          <div class="isp-https-alert">
+      <div class="ag-container">
+        ${needCert ? `
+          <div class="ag-alert">
             <div>
-              <div class="isp-https-text"><strong>Koneksi Lokal Diblokir Kebijakan HTTPS Browser</strong></div>
-              <div class="isp-https-sub">Buka langsung gateway HTTP lokal agar kontrol router berjalan tanpa blokir Mixed Content.</div>
+              <div class="ag-alert-title">Otorisasi Sertifikat HTTPS Lokal Diperlukan</div>
+              <div class="ag-alert-sub">Ketuk tombol di samping, pilih Lanjutan → Lanjutkan ke 127.0.0.1, lalu muat ulang.</div>
             </div>
-            <a class="swc-btn swc-btn-warn" href="http://127.0.0.1:8765/wifi">${SVG.ext}<span>Buka Mode Lokal</span></a>
+            <a class="swc-btn swc-btn-warn" href="https://127.0.0.1:8766/api/state" target="_blank" rel="noopener">${SVG.ext}<span>Otorisasi 8766</span></a>
           </div>
         ` : ""}
 
-        <div class="isp-box">
-          <div class="isp-head-row">
+        <div class="ag-glass">
+          <div class="ag-hdr">
             <div>
-              <div class="isp-kicker">${SVG.gateway} GPON ONT GATEWAY • 192.168.1.1</div>
-              <h2 class="isp-title">ZTE F672Y Subscriber Access</h2>
-              <div class="isp-link-pill ${isOnline ? "" : "err"}">
-                <span class="isp-led ${isOnline ? "on" : ""}"></span>
+              <div class="ag-overline">${SVG.gateway} GPON ONT GATEWAY • 192.168.1.1</div>
+              <h2 class="ag-h1">ZTE F672Y Subscriber Access</h2>
+              <div class="ag-status-chip ${isOnline ? "" : "err"}">
+                <span class="ag-led ${isOnline ? "on" : ""}"></span>
                 <span>${statusText}</span>
               </div>
             </div>
-            <button class="swc-btn swc-btn-primary" id="swc-btn-scan">${SVG.sync}<span>Pindai</span></button>
+            <button class="swc-btn swc-btn-primary" id="swc-btn-scan">${SVG.scan}<span>Pindai</span></button>
           </div>
-          <div class="isp-metrics">
-            <div class="isp-metric" style="--m-color:#10b981">
-              <div class="isp-m-lbl">ACTIVE</div>
-              <div class="isp-m-val">${String(onlineCount).padStart(2, "0")}</div>
-              <div class="isp-m-desc">Client Terhubung</div>
+          <div class="ag-kpi-grid">
+            <div class="ag-kpi" style="--kpi-tint:#10b981">
+              <div class="ag-kpi-lbl">ACTIVE</div>
+              <div class="ag-kpi-num">${String(onlineCount).padStart(2, "0")}</div>
+              <div class="ag-kpi-sub">Client Terhubung</div>
             </div>
-            <div class="isp-metric" style="--m-color:#ef4444">
-              <div class="isp-m-lbl">ACL DENY</div>
-              <div class="isp-m-val">${String(blockedCount).padStart(2, "0")}</div>
-              <div class="isp-m-desc">MAC Diblokir</div>
+            <div class="ag-kpi" style="--kpi-tint:#ef4444">
+              <div class="ag-kpi-lbl">ACL DENY</div>
+              <div class="ag-kpi-num">${String(blockedCount).padStart(2, "0")}</div>
+              <div class="ag-kpi-sub">MAC Diblokir</div>
             </div>
-            <div class="isp-metric" style="--m-color:#f59e0b">
-              <div class="isp-m-lbl">UNVERIFIED</div>
-              <div class="isp-m-val">${String(unknownCount).padStart(2, "0")}</div>
-              <div class="isp-m-desc">Perangkat Asing</div>
+            <div class="ag-kpi" style="--kpi-tint:#f59e0b">
+              <div class="ag-kpi-lbl">UNVERIFIED</div>
+              <div class="ag-kpi-num">${String(unknownCount).padStart(2, "0")}</div>
+              <div class="ag-kpi-sub">Perangkat Asing</div>
             </div>
           </div>
         </div>
 
-        <div class="isp-controls">
-          <div class="isp-search-box">
+        <div class="ag-toolbar">
+          <div class="ag-search">
             ${SVG.search}
-            <input class="isp-search-input" id="swc-search" placeholder="Cari hostname, alamat IPv4, atau MAC..." value="${esc(searchQuery)}" />
+            <input id="swc-search" placeholder="Cari hostname, alamat IPv4, atau MAC..." value="${esc(searchQuery)}" />
           </div>
-          <div class="isp-tabs-filter">
-            <button class="swc-chip ${filterMode === "all" ? "active" : ""}" data-f="all">Semua <span class="isp-num">(${devs.length})</span></button>
-            <button class="swc-chip ${filterMode === "online" ? "active" : ""}" data-f="online">Online <span class="isp-num">(${onlineCount})</span></button>
-            <button class="swc-chip ${filterMode === "blocked" ? "active" : ""}" data-f="blocked">Blokir <span class="isp-num">(${blockedCount})</span></button>
-            <button class="swc-chip ${filterMode === "unknown" ? "active" : ""}" data-f="unknown">Asing <span class="isp-num">(${unknownCount})</span></button>
+          <div class="ag-filter-bar">
+            <button class="swc-chip ${filterMode === "all" ? "active" : ""}" data-f="all">Semua <span class="ag-cnt">(${devs.length})</span></button>
+            <button class="swc-chip ${filterMode === "online" ? "active" : ""}" data-f="online">Online <span class="ag-cnt">(${onlineCount})</span></button>
+            <button class="swc-chip ${filterMode === "blocked" ? "active" : ""}" data-f="blocked">Blokir <span class="ag-cnt">(${blockedCount})</span></button>
+            <button class="swc-chip ${filterMode === "unknown" ? "active" : ""}" data-f="unknown">Asing <span class="ag-cnt">(${unknownCount})</span></button>
           </div>
         </div>
 
-        <div class="isp-dev-list">
-          ${filtered.length === 0 ? `<div class="isp-empty">TIDAK ADA DATA SUBSCRIBER PADA FILTER INI</div>` : filtered.map(d => {
+        <div class="ag-list">
+          ${filtered.length === 0 ? `<div class="ag-empty">TIDAK ADA DATA SUBSCRIBER PADA FILTER INI</div>` : filtered.map(d => {
             const isBlk = d.block_mode === "blocked";
             const isOn = d.status === "online";
             const label = d.alias || d.hostname || "Unnamed Client";
             return `
-              <div class="isp-dev ${isBlk ? "blocked" : (isOn ? "online" : "")}">
-                <div class="isp-dev-main">
+              <div class="ag-node ${isBlk ? "blocked" : (isOn ? "online" : "")}">
+                <div class="ag-node-top">
                   <div style="min-width:0;flex:1">
-                    <div class="isp-dev-title">
-                      <span class="isp-dev-name">${esc(label)}</span>
-                      <span class="isp-tag ${isOn ? "t-on" : "t-off"}">${isOn ? "ONLINE" : "OFFLINE"}</span>
-                      ${isBlk ? `<span class="isp-tag t-blk">ACL DENY</span>` : ""}
-                      <span class="isp-tag ${d.is_known ? "t-ver" : "t-unv"}">${d.is_known ? "KNOWN" : "UNKNOWN"}</span>
+                    <div class="ag-node-name-row">
+                      <span class="ag-node-name">${esc(label)}</span>
+                      <span class="ag-pill ${isOn ? "p-on" : "p-off"}">${isOn ? "ONLINE" : "OFFLINE"}</span>
+                      ${isBlk ? `<span class="ag-pill p-blk">ACL DENY</span>` : ""}
+                      <span class="ag-pill ${d.is_known ? "p-ver" : "p-unv"}">${d.is_known ? "KNOWN" : "UNKNOWN"}</span>
                     </div>
-                    <div class="isp-dev-spec">
+                    <div class="ag-node-meta">
                       <span>${esc(d.ip || "-")}</span>
-                      <span>|</span>
+                      <span>•</span>
                       <span>${esc((d.mac || "").toUpperCase())}</span>
-                      <span>|</span>
+                      <span>•</span>
                       <span>${esc(d.conn_type || "WLAN")}</span>
                     </div>
                   </div>
                   <button class="swc-btn ${isBlk ? "swc-btn-success" : "swc-btn-danger"}" data-act="block" data-mac="${esc(d.mac)}" data-next="${isBlk ? 0 : 1}">
-                    ${isBlk ? `${SVG.allow}<span>Pulihkan</span>` : `${SVG.ban}<span>Blokir</span>`}
+                    ${isBlk ? `${SVG.allow}<span>Pulihkan</span>` : `${SVG.block}<span>Blokir</span>`}
                   </button>
                 </div>
-                <div class="isp-dev-foot">
+                <div class="ag-node-actions">
                   <button class="swc-btn" data-act="rename" data-mac="${esc(d.mac)}" data-alias="${esc(label)}">${SVG.edit}<span>Label</span></button>
                   <button class="swc-btn" data-act="known" data-mac="${esc(d.mac)}" data-known="${d.is_known ? 0 : 1}">
                     ${d.is_known ? `${SVG.flag}<span>Tandai Asing</span>` : `${SVG.verify}<span>Verifikasi</span>`}
@@ -511,33 +529,33 @@
           }).join("")}
         </div>
 
-        <div class="isp-box">
-          <div class="isp-sec-hdr">${SVG.clock}<span>Penjadwalan Kebijakan ACL Otomatis</span></div>
-          <div class="isp-form-grid">
-            <select class="isp-input" id="swc-sch-mac">
+        <div class="ag-glass">
+          <div class="ag-sec-title">${SVG.clock}<span>Penjadwalan Kebijakan ACL Otomatis</span></div>
+          <div class="ag-form">
+            <select class="ag-field" id="swc-sch-mac">
               ${devs.map(d => `<option value="${esc(d.mac)}">${esc(d.alias || d.hostname)} (${esc(d.mac)})</option>`).join("")}
             </select>
-            <input class="isp-input" type="time" id="swc-sch-start" value="22:00" />
-            <input class="isp-input" type="time" id="swc-sch-end" value="06:00" />
+            <input class="ag-field" type="time" id="swc-sch-start" value="22:00" />
+            <input class="ag-field" type="time" id="swc-sch-end" value="06:00" />
             <button class="swc-btn swc-btn-primary" id="swc-btn-add-sch">${SVG.plus}<span>Tambah</span></button>
           </div>
           <div>
-            ${schedules.length === 0 ? `<div class="isp-empty" style="margin-top:8px">BELUM ADA JADWAL TERDAFTAR</div>` : schedules.map(s => `
-              <div class="isp-row">
-                <div><strong>${esc(devMap.get(s.mac) || s.mac)}</strong> <span style="font-family:var(--isp-mono);color:var(--isp-sky);margin-left:6px">${esc(s.start_time)} - ${esc(s.end_time)}</span></div>
+            ${schedules.length === 0 ? `<div class="ag-empty" style="margin-top:8px">BELUM ADA JADWAL TERDAFTAR</div>` : schedules.map(s => `
+              <div class="ag-item-row">
+                <div><strong>${esc(devMap.get(s.mac) || s.mac)}</strong> <span style="font-family:var(--ag-mono);color:var(--ag-accent);margin-left:6px">${esc(s.start_time)} - ${esc(s.end_time)}</span></div>
                 <button class="swc-btn swc-btn-danger" style="padding:3px 7px" data-del-sch="${s.id}">${SVG.trash}</button>
               </div>
             `).join("")}
           </div>
         </div>
 
-        <div class="isp-box">
-          <div class="isp-sec-hdr">${SVG.log}<span>Log Audit Sistem</span></div>
+        <div class="ag-glass">
+          <div class="ag-sec-title">${SVG.log}<span>Log Audit Sistem</span></div>
           <div>
-            ${logs.length === 0 ? `<div class="isp-empty">BELUM ADA LOG AKTIVITAS</div>` : logs.slice(0, 12).map(l => `
-              <div class="isp-log">
-                <span style="color:var(--isp-dim)">${fmtTime(l.created_at)}</span>
-                <span style="color:var(--isp-sky);font-weight:700">[${esc(l.event_type)}]</span>
+            ${logs.length === 0 ? `<div class="ag-empty">BELUM ADA LOG AKTIVITAS</div>` : logs.slice(0, 12).map(l => `
+              <div class="ag-log-line">
+                <span style="color:var(--ag-ink-dim)">${fmtTime(l.created_at)}</span>
+                <span style="color:var(--ag-accent);font-weight:700">[${esc(l.event_type)}]</span>
                 <span>${esc(l.detail)}</span>
               </div>
             `).join("")}
