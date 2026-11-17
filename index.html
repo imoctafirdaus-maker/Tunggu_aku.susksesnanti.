@@ -82,7 +82,10 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     </div>
   </div>
   <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
-    <div style="font-size:12px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">📌 Posisi Terbuka Saat Ini</div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+  <div style="font-size:12px;font-weight:600;color:#cbd5e1;">📌 Posisi Terbuka Saat Ini <span id="bf-lev-badge" class="badge pass" style="margin-left:6px;">50x</span></div>
+  <div id="bf-updated" style="font-size:11px;color:#64748b;">Menunggu sinkronisasi...</div>
+</div>
     <div id="bf-positions" style="font-size:12px;color:#94a3b8;">Menunggu sinkronisasi...</div>
   </div>
 
@@ -263,7 +266,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   ];
   function renderFuturesData(d) {
     if (!d || typeof d.totalMargin !== "number") return false;
-    document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
+    const levEl = document.getElementById("bf-lev-badge"); if (levEl) levEl.textContent = (d.leverage || 50) + "x";
     document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
     document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
     const pnlEl = document.getElementById("bf-pnl");
@@ -272,7 +275,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
     if (d.updatedAt) {
       const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      document.getElementById("bf-updated").textContent = "Update: " + dt + " WIB";
+      const updEl = document.getElementById("bf-updated"); if (updEl) updEl.textContent = "Update: " + dt + " WIB";
     }
     const posEl = document.getElementById("bf-positions");
     const list = Array.isArray(d.openPositions) ? d.openPositions : [];
@@ -303,7 +306,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         if (renderFuturesData(json)) return;
       } catch (e) { lastErr = e.message; }
     }
-    document.getElementById("bf-updated").textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi...";
+    const updEl = document.getElementById("bf-updated"); if (updEl) updEl.textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi...";
   }
   refreshFuturesWidget();
   setInterval(refreshFuturesWidget, 15000);
@@ -1247,34 +1250,7 @@ setInterval(() => radarCycle(false), 30000);
 loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
 </script>
 
-  <!-- VOLTAGENT ISOLATED TRIGGER & OVERLAY (TERHUBUNG KE ZTE F672Y - DILARANG DIUBAH) -->
-  <div id="voltagent-launcher" style="position:fixed; bottom:20px; right:20px; z-index:999999;">
-    <button onclick="toggleWifiModal()" style="background:#161b22; color:#10b981; border:1px solid #30363d; padding:10px 16px; border-radius:30px; font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; cursor:pointer; box-shadow:0 8px 24px rgba(0,0,0,0.7); display:flex; align-items:center; gap:8px;">
-      <span style="width:8px; height:8px; background:#10b981; border-radius:50%; display:inline-block;"></span> 📶 VoltAgent Wi-Fi
-    </button>
-  </div>
-
-  <div id="voltagent-wifi-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:#0d1117; z-index:999998; box-sizing:border-box;">
-    <div style="background:#161b22; border-bottom:1px solid #30363d; padding:10px 16px; display:flex; justify-content:space-between; align-items:center;">
-      <div style="font-family:'JetBrains Mono',monospace; font-size:13px; font-weight:700; color:#f0f6fc; display:flex; align-items:center; gap:8px;">
-        <span style="color:#58a6ff;">VoltAgent</span>
-        <span style="color:#6e7681;">/</span>
-        <span style="color:#10b981;">smart-wifi-connection</span>
-        <span style="font-size:10px; background:#21262d; border:1px solid #30363d; color:#06b6d4; padding:2px 6px; border-radius:10px;">ZTE F672Y</span>
-      </div>
-      <button onclick="toggleWifiModal()" style="background:#21262d; color:#f85149; border:1px solid #30363d; padding:6px 14px; border-radius:6px; font-family:'Inter',sans-serif; font-size:12px; font-weight:700; cursor:pointer;">✕ Tutup</button>
-    </div>
-    <iframe src="./swc/public.html" style="width:100%; height:calc(100vh - 48px); border:none; background:#0d1117;"></iframe>
-  </div>
-
-  <script>
-    function toggleWifiModal() {
-      const modal = document.getElementById("voltagent-wifi-modal");
-      modal.style.display = modal.style.display === "block" ? "none" : "block";
-    }
-  </script>
   
-<script src="./swc/swc-ui.js?v=1794948205141"></script>
 <script type="module" src="firebase-signals.js"></script>
 </body>
 </html>
