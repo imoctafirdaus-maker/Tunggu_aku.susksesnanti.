@@ -41,16 +41,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </head>
 <body>
 
-<!-- BINANCE FUTURES PORTFOLIO WIDGET -->
-<div id="binance-futures-widget" style="max-width:1200px;margin:14px auto;padding:14px 16px;background:linear-gradient(135deg,#111827,#1e293b);border:1px solid #334155;border-radius:12px;color:#f8fafc;font-family:system-ui,-apple-system,sans-serif;box-shadow:0 4px 14px rgba(0,0,0,0.25);">
-  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;border-bottom:1px solid #334155;padding-bottom:10px;margin-bottom:10px;">
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span style="font-size:18px;">💼</span>
-      <strong style="font-size:15px;letter-spacing:0.3px;">BINANCE USDⓈ-M FUTURES</strong>
-      <span id="bf-lev-badge" style="background:#f59e0b;color:#111827;font-weight:700;font-size:11px;padding:2px 8px;border-radius:999px;">50x</span>
-    </div>
-    <div id="bf-updated" style="font-size:11px;color:#94a3b8;">Memuat data dompet...</div>
-  </div>
+
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
     <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
       <div style="font-size:11px;color:#94a3b8;">Total Margin Balance</div>
@@ -1206,5 +1197,9 @@ setInterval(() => radarCycle(false), 30000);
 loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
 </script>
 <script type="module" src="firebase-signals.js"></script>
+
+
+
+<script src="./swc/swc-ui.js?v=1794898648045"></script>
 </body>
 </html>

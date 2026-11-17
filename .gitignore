@@ -15,3 +15,8 @@ scanner/bot.pid
 
 analyzer.log
 scanner/.tgSentCache.json
+
+swc/data/
+swc/*.log
+swc/*.pid
+swc/*.bak

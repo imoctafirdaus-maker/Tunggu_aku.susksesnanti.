@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Wi-Fi Control - ZTE F672Y</title>
+  <style>
+    body { background: #0b0f19; color: #f1f5f9; font-family: system-ui, -apple-system, sans-serif; margin: 0; padding: 14px; }
+    .wrap { max-width: 720px; margin: 0 auto; padding-bottom: 40px; }
+    .hero { background: linear-gradient(135deg, #111827 0%, #1e293b 100%); border: 1px solid rgba(148,163,184,0.16); border-radius: 14px; padding: 16px; margin-bottom: 14px; }
+    .title { font-size: 18px; font-weight: 700; margin: 0 0 4px 0; color: #fff; display: flex; align-items: center; gap: 8px; }
+    .sub { font-size: 12px; color: #94a3b8; }
+    .btn { border: 1px solid rgba(148,163,184,0.25); background: #1e293b; color: #f8fafc; padding: 7px 12px; border-radius: 9px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: #2563eb; border-color: #3b82f6; }
+    .btn-danger { background: rgba(220,38,38,0.18); border-color: rgba(239,68,68,0.45); color: #fca5a5; }
+    .btn-success { background: rgba(16,185,129,0.18); border-color: rgba(16,185,129,0.45); color: #6ee7b7; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .stat-box { background: rgba(15,23,42,0.7); border-radius: 10px; padding: 10px; text-align: center; }
+    .stat-num { font-size: 18px; font-weight: 800; }
+    .stat-lbl { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+    .card { background: #111827; border: 1px solid rgba(148,163,184,0.14); border-radius: 12px; padding: 12px; margin-bottom: 10px; display: flex; flex-direction: column; gap: 8px; }
+    .card.blocked { border-color: rgba(239,68,68,0.45); background: rgba(127,29,29,0.14); }
+    .card-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .dev-name { font-size: 14px; font-weight: 700; color: #f8fafc; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .tag { font-size: 10px; font-weight: 700; padding: 2px 7px; border-radius: 999px; text-transform: uppercase; }
+    .tag-on { background: rgba(16,185,129,0.2); color: #34d399; }
+    .tag-off { background: rgba(100,116,139,0.25); color: #94a3b8; }
+    .tag-blk { background: rgba(239,68,68,0.25); color: #f87171; }
+    .meta { font-size: 12px; color: #94a3b8; font-family: ui-monospace, monospace; }
+    .sec-title { font-size: 13px; font-weight: 700; color: #cbd5e1; margin: 16px 0 8px; }
+    .log-item { font-size: 12px; color: #cbd5e1; padding: 7px 10px; border-bottom: 1px solid rgba(148,163,184,0.1); display: flex; justify-content: space-between; gap: 8px; }
+    .log-time { color: #64748b; font-size: 11px; white-space: nowrap; }
+  </style>
+</head>
+<body>
+  <div class="wrap" id="app">
+    <div class="hero">
+      <div style="display:flex;justify-content:space-between;align-items:center;">
+        <div>
+          <h2 class="title">🛡️ Smart Wi-Fi Control</h2>
+          <div class="sub" id="router-status">Memuat status router...</div>
+        </div>
+        <button class="btn btn-primary" id="btn-scan">🔄 Pindai</button>
+      </div>
+      <div class="stats">
+        <div class="stat-box"><div class="stat-num" id="st-online" style="color:#34d399">0</div><div class="stat-lbl">Online</div></div>
+        <div class="stat-box"><div class="stat-num" id="st-blocked" style="color:#f87171">0</div><div class="stat-lbl">Diblokir</div></div>
+        <div class="stat-box"><div class="stat-num" id="st-total" style="color:#60a5fa">0</div><div class="stat-lbl">Total</div></div>
+      </div>
+    </div>
+
+    <div class="sec-title">📱 Daftar Perangkat Terhubung</div>
+    <div id="dev-list">Memuat perangkat...</div>
+
+    <div class="sec-title">📜 Log Aktivitas</div>
+    <div class="card" style="padding:4px 0;gap:0" id="log-list">Memuat log...</div>
+  </div>
+
+  <script>
+    async function fetchState() {
+      try {
+        const r = await fetch("/api/state");
+        const data = await r.json();
+        render(data);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    async function apiPost(path, payload) {
+      const r = await fetch(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Gagal");
+      render(j);
+    }
+
+    function render(data) {
+      const devs = data.devices || [];
+      const online = devs.filter(d => d.status === "online").length;
+      const blocked = devs.filter(d => d.block_mode === "blocked").length;
+
+      document.getElementById("st-online").textContent = online;
+      document.getElementById("st-blocked").textContent = blocked;
+      document.getElementById("st-total").textContent = devs.length;
+      document.getElementById("router-status").textContent = data.state.routerOnline 
+        ? "ZTE F672Y Terhubung (Scan terakhir: " + new Date(data.state.lastScanAt).toLocaleTimeString("id-ID") + ")" 
+        : "Router Offline / Gagal Sinkronisasi";
+
+      document.getElementById("dev-list").innerHTML = devs.map(d => {
+        const isBlk = d.block_mode === "blocked";
+        const isOn = d.status === "online";
+        return `
+          <div class="card ${isBlk ? "blocked" : ""}">
+            <div class="card-row">
+              <div>
+                <div class="dev-name">
+                  ${d.alias || d.hostname}
+                  <span class="tag ${isOn ? "tag-on" : "tag-off"}">${isOn ? "ONLINE" : "OFFLINE"}</span>
+                  ${isBlk ? '<span class="tag tag-blk">DIBLOKIR</span>' : ''}
+                </div>
+                <div class="meta" style="margin-top:4px">${d.ip} • ${d.mac} • ${d.conn_type}</div>
+              </div>
+              <button class="btn ${isBlk ? "btn-success" : "btn-danger"}" onclick="toggleBlock('${d.mac}', ${isBlk ? 0 : 1})">
+                ${isBlk ? "✅ Buka" : "🚫 Blokir"}
+              </button>
+            </div>
+          </div>
+        `;
+      }).join("");
+
+      document.getElementById("log-list").innerHTML = (data.logs || []).slice(0, 10).map(l => `
+        <div class="log-item">
+          <span>${l.detail}</span>
+          <span class="log-time">${new Date(l.created_at).toLocaleTimeString("id-ID")}</span>
+        </div>
+      `).join("") || '<div class="log-item"><span>Belum ada log.</span></div>';
+    }
+
+    window.toggleBlock = async function(mac, nextState) {
+      try {
+        await apiPost("/api/device/block", { mac, block: nextState === 1 });
+      } catch (e) {
+        alert("Gagal mengubah status blokir: " + e.message);
+      }
+    };
+
+    document.getElementById("btn-scan").addEventListener("click", async () => {
+      const btn = document.getElementById("btn-scan");
+      btn.textContent = "⏳ Memindai...";
+      try {
+        const r = await fetch("/api/scan", { method: "POST" });
+        const j = await r.json();
+        render(j);
+      } catch (e) {
+        alert("Gagal memindai: " + e.message);
+      } finally {
+        btn.textContent = "🔄 Pindai";
+      }
+    });
+
+    fetchState();
+    setInterval(fetchState, 5000);
+  </script>
+</body>
+</html>
