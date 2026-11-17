@@ -317,8 +317,7 @@
     for (const base of bases) {
       try {
         const res = await fetch(base + path, {
-          ...options,
-          targetAddressSpace: "private"
+          ...options
         });
         API_BASE = base;
         return res;
