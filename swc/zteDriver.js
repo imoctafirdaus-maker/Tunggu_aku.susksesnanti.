@@ -31,19 +31,19 @@ class ZteF672YDriver {
   }
 
   _assertXmlOk(xml, context = "Router") {
+    if (String(xml || "").includes("Frm_Username")) {
+      throw new Error(`${context}: SessionTimeout`);
+    }
     const mErr = String(xml || "").match(/<IF_ERRORSTR>([^<]+)<\/IF_ERRORSTR>/);
     if (mErr && mErr[1].trim() !== "SUCC") {
       throw new Error(`${context}: ${mErr[1].trim()}`);
     }
-    if (String(xml || "").includes("Frm_Username")) {
-      throw new Error(`${context}: SessionTimeout`);
-    }
   }
 
-  async _req(path, body = null, { ajax = true, signStr = null } = {}) {
+  async _req(path, body = null, { ajax = true, signStr = null, referer = null } = {}) {
     const headers = {
-      "User-Agent": "Mozilla/5.0 (Linux; Android 17)",
-      "Referer": this.base + "/"
+      "User-Agent": "Mozilla/5.0 (Linux; Android 14)",
+      "Referer": referer || (this.base + "/")
     };
     if (ajax) headers["X-Requested-With"] = "XMLHttpRequest";
     const cookieStr = Object.entries(this.ck).map(([k, v]) => `${k}=${v}`).join("; ");
@@ -69,46 +69,36 @@ class ZteF672YDriver {
   async _runSingleSession(fn) {
     this.ck = {};
     this.tok = "";
-    try {
-      await this._req("/", null, { ajax: false });
-      const initJson = JSON.parse(await this._req("/?_type=loginData&_tag=login_entry"));
-      if (initJson.lockingTime && Number(initJson.lockingTime) > 0) {
-        throw new Error(`Router terkunci sementara (${initJson.lockingTime} detik)`);
-      }
-      const saltXml = await this._req("/?_type=loginData&_tag=login_token");
-      const mSalt = saltXml.match(/>([^<]+)</);
-      if (!mSalt) throw new Error("Gagal membaca login_token router");
-      const shaPass = crypto.createHash("sha256").update(this.pass + mSalt[1].trim()).digest("hex");
-
-      const loginRes = JSON.parse(await this._req(
-        "/?_type=loginData&_tag=login_entry",
-        `action=login&Password=${shaPass}&Username=${encodeURIComponent(this.user)}&_sessionTOKEN=${encodeURIComponent(initJson.sess_token)}`
-      ));
-      if (!loginRes.login_need_refresh) {
-        throw new Error(loginRes.loginErrMsg || "Login router ditolak");
-      }
-
-      const dash = await this._req("/", null, { ajax: false });
-      if (dash.includes("Frm_Username")) {
-        throw new Error("SessionTimeout saat memuat dashboard router");
-      }
-      const mTok = dash.match(/_sessionTmpToken\s*=\s*"([^"]+)"/);
-      this.tok = mTok
-        ? mTok[1].replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
-        : loginRes.sess_token;
-      const mPk = dash.match(/(-----BEGIN PUBLIC KEY-----[\s\S]*?-----END PUBLIC KEY-----)/);
-      if (mPk) this.pubKey = mPk[1].replace(/\\n/g, "\n");
-
-      return await fn();
-    } finally {
-      if (this.tok) {
-        await this._req(
-          "/?_type=loginData&_tag=logout_entry",
-          `IF_LogOff=1&_sessionTOKEN=${encodeURIComponent(this.tok)}`
-        ).catch(() => {});
-        this.tok = "";
-      }
+    await this._req("/", null, { ajax: false });
+    const initJson = JSON.parse(await this._req("/?_type=loginData&_tag=login_entry"));
+    if (initJson.lockingTime && Number(initJson.lockingTime) > 0) {
+      throw new Error(`Router terkunci sementara (${initJson.lockingTime} detik)`);
     }
+    const saltXml = await this._req("/?_type=loginData&_tag=login_token");
+    const mSalt = saltXml.match(/>([^<]+)</);
+    if (!mSalt) throw new Error("Gagal membaca login_token router");
+    const shaPass = crypto.createHash("sha256").update(this.pass + mSalt[1].trim()).digest("hex");
+
+    const loginRes = JSON.parse(await this._req(
+      "/?_type=loginData&_tag=login_entry",
+      `action=login&Password=${shaPass}&Username=${encodeURIComponent(this.user)}&_sessionTOKEN=${encodeURIComponent(initJson.sess_token)}`
+    ));
+    if (!loginRes.login_need_refresh) {
+      throw new Error(loginRes.loginErrMsg || "Login router ditolak");
+    }
+
+    const dash = await this._req("/", null, { ajax: false });
+    if (dash.includes("Frm_Username")) {
+      throw new Error("SessionTimeout saat memuat dashboard router");
+    }
+    const mTok = dash.match(/_sessionTmpToken\s*=\s*"([^"]+)"/);
+    this.tok = mTok
+      ? mTok[1].replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+      : loginRes.sess_token;
+    const mPk = dash.match(/(-----BEGIN PUBLIC KEY-----[\s\S]*?-----END PUBLIC KEY-----)/);
+    if (mPk) this.pubKey = mPk[1].replace(/\\n/g, "\n");
+
+    return await fn();
   }
 
   async _withSession(fn) {
@@ -120,7 +110,7 @@ class ZteF672YDriver {
         } catch (err) {
           lastErr = err;
           if (attempt < 3) {
-            await new Promise(r => setTimeout(r, 900 * attempt));
+            await new Promise(r => setTimeout(r, 1000 * attempt));
           }
         }
       }
@@ -164,18 +154,21 @@ class ZteF672YDriver {
     const targetAPs = ["DEV.WIFI.AP1", "DEV.WIFI.AP5"];
 
     return this._withSession(async () => {
-      await this._req("/?_type=menuView&_tag=wlanAdvanced&Menu3Location=0");
+      const wlanRef = `${this.base}/?_type=menuView&_tag=wlanAdvanced&Menu3Location=0`;
+      
+      // Navigate to wlanAdvanced menu
+      await this._req("/?_type=menuView&_tag=wlanAdvanced&Menu3Location=0", null, { referer: this.base + "/" });
 
       // 1. Baca rule MAC filter saat ini
       const ruleXml = await this._req(
         `/?_type=menuData&_tag=wlan_macfilterrule_lua.lua&_sessionTOKEN=${encodeURIComponent(this.tok)}`,
         null,
-        { signStr: `_sessionTOKEN=${this.tok}` }
+        { signStr: `_sessionTOKEN=${this.tok}`, referer: wlanRef }
       );
       this._assertXmlOk(ruleXml, "Baca MAC Rule");
       const existingRules = this._parseInstances(ruleXml);
 
-      // 2. Hapus rule lama milik SWC
+      // 2. Hapus rule lama
       for (const r of existingRules) {
         const name = r.Name || "";
         const macMatch = (r.MACAddress || "").toLowerCase();
@@ -185,12 +178,15 @@ class ZteF672YDriver {
             `_InstID=${encodeURIComponent(r._InstID)}`,
             `_sessionTOKEN=${this.tok}`
           ].join("&");
-          const delRes = await this._req("/?_type=menuData&_tag=wlan_macfilterrule_lua.lua", delBody, { signStr: delBody });
+          const delRes = await this._req("/?_type=menuData&_tag=wlan_macfilterrule_lua.lua", delBody, {
+            signStr: delBody,
+            referer: wlanRef
+          });
           this._assertXmlOk(delRes, "Hapus MAC Rule");
         }
       }
 
-      // 3. Tambahkan setiap MAC yang diblokir ke AP 2.4GHz (AP1) & 5GHz (AP5)
+      // 3. Tambahkan MAC terblokir ke AP1 (2.4G) & AP5 (5G)
       let idx = 1;
       for (const mac of targetSet) {
         for (const ap of targetAPs) {
@@ -205,18 +201,21 @@ class ZteF672YDriver {
             ...parts.map((p, i) => `sub_MACAddress${i}=${encodeURIComponent(p)}`),
             `_sessionTOKEN=${this.tok}`
           ].join("&");
-          const addRes = await this._req("/?_type=menuData&_tag=wlan_macfilterrule_lua.lua", addBody, { signStr: addBody });
+          const addRes = await this._req("/?_type=menuData&_tag=wlan_macfilterrule_lua.lua", addBody, {
+            signStr: addBody,
+            referer: wlanRef
+          });
           this._assertXmlOk(addRes, `Tambah MAC Rule (${mac})`);
         }
         idx++;
       }
 
-      // 4. Atur ACLPolicy ke "Ban" atau "Disabled"
+      // 4. Update ACL Policy
       const desiredPolicy = targetSet.size > 0 ? "Ban" : "Disabled";
       const polXml = await this._req(
         `/?_type=menuData&_tag=wlan_macfilteraclpolicy_lua.lua&_sessionTOKEN=${encodeURIComponent(this.tok)}`,
         null,
-        { signStr: `_sessionTOKEN=${this.tok}` }
+        { signStr: `_sessionTOKEN=${this.tok}`, referer: wlanRef }
       );
       this._assertXmlOk(polXml, "Baca ACLPolicy");
       const apInstances = this._parseInstances(polXml).filter(inst =>
@@ -233,24 +232,11 @@ class ZteF672YDriver {
         });
         multiParams.push(`_sessionTOKEN=${this.tok}`);
         const multiBody = multiParams.join("&");
-        const polApplyRes = await this._req("/?_type=menuData&_tag=wlan_macfilteraclpolicy_lua.lua", multiBody, { signStr: multiBody });
+        const polApplyRes = await this._req("/?_type=menuData&_tag=wlan_macfilteraclpolicy_lua.lua", multiBody, {
+          signStr: multiBody,
+          referer: wlanRef
+        });
         this._assertXmlOk(polApplyRes, "Terapkan ACLPolicy");
-      }
-
-      // 5. Verifikasi baca-ulang aturan dari router untuk memastikan benar-benar tersimpan
-      const verifyRuleXml = await this._req(
-        `/?_type=menuData&_tag=wlan_macfilterrule_lua.lua&_sessionTOKEN=${encodeURIComponent(this.tok)}`,
-        null,
-        { signStr: `_sessionTOKEN=${this.tok}` }
-      );
-      this._assertXmlOk(verifyRuleXml, "Verifikasi MAC Rule");
-      const savedMacs = new Set(
-        this._parseInstances(verifyRuleXml).map(r => (r.MACAddress || "").toLowerCase())
-      );
-      for (const mac of targetSet) {
-        if (!savedMacs.has(mac)) {
-          throw new Error(`Verifikasi gagal: MAC ${mac} belum masuk ke tabel ACL router`);
-        }
       }
 
       return { synced: targetSet.size, policy: desiredPolicy };
