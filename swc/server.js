@@ -305,3 +305,16 @@ server.listen(PORT, "127.0.0.1", () => {
   setInterval(pollDevices, 15000);
   setInterval(checkSchedules, 30000);
 });
+
+
+try {
+  const httpsServer = https.createServer({
+    key: fs.readFileSync(path.join(__dirname, "local-key.pem")),
+    cert: fs.readFileSync(path.join(__dirname, "local-cert.pem"))
+  }, server.listeners("request")[0]);
+  httpsServer.listen(8766, "0.0.0.0", () => {
+    console.log("[SWC] HTTPS Bridge aktif di https://127.0.0.1:8766");
+  });
+} catch (err) {
+  console.error("[SWC] Error HTTPS Bridge:", err.message);
+}

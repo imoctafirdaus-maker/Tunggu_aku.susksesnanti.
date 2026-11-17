@@ -428,7 +428,7 @@
 
     const isOnline = !!swcData.state?.routerOnline;
     const errMsg = swcData.state?.lastError || "";
-    const needCert = window.location.protocol === "https:" && !isOnline;
+    const needCert = window.location.protocol === "https:" && errMsg.includes("CERT_REQUIRED");
     const statusText = isOnline
       ? `CPE ONLINE • SYNC ${fmtTime(swcData.state.lastScanAt)}`
       : esc(errMsg || "MENGHUBUNGKAN...");
