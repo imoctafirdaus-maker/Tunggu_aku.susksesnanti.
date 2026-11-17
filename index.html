@@ -45,23 +45,6 @@
 </head>
 <body>
 
-  <div id="octaNavHeader" style="background:#161b22; border-bottom:1px solid #30363d; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:99999; font-family:'Inter',sans-serif;">
-    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
-      <span style="color:#58a6ff;">VoltAgent</span>
-      <span style="color:#6e7681;">/</span>
-      <span style="color:#f0f6fc;">octa-analyzer</span>
-    </div>
-    <div style="display:flex; gap:6px;">
-      <button id="btnTabCrypto" onclick="switchOctaTab('crypto')" style="padding:6px 12px; background:#21262d; color:#06b6d4; border:1px solid #06b6d4; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">📈 Crypto Radar</button>
-      <button id="btnTabWifi" onclick="switchOctaTab('wifi')" style="padding:6px 12px; background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer;">📶 Wi-Fi Gateway</button>
-    </div>
-  </div>
-  <div id="wifiAppContainer" style="display:none; width:100%; min-height:calc(100vh - 60px); background:#0d1117;">
-    <iframe id="wifiIframe" src="./swc/public.html" style="width:100%; height:calc(100vh - 60px); border:none;"></iframe>
-  </div>
-  <div id="cryptoMainApp">
-  
-
   <div class="top-nav">
     <div class="nav-tabs">
       <button class="nav-btn active" id="btn-wifi" onclick="switchTab('wifi')">
@@ -101,27 +84,5 @@
       document.getElementById("https-warning").style.display = "block";
     }
   </script>
-
-  </div>
-  <script>
-    function switchOctaTab(tab) {
-      const cryptoApp = document.getElementById("cryptoMainApp");
-      const wifiApp = document.getElementById("wifiAppContainer");
-      const btnC = document.getElementById("btnTabCrypto");
-      const btnW = document.getElementById("btnTabWifi");
-      if (tab === "crypto") {
-        if (cryptoApp) cryptoApp.style.display = "block";
-        if (wifiApp) wifiApp.style.display = "none";
-        btnC.style.borderColor = "#06b6d4"; btnC.style.color = "#06b6d4";
-        btnW.style.borderColor = "#30363d"; btnW.style.color = "#8b949e";
-      } else {
-        if (cryptoApp) cryptoApp.style.display = "none";
-        if (wifiApp) wifiApp.style.display = "block";
-        btnW.style.borderColor = "#06b6d4"; btnW.style.color = "#06b6d4";
-        btnC.style.borderColor = "#30363d"; btnC.style.color = "#8b949e";
-      }
-    }
-  </script>
-  
 </body>
 </html>
