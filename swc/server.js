@@ -94,15 +94,9 @@ function broadcast() {
   }
 }
 
-let blockSyncQueue = Promise.resolve();
-function applyRouterBlocks() {
-  const task = async () => {
-    const blocked = db.prepare("SELECT mac FROM devices WHERE block_mode = 'blocked'").all().map(r => r.mac);
-    await router.syncBlockedMacs(blocked);
-  };
-  const next = blockSyncQueue.then(task, task);
-  blockSyncQueue = next.catch(() => {});
-  return next;
+async function applyRouterBlocks() {
+  const blocked = db.prepare("SELECT mac FROM devices WHERE block_mode = 'blocked'").all().map(r => r.mac);
+  await router.syncBlockedMacs(blocked);
 }
 
 async function pollDevices() {
@@ -231,17 +225,11 @@ const server = http.createServer(async (req, res) => {
       if (!mac) return sendJson(400, { error: "MAC wajib diisi" });
       const normMac = mac.toLowerCase();
       const mode = block ? "blocked" : "none";
-      const dev = db.prepare("SELECT * FROM devices WHERE mac = ?").get(normMac);
-      const prevMode = dev ? dev.block_mode : "none";
-      const label = dev ? (dev.alias || dev.hostname) : normMac;
       db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(mode, normMac);
+      const dev = db.prepare("SELECT * FROM devices WHERE mac = ?").get(normMac);
+      const label = dev ? (dev.alias || dev.hostname) : normMac;
 
-      try {
-        await applyRouterBlocks();
-      } catch (syncErr) {
-        db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(prevMode, normMac);
-        throw syncErr;
-      }
+      await applyRouterBlocks();
       logEvent(normMac, block ? "BLOCK" : "UNBLOCK", `${block ? "Memblokir" : "Membuka blokir"} ${label}`);
       sendTelegram(
         `${block ? "🚫" : "✅"} <b>SWC Wi-Fi — ${block ? "Perangkat Diblokir" : "Blokir Dibuka"}</b>\n` +
@@ -289,7 +277,7 @@ const server = http.createServer(async (req, res) => {
     const filePath = path.normalize(path.join(PUBLIC_DIR, relPath));
     if (filePath.startsWith(PUBLIC_DIR) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
       const ext = path.extname(filePath).toLowerCase();
-      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-store, no-cache, must-revalidate" });
+      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream" });
       return fs.createReadStream(filePath).pipe(res);
     }
     sendJson(404, { error: "Endpoint tidak ditemukan" });
