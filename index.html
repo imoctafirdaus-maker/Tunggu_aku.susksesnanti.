@@ -3,207 +3,147 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>VoltAgent / octa-analyzer · PWA Dashboard</title>
+  <title>Octa-Analyzer · Unified Gateway</title>
   <script src="https://cdn.jsdelivr.net/npm/eruda"></script>
   <script>eruda.init();</script>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Inter:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&family=JetBrains+Mono:wght@600&display=swap');
+    :root {
+      --bg: #060911; --panel: #0d1322; --border: rgba(255, 255, 255, 0.08);
+      --accent: #06b6d4; --text: #f3f4f6; --muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: 'Plus Jakarta Sans', sans-serif; padding: 10px; min-height: 100vh; }
+    
+    .top-nav {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px; margin-bottom: 10px;
+    }
+    .nav-tabs { display: flex; gap: 6px; }
+    .nav-btn {
+      display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px;
+      border-radius: 7px; font-size: 12px; font-weight: 700; border: 1px solid transparent;
+      background: transparent; color: var(--muted); cursor: pointer; transition: all 0.2s;
+    }
+    .nav-btn.active { background: rgba(6, 182, 212, 0.15); color: var(--accent); border-color: rgba(6, 182, 212, 0.3); }
+    
+    .notice-box {
+      display: none; background: rgba(244, 63, 94, 0.12); border: 1px solid rgba(244, 63, 94, 0.3);
+      border-radius: 10px; padding: 14px; margin-bottom: 12px; color: #fca5a5; font-size: 12px;
+    }
+    .btn-open-local {
+      display: inline-block; margin-top: 8px; padding: 8px 14px;
+      background: #06b6d4; color: #000; font-weight: 800; font-size: 12px;
+      border-radius: 6px; text-decoration: none;
+    }
 
+    .tab-content { display: none; height: calc(100vh - 75px); }
+    .tab-content.active { display: block; }
+    iframe { width: 100%; height: 100%; border: none; border-radius: 8px; }
+  </style>
+
+  <style id="design-md-tokens">
+    @import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap");
     :root {
       --bg-canvas: #0d1117;
       --bg-surface: #161b22;
       --bg-subtle: #21262d;
       --border-default: #30363d;
-      --border-muted: #21262d;
       --accent-emerald: #10b981;
-      --accent-blue: #58a6ff;
+      --accent-cyan: #06b6d4;
+      --status-rose: #f85149;
       --text-primary: #f0f6fc;
       --text-secondary: #8b949e;
-      --text-muted: #6e7681;
-      --danger: #f85149;
-      --warning: #d29922;
-      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
+      --font-sans: "Inter", sans-serif;
+      --font-mono: "JetBrains Mono", monospace;
     }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    
-    body {
-      background-color: var(--bg-canvas);
-      color: var(--text-primary);
-      font-family: var(--font-sans);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* Top Global Header */
-    .gh-header {
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-default);
-      padding: 12px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-    .repo-breadcrumb {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      font-weight: 600;
-    }
-    .repo-owner { color: var(--accent-blue); text-decoration: none; }
-    .repo-divider { color: var(--text-muted); }
-    .repo-name { color: var(--text-primary); font-weight: 700; }
-    .badge-public {
-      font-size: 11px;
-      font-family: var(--font-mono);
-      color: var(--text-secondary);
-      border: 1px solid var(--border-default);
-      padding: 2px 7px;
-      border-radius: 12px;
-      background: var(--bg-subtle);
-    }
-
-    /* Repository Navigation Tabs */
-    .nav-tabs-bar {
-      background: var(--bg-surface);
-      border-bottom: 1px solid var(--border-default);
-      padding: 0 16px;
-      display: flex;
-      gap: 8px;
-      overflow-x: auto;
-    }
-    .tab-item {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 10px 14px;
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-secondary);
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: all 0.15s ease;
-    }
-    .tab-item:hover { color: var(--text-primary); }
-    .tab-item.active {
-      color: var(--text-primary);
-      font-weight: 600;
-      border-bottom-color: #f78166;
-    }
-    .tab-badge {
-      font-size: 10px;
-      font-family: var(--font-mono);
-      background: var(--bg-subtle);
-      border: 1px solid var(--border-default);
-      color: var(--text-secondary);
-      padding: 1px 6px;
-      border-radius: 10px;
-    }
-
-    /* Container Area */
-    .main-container {
-      flex: 1;
-      padding: 16px;
-      max-width: 1280px;
-      width: 100%;
-      margin: 0 auto;
-    }
-
-    .notice-https {
-      display: none;
-      background: rgba(210, 153, 34, 0.1);
-      border: 1px solid var(--warning);
-      border-radius: 6px;
-      padding: 12px 16px;
-      margin-bottom: 16px;
-      font-size: 12px;
-      color: #e3b341;
-      font-family: var(--font-mono);
-    }
-    .btn-local-link {
-      display: inline-block;
-      margin-top: 6px;
-      padding: 6px 12px;
-      background: var(--accent-emerald);
-      color: #000;
-      font-weight: 700;
-      border-radius: 6px;
-      text-decoration: none;
-      font-size: 11px;
-    }
-
-    .tab-pane { display: none; width: 100%; height: 100%; }
-    .tab-pane.active { display: block; }
-    iframe { width: 100%; height: calc(100vh - 130px); border: 1px solid var(--border-default); border-radius: 6px; background: var(--bg-canvas); }
+    body { background-color: var(--bg-canvas) !important; color: var(--text-primary) !important; font-family: var(--font-sans) !important; }
+    .panel, div[style*="background:#0f172a"] { background: var(--bg-surface) !important; border-color: var(--border-default) !important; border-radius: 6px !important; }
+    .btn { font-family: var(--font-sans); border-radius: 6px !important; border: 1px solid var(--border-default) !important; }
+    code, table, .font-mono { font-family: var(--font-mono) !important; }
   </style>
+  
 </head>
 <body>
 
-  <!-- Top GitHub Header -->
-  <div class="gh-header">
-    <div class="repo-breadcrumb">
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" style="color:var(--text-muted)"><path d="M2 2.5A2.5 2.5 0 0 1 4.5 0h8.75a.75.75 0 0 1 .75.75v12.5a.75.75 0 0 1-.75.75h-2.5a.75.75 0 0 1 0-1.5h1.75v-2h-8a1 1 0 0 0-1 1v.75a.75.75 0 0 1-1.5 0V2.5z"/></svg>
-      <span class="repo-owner">VoltAgent</span>
-      <span class="repo-divider">/</span>
-      <span class="repo-name">octa-analyzer</span>
-      <span class="badge-public">Public</span>
+  <div id="designMdHeader" style="background:var(--bg-surface,#161b22); border-bottom:1px solid #30363d; padding:10px 16px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:9999; font-family:'Inter',sans-serif;">
+    <div style="display:flex; align-items:center; gap:8px; font-size:13px; font-weight:700;">
+      <span style="color:#58a6ff;">VoltAgent</span>
+      <span style="color:#6e7681;">/</span>
+      <span style="color:#f0f6fc;">octa-analyzer</span>
+      <span style="font-size:10px; font-family:'JetBrains Mono',monospace; padding:1px 6px; background:#21262d; border:1px solid #30363d; border-radius:10px; color:#8b949e;">DESIGN.md</span>
+    </div>
+    <div style="display:flex; gap:6px;">
+      <button onclick="togglePwaView('crypto')" id="btnViewCrypto" style="padding:6px 12px; background:#21262d; color:#f0f6fc; border:1px solid #06b6d4; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">📈 Crypto Radar</button>
+      <button onclick="togglePwaView('wifi')" id="btnViewWifi" style="padding:6px 12px; background:#21262d; color:#8b949e; border:1px solid #30363d; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer;">📶 Wi-Fi Gateway</button>
+    </div>
+  </div>
+  <div id="wifiGatewayFrameContainer" style="display:none; width:100%; height:calc(100vh - 50px); background:#0d1117;">
+    <iframe src="/swc/public.html" style="width:100%; height:100%; border:none;"></iframe>
+  </div>
+  
+
+  <div class="top-nav">
+    <div class="nav-tabs">
+      <button class="nav-btn active" id="btn-wifi" onclick="switchTab('wifi')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        Gateway Wi-Fi
+      </button>
+      <button class="nav-btn" id="btn-radar" onclick="switchTab('radar')">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        Radar Sinyal
+      </button>
     </div>
   </div>
 
-  <!-- Repository Navigation Tabs -->
-  <div class="nav-tabs-bar">
-    <button class="tab-item active" id="tab-btn-crypto" onclick="selectTab('crypto')">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M0 1.75C0 .784.784 0 1.75 0h12.5C15.216 0 16 .784 16 1.75v12.5A1.75 1.75 0 0 1 14.25 16H1.75A1.75 1.75 0 0 1 0 14.25V1.75zm1.75-.25a.25.25 0 0 0-.25.25v12.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25V1.75a.25.25 0 0 0-.25-.25H1.75z"/></svg>
-      Crypto Radar
-      <span class="tab-badge">Top 500</span>
-    </button>
-    <button class="tab-item" id="tab-btn-wifi" onclick="selectTab('wifi')">
-      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0zM1.5 8a6.5 6.5 0 1 0 13 0 6.5 6.5 0 0 0-13 0z"/></svg>
-      Gateway Wi-Fi
-      <span class="tab-badge">ZTE ACL</span>
-    </button>
+  <div id="https-warning" class="notice-box">
+    <strong>⚠️ Akses GitHub Pages Terdeteksi (HTTPS Block)</strong><br>
+    Browser memblokir backend Termux lokal karena diakses dari HTTPS.<br>
+    <a href="http://127.0.0.1:8765" class="btn-open-local">🚀 Buka dari Server Lokal (http://127.0.0.1:8765)</a>
   </div>
 
-  <!-- Main Content -->
-  <div class="main-container">
+  <div id="tab-wifi" class="tab-content active">
+    <iframe id="frame-wifi" src="/swc/public.html"></iframe>
+  </div>
 
-    <div id="https-notice" class="notice-https">
-      <strong>⚠️ HTTPS Mixed Content Detected</strong><br>
-      GitHub Pages memblokir koneksi ke backend Termux lokal (`http://127.0.0.1:8765`).<br>
-      <a href="http://127.0.0.1:8765" class="btn-local-link">🚀 Open in Local Termux Server (http://127.0.0.1:8765)</a>
-    </div>
-
-    <!-- Crypto Radar Pane -->
-    <div id="pane-crypto" class="tab-pane active">
-      <iframe src="/trading"></iframe>
-    </div>
-
-    <!-- Gateway Wi-Fi ZTE Pane -->
-    <div id="pane-wifi" class="tab-pane">
-      <iframe src="/swc/public.html"></iframe>
-    </div>
-
+  <div id="tab-radar" class="tab-content">
+    <iframe id="frame-radar" src="/trading"></iframe>
   </div>
 
   <script>
-    function selectTab(name) {
-      document.getElementById("pane-crypto").classList.toggle("active", name === 'crypto');
-      document.getElementById("pane-wifi").classList.toggle("active", name === 'wifi');
-      
-      document.getElementById("tab-btn-crypto").classList.toggle("active", name === 'crypto');
-      document.getElementById("tab-btn-wifi").classList.toggle("active", name === 'wifi');
+    function switchTab(t) {
+      document.getElementById("tab-wifi").classList.toggle("active", t === 'wifi');
+      document.getElementById("tab-radar").classList.toggle("active", t === 'radar');
+      document.getElementById("btn-wifi").classList.toggle("active", t === 'wifi');
+      document.getElementById("btn-radar").classList.toggle("active", t === 'radar');
     }
 
     if (window.location.protocol === 'https:') {
-      document.getElementById("https-notice").style.display = "block";
+      document.getElementById("https-warning").style.display = "block";
     }
   </script>
+
+  <script>
+    function togglePwaView(mode) {
+      const mainEl = document.querySelector("main");
+      const wifiContainer = document.getElementById("wifiGatewayFrameContainer");
+      const btnC = document.getElementById("btnViewCrypto");
+      const btnW = document.getElementById("btnViewWifi");
+      
+      if (mode === "crypto") {
+        if (mainEl) mainEl.style.display = "block";
+        if (wifiContainer) wifiContainer.style.display = "none";
+        btnC.style.borderColor = "#06b6d4"; btnC.style.color = "#f0f6fc";
+        btnW.style.borderColor = "#30363d"; btnW.style.color = "#8b949e";
+      } else {
+        if (mainEl) mainEl.style.display = "none";
+        if (wifiContainer) wifiContainer.style.display = "block";
+        btnW.style.borderColor = "#06b6d4"; btnW.style.color = "#f0f6fc";
+        btnC.style.borderColor = "#30363d"; btnC.style.color = "#8b949e";
+      }
+    }
+  </script>
+  
 </body>
 </html>
