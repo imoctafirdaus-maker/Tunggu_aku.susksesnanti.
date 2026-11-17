@@ -178,7 +178,8 @@ class ZteF672YDriver {
       // 2. Hapus rule lama milik SWC
       for (const r of existingRules) {
         const name = r.Name || "";
-        if (r._InstID && (name.startsWith("SWC_") || name === "TestSWC")) {
+        const macMatch = (r.MACAddress || "").toLowerCase();
+        if (r._InstID && (name.startsWith("SWC_") || name === "TestSWC" || targetSet.has(macMatch) || targetSet.size === 0)) {
           const delBody = [
             "IF_ACTION=Delete",
             `_InstID=${encodeURIComponent(r._InstID)}`,
