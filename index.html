@@ -1007,7 +1007,13 @@ const EMA_EXP = {
     $("emaBadge").textContent = isBotEnabled() ? "TERHUBUNG (MTF · ≥75%)" : "STANDBY (MASTER OFF)";
     $("emaBadge").className = isBotEnabled() ? "badge pass" : "badge warning";
 
-    $("emaState").textContent = this.stateStatus.replace(/_/g, " ");
+    $("emaState").textContent = this.stateStatus;
+    this.renderUI();
+  }
+};
+</script>
+</body>
+</html>
     $("emaStateSub").textContent = (this.remoteSync && this.remoteSync.aiSummary) ? this.remoteSync.aiSummary : "Pemantauan MTF + Dual-AI Gatekeeper";
 
     const dt = this.data.trend, dp = this.data.pull;

@@ -19,11 +19,11 @@ const SCANNER_SOURCE = process.env.SCANNER_SOURCE || "github-actions";
 const CG_API_KEY = process.env.CG_API_KEY || "CG-eHK3WLfwgdQzLf5pVqCgoGWy";
 
 const TIMEFRAMES = ["5m", "15m", "1h"];
-const N_VOLUME = 10;
-const N_GAINERS = 10;
+const N_VOLUME = 20;
+const N_GAINERS = 20;
 const POOL = 500;
 const CANDLES = 300;
-const CONCURRENCY = 4;
+const CONCURRENCY = 6;
 
 const ENDPOINTS = [
   "https://data-api.binance.vision", "https://api.binance.com",
@@ -283,6 +283,39 @@ async function main() {
     const tgSent = await notifyNewSignalsToTelegram(upEma, typeof up !== "undefined" ? up : {});
     if (tgSent > 0) console.log(`📲 ${tgSent} notifikasi sinyal baru terkirim ke Telegram!`);
     emaSt.written = Object.keys(upEma).length;
+
+    // [AI-TAKEOVER] Ambil kandidat langsung dari hasil scan aktif (foundEma & foundOld)
+    if (futuresSnap && futuresSnap.ok) {
+      const normalizeCand = (r, strat) => {
+        const entry = Number(r.entryPrice || r.entry || r.price || r.close || 0);
+        const isBuy = r.signal === "BUY";
+        const sl = Number(r.stopLoss || r.sl || (isBuy ? entry * 0.992 : entry * 1.008));
+        const tp = Number(r.takeProfit || r.tp || (isBuy ? entry * 1.016 : entry * 0.984));
+        const pVal = Number(r.probability || r.prob || r.score || r.confidence || 80);
+        return { ...r, probability: pVal, score: pVal, entryPrice: entry, stopLoss: sl, takeProfit: tp, strategy: strat };
+      };
+
+      const emaCands = foundEma.map(x => normalizeCand(x.rec, "EMA Expert"));
+      const oldCands = foundOld
+        .map(x => normalizeCand(x.rec, "AI-Takeover"))
+        .filter(r => r.entryPrice > 0)
+        .sort((a, b) => (b.probability || b.prob || 0) - (a.probability || a.prob || 0))
+        .slice(0, 2);
+
+      const aiQueue = emaCands.length > 0 ? emaCands.slice(0, 2) : oldCands;
+      console.log(`🧠 [AI-TAKEOVER] Kandidat siap audit AI: ${aiQueue.length} koin`);
+
+      for (const cand of aiQueue) {
+        console.log(`🤖 [AI-TAKEOVER] Mengirim ${cand.symbol} (${cand.signal} @ ${cand.entryPrice}) ke Dual-AI...`);
+        const execRes = await executeSignalTrade(cand, futuresSnap);
+        if (execRes && execRes.executed) {
+          console.log(`🚀 [AI-ORDER] ${cand.symbol} ${cand.signal} DIEKSEKUSI AI! (${execRes.orderId || "OK"})`);
+          futuresSnap.openPositions.push({ symbol: cand.symbol });
+        } else {
+          console.log(`🛡️ [AI-SKIP] ${cand.symbol}: ${execRes ? execRes.reason : "Ditolak"}`);
+        }
+      }
+    }
 
     st.ok = st.scanned > 0;
     emaSt.ok = emaSt.scanned > 0;

@@ -1,0 +1,2831 @@
+==========================================
+OCTA-ANALYZER (SWC) - PROJECT CONTEXT DUMP
+==========================================
+
+--- 1. STRUKTUR DIREKTORI ---
+.
+./1791748937891.jpg
+./README.md
+./analyzer.log
+./analyzer_bot.py
+./bot.log
+./bot.pid
+./bot.sh
+./firebase-signals.js
+./icon-192.png
+./icon-512.png
+./icon-maskable-192.png
+./icon-maskable-512.png
+./index.html
+./manifest.json
+./project_summary.txt
+./scanner
+./scanner/aiConfig.json
+./scanner/aiQuotaState.json
+./scanner/autoTrader.js
+./scanner/binanceConfig.json
+./scanner/bot.log
+./scanner/bot.pid
+./scanner/botControl.js
+./scanner/database.rules.json
+./scanner/dualAiGatekeeper.js
+./scanner/engine.js
+./scanner/firebase-signals.js
+./scanner/monteCarlo.js
+./scanner/newsGuard.js
+./scanner/node_modules
+./scanner/node_modules/@fastify
+./scanner/node_modules/@firebase
+./scanner/node_modules/@google-cloud
+./scanner/node_modules/@grpc
+./scanner/node_modules/@js-sdsl
+./scanner/node_modules/@nodable
+./scanner/node_modules/@opentelemetry
+./scanner/node_modules/@protobufjs
+./scanner/node_modules/@tootallnate
+./scanner/node_modules/@types
+./scanner/node_modules/abort-controller
+./scanner/node_modules/agent-base
+./scanner/node_modules/ansi-regex
+./scanner/node_modules/ansi-styles
+./scanner/node_modules/anynum
+./scanner/node_modules/arrify
+./scanner/node_modules/async-retry
+./scanner/node_modules/asynckit
+./scanner/node_modules/base64-js
+./scanner/node_modules/bignumber.js
+./scanner/node_modules/buffer-equal-constant-time
+./scanner/node_modules/call-bind-apply-helpers
+./scanner/node_modules/cliui
+./scanner/node_modules/color-convert
+./scanner/node_modules/color-name
+./scanner/node_modules/combined-stream
+./scanner/node_modules/data-uri-to-buffer
+./scanner/node_modules/debug
+./scanner/node_modules/delayed-stream
+./scanner/node_modules/dunder-proto
+./scanner/node_modules/duplexify
+./scanner/node_modules/ecdsa-sig-formatter
+./scanner/node_modules/emoji-regex
+./scanner/node_modules/end-of-stream
+./scanner/node_modules/es-define-property
+./scanner/node_modules/es-errors
+./scanner/node_modules/es-object-atoms
+./scanner/node_modules/es-set-tostringtag
+./scanner/node_modules/escalade
+./scanner/node_modules/event-target-shim
+./scanner/node_modules/extend
+./scanner/node_modules/farmhash-modern
+./scanner/node_modules/fast-deep-equal
+./scanner/node_modules/fast-xml-builder
+./scanner/node_modules/fast-xml-parser
+./scanner/node_modules/faye-websocket
+./scanner/node_modules/fetch-blob
+./scanner/node_modules/firebase-admin
+./scanner/node_modules/form-data
+./scanner/node_modules/formdata-polyfill
+./scanner/node_modules/function-bind
+./scanner/node_modules/functional-red-black-tree
+./scanner/node_modules/gaxios
+./scanner/node_modules/gcp-metadata
+./scanner/node_modules/get-caller-file
+./scanner/node_modules/get-intrinsic
+./scanner/node_modules/get-proto
+./scanner/node_modules/google-auth-library
+./scanner/node_modules/google-gax
+./scanner/node_modules/google-logging-utils
+./scanner/node_modules/gopd
+./scanner/node_modules/gtoken
+./scanner/node_modules/has-symbols
+./scanner/node_modules/has-tostringtag
+./scanner/node_modules/hasown
+./scanner/node_modules/html-entities
+./scanner/node_modules/http-parser-js
+./scanner/node_modules/http-proxy-agent
+./scanner/node_modules/https-proxy-agent
+./scanner/node_modules/inherits
+./scanner/node_modules/is-fullwidth-code-point
+./scanner/node_modules/is-stream
+./scanner/node_modules/is-unsafe
+./scanner/node_modules/jose
+./scanner/node_modules/json-bigint
+./scanner/node_modules/jsonwebtoken
+./scanner/node_modules/jwa
+./scanner/node_modules/jwks-rsa
+./scanner/node_modules/jws
+./scanner/node_modules/limiter
+./scanner/node_modules/lodash.camelcase
+./scanner/node_modules/lodash.clonedeep
+./scanner/node_modules/lodash.includes
+./scanner/node_modules/lodash.isboolean
+./scanner/node_modules/lodash.isinteger
+./scanner/node_modules/lodash.isnumber
+./scanner/node_modules/lodash.isplainobject
+./scanner/node_modules/lodash.isstring
+./scanner/node_modules/lodash.once
+./scanner/node_modules/long
+./scanner/node_modules/lru-cache
+./scanner/node_modules/lru-memoizer
+./scanner/node_modules/math-intrinsics
+./scanner/node_modules/mime
+./scanner/node_modules/mime-db
+./scanner/node_modules/mime-types
+./scanner/node_modules/ms
+./scanner/node_modules/node-domexception
+./scanner/node_modules/node-fetch
+./scanner/node_modules/object-hash
+./scanner/node_modules/once
+./scanner/node_modules/p-limit
+./scanner/node_modules/path-expression-matcher
+./scanner/node_modules/proto3-json-serializer
+./scanner/node_modules/protobufjs
+./scanner/node_modules/readable-stream
+./scanner/node_modules/require-directory
+./scanner/node_modules/retry
+./scanner/node_modules/retry-request
+./scanner/node_modules/safe-buffer
+./scanner/node_modules/semver
+./scanner/node_modules/stream-events
+./scanner/node_modules/stream-shift
+./scanner/node_modules/string-width
+./scanner/node_modules/string_decoder
+./scanner/node_modules/strip-ansi
+./scanner/node_modules/strnum
+./scanner/node_modules/stubs
+./scanner/node_modules/teeny-request
+./scanner/node_modules/tr46
+./scanner/node_modules/tslib
+./scanner/node_modules/undici-types
+./scanner/node_modules/util-deprecate
+./scanner/node_modules/uuid
+./scanner/node_modules/web-streams-polyfill
+./scanner/node_modules/webidl-conversions
+./scanner/node_modules/websocket-driver
+./scanner/node_modules/websocket-extensions
+./scanner/node_modules/whatwg-url
+./scanner/node_modules/wrap-ansi
+./scanner/node_modules/wrappy
+./scanner/node_modules/xml-naming
+./scanner/node_modules/y18n
+./scanner/node_modules/yallist
+./scanner/node_modules/yargs
+./scanner/node_modules/yargs-parser
+./scanner/node_modules/yocto-queue
+./scanner/package-lock.json
+./scanner/package.json
+./scanner/scan.js
+./scanner/serviceAccountKey.json
+./scanner/telegramConfig.json
+./scanner/telegramNotifier.js
+./swc
+./swc.sh
+./swc/data
+./swc/data/swc.db
+./swc/index.html.pre_swc.bak
+./swc/public
+./swc/public.html
+./swc/server.js
+./swc/swc-ui.js
+./swc/swc.db
+./swc/swc.log
+./swc/swc.pid
+./swc/zteDriver.js
+./trade-off
+./trade-on
+
+--- 2. ISI FILE UTAMA ---
+
+=== FILE: swc/server.js ===
+"use strict";
+const http = require("http");
+const fs = require("fs");
+const path = require("path");
+const { DatabaseSync } = require("node:sqlite");
+const { ZteF672YDriver } = require("./zteDriver");
+
+const PORT = Number(process.env.SWC_PORT || 8765);
+const PUBLIC_DIR = path.join(__dirname, "..");
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "application/javascript; charset=utf-8", ".json": "application/json", ".png": "image/png", ".jpg": "image/jpeg", ".svg": "image/svg+xml", ".css": "text/css" };
+const SWC_DIR = __dirname;
+const DB_PATH = path.join(SWC_DIR, "data", "swc.db");
+const TG_CFG_PATH = path.join(SWC_DIR, "..", "scanner", "telegramConfig.json");
+
+const db = new DatabaseSync(DB_PATH);
+const router = new ZteF672YDriver();
+const sseClients = new Set();
+
+let state = {
+  routerOnline: false,
+  lastScanAt: 0,
+  lastError: "",
+  autoAlertNewDevice: true
+};
+
+// Migrasi/ensure schema
+db.exec(`
+  CREATE TABLE IF NOT EXISTS devices (
+    mac TEXT PRIMARY KEY,
+    ip TEXT,
+    hostname TEXT,
+    alias TEXT,
+    conn_type TEXT,
+    status TEXT DEFAULT "online",
+    block_mode TEXT DEFAULT "none",
+    is_known INTEGER DEFAULT 0,
+    first_seen INTEGER,
+    last_seen INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS event_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mac TEXT,
+    event_type TEXT,
+    detail TEXT,
+    created_at INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS schedules (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mac TEXT,
+    action TEXT,
+    start_time TEXT,
+    end_time TEXT,
+    enabled INTEGER DEFAULT 1
+  );
+`);
+
+async function sendTelegram(text) {
+  try {
+    if (!fs.existsSync(TG_CFG_PATH)) return;
+    const cfg = JSON.parse(fs.readFileSync(TG_CFG_PATH, "utf8"));
+    if (!cfg.token || !cfg.chatId) return;
+    await fetch(`https://api.telegram.org/bot${cfg.token}/sendMessage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: cfg.chatId,
+        text,
+        parse_mode: "HTML"
+      }),
+      signal: AbortSignal.timeout(6000)
+    });
+  } catch (e) {
+    console.error("[TG Err]", e.message);
+  }
+}
+
+function logEvent(mac, eventType, detail) {
+  db.prepare("INSERT INTO event_logs (mac, event_type, detail, created_at) VALUES (?, ?, ?, ?)")
+    .run(mac || "-", eventType, detail, Date.now());
+  db.prepare("DELETE FROM event_logs WHERE id NOT IN (SELECT id FROM event_logs ORDER BY id DESC LIMIT 150)").run();
+}
+
+function getSnapshot() {
+  const devices = db.prepare("SELECT * FROM devices ORDER BY status DESC, last_seen DESC").all();
+  const logs = db.prepare("SELECT * FROM event_logs ORDER BY id DESC LIMIT 30").all();
+  const schedules = db.prepare("SELECT * FROM schedules ORDER BY id DESC").all();
+  return { state, devices, logs, schedules };
+}
+
+function broadcast() {
+  const payload = `data: ${JSON.stringify(getSnapshot())}\n\n`;
+  for (const res of sseClients) {
+    try { res.write(payload); } catch (_) { sseClients.delete(res); }
+  }
+}
+
+let blockSyncQueue = Promise.resolve();
+function applyRouterBlocks() {
+  const task = async () => {
+    const blocked = db.prepare("SELECT mac FROM devices WHERE block_mode = 'blocked'").all().map(r => r.mac);
+    await router.syncBlockedMacs(blocked);
+  };
+  const next = blockSyncQueue.then(task, task);
+  blockSyncQueue = next.catch(() => {});
+  return next;
+}
+
+async function pollDevices() {
+  try {
+    const active = await router.getConnectedDevices();
+    const now = Date.now();
+    const activeSet = new Set(active.map(d => d.mac));
+
+    for (const dev of active) {
+      const existing = db.prepare("SELECT * FROM devices WHERE mac = ?").get(dev.mac);
+      if (!existing) {
+        db.prepare(`
+          INSERT INTO devices (mac, ip, hostname, alias, conn_type, status, block_mode, is_known, first_seen, last_seen)
+          VALUES (?, ?, ?, ?, ?, 'online', 'none', 0, ?, ?)
+        `).run(dev.mac, dev.ip, dev.hostname, dev.hostname, dev.connType, now, now);
+
+        logEvent(dev.mac, "NEW_DEVICE", `Perangkat baru terhubung: ${dev.hostname} (${dev.ip})`);
+        if (state.autoAlertNewDevice) {
+          sendTelegram(
+            `🛡️ <b>SWC Wi-Fi Alert — Perangkat Baru</b>\n` +
+            `• Nama: <code>${dev.hostname}</code>\n` +
+            `• IP: <code>${dev.ip}</code>\n` +
+            `• MAC: <code>${dev.mac}</code>`
+          );
+        }
+      } else {
+        db.prepare(`
+          UPDATE devices SET ip = ?, hostname = ?, conn_type = ?, status = 'online', last_seen = ?
+          WHERE mac = ?
+        `).run(dev.ip, dev.hostname, dev.connType, now, dev.mac);
+      }
+    }
+
+    const allStored = db.prepare("SELECT mac, status FROM devices").all();
+    for (const row of allStored) {
+      if (!activeSet.has(row.mac) && row.status === "online") {
+        db.prepare("UPDATE devices SET status = 'offline' WHERE mac = ?").run(row.mac);
+      }
+    }
+
+    state.routerOnline = true;
+    state.lastScanAt = now;
+    state.lastError = "";
+  } catch (e) {
+    state.routerOnline = false;
+    state.lastError = e.message;
+  }
+  broadcast();
+}
+
+function checkSchedules() {
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0, 5);
+  const rows = db.prepare("SELECT * FROM schedules WHERE enabled = 1").all();
+  let changed = false;
+
+  for (const s of rows) {
+    const dev = db.prepare("SELECT * FROM devices WHERE mac = ?").get(s.mac);
+    if (!dev) continue;
+    const inWindow = s.start_time <= s.end_time
+      ? (hhmm >= s.start_time && hhmm < s.end_time)
+      : (hhmm >= s.start_time || hhmm < s.end_time);
+
+    const targetMode = inWindow ? "blocked" : "none";
+    if (dev.block_mode !== targetMode) {
+      db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(targetMode, s.mac);
+      logEvent(s.mac, "SCHEDULE", `Jadwal otomatis: ${dev.alias || dev.hostname} -> ${targetMode === "blocked" ? "BLOKIR" : "IZINKAN"}`);
+      changed = true;
+    }
+  }
+  if (changed) {
+    applyRouterBlocks().then(broadcast).catch(err => {
+      state.lastError = err.message;
+      broadcast();
+    });
+  }
+}
+
+function readJsonBody(req) {
+  return new Promise((resolve, reject) => {
+    let raw = "";
+    req.on("data", chunk => { raw += chunk; if (raw.length > 65536) req.destroy(); });
+    req.on("end", () => {
+      try { resolve(raw ? JSON.parse(raw) : {}); } catch (e) { reject(e); }
+    });
+  });
+}
+
+const server = http.createServer(async (req, res) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  res.setHeader("Access-Control-Allow-Private-Network", "true");
+  if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
+
+  const url = new URL(req.url, `http://127.0.0.1:${PORT}`);
+  const sendJson = (code, obj) => {
+    res.writeHead(code, { "Content-Type": "application/json; charset=utf-8" });
+    res.end(JSON.stringify(obj));
+  };
+
+  try {
+    if (req.method === "GET" && url.pathname === "/api/stream") {
+      res.writeHead(200, {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        "Connection": "keep-alive"
+      });
+      res.write(`data: ${JSON.stringify(getSnapshot())}\n\n`);
+      sseClients.add(res);
+      req.on("close", () => sseClients.delete(res));
+      return;
+    }
+
+    if (req.method === "GET" && url.pathname === "/api/state") {
+      return sendJson(200, getSnapshot());
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/scan") {
+      await pollDevices();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/device/block") {
+      const { mac, block } = await readJsonBody(req);
+      if (!mac) return sendJson(400, { error: "MAC wajib diisi" });
+      const normMac = mac.toLowerCase();
+      const mode = block ? "blocked" : "none";
+      const dev = db.prepare("SELECT * FROM devices WHERE mac = ?").get(normMac);
+      const prevMode = dev ? dev.block_mode : "none";
+      const label = dev ? (dev.alias || dev.hostname) : normMac;
+      db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(mode, normMac);
+
+      try {
+        await applyRouterBlocks();
+      } catch (syncErr) {
+        db.prepare("UPDATE devices SET block_mode = ? WHERE mac = ?").run(prevMode, normMac);
+        throw syncErr;
+      }
+      logEvent(normMac, block ? "BLOCK" : "UNBLOCK", `${block ? "Memblokir" : "Membuka blokir"} ${label}`);
+      sendTelegram(
+        `${block ? "🚫" : "✅"} <b>SWC Wi-Fi — ${block ? "Perangkat Diblokir" : "Blokir Dibuka"}</b>\n` +
+        `• Perangkat: <b>${label}</b>\n` +
+        `• MAC: <code>${normMac}</code>`
+      );
+      broadcast();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/device/meta") {
+      const { mac, alias, is_known } = await readJsonBody(req);
+      if (!mac) return sendJson(400, { error: "MAC wajib diisi" });
+      const normMac = mac.toLowerCase();
+      if (typeof alias === "string") {
+        db.prepare("UPDATE devices SET alias = ? WHERE mac = ?").run(alias.trim(), normMac);
+      }
+      if (typeof is_known !== "undefined") {
+        db.prepare("UPDATE devices SET is_known = ? WHERE mac = ?").run(is_known ? 1 : 0, normMac);
+      }
+      logEvent(normMac, "UPDATE", `Memperbarui profil perangkat ${normMac}`);
+      broadcast();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/schedule") {
+      const { mac, start_time, end_time } = await readJsonBody(req);
+      if (!mac || !start_time || !end_time) return sendJson(400, { error: "Data jadwal tidak lengkap" });
+      db.prepare("INSERT INTO schedules (mac, action, start_time, end_time, enabled) VALUES (?, 'block', ?, ?, 1)")
+        .run(mac.toLowerCase(), start_time, end_time);
+      logEvent(mac.toLowerCase(), "SCHEDULE_ADD", `Jadwal blokir ${start_time} - ${end_time}`);
+      checkSchedules();
+      broadcast();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    if (req.method === "DELETE" && url.pathname === "/api/schedule") {
+      const id = Number(url.searchParams.get("id"));
+      db.prepare("DELETE FROM schedules WHERE id = ?").run(id);
+      broadcast();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    const relPath = url.pathname === "/" ? "/index.html" : (url.pathname === "/wifi" ? "/swc/public.html" : url.pathname);
+    const filePath = path.normalize(path.join(PUBLIC_DIR, relPath));
+    if (filePath.startsWith(PUBLIC_DIR) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
+      const ext = path.extname(filePath).toLowerCase();
+      res.writeHead(200, { "Content-Type": MIME[ext] || "application/octet-stream", "Cache-Control": "no-store, no-cache, must-revalidate" });
+      return fs.createReadStream(filePath).pipe(res);
+    }
+    sendJson(404, { error: "Endpoint tidak ditemukan" });
+  } catch (e) {
+    sendJson(500, { error: e.message });
+  }
+});
+
+server.listen(PORT, "127.0.0.1", () => {
+  console.log(`[SWC] Server aktif di http://127.0.0.1:${PORT}`);
+  pollDevices();
+  setInterval(pollDevices, 15000);
+  setInterval(checkSchedules, 30000);
+});
+
+=== FILE: swc/zteDriver.js ===
+"use strict";
+const crypto = require("crypto");
+
+class ZteF672YDriver {
+  constructor(opts = {}) {
+    this.base = opts.base || process.env.ZTE_URL || "http://192.168.1.1";
+    this.user = opts.user || process.env.ZTE_USER || "admin";
+    this.pass = opts.pass || process.env.ZTE_PASS || "Web@0063";
+    this.ck = {};
+    this.pubKey = "";
+    this.tok = "";
+    this.lock = Promise.resolve();
+  }
+
+  _upCk(res) {
+    const list = res.headers.getSetCookie ? res.headers.getSetCookie() : [];
+    for (const c of list) {
+      const [pair] = c.split(";");
+      const i = pair.indexOf("=");
+      if (i > 0) this.ck[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
+    }
+  }
+
+  _signCheck(payloadStr) {
+    if (!this.pubKey) return "";
+    const digest = crypto.createHash("sha256").update(payloadStr).digest("hex");
+    return crypto.publicEncrypt(
+      { key: this.pubKey, padding: crypto.constants.RSA_PKCS1_PADDING },
+      Buffer.from(digest)
+    ).toString("base64");
+  }
+
+  _assertXmlOk(xml, context = "Router") {
+    const mErr = String(xml || "").match(/<IF_ERRORSTR>([^<]+)<\/IF_ERRORSTR>/);
+    if (mErr && mErr[1].trim() !== "SUCC") {
+      throw new Error(`${context}: ${mErr[1].trim()}`);
+    }
+    if (String(xml || "").includes("Frm_Username")) {
+      throw new Error(`${context}: SessionTimeout`);
+    }
+  }
+
+  async _req(path, body = null, { ajax = true, signStr = null } = {}) {
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (Linux; Android 17)",
+      "Referer": this.base + "/"
+    };
+    if (ajax) headers["X-Requested-With"] = "XMLHttpRequest";
+    const cookieStr = Object.entries(this.ck).map(([k, v]) => `${k}=${v}`).join("; ");
+    if (cookieStr) headers["Cookie"] = cookieStr;
+    if (body !== null) headers["Content-Type"] = "application/x-www-form-urlencoded; charset=UTF-8";
+    if (signStr !== null && this.pubKey) headers["Check"] = this._signCheck(signStr);
+
+    const res = await fetch(this.base + path, {
+      method: body !== null ? "POST" : "GET",
+      headers,
+      body,
+      signal: AbortSignal.timeout(9000)
+    });
+    this._upCk(res);
+    const txt = await res.text();
+    const mTok = txt.match(/_sessionTmpToken\s*=\s*"([^"]+)"/);
+    if (mTok) {
+      this.tok = mTok[1].replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)));
+    }
+    return txt;
+  }
+
+  async _runSingleSession(fn) {
+    this.ck = {};
+    this.tok = "";
+    try {
+      await this._req("/", null, { ajax: false });
+      const initJson = JSON.parse(await this._req("/?_type=loginData&_tag=login_entry"));
+      if (initJson.lockingTime && Number(initJson.lockingTime) > 0) {
+        throw new Error(`Router terkunci sementara (${initJson.lockingTime} detik)`);
+      }
+      const saltXml = await this._req("/?_type=loginData&_tag=login_token");
+      const mSalt = saltXml.match(/>([^<]+)</);
+      if (!mSalt) throw new Error("Gagal membaca login_token router");
+      const shaPass = crypto.createHash("sha256").update(this.pass + mSalt[1].trim()).digest("hex");
+
+      const loginRes = JSON.parse(await this._req(
+        "/?_type=loginData&_tag=login_entry",
+        `action=login&Password=${shaPass}&Username=${encodeURIComponent(this.user)}&_sessionTOKEN=${encodeURIComponent(initJson.sess_token)}`
+      ));
+      if (!loginRes.login_need_refresh) {
+        throw new Error(loginRes.loginErrMsg || "Login router ditolak");
+      }
+
+      const dash = await this._req("/", null, { ajax: false });
+      if (dash.includes("Frm_Username")) {
+        throw new Error("SessionTimeout saat memuat dashboard router");
+      }
+      const mTok = dash.match(/_sessionTmpToken\s*=\s*"([^"]+)"/);
+      this.tok = mTok
+        ? mTok[1].replace(/\\x([0-9a-fA-F]{2})/g, (_, h) => String.fromCharCode(parseInt(h, 16)))
+        : loginRes.sess_token;
+      const mPk = dash.match(/(-----BEGIN PUBLIC KEY-----[\s\S]*?-----END PUBLIC KEY-----)/);
+      if (mPk) this.pubKey = mPk[1].replace(/\\n/g, "\n");
+
+      return await fn();
+    } finally {
+      if (this.tok) {
+        await this._req(
+          "/?_type=loginData&_tag=logout_entry",
+          `IF_LogOff=1&_sessionTOKEN=${encodeURIComponent(this.tok)}`
+        ).catch(() => {});
+        this.tok = "";
+      }
+    }
+  }
+
+  async _withSession(fn) {
+    const runWithRetry = async () => {
+      let lastErr;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          return await this._runSingleSession(fn);
+        } catch (err) {
+          lastErr = err;
+          if (attempt < 3) {
+            await new Promise(r => setTimeout(r, 900 * attempt));
+          }
+        }
+      }
+      throw lastErr;
+    };
+    const next = this.lock.then(runWithRetry, runWithRetry);
+    this.lock = next.catch(() => {});
+    return next;
+  }
+
+  _parseInstances(xml) {
+    const list = [];
+    const instMatches = xml.matchAll(/<Instance>([\s\S]*?)<\/Instance>/g);
+    for (const m of instMatches) {
+      const obj = {};
+      const pairs = m[1].matchAll(/<ParaName>([^<]+)<\/ParaName>\s*<ParaValue>([^<]*)<\/ParaValue>/g);
+      for (const p of pairs) obj[p[1].trim()] = p[2].trim();
+      if (Object.keys(obj).length) list.push(obj);
+    }
+    return list;
+  }
+
+  async getConnectedDevices() {
+    return this._withSession(async () => {
+      const xml = await this._req(`/?_type=hiddenData&_tag=accessdev_data&DeveiceType=ALL&_=${Date.now()}`);
+      this._assertXmlOk(xml, "getConnectedDevices");
+      const raw = this._parseInstances(xml);
+      return raw.map(d => ({
+        mac: (d._LuQUID_MACAddress || "").toLowerCase(),
+        ip: d._LuQUID_IPAddress || "-",
+        hostname: d._LuQUID_HostName || "Perangkat Tanpa Nama",
+        connType: d._LuQUID_InterfaceType || d._LuQUID_AccessType || "WLAN"
+      })).filter(d => d.mac);
+    });
+  }
+
+  async syncBlockedMacs(blockedMacs = []) {
+    const targetSet = new Set(
+      (blockedMacs || []).map(m => String(m || "").trim().toLowerCase()).filter(Boolean)
+    );
+    const targetAPs = ["DEV.WIFI.AP1", "DEV.WIFI.AP5"];
+
+    return this._withSession(async () => {
+      await this._req("/?_type=menuView&_tag=wlanAdvanced&Menu3Location=0");
+
+      // 1. Baca rule MAC filter saat ini
+      const ruleXml = await this._req(
+        `/?_type=menuData&_tag=wlan_macfilterrule_lua.lua&_sessionTOKEN=${encodeURIComponent(this.tok)}`,
+        null,
+        { signStr: `_sessionTOKEN=${this.tok}` }
+      );
+      this._assertXmlOk(ruleXml, "Baca MAC Rule");
+      const existingRules = this._parseInstances(ruleXml);
+
+      // 2. Hapus rule lama milik SWC
+      for (const r of existingRules) {
+        const name = r.Name || "";
+        if (r._InstID && (name.startsWith("SWC_") || name === "TestSWC")) {
+          const delBody = [
+            "IF_ACTION=Delete",
+            `_InstID=${encodeURIComponent(r._InstID)}`,
+            `_sessionTOKEN=${this.tok}`
+          ].join("&");
+          const delRes = await this._req("/?_type=menuData&_tag=wlan_macfilterrule_lua.lua", delBody, { signStr: delBody });
+          this._assertXmlOk(delRes, "Hapus MAC Rule");
+        }
+      }
+
+      // 3. Tambahkan setiap MAC yang diblokir ke AP 2.4GHz (AP1) & 5GHz (AP5)
+      let idx = 1;
+      for (const mac of targetSet) {
+        for (const ap of targetAPs) {
+          const ruleName = `SWC_${idx}_${mac.replace(/:/g, "").slice(-6)}`;
+          const parts = mac.split(":");
+          const addBody = [
+            "IF_ACTION=Apply",
+            "_InstID=-1",
+            `MACAddress=${encodeURIComponent(mac)}`,
+            `Name=${encodeURIComponent(ruleName)}`,
+            `Interface=${encodeURIComponent(ap)}`,
+            ...parts.map((p, i) => `sub_MACAddress${i}=${encodeURIComponent(p)}`),
+            `_sessionTOKEN=${this.tok}`
+          ].join("&");
+          const addRes = await this._req("/?_type=menuData&_tag=wlan_macfilterrule_lua.lua", addBody, { signStr: addBody });
+          this._assertXmlOk(addRes, `Tambah MAC Rule (${mac})`);
+        }
+        idx++;
+      }
+
+      // 4. Atur ACLPolicy ke "Ban" atau "Disabled"
+      const desiredPolicy = targetSet.size > 0 ? "Ban" : "Disabled";
+      const polXml = await this._req(
+        `/?_type=menuData&_tag=wlan_macfilteraclpolicy_lua.lua&_sessionTOKEN=${encodeURIComponent(this.tok)}`,
+        null,
+        { signStr: `_sessionTOKEN=${this.tok}` }
+      );
+      this._assertXmlOk(polXml, "Baca ACLPolicy");
+      const apInstances = this._parseInstances(polXml).filter(inst =>
+        (inst._InstID || "").startsWith("DEV.WIFI.AP")
+      );
+
+      if (apInstances.length > 0) {
+        const multiParams = ["IF_ACTION=Apply", `_InstNum=${apInstances.length}`];
+        apInstances.forEach((inst, i) => {
+          const id = inst._InstID;
+          const pol = targetAPs.includes(id) ? desiredPolicy : (inst.ACLPolicy || "Disabled");
+          multiParams.push(`_InstID_${i}=${encodeURIComponent(id)}`);
+          multiParams.push(`ACLPolicy_${i}=${pol}`);
+        });
+        multiParams.push(`_sessionTOKEN=${this.tok}`);
+        const multiBody = multiParams.join("&");
+        const polApplyRes = await this._req("/?_type=menuData&_tag=wlan_macfilteraclpolicy_lua.lua", multiBody, { signStr: multiBody });
+        this._assertXmlOk(polApplyRes, "Terapkan ACLPolicy");
+      }
+
+      // 5. Verifikasi baca-ulang aturan dari router untuk memastikan benar-benar tersimpan
+      const verifyRuleXml = await this._req(
+        `/?_type=menuData&_tag=wlan_macfilterrule_lua.lua&_sessionTOKEN=${encodeURIComponent(this.tok)}`,
+        null,
+        { signStr: `_sessionTOKEN=${this.tok}` }
+      );
+      this._assertXmlOk(verifyRuleXml, "Verifikasi MAC Rule");
+      const savedMacs = new Set(
+        this._parseInstances(verifyRuleXml).map(r => (r.MACAddress || "").toLowerCase())
+      );
+      for (const mac of targetSet) {
+        if (!savedMacs.has(mac)) {
+          throw new Error(`Verifikasi gagal: MAC ${mac} belum masuk ke tabel ACL router`);
+        }
+      }
+
+      return { synced: targetSet.size, policy: desiredPolicy };
+    });
+  }
+}
+
+module.exports = { ZteF672YDriver };
+
+=== FILE: swc/swc-ui.js ===
+(function () {
+  if (window.__SWC_LOADED__) return;
+  window.__SWC_LOADED__ = true;
+
+  const API_BASE = (location.port === "8765") ? "" : "http://127.0.0.1:8765";
+  let currentTab = "crypto";
+  let swcData = { state: { routerOnline: false, lastScanAt: 0, lastError: "Menghubungkan ke Termux (8765)..." }, devices: [], logs: [], schedules: [] };
+  let searchQuery = "";
+  let filterMode = "all";
+  let touchStartX = 0, touchStartY = 0;
+  let lastStreamMsg = 0;
+  let isMutating = false;
+
+  const style = document.createElement("style");
+  style.id = "swc-injected-style";
+  style.textContent = `
+    :root {
+      --noc-bg: #080a0e;
+      --noc-surface: #0e1218;
+      --noc-inset: #131821;
+      --noc-hover: #19202c;
+      --noc-border: #1e2633;
+      --noc-border-hi: #2b3648;
+      --noc-text: #f1f5f9;
+      --noc-sub: #94a3b8;
+      --noc-muted: #64748b;
+      --noc-accent: #2563eb;
+      --noc-cyan: #38bdf8;
+      --noc-green: #10b981;
+      --noc-red: #ef4444;
+      --noc-amber: #f59e0b;
+      --noc-mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+      --noc-sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    body { padding-top: 50px !important; background: var(--noc-bg); }
+    #swc-top-switcher {
+      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 48px !important; z-index: 999999 !important;
+      background: rgba(8, 10, 14, 0.96) !important; backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--noc-border) !important;
+      display: flex !important; align-items: center !important; justify-content: space-between !important;
+      padding: 0 12px !important; font-family: var(--noc-sans) !important; box-sizing: border-box;
+    }
+    .swc-tabs {
+      display: flex !important; gap: 3px; background: var(--noc-surface);
+      padding: 3px; border-radius: 6px; border: 1px solid var(--noc-border);
+    }
+    .swc-tab-btn {
+      display: inline-flex; align-items: center; gap: 6px;
+      border: 1px solid transparent; background: transparent; color: var(--noc-sub);
+      font-size: 11.5px; font-weight: 600; letter-spacing: 0.01em;
+      padding: 5px 11px; border-radius: 4px; cursor: pointer; transition: all 0.15s ease;
+    }
+    .swc-tab-btn svg { width: 13px; height: 13px; opacity: 0.8; }
+    .swc-tab-btn.active {
+      background: var(--noc-hover); color: #ffffff;
+      border-color: var(--noc-border-hi); box-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    .swc-tab-btn.active svg { color: var(--noc-cyan); opacity: 1; }
+    .swc-dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--noc-red);
+      box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.18); flex-shrink: 0;
+    }
+    .swc-dot.online {
+      background: var(--noc-green); box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+    }
+    .swc-swipe-hint {
+      display: inline-flex; align-items: center; gap: 5px;
+      font-family: var(--noc-mono); font-size: 10px; color: var(--noc-muted);
+      letter-spacing: 0.04em; text-transform: uppercase;
+    }
+    #swc-panel {
+      display: none; min-height: calc(100vh - 50px);
+      background: var(--noc-bg); color: var(--noc-text);
+      font-family: var(--noc-sans); padding: 12px; box-sizing: border-box;
+    }
+    .swc-wrap { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+
+    /* Gateway Header Card */
+    .noc-gateway {
+      background: var(--noc-surface); border: 1px solid var(--noc-border);
+      border-radius: 8px; padding: 14px;
+    }
+    .noc-gw-top {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    }
+    .noc-gw-eyebrow {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-family: var(--noc-mono); font-size: 10px; font-weight: 600;
+      letter-spacing: 0.08em; text-transform: uppercase; color: var(--noc-cyan);
+      margin-bottom: 4px;
+    }
+    .noc-gw-title {
+      margin: 0; font-size: 16px; font-weight: 700; letter-spacing: -0.01em; color: #f8fafc;
+    }
+    .noc-gw-status {
+      display: inline-flex; align-items: center; gap: 6px; margin-top: 6px;
+      font-family: var(--noc-mono); font-size: 10.5px; color: var(--noc-sub);
+      background: var(--noc-inset); border: 1px solid var(--noc-border);
+      padding: 3px 8px; border-radius: 4px;
+    }
+    .noc-gw-status.is-err { color: #fca5a5; border-color: rgba(239,68,68,0.3); background: rgba(239,68,68,0.08); }
+    .noc-pulse {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--noc-green);
+      animation: nocPulse 2s infinite;
+    }
+    .noc-pulse.err { background: var(--noc-red); animation: none; }
+    @keyframes nocPulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.35; }
+    }
+    @keyframes nocSpin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    .noc-spin { animation: nocSpin 0.8s linear infinite; }
+
+    /* KPI Strip */
+    .noc-kpi-grid {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px;
+    }
+    .noc-kpi {
+      background: var(--noc-inset); border: 1px solid var(--noc-border);
+      border-radius: 6px; padding: 9px 10px; position: relative; overflow: hidden;
+    }
+    .noc-kpi::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: var(--kpi-accent, var(--noc-border-hi));
+    }
+    .noc-kpi-lbl {
+      font-family: var(--noc-mono); font-size: 9.5px; font-weight: 600;
+      letter-spacing: 0.06em; text-transform: uppercase; color: var(--noc-muted);
+    }
+    .noc-kpi-val {
+      font-family: var(--noc-mono); font-size: 20px; font-weight: 700;
+      font-variant-numeric: tabular-nums; color: #f8fafc; margin-top: 2px; line-height: 1.2;
+    }
+    .noc-kpi-sub { font-size: 10.5px; color: var(--noc-sub); margin-top: 2px; }
+
+    /* Search & Filter Toolbar */
+    .noc-toolbar { display: flex; flex-direction: column; gap: 8px; }
+    .noc-search-wrap { position: relative; display: flex; align-items: center; }
+    .noc-search-wrap svg {
+      position: absolute; left: 11px; color: var(--noc-muted); pointer-events: none;
+    }
+    .noc-input {
+      width: 100%; background: var(--noc-surface); border: 1px solid var(--noc-border);
+      border-radius: 6px; padding: 9px 12px 9px 33px; color: var(--noc-text);
+      font-family: var(--noc-sans); font-size: 12.5px; outline: none; box-sizing: border-box;
+      transition: border-color 0.15s ease;
+    }
+    .noc-input:focus { border-color: var(--noc-accent); }
+    .noc-input::placeholder { color: var(--noc-muted); }
+
+    .noc-seg-bar {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 4px;
+      background: var(--noc-surface); border: 1px solid var(--noc-border);
+      padding: 3px; border-radius: 6px;
+    }
+    .swc-chip {
+      display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+      background: transparent; border: 1px solid transparent; color: var(--noc-sub);
+      font-size: 11.5px; font-weight: 600; padding: 6px 6px; border-radius: 4px;
+      cursor: pointer; transition: all 0.15s ease;
+    }
+    .swc-chip.active {
+      background: var(--noc-hover); color: #ffffff; border-color: var(--noc-border-hi);
+    }
+    .noc-cnt {
+      font-family: var(--noc-mono); font-size: 10px; color: var(--noc-muted);
+      background: var(--noc-bg); padding: 1px 5px; border-radius: 3px;
+    }
+    .swc-chip.active .noc-cnt { color: var(--noc-cyan); }
+
+    /* Buttons */
+    .swc-btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+      background: var(--noc-inset); border: 1px solid var(--noc-border-hi);
+      color: var(--noc-text); font-family: var(--noc-sans); font-size: 11.5px; font-weight: 600;
+      padding: 6px 11px; border-radius: 5px; cursor: pointer; transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+    .swc-btn:hover:not(:disabled) { background: var(--noc-hover); border-color: #3b4961; }
+    .swc-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .swc-btn-primary {
+      background: #1d4ed8; border-color: #2563eb; color: #ffffff;
+    }
+    .swc-btn-primary:hover:not(:disabled) { background: #2563eb; }
+    .swc-btn-danger {
+      background: rgba(239, 68, 68, 0.1); border-color: rgba(239, 68, 68, 0.34); color: #fca5a5;
+    }
+    .swc-btn-danger:hover:not(:disabled) { background: rgba(239, 68, 68, 0.18); border-color: rgba(239, 68, 68, 0.5); }
+    .swc-btn-success {
+      background: rgba(16, 185, 129, 0.12); border-color: rgba(16, 185, 129, 0.36); color: #6ee7b7;
+    }
+    .swc-btn-success:hover:not(:disabled) { background: rgba(16, 185, 129, 0.2); border-color: rgba(16, 185, 129, 0.52); }
+
+    /* Client Cards */
+    .noc-list { display: flex; flex-direction: column; gap: 8px; }
+    .noc-card {
+      background: var(--noc-surface); border: 1px solid var(--noc-border);
+      border-left: 3px solid #334155; border-radius: 6px; padding: 11px 12px;
+      display: flex; flex-direction: column; gap: 9px;
+    }
+    .noc-card.is-online { border-left-color: var(--noc-green); }
+    .noc-card.is-blocked {
+      background: #120d10; border-color: rgba(239, 68, 68, 0.26); border-left-color: var(--noc-red);
+    }
+    .noc-card-top {
+      display: flex; justify-content: space-between; align-items: flex-start; gap: 10px;
+    }
+    .noc-card-info { min-width: 0; flex: 1; }
+    .noc-name-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+    .noc-hostname {
+      font-size: 13.5px; font-weight: 700; color: #f8fafc;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 190px;
+    }
+    .noc-badge {
+      font-family: var(--noc-mono); font-size: 9.5px; font-weight: 700;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      padding: 2px 6px; border-radius: 3px; border: 1px solid transparent;
+    }
+    .noc-badge-on { background: rgba(16,185,129,0.1); color: #34d399; border-color: rgba(16,185,129,0.25); }
+    .noc-badge-off { background: rgba(100,116,139,0.12); color: #94a3b8; border-color: rgba(100,116,139,0.22); }
+    .noc-badge-blk { background: rgba(239,68,68,0.14); color: #f87171; border-color: rgba(239,68,68,0.32); }
+    .noc-badge-known { background: rgba(56,189,248,0.08); color: #7dd3fc; border-color: rgba(56,189,248,0.22); }
+    .noc-badge-unk { background: rgba(245,158,11,0.1); color: #fbbf24; border-color: rgba(245,158,11,0.26); }
+
+    .noc-meta {
+      display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+      font-family: var(--noc-mono); font-size: 11px; color: var(--noc-sub); margin-top: 5px;
+    }
+    .noc-sep { color: #334155; }
+    .noc-card-actions {
+      display: flex; align-items: center; gap: 6px; padding-top: 8px;
+      border-top: 1px solid rgba(30, 38, 51, 0.8);
+    }
+    .noc-card-actions .swc-btn { padding: 5px 9px; font-size: 11px; color: var(--noc-sub); }
+    .noc-card-actions .swc-btn:hover { color: #f8fafc; }
+
+    /* Sub-panels (Schedules & Audit Logs) */
+    .noc-section {
+      background: var(--noc-surface); border: 1px solid var(--noc-border);
+      border-radius: 8px; padding: 12px;
+    }
+    .noc-sec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid var(--noc-border);
+    }
+    .noc-sec-title {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 12px; font-weight: 700; letter-spacing: 0.02em; color: #e2e8f0;
+      text-transform: uppercase;
+    }
+    .noc-sec-title svg { color: var(--noc-cyan); }
+    .noc-sch-form {
+      display: grid; grid-template-columns: 1fr auto auto auto; gap: 6px; align-items: center;
+    }
+    @media (max-width: 540px) {
+      .noc-sch-form { grid-template-columns: 1fr 1fr; }
+      .noc-sch-form select { grid-column: span 2; }
+      .noc-sch-form button { grid-column: span 2; }
+    }
+    .noc-field {
+      background: var(--noc-inset); border: 1px solid var(--noc-border);
+      color: var(--noc-text); border-radius: 5px; padding: 7px 9px;
+      font-family: var(--noc-mono); font-size: 11.5px; outline: none;
+    }
+    .noc-sch-list, .noc-log-list {
+      display: flex; flex-direction: column; gap: 5px; margin-top: 8px;
+    }
+    .noc-sch-item {
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      background: var(--noc-inset); border: 1px solid var(--noc-border);
+      padding: 7px 10px; border-radius: 5px; font-size: 11.5px;
+    }
+    .noc-log-item {
+      display: flex; align-items: baseline; gap: 8px;
+      font-family: var(--noc-mono); font-size: 10.5px; color: var(--noc-sub);
+      padding: 4px 6px; border-bottom: 1px solid rgba(30, 38, 51, 0.5);
+    }
+    .noc-log-item:last-child { border-bottom: none; }
+    .noc-log-ts { color: var(--noc-muted); flex-shrink: 0; }
+    .noc-log-tag {
+      font-size: 9.5px; font-weight: 700; padding: 1px 4px; border-radius: 3px;
+      background: var(--noc-inset); color: var(--noc-cyan); flex-shrink: 0;
+    }
+    .noc-log-tag.BLOCK { color: #f87171; background: rgba(239,68,68,0.12); }
+    .noc-log-tag.UNBLOCK { color: #34d399; background: rgba(16,185,129,0.12); }
+    .noc-empty {
+      text-align: center; padding: 18px 12px; color: var(--noc-muted);
+      font-family: var(--noc-mono); font-size: 11.5px;
+      border: 1px dashed var(--noc-border); border-radius: 6px;
+    }
+  `;
+  document.head.appendChild(style);
+
+  function initSwcUI() {
+    if (document.getElementById("swc-top-switcher")) return;
+
+    const switcher = document.createElement("div");
+    switcher.id = "swc-top-switcher";
+    switcher.innerHTML = `
+      <div class="swc-tabs">
+        <button class="swc-tab-btn active" data-tab="crypto">${NOC_ICONS.radar}<span>Radar Sinyal</span></button>
+        <button class="swc-tab-btn" data-tab="wifi"><span class="swc-dot" id="swc-router-dot"></span>${NOC_ICONS.router}<span>Gateway Wi-Fi</span></button>
+      </div>
+      <span class="swc-swipe-hint">${NOC_ICONS.swipe}<span>Geser</span></span>
+    `;
+    document.body.prepend(switcher);
+
+    const cryptoHost = document.createElement("div");
+    cryptoHost.id = "swc-crypto-host";
+    Array.from(document.body.childNodes).forEach(node => {
+      if (node !== switcher && node !== cryptoHost && node.id !== "swc-panel" && node.tagName !== "SCRIPT" && node.tagName !== "STYLE") {
+        cryptoHost.appendChild(node);
+      }
+    });
+    document.body.appendChild(cryptoHost);
+
+    const swcPanel = document.createElement("div");
+    swcPanel.id = "swc-panel";
+    document.body.appendChild(swcPanel);
+
+    function setTab(tab) {
+      currentTab = tab;
+      switcher.querySelectorAll(".swc-tab-btn").forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+      if (tab === "wifi") {
+        cryptoHost.style.display = "none";
+        swcPanel.classList.add("active");
+        pollStateOnce();
+        renderSwc();
+      } else {
+        swcPanel.classList.remove("active");
+        cryptoHost.style.display = "block";
+      }
+    }
+
+    switcher.addEventListener("click", e => {
+      const btn = e.target.closest(".swc-tab-btn");
+      if (btn) setTab(btn.dataset.tab);
+    });
+
+    document.addEventListener("touchstart", e => {
+      if (e.touches.length === 1) {
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+
+    document.addEventListener("touchend", e => {
+      if (!touchStartX || e.changedTouches.length !== 1) return;
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      const dy = e.changedTouches[0].clientY - touchStartY;
+      touchStartX = 0; touchStartY = 0;
+      if (Math.abs(dx) > 75 && Math.abs(dx) > Math.abs(dy) * 1.6) {
+        if (dx < 0 && currentTab === "crypto") setTab("wifi");
+        else if (dx > 0 && currentTab === "wifi") setTab("crypto");
+      }
+    }, { passive: true });
+  }
+
+  async function apiPost(path, payload = {}) {
+    isMutating = true;
+    try {
+      const r = await fetch(API_BASE + path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Permintaan gagal");
+      swcData = { state: j.state, devices: j.devices, logs: j.logs, schedules: j.schedules };
+    } finally {
+      isMutating = false;
+      renderSwc();
+    }
+  }
+
+  async function pollStateOnce() {
+    if (isMutating) return;
+    try {
+      const r = await fetch(API_BASE + "/api/state");
+      if (r.ok && !isMutating) {
+        swcData = await r.json();
+        renderSwc();
+      }
+    } catch (e) {
+      swcData.state.routerOnline = false;
+      swcData.state.lastError = "Backend lokal Termux (8765) belum aktif";
+      renderSwc();
+    }
+  }
+
+  function esc(s) {
+    return String(s || "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  }
+
+  function fmtTime(ts) {
+    if (!ts) return "-";
+    return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
+  const NOC_ICONS = {
+    radar: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
+    router: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="14" width="20" height="6" rx="1.5"/><path d="M6 14v-3"/><path d="M18 14v-3"/><path d="M14.5 8.5a4 4 0 0 1 7 0"/><path d="M16.5 10.5a1.5 1.5 0 0 1 3 0"/><circle cx="6" cy="17" r="1" fill="currentColor" stroke="none"/><circle cx="9.5" cy="17" r="1" fill="currentColor" stroke="none"/></svg>',
+    swipe: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10l-3 3 3 3"/><path d="M4 13h16"/><path d="M17 14l3-3-3-3"/></svg>',
+    scan: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16"/><path d="M16 16h5v5"/></svg>',
+    search: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+    block: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="m5.7 5.7 12.6 12.6"/></svg>',
+    restore: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>',
+    tag: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>',
+    trust: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><polyline points="16 11 18 13 22 9"/></svg>',
+    alert: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="19" y1="8" x2="19" y2="12"/><line x1="19" y1="16" x2="19.01" y2="16"/></svg>',
+    clock: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15 14"/></svg>',
+    plus: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>',
+    trash: '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>',
+    terminal: '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"/><line x1="12" y1="19" x2="20" y2="19"/></svg>',
+    spinner: '<svg class="noc-spin" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg>'
+  };
+
+  function upgradeTopSwitcherIcons() {
+    const sw = document.getElementById("swc-top-switcher");
+    if (!sw) return;
+    const cryptoBtn = sw.querySelector('[data-tab="crypto"]');
+    const wifiBtn = sw.querySelector('[data-tab="wifi"]');
+    const hint = sw.querySelector(".swc-swipe-hint");
+    if (cryptoBtn) cryptoBtn.innerHTML = `${NOC_ICONS.radar}<span>Radar Sinyal</span>`;
+    if (wifiBtn) wifiBtn.innerHTML = `<span class="swc-dot${swcData.state?.routerOnline ? " online" : ""}" id="swc-router-dot"></span>${NOC_ICONS.router}<span>Gateway Wi-Fi</span>`;
+    if (hint) hint.innerHTML = `${NOC_ICONS.swipe}<span>Geser</span>`;
+  }
+
+  function renderSwc() {
+    upgradeTopSwitcherIcons();
+    const dot = document.getElementById("swc-router-dot");
+    if (dot) dot.classList.toggle("online", !!swcData.state?.routerOnline);
+    if (currentTab !== "wifi") return;
+
+    const swcPanel = document.getElementById("swc-panel");
+    if (!swcPanel) return;
+
+    const hadSearchFocus = document.activeElement && document.activeElement.id === "swc-search";
+    const selStart = hadSearchFocus ? document.activeElement.selectionStart : null;
+    const selEnd = hadSearchFocus ? document.activeElement.selectionEnd : null;
+
+    const devs = swcData.devices || [];
+    const logs = swcData.logs || [];
+    const schedules = swcData.schedules || [];
+    const onlineCount = devs.filter(d => d.status === "online").length;
+    const blockedCount = devs.filter(d => d.block_mode === "blocked").length;
+    const unknownCount = devs.filter(d => !d.is_known).length;
+
+    const filtered = devs.filter(d => {
+      if (filterMode === "online" && d.status !== "online") return false;
+      if (filterMode === "blocked" && d.block_mode !== "blocked") return false;
+      if (filterMode === "unknown" && d.is_known) return false;
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const hay = `${d.alias} ${d.hostname} ${d.ip} ${d.mac}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      return true;
+    });
+
+    const isOnline = !!swcData.state?.routerOnline;
+    const rawErr = swcData.state?.lastError || "";
+    const statusText = isOnline
+      ? `TERHUBUNG • SYNC ${fmtTime(swcData.state.lastScanAt)}`
+      : (rawErr.toLowerCase().includes("fetch") ? "BACKEND LOKAL OFFLINE (PORT 8765)" : esc(rawErr || "MENGHUBUNGKAN..."));
+
+    const devMap = new Map(devs.map(d => [d.mac, d.alias || d.hostname || d.mac]));
+
+    swcPanel.innerHTML = `
+      <div class="swc-wrap">
+        <div class="noc-gateway">
+          <div class="noc-gw-top">
+            <div>
+              <div class="noc-gw-eyebrow">${NOC_ICONS.router} CPE GATEWAY • 192.168.1.1</div>
+              <h2 class="noc-gw-title">ZTE F672Y Access Control</h2>
+              <div class="noc-gw-status ${isOnline ? "" : "is-err"}">
+                <span class="noc-pulse ${isOnline ? "" : "err"}"></span>
+                <span>${statusText}</span>
+              </div>
+            </div>
+            <button class="swc-btn swc-btn-primary" id="swc-btn-scan">${NOC_ICONS.scan}<span>Pindai</span></button>
+          </div>
+          <div class="noc-kpi-grid">
+            <div class="noc-kpi" style="--kpi-accent:#10b981">
+              <div class="noc-kpi-lbl">AKTIF</div>
+              <div class="noc-kpi-val">${String(onlineCount).padStart(2, "0")}</div>
+              <div class="noc-kpi-sub">Perangkat Online</div>
+            </div>
+            <div class="noc-kpi" style="--kpi-accent:#ef4444">
+              <div class="noc-kpi-lbl">ACL BLOKIR</div>
+              <div class="noc-kpi-val">${String(blockedCount).padStart(2, "0")}</div>
+              <div class="noc-kpi-sub">Akses Diputus</div>
+            </div>
+            <div class="noc-kpi" style="--kpi-accent:#f59e0b">
+              <div class="noc-kpi-lbl">ASING</div>
+              <div class="noc-kpi-val">${String(unknownCount).padStart(2, "0")}</div>
+              <div class="noc-kpi-sub">Belum Dikenal</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="noc-toolbar">
+          <div class="noc-search-wrap">
+            ${NOC_ICONS.search}
+            <input class="noc-input" id="swc-search" placeholder="Filter hostname, IPv4, atau alamat MAC..." value="${esc(searchQuery)}" />
+          </div>
+          <div class="noc-seg-bar">
+            <button class="swc-chip ${filterMode === "all" ? "active" : ""}" data-f="all">Semua <span class="noc-cnt">${devs.length}</span></button>
+            <button class="swc-chip ${filterMode === "online" ? "active" : ""}" data-f="online">Online <span class="noc-cnt">${onlineCount}</span></button>
+            <button class="swc-chip ${filterMode === "blocked" ? "active" : ""}" data-f="blocked">Blokir <span class="noc-cnt">${blockedCount}</span></button>
+            <button class="swc-chip ${filterMode === "unknown" ? "active" : ""}" data-f="unknown">Asing <span class="noc-cnt">${unknownCount}</span></button>
+          </div>
+        </div>
+
+        <div class="noc-list">
+          ${filtered.length === 0 ? `<div class="noc-empty">TIDAK ADA CLIENT YANG SESUAI FILTER</div>` : filtered.map(d => {
+            const isBlk = d.block_mode === "blocked";
+            const isOn = d.status === "online";
+            const label = d.alias || d.hostname || "Client Tanpa Nama";
+            return `
+              <div class="noc-card ${isBlk ? "is-blocked" : (isOn ? "is-online" : "")}">
+                <div class="noc-card-top">
+                  <div class="noc-card-info">
+                    <div class="noc-name-row">
+                      <span class="noc-hostname">${esc(label)}</span>
+                      <span class="noc-badge ${isOn ? "noc-badge-on" : "noc-badge-off"}">${isOn ? "ONLINE" : "OFFLINE"}</span>
+                      ${isBlk ? `<span class="noc-badge noc-badge-blk">ACL DENY</span>` : ""}
+                      <span class="noc-badge ${d.is_known ? "noc-badge-known" : "noc-badge-unk"}">${d.is_known ? "VERIFIED" : "UNVERIFIED"}</span>
+                    </div>
+                    <div class="noc-meta">
+                      <span>${esc(d.ip || "-")}</span>
+                      <span class="noc-sep">/</span>
+                      <span>${esc((d.mac || "").toUpperCase())}</span>
+                      <span class="noc-sep">/</span>
+                      <span>${esc(d.conn_type || "WLAN")}</span>
+                    </div>
+                  </div>
+                  <button class="swc-btn ${isBlk ? "swc-btn-success" : "swc-btn-danger"}" data-act="block" data-mac="${esc(d.mac)}" data-next="${isBlk ? 0 : 1}">
+                    ${isBlk ? `${NOC_ICONS.restore}<span>Pulihkan</span>` : `${NOC_ICONS.block}<span>Blokir</span>`}
+                  </button>
+                </div>
+                <div class="noc-card-actions">
+                  <button class="swc-btn" data-act="rename" data-mac="${esc(d.mac)}" data-alias="${esc(label)}">
+                    ${NOC_ICONS.tag}<span>Alias</span>
+                  </button>
+                  <button class="swc-btn" data-act="known" data-mac="${esc(d.mac)}" data-known="${d.is_known ? 0 : 1}">
+                    ${d.is_known ? `${NOC_ICONS.alert}<span>Tandai Asing</span>` : `${NOC_ICONS.trust}<span>Verifikasi</span>`}
+                  </button>
+                </div>
+              </div>
+            `;
+          }).join("")}
+        </div>
+
+        <div class="noc-section">
+          <div class="noc-sec-head">
+            <div class="noc-sec-title">${NOC_ICONS.clock}<span>Kebijakan Jadwal Blokir Otomatis</span></div>
+          </div>
+          <div class="noc-sch-form">
+            <select class="noc-field" id="swc-sch-mac">
+              ${devs.map(d => `<option value="${esc(d.mac)}">${esc(d.alias || d.hostname)} (${esc(d.mac)})</option>`).join("")}
+            </select>
+            <input class="noc-field" type="time" id="swc-sch-start" value="22:00" />
+            <input class="noc-field" type="time" id="swc-sch-end" value="06:00" />
+            <button class="swc-btn swc-btn-primary" id="swc-btn-add-sch">${NOC_ICONS.plus}<span>Tambah</span></button>
+          </div>
+          <div class="noc-sch-list">
+            ${schedules.length === 0 ? `<div class="noc-empty">BELUM ADA ATURAN JADWAL AKTIF</div>` : schedules.map(s => `
+              <div class="noc-sch-item">
+                <div>
+                  <strong style="color:#f1f5f9">${esc(devMap.get(s.mac) || s.mac)}</strong>
+                  <span style="font-family:var(--noc-mono);color:var(--noc-cyan);margin-left:8px">${esc(s.start_time)} - ${esc(s.end_time)}</span>
+                </div>
+                <button class="swc-btn swc-btn-danger" style="padding:4px 8px" data-del-sch="${s.id}">${NOC_ICONS.trash}</button>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+
+        <div class="noc-section">
+          <div class="noc-sec-head">
+            <div class="noc-sec-title">${NOC_ICONS.terminal}<span>Log Audit Sistem</span></div>
+          </div>
+          <div class="noc-log-list">
+            ${logs.length === 0 ? `<div class="noc-empty">BELUM ADA AKTIVITAS TERCATAT</div>` : logs.slice(0, 12).map(l => `
+              <div class="noc-log-item">
+                <span class="noc-log-ts">${fmtTime(l.created_at)}</span>
+                <span class="noc-log-tag ${esc(l.event_type)}">${esc(l.event_type)}</span>
+                <span>${esc(l.detail)}</span>
+              </div>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    `;
+
+    if (hadSearchFocus) {
+      const inp = document.getElementById("swc-search");
+      if (inp) {
+        inp.focus();
+        if (selStart !== null) inp.setSelectionRange(selStart, selEnd);
+      }
+    }
+
+    document.getElementById("swc-btn-scan")?.addEventListener("click", async () => {
+      if (isMutating) return;
+      const btn = document.getElementById("swc-btn-scan");
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `${NOC_ICONS.spinner}<span>Memindai...</span>`;
+      }
+      try { await apiPost("/api/scan"); } catch (err) { alert(err.message); renderSwc(); }
+    });
+
+    document.getElementById("swc-search")?.addEventListener("input", e => {
+      searchQuery = e.target.value;
+      renderSwc();
+    });
+
+    swcPanel.querySelectorAll(".swc-chip").forEach(btn => {
+      btn.addEventListener("click", () => {
+        filterMode = btn.dataset.f;
+        renderSwc();
+      });
+    });
+
+    swcPanel.querySelectorAll("[data-act]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (isMutating) return;
+        const act = btn.dataset.act, mac = btn.dataset.mac;
+        try {
+          if (act === "block") {
+            btn.disabled = true;
+            btn.innerHTML = `${NOC_ICONS.spinner}<span>Proses...</span>`;
+            await apiPost("/api/device/block", { mac, block: btn.dataset.next === "1" });
+          } else if (act === "rename") {
+            const val = prompt("Masukkan alias perangkat:", btn.dataset.alias || "");
+            if (val !== null && val.trim()) await apiPost("/api/device/meta", { mac, alias: val.trim() });
+          } else if (act === "known") {
+            await apiPost("/api/device/meta", { mac, is_known: btn.dataset.known === "1" });
+          }
+        } catch (err) {
+          alert("Gagal: " + err.message);
+          renderSwc();
+        }
+      });
+    });
+
+    document.getElementById("swc-btn-add-sch")?.addEventListener("click", async () => {
+      if (isMutating) return;
+      const mac = document.getElementById("swc-sch-mac")?.value;
+      const start_time = document.getElementById("swc-sch-start")?.value;
+      const end_time = document.getElementById("swc-sch-end")?.value;
+      if (!mac || !start_time || !end_time) return;
+      try { await apiPost("/api/schedule", { mac, start_time, end_time }); } catch (err) { alert(err.message); }
+    });
+
+    swcPanel.querySelectorAll("[data-del-sch]").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        if (isMutating) return;
+        try {
+          const r = await fetch(`${API_BASE}/api/schedule?id=${btn.dataset.delSch}`, { method: "DELETE" });
+          const j = await r.json();
+          if (j.ok) { swcData = { state: j.state, devices: j.devices, logs: j.logs, schedules: j.schedules }; renderSwc(); }
+        } catch (err) { alert(err.message); }
+      });
+    });
+  }
+
+  function connectStream() {
+    pollStateOnce();
+    try {
+      const es = new EventSource(API_BASE + "/api/stream");
+      es.onmessage = ev => {
+        try {
+          lastStreamMsg = Date.now();
+          if (isMutating) return;
+          swcData = JSON.parse(ev.data);
+          renderSwc();
+        } catch (_) {}
+      };
+      es.onerror = () => {
+        es.close();
+        setTimeout(connectStream, 5000);
+      };
+    } catch (_) {}
+    setInterval(() => {
+      if (Date.now() - lastStreamMsg > 6000) pollStateOnce();
+    }, 5000);
+  }
+
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && !isMutating) pollStateOnce(); });
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => { initSwcUI(); upgradeTopSwitcherIcons(); renderSwc(); connectStream(); });
+  } else {
+    initSwcUI();
+    connectStream();
+  }
+})();
+
+=== FILE: swc/public.html ===
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ZTE F672Y • CPE Gateway Access Control</title>
+  <style>
+    :root {
+      --bg: #080a0e; --surface: #0e1218; --inset: #131821; --hover: #19202c;
+      --border: #1e2633; --border-hi: #2b3648; --text: #f1f5f9; --sub: #94a3b8;
+      --muted: #64748b; --cyan: #38bdf8; --green: #10b981; --red: #ef4444; --amber: #f59e0b;
+      --mono: "JetBrains Mono", "SF Mono", ui-monospace, Menlo, monospace;
+      --sans: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); padding: 14px; }
+    .wrap { max-width: 780px; margin: 0 auto; display: flex; flex-direction: column; gap: 10px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+    .top { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 6px; font-family: var(--mono); font-size: 10px; font-weight: 600; letter-spacing: 0.08em; color: var(--cyan); text-transform: uppercase; }
+    h1 { margin: 4px 0 0; font-size: 16px; font-weight: 700; }
+    .status { display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; font-family: var(--mono); font-size: 10.5px; color: var(--sub); background: var(--inset); border: 1px solid var(--border); padding: 3px 8px; border-radius: 4px; }
+    .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); }
+    .dot.err { background: var(--red); }
+    .kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+    .kpi { background: var(--inset); border: 1px solid var(--border); border-top: 2px solid var(--accent); border-radius: 6px; padding: 9px 10px; }
+    .kpi-lbl { font-family: var(--mono); font-size: 9.5px; font-weight: 600; color: var(--muted); }
+    .kpi-val { font-family: var(--mono); font-size: 20px; font-weight: 700; margin-top: 2px; }
+    .btn { display: inline-flex; align-items: center; gap: 6px; background: var(--inset); border: 1px solid var(--border-hi); color: var(--text); font-size: 11.5px; font-weight: 600; padding: 6px 11px; border-radius: 5px; cursor: pointer; }
+    .btn-primary { background: #1d4ed8; border-color: #2563eb; color: #fff; }
+    .btn-danger { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.34); color: #fca5a5; }
+    .btn-success { background: rgba(16,185,129,0.12); border-color: rgba(16,185,129,0.36); color: #6ee7b7; }
+    .dev { background: var(--surface); border: 1px solid var(--border); border-left: 3px solid #334155; border-radius: 6px; padding: 11px 12px; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .dev.on { border-left-color: var(--green); }
+    .dev.blk { background: #120d10; border-color: rgba(239,68,68,0.28); border-left-color: var(--red); }
+    .badge { font-family: var(--mono); font-size: 9.5px; font-weight: 700; padding: 2px 5px; border-radius: 3px; text-transform: uppercase; }
+    .b-on { background: rgba(16,185,129,0.1); color: #34d399; }
+    .b-off { background: rgba(100,116,139,0.12); color: #94a3b8; }
+    .b-blk { background: rgba(239,68,68,0.14); color: #f87171; }
+    .meta { font-family: var(--mono); font-size: 11px; color: var(--sub); margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <div class="top">
+        <div>
+          <div class="eyebrow">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2" y="14" width="20" height="6" rx="1.5"/><path d="M6 14v-3M18 14v-3"/></svg>
+            CPE GATEWAY • 192.168.1.1
+          </div>
+          <h1>ZTE F672Y Access Control</h1>
+          <div class="status"><span class="dot" id="st-dot"></span><span id="router-status">Menghubungkan...</span></div>
+        </div>
+        <button class="btn btn-primary" id="btn-scan">Pindai</button>
+      </div>
+      <div class="kpis">
+        <div class="kpi" style="--accent:#10b981"><div class="kpi-lbl">AKTIF</div><div class="kpi-val" id="st-online">0</div></div>
+        <div class="kpi" style="--accent:#ef4444"><div class="kpi-lbl">ACL BLOKIR</div><div class="kpi-val" id="st-blocked">0</div></div>
+        <div class="kpi" style="--accent:#38bdf8"><div class="kpi-lbl">TOTAL CLIENT</div><div class="kpi-val" id="st-total">0</div></div>
+      </div>
+    </div>
+    <div id="device-list" style="display:flex;flex-direction:column;gap:8px"></div>
+  </div>
+  <script>
+    let isToggling = false;
+    function esc(s) { return String(s || "").replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c])); }
+    async function apiPost(path, payload) {
+      const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const j = await r.json();
+      if (!r.ok) throw new Error(j.error || "Permintaan gagal");
+      render(j);
+    }
+    async function fetchState() {
+      try { const r = await fetch("/api/state"); render(await r.json()); } catch (e) { console.error(e); }
+    }
+    window.toggleBlock = async function(mac, nextState) {
+      if (isToggling) return;
+      isToggling = true;
+      document.querySelectorAll("#device-list button").forEach(b => b.disabled = true);
+      try { await apiPost("/api/device/block", { mac, block: nextState === 1 }); }
+      catch (e) { alert("Gagal: " + e.message); await fetchState(); }
+      finally { isToggling = false; }
+    };
+    function render(data) {
+      const devs = data.devices || [];
+      document.getElementById("st-online").textContent = devs.filter(d => d.status === "online").length;
+      document.getElementById("st-blocked").textContent = devs.filter(d => d.block_mode === "blocked").length;
+      document.getElementById("st-total").textContent = devs.length;
+      const dot = document.getElementById("st-dot");
+      dot.classList.toggle("err", !data.state?.routerOnline);
+      document.getElementById("router-status").textContent = data.state?.routerOnline
+        ? "TERHUBUNG • SYNC " + new Date(data.state.lastScanAt).toLocaleTimeString("id-ID")
+        : (data.state?.lastError || "TERPUTUS");
+      document.getElementById("device-list").innerHTML = devs.map(d => {
+        const isBlk = d.block_mode === "blocked";
+        const isOn = d.status === "online";
+        return '<div class="dev ' + (isBlk ? "blk" : (isOn ? "on" : "")) + '">' +
+          '<div><div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+          '<strong style="font-size:13.5px">' + esc(d.alias || d.hostname) + '</strong>' +
+          '<span class="badge ' + (isOn ? "b-on" : "b-off") + '">' + (isOn ? "ONLINE" : "OFFLINE") + '</span>' +
+          (isBlk ? '<span class="badge b-blk">ACL DENY</span>' : '') +
+          '</div><div class="meta">' + esc(d.ip) + ' / ' + esc((d.mac || "").toUpperCase()) + ' / ' + esc(d.conn_type) + '</div></div>' +
+          '<button class="btn ' + (isBlk ? "btn-success" : "btn-danger") + '" onclick="toggleBlock(\'' + esc(d.mac) + '\',' + (isBlk ? 0 : 1) + ')">' +
+          (isBlk ? "Pulihkan" : "Blokir") + '</button></div>';
+      }).join("");
+    }
+    document.getElementById("btn-scan").addEventListener("click", () => apiPost("/api/scan", {}));
+    fetchState();
+    setInterval(() => { if (!isToggling) fetchState(); }, 6000);
+  </script>
+</body>
+</html>
+=== FILE: index.html ===
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070b14">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="1791748937891.jpg">
+<title>Binance Top 500 · Multi-Indicator + EMA Expert + Early Volume Radar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{--bg:#070b14;--panel:#101827;--border:#243047;--muted:#94a3b8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e5e7eb;font-family:Arial,sans-serif}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px}.muted{color:var(--muted)}
+.btn{padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;background:#253247;color:white;border:0;transition:background 0.2s}
+.btn:hover{background:#334155}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.active{background:#2962ff}
+.btn.active:hover{background:#1d4ed8}
+.badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800}
+.up,.pass{color:#86efac;background:#123322}.down,.reject{color:#fca5a5;background:#431717}.neutral,.warning{color:#fde68a;background:#3b2e0a}.unknown{color:#cbd5e1;background:#293548}
+.indicator-card{background:#0b1220;border:1px solid var(--border);padding:12px;border-radius:9px;min-width:0;transition:all 0.3s ease}
+.indicator-value{font-weight:800;font-size:14px;overflow-wrap:anywhere}.indicator-status{font-size:10px;text-transform:uppercase;margin-top:6px;color:var(--muted)}
+.card-bullish{background:rgba(22,163,74,0.15)!important;border-color:rgba(22,163,74,0.4)!important}
+.card-bearish{background:rgba(220,38,38,0.15)!important;border-color:rgba(220,38,38,0.4)!important}
+.card-neutral{background:rgba(202,138,4,0.15)!important;border-color:rgba(202,138,4,0.4)!important}
+table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
+td.wrap{white-space:normal;min-width:260px;line-height:1.5}
+#connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}
+input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
+#chartWrap{position:relative;border-radius:10px;overflow:hidden;background:#131722}
+#chart{height:500px;width:100%}
+#legend{position:absolute;left:10px;top:8px;z-index:5;pointer-events:none;font:12px/1.5 monospace;color:#d1d4dc;text-shadow:0 0 4px #131722}
+#tvWidget{height:540px;width:100%;border-radius:10px;overflow:hidden;background:#131722}
+.chart-note{font-size:11px;color:var(--muted);line-height:1.5}
+.sg-text{font-size:12px;line-height:1.6;color:#d1d5db}
+@media(max-width:640px){th,td{padding:8px}#chart{height:360px}#tvWidget{height:420px}}
+</style>
+</head>
+<body>
+
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Total Margin Balance</div>
+      <div id="bf-margin" style="font-size:17px;font-weight:700;color:#38bdf8;margin-top:2px;">$--</div>
+    </div>
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Available Balance</div>
+      <div id="bf-avail" style="font-size:17px;font-weight:700;color:#4ade80;margin-top:2px;">$--</div>
+    </div>
+    <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+      <div style="font-size:11px;color:#94a3b8;">Unrealized PnL</div>
+      <div id="bf-pnl" style="font-size:17px;font-weight:700;color:#e2e8f0;margin-top:2px;">$--</div>
+    </div>
+  </div>
+  <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
+    <div style="font-size:12px;font-weight:600;color:#cbd5e1;margin-bottom:6px;">📌 Posisi Terbuka Saat Ini</div>
+    <div id="bf-positions" style="font-size:12px;color:#94a3b8;">Menunggu sinkronisasi...</div>
+  </div>
+</div>
+
+<!-- MASTER AUTO-TRADE CONTROL BAR -->
+<div id="masterTradeBar" style="max-width:1200px;margin:12px auto;padding:12px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(148,163,184,0.25);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+  <div>
+    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">Kontrol Master Rangkaian Bot · Ambang Eksekusi ≥ 75%</div>
+    <div id="masterTradeStatusText" style="font-size:13px;font-weight:700;color:#94a3b8;margin-top:3px;">Memuat status bot...</div>
+  </div>
+  <button id="masterTradeToggleBtn" type="button" onclick="toggleMasterAutoTrade()" style="padding:10px 16px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#334155;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+    ⏳ Memuat...
+  </button>
+</div>
+<script>
+(function() {
+  const CTRL_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
+  window.__botControlState = { autoTrade: true, minProb: 75, updatedAt: 0 };
+  let busy = false;
+
+  function renderMasterBtn(isOn) {
+    const enabled = Boolean(isOn);
+    window.__botControlState.autoTrade = enabled;
+    const txt = document.getElementById("masterTradeStatusText");
+    const btn = document.getElementById("masterTradeToggleBtn");
+    if (!txt || !btn) return;
+    btn.disabled = false;
+    if (enabled) {
+      txt.textContent = "🟢 AKTIF — Scanner + Dual-AI + Eksekusi 50x (Prob ≥ 75%) Berjalan";
+      txt.style.color = "#22c55e";
+      btn.textContent = "⏸ Matikan Auto-Trade (OFF)";
+      btn.style.background = "#ef4444";
+    } else {
+      txt.textContent = "⏸ NONAKTIF (STANDBY) — Pemindaian & Order Baru Dihentikan";
+      txt.style.color = "#f59e0b";
+      btn.textContent = "▶️ Aktifkan Kembali (ON)";
+      btn.style.background = "#10b981";
+    }
+    window.dispatchEvent(new CustomEvent("onBotControlChange", { detail: window.__botControlState }));
+  }
+
+  async function syncFromServer() {
+    if (busy) return;
+    try {
+      const res = await fetch(CTRL_URL + "?t=" + Date.now());
+      if (res.ok) {
+        const d = await res.json();
+        if (d && typeof d.minProb === "number") window.__botControlState.minProb = d.minProb;
+        renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
+      }
+    } catch (_) {}
+  }
+
+  window.toggleMasterAutoTrade = async function() {
+    if (busy) return;
+    busy = true;
+    const btn = document.getElementById("masterTradeToggleBtn");
+    const txt = document.getElementById("masterTradeStatusText");
+    const nextState = !window.__botControlState.autoTrade;
+    if (btn) { btn.disabled = true; btn.textContent = "⏳ Menyimpan..."; }
+
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ autoTrade: nextState, minProb: 75, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderMasterBtn(nextState);
+    } catch (err) {
+      if (txt) { txt.textContent = "⚠️ " + err.message; txt.style.color = "#f87171"; }
+      if (btn) { btn.disabled = false; btn.textContent = window.__botControlState.autoTrade ? "⏸ Matikan Auto-Trade (OFF)" : "▶️ Aktifkan Kembali (ON)"; }
+    } finally {
+      busy = false;
+    }
+  };
+
+  syncFromServer();
+  setInterval(syncFromServer, 6000);
+})();
+</script>
+
+<!-- AI QUOTA MONITOR WIDGET -->
+<div id="aiQuotaPanel" style="max-width:1200px;margin:12px auto;padding:14px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(148,163,184,0.22);">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">🧠 Monitor Kuota & Rate Limit Dual-AI</div>
+    <div id="aiQuotaUpdated" style="font-size:11px;color:#64748b;">Sinkronisasi...</div>
+  </div>
+  <div id="aiQuotaGrid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;">
+    <div style="font-size:12px;color:#94a3b8;">Memuat status kuota API Key...</div>
+  </div>
+</div>
+<script>
+(function() {
+  const QUOTA_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiQuota.json";
+
+  function barColor(pct) {
+    return pct >= 60 ? "#22c55e" : pct >= 25 ? "#f59e0b" : "#ef4444";
+  }
+
+  function renderQuotaCard(item) {
+    const pct = Math.max(0, Math.min(100, Number(item.pct ?? 100)));
+    const col = barColor(pct);
+    const isStandby = /Standby/i.test(item.status || "");
+    const badgeBg = pct === 0 ? "rgba(239,68,68,0.18)" : (isStandby ? "rgba(56,189,248,0.15)" : "rgba(34,197,94,0.16)");
+    const badgeCol = pct === 0 ? "#fca5a5" : (isStandby ? "#7dd3fc" : "#86efac");
+
+    return `
+      <div style="background:#0b1220;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:12px;font-weight:700;color:#e2e8f0;">${item.name}</span>
+          <span style="font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;background:${badgeBg};color:${badgeCol};">${pct}%</span>
+        </div>
+        <div style="width:100%;height:7px;background:#1e293b;border-radius:999px;overflow:hidden;margin-bottom:6px;">
+          <div style="width:${pct}%;height:100%;background:${col};border-radius:999px;transition:width 0.4s ease;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
+          <span>${item.status || "Standby (100%)"}</span>
+          <span style="font-family:monospace;color:#64748b;">${item.mask || ""}</span>
+        </div>
+      </div>
+    `;
+  }
+
+  async function refreshAiQuota() {
+    try {
+      const res = await fetch(QUOTA_URL + "?t=" + Date.now());
+      if (!res.ok) return;
+      const d = await res.json();
+      if (!d || (!Array.isArray(d.groq) && !Array.isArray(d.gemini))) return;
+      const all = [...(d.groq || []), ...(d.gemini || [])];
+      const grid = document.getElementById("aiQuotaGrid");
+      const upd = document.getElementById("aiQuotaUpdated");
+      if (grid) grid.innerHTML = all.map(renderQuotaCard).join("");
+      if (upd && d.updatedAt) {
+        const dt = new Date(d.updatedAt);
+        upd.textContent = "Update: " + dt.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      }
+    } catch (_) {}
+  }
+
+  refreshAiQuota();
+  setInterval(refreshAiQuota, 8000);
+})();
+</script>
+
+<!-- PORTFOLIO FETCH SCRIPT -->
+<script>
+(function() {
+  const DB_URLS = [
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_futuresPortfolio.json",
+    "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json"
+  ];
+  function renderFuturesData(d) {
+    if (!d || typeof d.totalMargin !== "number") return false;
+    document.getElementById("bf-lev-badge").textContent = (d.leverage || 50) + "x";
+    document.getElementById("bf-margin").textContent = "$" + d.totalMargin.toFixed(2) + " USDT";
+    document.getElementById("bf-avail").textContent = "$" + d.available.toFixed(2) + " USDT";
+    const pnlEl = document.getElementById("bf-pnl");
+    const pnlVal = Number(d.unrealizedPnl || 0);
+    pnlEl.textContent = (pnlVal >= 0 ? "+" : "") + "$" + pnlVal.toFixed(2) + " USDT";
+    pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
+    if (d.updatedAt) {
+      const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      document.getElementById("bf-updated").textContent = "Update: " + dt + " WIB";
+    }
+    const posEl = document.getElementById("bf-positions");
+    const list = Array.isArray(d.openPositions) ? d.openPositions : [];
+    if (!list.length) {
+      posEl.innerHTML = '<span style="color:#64748b;">Tidak ada posisi Futures yang sedang dibuka.</span>';
+    } else {
+      posEl.innerHTML = list.map(p => {
+        const isLong = p.side === "LONG";
+        const badge = isLong
+          ? '<span style="background:#14532d;color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700;">LONG</span>'
+          : '<span style="background:#7f1d1d;color:#fca5a5;padding:1px 6px;border-radius:4px;font-weight:700;">SHORT</span>';
+        const pColor = p.pnl >= 0 ? "#4ade80" : "#f87171";
+        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;">
+          <div>${badge} <strong>${p.symbol}</strong> · Qty: <code>${Math.abs(p.amt)}</code> @ $${p.entryPrice} (${p.leverage}x)</div>
+          <div style="font-weight:700;color:${pColor};">${p.pnl >= 0 ? "+" : ""}$${Number(p.pnl).toFixed(2)}</div>
+        </div>`;
+      }).join("");
+    }
+    return true;
+  }
+  async function refreshFuturesWidget() {
+    let lastErr = "";
+    for (const u of DB_URLS) {
+      try {
+        const res = await fetch(u + "?t=" + Date.now());
+        if (!res.ok) { lastErr = "HTTP " + res.status; continue; }
+        const json = await res.json();
+        if (renderFuturesData(json)) return;
+      } catch (e) { lastErr = e.message; }
+    }
+    document.getElementById("bf-updated").textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi...";
+  }
+  refreshFuturesWidget();
+  setInterval(refreshFuturesWidget, 15000);
+})();
+</script>
+
+<main class="max-w-7xl mx-auto px-4 py-6">
+<header class="mb-6 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <div>
+    <div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE FUTURES DASHBOARD</div>
+    <h1 class="text-2xl md:text-3xl font-extrabold mt-1">Binance Top 500 · Multi-Indicator & EMA Expert MTF</h1>
+    <p class="muted mt-1 text-sm">Monitoring sinyal 10 indikator teknikal, EMA Expert Multi-Timeframe, Dynamic R:R, dan Early Volume Radar.</p>
+  </div>
+  <div class="panel p-4 min-w-[240px]">
+    <div class="muted text-sm">Status Market</div>
+    <div class="flex items-center gap-2 mt-2"><span id="connectionDot"></span><span id="connectionText" class="font-bold">Memuat...</span></div>
+    <div id="lastUpdate" class="muted text-xs mt-2">Menunggu data</div>
+    <div id="sourceText" class="muted text-xs mt-1">Sumber: Binance</div>
+  </div>
+</header>
+
+<!-- PENGATURAN KOIN & TIMEFRAME UTAMA -->
+<section class="panel p-4 mb-6">
+  <div class="flex flex-wrap items-end gap-3">
+    <label class="text-sm">Pilih Koin (Top 500)<br><select id="symbolSelect"><option value="BTCUSDT">Memuat daftar...</option></select></label>
+    <label class="text-sm">Timeframe Chart & Sinyal<br>
+      <select id="timeframeSelect">
+        <option value="1m">1 menit</option>
+        <option value="5m" selected>5 menit</option>
+        <option value="15m">15 menit</option>
+        <option value="1h">1 jam</option>
+        <option value="4h">4 jam</option>
+        <option value="1d">1 hari</option>
+      </select>
+    </label>
+    <button id="reconnectButton" class="btn text-sm">Sambungkan Ulang</button>
+    <button id="refreshCoinsButton" class="btn text-sm">Perbarui Top 500</button>
+  </div>
+</section>
+
+<!-- GRAFIK CHART -->
+<section class="panel p-4 mb-6">
+  <div class="flex flex-wrap justify-between items-center gap-3 mb-3">
+    <div>
+      <h2 class="text-lg font-bold">Grafik Candlestick · Level Entry, SL & TP</h2>
+      <p class="muted text-xs mt-1">Level Entry, Stop Loss, dan Target 1–3 dari sinyal aktif digambar otomatis di chart.</p>
+    </div>
+    <div class="flex gap-2">
+      <button class="btn text-sm active" id="tabChart">Chart + Level Sinyal</button>
+      <button class="btn text-sm" id="tabTV">TradingView Asli</button>
+    </div>
+  </div>
+  <div id="paneChart">
+    <div id="chartWrap"><div id="chart"></div><div id="legend"></div></div>
+    <div class="flex flex-wrap gap-2 mt-3"><button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button></div>
+  </div>
+  <div id="paneTV" style="display:none"><div id="tvWidget"></div></div>
+</section>
+
+<!-- PANEL SINYAL MULTI-INDIKATOR -->
+<section class="panel p-5 mb-6" id="signalSection">
+  <div class="flex flex-wrap justify-between gap-3 mb-4">
+    <h2 class="text-lg font-bold">Sinyal Multi-Indikator · BUY / SELL / NETRAL</h2>
+    <span id="sgBadge" class="badge unknown">MENUNGGU DATA</span>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="indicator-card"><div class="muted text-xs mb-2">Simbol · Timeframe</div><div id="sgSymbol" class="indicator-value">--</div></div>
+    <div class="indicator-card"><div class="muted text-xs mb-2">Harga Saat Ini</div><div id="sgPrice" class="indicator-value">--</div></div>
+    <div id="sgMainCard" class="indicator-card"><div class="muted text-xs mb-2">Sinyal Utama</div><div id="sgMain" class="indicator-value text-lg">--</div><div id="sgSub" class="indicator-status">--</div></div>
+    <div class="indicator-card"><div id="sgStrengthLabel" class="muted text-xs mb-2">Kekuatan Sinyal</div><div id="sgStrength" class="indicator-value">--</div><div class="progress-track mt-2"><div id="sgBar" style="height:100%;width:0;background:#facc15;transition:width .25s"></div></div></div>
+  </div>
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+    <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">Indikator Hijau (Bullish)</div><div id="sgGreen" class="indicator-value">--</div></div>
+    <div class="indicator-card card-neutral"><div class="muted text-xs mb-2">Indikator Kuning (Netral)</div><div id="sgYellow" class="indicator-value">--</div></div>
+    <div class="indicator-card card-bearish"><div class="muted text-xs mb-2">Indikator Merah (Bearish)</div><div id="sgRed" class="indicator-value">--</div></div>
+    <div class="indicator-card"><div class="muted text-xs mb-2">Akurasi Historis (Backtest)</div><div id="sgAcc" class="indicator-value">--</div><div id="sgAccSub" class="indicator-status">--</div></div>
+  </div>
+  <div id="sgPlan" class="mt-4" style="display:none">
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div class="indicator-card"><div id="sgEntryLabel" class="muted text-xs mb-2">ENTRY RANGE</div><div id="sgEntry" class="indicator-value">--</div></div>
+      <div class="indicator-card card-bearish"><div class="muted text-xs mb-2">STOP LOSS</div><div id="sgSL" class="indicator-value">--</div><div id="sgSLpct" class="indicator-status">--</div></div>
+      <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TARGET 1</div><div id="sgT1" class="indicator-value">--</div><div id="sgRR1" class="indicator-status">--</div></div>
+      <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TARGET 2</div><div id="sgT2" class="indicator-value">--</div><div id="sgRR2" class="indicator-status">--</div></div>
+      <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">TARGET 3</div><div id="sgT3" class="indicator-value">--</div><div id="sgRR3" class="indicator-status">--</div></div>
+    </div>
+  </div>
+  <div id="sgNoTrade" class="indicator-card card-neutral mt-4" style="display:none"><div class="muted text-xs mb-2">TIDAK ADA REKOMENDASI TRANSAKSI</div><div id="sgNoTradeText" class="sg-text">--</div></div>
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
+    <div class="indicator-card"><div class="muted text-xs mb-2">Alasan Sinyal</div><div id="sgReason" class="sg-text">--</div></div>
+    <div class="indicator-card"><div class="muted text-xs mb-2">Kondisi Pembatalan</div><div id="sgInvalid" class="sg-text">--</div></div>
+  </div>
+  <div id="sgUpdated" class="chart-note mt-2"></div>
+  <div class="overflow-x-auto mt-4">
+    <table>
+      <thead><tr><th>Indikator</th><th>Nilai</th><th>Arah</th><th>Warna</th><th>Keterangan</th></tr></thead>
+      <tbody id="sgTable"><tr><td colspan="5" class="muted text-center">Menunggu data candle tertutup</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<!-- PANEL EMA EXPERT STRATEGY MTF -->
+<section class="panel p-5 mb-6" id="emaExpertSection">
+  <div class="flex flex-wrap justify-between gap-3 mb-4">
+    <div>
+      <h2 class="text-lg font-bold">EMA Expert Strategy · Multi-Timeframe</h2>
+      <p class="muted text-xs mt-1">Trend (EMA 125), Pullback (EMA 8/21), Konfirmasi HH/LL, Dynamic R:R (1:2–1:5) & Gerbang Dual-AI ≥ 75%.</p>
+    </div>
+    <span id="emaBadge" class="badge unknown">MENUNGGU MTF...</span>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4 border-b border-slate-700 pb-4">
+    <label class="text-sm">Trend TF<br><select id="emaTrendTf"><option value="1h" selected>1 Jam (1h)</option><option value="4h">4 Jam (4h)</option><option value="1d">1 Hari (1d)</option></select></label>
+    <label class="text-sm">Pullback TF<br><select id="emaPullTf"><option value="15m" selected>15 Menit (15m)</option><option value="30m">30 Menit (30m)</option><option value="1h">1 Jam (1h)</option></select></label>
+    <label class="text-sm">Entry TF<br><select id="emaEntryTf"><option value="5m" selected>5 Menit (5m)</option><option value="1m">1 Menit (1m)</option><option value="15m">15 Menit (15m)</option></select></label>
+    <button id="emaRefreshBtn" class="btn text-sm bg-sky-600 hover:bg-sky-500">Refresh & Sinkronisasi MTF</button>
+  </div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+    <div class="indicator-card"><div class="muted text-xs mb-2">Tahapan Strategi</div><div id="emaState" class="indicator-value">--</div><div id="emaStateSub" class="indicator-status">--</div></div>
+    <div id="emaTrendCard" class="indicator-card"><div class="muted text-xs mb-2">Trend Utama (EMA 125)</div><div id="emaTrend" class="indicator-value">--</div><div id="emaTrendSub" class="indicator-status">--</div></div>
+    <div id="emaPullCard" class="indicator-card"><div class="muted text-xs mb-2">Pullback (EMA 8 & 21)</div><div id="emaPull" class="indicator-value">--</div><div id="emaPullSub" class="indicator-status">--</div></div>
+    <div id="emaSigCard" class="indicator-card"><div class="muted text-xs mb-2">Sinyal Konfirmasi</div><div id="emaSig" class="indicator-value">--</div><div id="emaSigSub" class="indicator-status">--</div></div>
+  </div>
+
+  <div id="emaPlan" class="mt-4" style="display:none">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div class="indicator-card"><div class="muted text-xs mb-2">ENTRY PRICE</div><div id="emaEntryVal" class="indicator-value font-bold text-sky-400">--</div></div>
+      <div class="indicator-card card-bearish"><div class="muted text-xs mb-2">STOP LOSS</div><div id="emaSlVal" class="indicator-value">--</div></div>
+      <div class="indicator-card card-bullish"><div id="emaTpLabel" class="muted text-xs mb-2">TAKE PROFIT (DYNAMIC R:R)</div><div id="emaTpVal" class="indicator-value">--</div></div>
+      <div class="indicator-card"><div class="muted text-xs mb-2">HISTORI BACKTEST & GERBANG 75%</div><div id="emaBtVal" class="indicator-value">--</div><div id="emaBtSub" class="indicator-status">--</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- EARLY VOLUME RADAR (RINGKAS & AKTIF) -->
+<section class="panel p-5 mb-6" id="radarSection">
+  <div class="flex flex-wrap justify-between gap-3 mb-2">
+    <h2 class="text-lg font-bold uppercase">Early Volume Radar · Top Likuiditas</h2>
+    <span id="rdBadge" class="badge unknown">MEMUAT</span>
+  </div>
+  <div id="rdMeta" class="muted text-xs mb-4">Menunggu daftar pasangan...</div>
+
+  <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+    <div class="indicator-card"><div class="muted text-xs mb-2">Dipindai (Top Likuid)</div><div id="rdTotal" class="indicator-value">0</div></div>
+    <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">Early Bullish</div><div id="rdEB" class="indicator-value">0</div></div>
+    <div class="indicator-card card-bearish"><div class="muted text-xs mb-2">Early Bearish</div><div id="rdEE" class="indicator-value">0</div></div>
+    <div class="indicator-card card-neutral"><div class="muted text-xs mb-2">Volume Surge</div><div id="rdVS" class="indicator-value">0</div></div>
+  </div>
+
+  <div class="flex flex-wrap items-end gap-3 mb-4">
+    <label class="text-sm">Cari Koin<br><input id="rdSearch" type="search" placeholder="Contoh: BTCUSDT / SOLUSDT" style="width:240px"></label>
+    <label class="text-sm">Filter Status<br>
+      <select id="rdFilter">
+        <option value="all">Semua</option>
+        <option value="EB">Early Bullish</option>
+        <option value="EE">Early Bearish</option>
+        <option value="VS">Volume Surge</option>
+      </select>
+    </label>
+    <button id="rdRefreshBtn" class="btn text-sm">Refresh Radar</button>
+  </div>
+
+  <div class="overflow-x-auto">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th><th>Pair</th><th>Harga</th><th>Δ 5m</th><th>Δ 15m</th><th>Δ 1h</th>
+          <th>Vol 24h</th><th>RVOL</th><th>Accel</th><th>Jarak Awal</th><th>Skor</th><th>Status</th><th>Waktu</th><th>Aksi</th>
+        </tr>
+      </thead>
+      <tbody id="rdBody"><tr><td colspan="14" class="muted text-center">Memuat pemindai...</td></tr></tbody>
+    </table>
+  </div>
+</section>
+
+<footer class="muted text-xs mt-6 leading-5">Alat analisis kuantitatif eksperimental, bukan saran investasi.</footer>
+</main>
+
+<script>
+"use strict";
+const MIN_EXEC_PROB = 75;
+const CONFIG = {
+  symbol: "BTCUSDT",
+  interval: "5m",
+  historyLimit: 500,
+  costPct: 0.0012,
+  restEndpoints: [
+    "https://data-api.binance.vision",
+    "https://api.binance.com",
+    "https://api-gcp.binance.com",
+    "https://api1.binance.com",
+    "https://api2.binance.com",
+    "https://api3.binance.com"
+  ],
+  wsBases: ["wss://stream.binance.com:9443/ws/", "wss://data-stream.binance.vision/ws/"]
+};
+
+const SIG = { window: 300, minCandles: 60, minValid: 7, maxBars: 24, minSample: 30, backtestStart: 100 };
+const GROUPS = { ema: "trend", sma: "trend", macd: "trend", adx: "trend", rsi: "momentum", stochrsi: "momentum", cci: "momentum", bb: "band", atr: "band", obv: "volume" };
+const GROUP_W = { trend: 0.35, momentum: 0.25, band: 0.2, volume: 0.2 };
+const TZ_OFFSET = -new Date().getTimezoneOffset() * 60;
+const toCT = ms => Math.floor(ms / 1000) + TZ_OFFSET;
+
+const state = {
+  candles: [], liveCandle: null, currentPrice: 0,
+  ws: null, generation: 0, coinList: [],
+  chart: null, candleSeries: null, volumeSeries: null, tab: "chart",
+  signal: null, sigKey: "", sigLines: [], bt: null, btTimer: null
+};
+
+const $ = id => document.getElementById(id), finite = Number.isFinite;
+const TIMEFRAMES = {
+  "1m": { label: "1 menit", ms: 60000 },
+  "5m": { label: "5 menit", ms: 300000 },
+  "15m": { label: "15 menit", ms: 900000 },
+  "1h": { label: "1 jam", ms: 3600000 },
+  "4h": { label: "4 jam", ms: 14400000 },
+  "1d": { label: "1 hari", ms: 86400000 }
+};
+const TV_INTERVAL = { "1m": "1", "5m": "5", "15m": "15", "1h": "60", "4h": "240", "1d": "D" };
+const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+const mean = a => a.length ? a.reduce((x, y) => x + y, 0) / a.length : NaN;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+function isBotEnabled() { return !window.__botControlState || window.__botControlState.autoTrade !== false; }
+
+function fmt(n, d = 2) { return finite(n) ? n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }) : "--"; }
+function fmtP(n) { if (!finite(n)) return "--"; const d = n >= 1000 ? 2 : n >= 1 ? 4 : n >= 0.01 ? 6 : 8; return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d }); }
+function fmtTime(t) { return finite(t) ? new Date(t).toLocaleString("id-ID", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--"; }
+function compactUSD(n) { return n >= 1e9 ? "$" + (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? "$" + (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? "$" + (n / 1e3).toFixed(1) + "K" : "$" + Math.round(n); }
+function setStatus(t, c = "yellow") { $("connectionText").textContent = t; $("lastUpdate").textContent = "Terakhir: " + new Date().toLocaleTimeString("id-ID"); $("connectionDot").style.background = ({ green: "#22c55e", yellow: "#facc15", red: "#ef4444" })[c] || "#94a3b8"; }
+
+async function fetchTimeout(url, ms = 12000) {
+  const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
+  try { return await fetch(url, { signal: c.signal, cache: "no-store" }); } finally { clearTimeout(t); }
+}
+async function apiFetch(path) {
+  let last;
+  for (const base of CONFIG.restEndpoints) {
+    try {
+      const r = await fetchTimeout(base + path);
+      if (!r.ok) throw Error("HTTP " + r.status);
+      return { data: await r.json(), base };
+    } catch (e) { last = e; }
+  }
+  throw last || Error("Semua endpoint Binance gagal");
+}
+
+async function loadTop500() {
+  $("refreshCoinsButton").disabled = true;
+  try {
+    const [{ data: ex, base }, { data: ticks }] = await Promise.all([apiFetch("/api/v3/exchangeInfo"), apiFetch("/api/v3/ticker/24hr")]);
+    const valid = new Set(ex.symbols.filter(s => s.status === "TRADING" && s.isSpotTradingAllowed && s.quoteAsset === "USDT" && s.baseAsset !== "USDT").map(s => s.symbol));
+    const excluded = /(UPUSDT|DOWNUSDT|BULLUSDT|BEARUSDT|[235]LUSDT|[235]SUSDT)$/;
+    const stable = /^(USDC|FDUSD|TUSD|USDP|DAI|BUSD|AEUR|EUR|USD1|RLUSD|USDE|UST)USDT$/;
+
+    state.coinList = ticks
+      .filter(t => valid.has(t.symbol) && !excluded.test(t.symbol) && !stable.test(t.symbol) && finite(+t.quoteVolume) && +t.lastPrice > 0)
+      .sort((a, b) => +b.quoteVolume - +a.quoteVolume)
+      .slice(0, 500)
+      .map(t => ({ symbol: t.symbol, price: +t.lastPrice, volume: +t.quoteVolume, chg: +t.priceChangePercent }));
+
+    if (!state.coinList.some(x => x.symbol === CONFIG.symbol) && state.coinList.length) CONFIG.symbol = state.coinList[0].symbol;
+    const sel = $("symbolSelect");
+    sel.innerHTML = "";
+    state.coinList.forEach((c, i) => {
+      const o = document.createElement("option");
+      o.value = c.symbol;
+      o.textContent = `${i + 1}. ${c.symbol} · 24h ${compactUSD(c.volume)} (${c.chg >= 0 ? "+" : ""}${c.chg.toFixed(2)}%)`;
+      sel.appendChild(o);
+    });
+    sel.value = CONFIG.symbol;
+    radarSetUniverse(state.coinList);
+    $("sourceText").textContent = `REST: ${new URL(base).hostname} · ${state.coinList.length} pasangan`;
+    if (!state.candles.length) reconnectNow();
+  } catch (e) {
+    setStatus("Gagal memuat Top 500", "red");
+  } finally {
+    $("refreshCoinsButton").disabled = false;
+  }
+}
+
+/* ================= INDIKATOR TEKNIKAL ================= */
+const TA = {
+  emaSeries(a, p) { const out = new Array(a.length).fill(NaN); if (a.length < p) return out; let v = mean(a.slice(0, p)); out[p - 1] = v; const k = 2 / (p + 1); for (let i = p; i < a.length; i++) { v = a[i] * k + v * (1 - k); out[i] = v; } return out; },
+  ema(a, p) { const s = this.emaSeries(a, p); return s.length ? s[s.length - 1] : NaN; },
+  sma(a, p) { return a.length >= p ? mean(a.slice(-p)) : NaN; },
+  smaSeries(a, p) { return a.map((_, i) => { if (i < p - 1) return NaN; const w = a.slice(i - p + 1, i + 1); return w.every(finite) ? mean(w) : NaN; }); },
+  rsi(a, p = 14) { if (a.length < p + 1) return NaN; let g = 0, l = 0; for (let i = 1; i <= p; i++) { const d = a[i] - a[i - 1]; g += Math.max(d, 0); l += Math.max(-d, 0); } g /= p; l /= p; for (let i = p + 1; i < a.length; i++) { const d = a[i] - a[i - 1]; g = (g * (p - 1) + Math.max(d, 0)) / p; l = (l * (p - 1) + Math.max(-d, 0)) / p; } return l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l); },
+  rsiSeries(a, p = 14) { const out = new Array(a.length).fill(NaN); if (a.length < p + 1) return out; let g = 0, l = 0; for (let i = 1; i <= p; i++) { const d = a[i] - a[i - 1]; g += Math.max(d, 0); l += Math.max(-d, 0); } g /= p; l /= p; const val = () => l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l); out[p] = val(); for (let i = p + 1; i < a.length; i++) { const d = a[i] - a[i - 1]; g = (g * (p - 1) + Math.max(d, 0)) / p; l = (l * (p - 1) + Math.max(-d, 0)) / p; out[i] = val(); } return out; },
+  stochRsi(a, rp = 14, sp = 14, kp = 3, dp = 3) { const rs = this.rsiSeries(a, rp), raw = rs.map((v, i) => { if (i < sp - 1) return NaN; const w = rs.slice(i - sp + 1, i + 1); if (!w.every(finite)) return NaN; const hi = Math.max(...w), lo = Math.min(...w); return hi === lo ? 50 : (rs[i] - lo) / (hi - lo) * 100; }); const k = this.smaSeries(raw, kp), d = this.smaSeries(k, dp); return { k: k[k.length - 1], d: d[d.length - 1] }; },
+  macd(a) { if (a.length < 35) return { line: NaN, signal: NaN, histogram: NaN }; const e12 = this.emaSeries(a, 12), e26 = this.emaSeries(a, 26), m = []; for (let i = 25; i < a.length; i++) m.push(e12[i] - e26[i]); const sg = this.emaSeries(m, 9), line = m[m.length - 1], signal = sg[sg.length - 1]; return { line, signal, histogram: line - signal }; },
+  bb(a, p = 20, k = 2) { if (a.length < p) return { upper: NaN, middle: NaN, lower: NaN }; const s = a.slice(-p), m = mean(s), sd = Math.sqrt(mean(s.map(x => (x - m) ** 2))); return { upper: m + k * sd, middle: m, lower: m - k * sd }; },
+  atrSeries(h, l, c, p = 14) { const n = c.length, out = new Array(n).fill(NaN); if (n < p + 1) return out; const tr = new Array(n).fill(0); for (let j = 1; j < n; j++) tr[j] = Math.max(h[j] - l[j], Math.abs(h[j] - c[j - 1]), Math.abs(l[j] - c[j - 1])); let v = mean(tr.slice(1, p + 1)); out[p] = v; for (let i = p + 1; i < n; i++) { v = (v * (p - 1) + tr[i]) / p; out[i] = v; } return out; },
+  adx(h, l, c, p = 14) { const n = c.length; if (n < 2 * p + 2) return { adx: NaN, plusDI: NaN, minusDI: NaN }; const tr = [], pd = [], md = []; for (let i = 1; i < n; i++) { const up = h[i] - h[i - 1], dn = l[i - 1] - l[i]; pd.push(up > dn && up > 0 ? up : 0); md.push(dn > up && dn > 0 ? dn : 0); tr.push(Math.max(h[i] - l[i], Math.abs(h[i] - c[i - 1]), Math.abs(l[i] - c[i - 1]))); } let sT = 0, sP = 0, sM = 0; for (let i = 0; i < p; i++) { sT += tr[i]; sP += pd[i]; sM += md[i]; } const dxs = []; let pdi = 0, mdi = 0; const calc = () => { pdi = sT ? 100 * sP / sT : 0; mdi = sT ? 100 * sM / sT : 0; dxs.push(pdi + mdi ? 100 * Math.abs(pdi - mdi) / (pdi + mdi) : 0); }; calc(); for (let i = p; i < tr.length; i++) { sT = sT - sT / p + tr[i]; sP = sP - sP / p + pd[i]; sM = sM - sM / p + md[i]; calc(); } if (dxs.length < p) return { adx: NaN, plusDI: pdi, minusDI: mdi }; let a = mean(dxs.slice(0, p)); for (let j = p; j < dxs.length; j++) a = (a * (p - 1) + dxs[j]) / p; return { adx: a, plusDI: pdi, minusDI: mdi }; },
+  cci(h, l, c, p = 20) { const n = c.length; if (n < p) return NaN; const tp = []; for (let i = n - p; i < n; i++) tp.push((h[i] + l[i] + c[i]) / 3); const m = mean(tp), md = mean(tp.map(x => Math.abs(x - m))); return md === 0 ? 0 : (tp[tp.length - 1] - m) / (0.015 * md); },
+  obvSeries(cs) { const out = new Array(cs.length).fill(0); for (let i = 1; i < cs.length; i++) { const d = cs[i].close - cs[i - 1].close; out[i] = out[i - 1] + (d > 0 ? cs[i].volume : d < 0 ? -cs[i].volume : 0); } return out; }
+};
+
+/* ================= MULTI-INDICATOR SIGNAL ENGINE ================= */
+function evaluateIndicators(cs) {
+  const n = cs.length, c = cs.map(x => x.close), h = cs.map(x => x.high), l = cs.map(x => x.low), p = c[n - 1], list = [], ctx = {};
+  const push = (key, name, value, dir, note) => list.push({ key, name, group: GROUPS[key], value, dir, note });
+  const na = (key, name, why) => push(key, name, "--", "na", "Gagal dihitung (" + why + ")");
+  const atrS = TA.atrSeries(h, l, c, 14), atrNow = atrS[n - 1]; ctx.atr = atrNow;
+
+  const rsi = TA.rsi(c);
+  if (!finite(rsi)) na("rsi", "RSI (14)", "butuh 15 candle");
+  else push("rsi", "RSI (14)", fmt(rsi, 1), rsi > 70 ? "neutral" : rsi < 30 ? "neutral" : rsi >= 55 ? "bull" : rsi <= 45 ? "bear" : "neutral", rsi > 70 ? "Jenuh beli (>70)" : rsi < 30 ? "Jenuh jual (<30)" : rsi >= 55 ? "Momentum naik (55–70)" : rsi <= 45 ? "Momentum turun (30–45)" : "Zona tengah 45–55");
+
+  const m = TA.macd(c);
+  if (!finite(m.histogram) || !finite(atrNow)) na("macd", "MACD (12,26,9)", "butuh 35 candle");
+  else { const th = 0.02 * atrNow; const d = m.histogram > th && m.line > m.signal ? "bull" : m.histogram < -th && m.line < m.signal ? "bear" : "neutral"; push("macd", "MACD (12,26,9)", fmt(m.histogram, p < 1 ? 6 : 4), d, d === "bull" ? "Histogram positif" : d === "bear" ? "Histogram negatif" : "Mendekati nol"); }
+
+  const e9 = TA.ema(c, 9), e21 = TA.ema(c, 21); ctx.ema21 = e21;
+  if (!finite(e9) || !finite(e21)) na("ema", "EMA 9/21", "butuh 21 candle");
+  else { const d = e9 > e21 && p > e21 ? "bull" : e9 < e21 && p < e21 ? "bear" : "neutral"; push("ema", "EMA 9/21", fmtP(e9) + " / " + fmtP(e21), d, d === "bull" ? "EMA 9 > EMA 21 & Harga > EMA 21" : d === "bear" ? "EMA 9 < EMA 21 & Harga < EMA 21" : "Persilangan netral"); }
+
+  const s20 = TA.sma(c, 20), s50 = TA.sma(c, 50);
+  if (!finite(s20) || !finite(s50)) na("sma", "SMA 20/50", "butuh 50 candle");
+  else { const d = s20 > s50 && p > s50 ? "bull" : s20 < s50 && p < s50 ? "bear" : "neutral"; push("sma", "SMA 20/50", fmtP(s20) + " / " + fmtP(s50), d, d === "bull" ? "SMA 20 > SMA 50" : d === "bear" ? "SMA 20 < SMA 50" : "Netral"); }
+
+  const b = TA.bb(c);
+  if (!finite(b.upper) || !finite(b.lower) || b.upper <= b.lower) na("bb", "Bollinger Bands (20,2)", "butuh 20 candle");
+  else { const pct = (p - b.lower) / (b.upper - b.lower); const d = (pct > 1 || pct < 0) ? "neutral" : pct >= 0.55 ? "bull" : pct <= 0.45 ? "bear" : "neutral"; push("bb", "Bollinger Bands (20,2)", "%B " + fmt(pct * 100, 0) + "%", d, d === "bull" ? "Di paruh atas band" : d === "bear" ? "Di paruh bawah band" : "Di tengah / luar band"); }
+
+  const sr = TA.stochRsi(c);
+  if (!finite(sr.k) || !finite(sr.d)) na("stochrsi", "Stochastic RSI", "butuh 35 candle");
+  else { const d = sr.k > sr.d && sr.k < 80 ? "bull" : sr.k < sr.d && sr.k > 20 ? "bear" : "neutral"; push("stochrsi", "Stochastic RSI (14,14,3,3)", "K " + fmt(sr.k, 1) + " / D " + fmt(sr.d, 1), d, d === "bull" ? "%K > %D" : d === "bear" ? "%K < %D" : "Jenuh / Netral"); }
+
+  const a = TA.adx(h, l, c); ctx.adx = a.adx;
+  if (!finite(a.adx)) na("adx", "ADX (14)", "butuh 30 candle");
+  else { const d = a.adx >= 20 && a.plusDI > a.minusDI ? "bull" : a.adx >= 20 && a.minusDI > a.plusDI ? "bear" : "neutral"; push("adx", "ADX (14)", fmt(a.adx, 1) + " (+DI " + fmt(a.plusDI, 1) + " / -DI " + fmt(a.minusDI, 1) + ")", d, d === "bull" ? "ADX ≥ 20 (+DI > -DI)" : d === "bear" ? "ADX ≥ 20 (-DI > +DI)" : "ADX < 20"); }
+
+  const cci = TA.cci(h, l, c);
+  if (!finite(cci)) na("cci", "CCI (20)", "butuh 20 candle");
+  else { const d = cci > 100 && cci <= 200 ? "bull" : cci < -100 && cci >= -200 ? "bear" : "neutral"; push("cci", "CCI (20)", fmt(cci, 1), d, d === "bull" ? "CCI > +100" : d === "bear" ? "CCI < -100" : "Netral"); }
+
+  const obv = TA.obvSeries(cs);
+  if (n < 26) na("obv", "OBV", "butuh 26 candle");
+  else { const oe = TA.emaSeries(obv, 20), eNow = oe[n - 1], now = obv[n - 1], prev = obv[n - 6]; if (!finite(eNow)) na("obv", "OBV", "EMA OBV N/A"); else { const d = now > eNow && now > prev ? "bull" : now < eNow && now < prev ? "bear" : "neutral"; push("obv", "OBV", fmt(now, 0), d, d === "bull" ? "OBV naik di atas EMA 20" : d === "bear" ? "OBV turun di bawah EMA 20" : "OBV netral"); } }
+
+  const atrVals = atrS.slice(-20).filter(finite);
+  if (!finite(atrNow) || atrVals.length < 10 || n < 5) na("atr", "ATR (14)", "butuh 25 candle");
+  else { const avg = mean(atrVals), exp = atrNow > avg * 1.05, chg = c[n - 1] - c[n - 4]; ctx.atrExp = exp; const d = exp && Math.abs(chg) > 0.5 * atrNow ? (chg > 0 ? "bull" : "bear") : "neutral"; push("atr", "ATR (14)", fmtP(atrNow), d, d !== "neutral" ? "Volatilitas meluas" : "Volatilitas normal"); }
+
+  return { list, ctx };
+}
+
+function swingExt(cs, k, type) { const s = cs.slice(-k); return type === "L" ? Math.min(...s.map(x => x.low)) : Math.max(...s.map(x => x.high)); }
+function buildLevels(s, cs, ctx) {
+  const p = cs[cs.length - 1].close, atr = ctx.atr, ema21 = ctx.ema21;
+  let far = p - s * 0.5 * atr;
+  if (finite(ema21) && ((s === 1 && ema21 < p && ema21 > far) || (s === -1 && ema21 > p && ema21 < far))) far = ema21;
+  if (Math.abs(p - far) < 0.1 * atr) far = p - s * 0.1 * atr;
+  const low = Math.min(p, far), high = Math.max(p, far), mid = (low + high) / 2;
+  let sl;
+  if (s === 1) { const sw = swingExt(cs, 10, "L") - 0.25 * atr; sl = sw < low ? sw : mid - 1.5 * atr; sl = Math.max(mid - 2.5 * atr, Math.min(sl, mid - 1.0 * atr)); }
+  else { const sw = swingExt(cs, 10, "H") + 0.25 * atr; sl = sw > high ? sw : mid + 1.5 * atr; sl = Math.min(mid + 2.5 * atr, Math.max(sl, mid + 1.0 * atr)); }
+  const risk = Math.abs(mid - sl);
+  return { low, high, mid, sl, risk, rr: [2, 3, 5], tps: [2, 3, 5].map(k => mid + s * k * risk) };
+}
+
+function computeSignal(all) {
+  const cs = all.slice(-SIG.window), last = cs[cs.length - 1];
+  const base = { time: last ? last.time : 0, price: last ? last.close : NaN, list: [], g: 0, y: 0, r: 0, nv: 0, strength: null, levels: null, filterMsg: "" };
+  if (cs.length < SIG.minCandles) return { ...base, status: "INSUFFICIENT", reason: `Data candle belum cukup (${cs.length}/${SIG.minCandles}).`, invalid: "--" };
+  const { list, ctx } = evaluateIndicators(cs), valid = list.filter(x => x.dir !== "na"), nv = valid.length;
+  const g = valid.filter(x => x.dir === "bull").length, r = valid.filter(x => x.dir === "bear").length, y = valid.filter(x => x.dir === "neutral").length;
+  const res = { ...base, list, g, y, r, nv };
+  if (nv < SIG.minValid) return { ...res, status: "INSUFFICIENT", reason: `Hanya ${nv} indikator valid.`, invalid: "--" };
+
+  const minVotes = Math.ceil(0.6 * nv), minMargin = Math.ceil(0.3 * nv);
+  let status = "NEUTRAL";
+  if (g >= minVotes && g - r >= minMargin) status = "BUY";
+  else if (r >= minVotes && r - g >= minMargin) status = "SELL";
+
+  const s = status === "BUY" ? 1 : status === "SELL" ? -1 : 0, adxV = ctx.adx;
+  if (s !== 0) {
+    const ema = list.find(x => x.key === "ema"), sma = list.find(x => x.key === "sma"), adx = list.find(x => x.key === "adx"), opp = s === 1 ? "bear" : "bull";
+    if (ema && sma && ema.dir === opp && sma.dir === opp) res.filterMsg = "Filter tren bertentangan.";
+    else if (adx && adx.dir === opp && adxV >= 25) res.filterMsg = "Filter ADX bertentangan.";
+    if (res.filterMsg) status = "NEUTRAL";
+  }
+  res.status = status;
+  if (status === "NEUTRAL") { res.reason = "Belum ada konfirmasi suara mayoritas indikator."; res.invalid = "--"; return res; }
+
+  const sc = d => d === "bull" ? 1 : d === "bear" ? -1 : 0;
+  let num = 0, den = 0;
+  for (const gr in GROUP_W) { const mm = valid.filter(x => x.group === gr); if (!mm.length) continue; num += GROUP_W[gr] * s * mean(mm.map(x => sc(x.dir))); den += GROUP_W[gr]; }
+  const dom = den ? clamp(num / den, -1, 1) : 0, adxF = finite(adxV) ? clamp((adxV - 15) / 25, 0, 1) : 0, volF = ctx.atrExp ? 1 : 0.4;
+  res.strength = Math.round(100 * clamp(0.65 * Math.max(0, dom) + 0.2 * adxF + 0.15 * volF, 0, 1));
+  res.levels = buildLevels(s, cs, ctx);
+  res.reason = `${s === 1 ? "BUY" : "SELL"} terkonfirmasi: ${g} hijau, ${y} kuning, ${r} merah dari ${nv} indikator (Skor ${res.strength}/100).`;
+  res.invalid = `Candle ditutup menembus Stop Loss ${fmtP(res.levels.sl)}.`;
+  return res;
+}
+
+function runBacktest(cs) {
+  const N = cs.length, start = SIG.backtestStart, trades = [];
+  if (N < start + SIG.maxBars + 5) return null;
+  let i = start;
+  while (i < N - 1) {
+    const s = computeSignal(cs.slice(0, i + 1));
+    if ((s.status !== "BUY" && s.status !== "SELL") || !s.levels || !(s.levels.risk > 0)) { i++; continue; }
+    const dir = s.status === "BUY" ? 1 : -1, entry = cs[i + 1].open, risk = s.levels.risk, sl = entry - dir * risk, tp1 = entry + dir * 2 * risk, last = i + SIG.maxBars;
+    let res = null;
+    for (let k = i + 1; k <= Math.min(last, N - 1); k++) {
+      const c = cs[k], hitSL = dir === 1 ? c.low <= sl : c.high >= sl, hitTP = dir === 1 ? c.high >= tp1 : c.low <= tp1;
+      if (hitSL) { res = { k, out: "SL" }; break; }
+      if (hitTP) { res = { k, out: "TP1" }; break; }
+      if (k === last) { res = { k, out: "TIMEOUT" }; break; }
+    }
+    if (!res) break;
+    trades.push(res.out);
+    i = res.k + 1;
+  }
+  const n = trades.length;
+  if (!n) return { n: 0 };
+  const wins = trades.filter(x => x === "TP1").length;
+  return { n, winRate: (100 * wins) / n };
+}
+
+function scheduleBacktest() {
+  clearTimeout(state.btTimer);
+  const key = CONFIG.symbol + "|" + CONFIG.interval;
+  state.btTimer = setTimeout(() => {
+    try {
+      const r = runBacktest(state.candles);
+      if (key !== CONFIG.symbol + "|" + CONFIG.interval) return;
+      state.bt = r || { insufficient: true };
+      renderSignal();
+    } catch (_) {
+      state.bt = { error: true };
+      renderSignal();
+    }
+  }, 60);
+}
+
+function clearSignalLines() { if (state.candleSeries) state.sigLines.forEach(l => { try { state.candleSeries.removePriceLine(l); } catch (_) {} }); state.sigLines = []; }
+function drawSignalLines(s) {
+  clearSignalLines();
+  if (!state.candleSeries || !s || !s.levels || (s.status !== "BUY" && s.status !== "SELL")) return;
+  const lv = s.levels, add = (price, color, title) => state.sigLines.push(state.candleSeries.createPriceLine({ price, color, lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title }));
+  add(lv.mid, "#38bdf8", "ENTRY");
+  add(lv.sl, "#ef5350", "SL");
+  lv.tps.forEach((t, i) => add(t, "#26a69a", "TP" + (i + 1)));
+}
+
+function updateSignal() {
+  const cs = state.candles;
+  if (!cs.length) { state.signal = null; renderSignal(); return; }
+  const key = CONFIG.symbol + "|" + CONFIG.interval + "|" + cs[cs.length - 1].time;
+  if (key !== state.sigKey) {
+    state.sigKey = key;
+    state.signal = computeSignal(cs);
+    drawSignalLines(state.signal);
+  }
+  renderSignal();
+}
+
+function setCard(id, cls) {
+  const e = $(id);
+  if (!e) return;
+  e.classList.remove("card-bullish", "card-bearish", "card-neutral");
+  if (cls) e.classList.add(cls);
+}
+
+const DIR_UI = { bull: ["Bullish", "pass", "HIJAU"], bear: ["Bearish", "reject", "MERAH"], neutral: ["Netral", "warning", "KUNING"], na: ["Gagal dihitung", "unknown", "N/A"] };
+function renderSignal() {
+  const s = state.signal, p = state.currentPrice, bt = state.bt;
+  $("sgSymbol").textContent = `${CONFIG.symbol} · ${(TIMEFRAMES[CONFIG.interval] || {}).label || CONFIG.interval}`;
+  $("sgPrice").textContent = finite(p) && p > 0 ? "$" + fmtP(p) : "--";
+  if (!s) {
+    $("sgBadge").className = "badge unknown"; $("sgBadge").textContent = "MENUNGGU DATA";
+    ["sgMain", "sgStrength", "sgGreen", "sgYellow", "sgRed", "sgAcc"].forEach(id => $(id).textContent = "--");
+    $("sgPlan").style.display = "none"; $("sgNoTrade").style.display = "none";
+    return;
+  }
+  const buy = s.status === "BUY", sell = s.status === "SELL", ins = s.status === "INSUFFICIENT";
+  const ui = buy ? ["up", "SINYAL BUY"] : sell ? ["down", "SINYAL SELL/SHORT"] : ins ? ["unknown", "DATA TIDAK CUKUP"] : ["neutral", "NETRAL - TIDAK ADA SINYAL"];
+  $("sgBadge").className = "badge " + ui[0]; $("sgBadge").textContent = ui[1];
+  $("sgMain").textContent = ui[1];
+  setCard("sgMainCard", buy ? "card-bullish" : sell ? "card-bearish" : ins ? "" : "card-neutral");
+  $("sgSub").textContent = ins ? "Indikator valid kurang" : (buy || sell) ? (s.strength >= MIN_EXEC_PROB ? "Lolos Ambang ≥ 75%" : "Di bawah ambang 75% (Pantau)") : (s.filterMsg ? "Ditahan filter" : "Netral");
+  $("sgGreen").textContent = ins ? "--" : `${s.g} dari ${s.nv}`;
+  $("sgYellow").textContent = ins ? "--" : `${s.y} dari ${s.nv}`;
+  $("sgRed").textContent = ins ? "--" : `${s.r} dari ${s.nv}`;
+  $("sgStrengthLabel").textContent = buy ? "Kekuatan Sinyal BUY" : sell ? "Kekuatan Sinyal SELL" : "Kekuatan Sinyal";
+  $("sgStrength").textContent = s.strength != null ? s.strength + " / 100" : "--";
+  $("sgBar").style.width = (s.strength || 0) + "%";
+  $("sgBar").style.background = buy ? "#22c55e" : sell ? "#ef4444" : "#facc15";
+
+  if (!bt) $("sgAcc").textContent = "Menghitung...";
+  else if (bt.error || bt.insufficient || bt.n < SIG.minSample) { $("sgAcc").textContent = "BELUM TERVALIDASI"; $("sgAccSub").textContent = "Sampel belum cukup"; }
+  else { $("sgAcc").textContent = fmt(bt.winRate, 1) + "%"; $("sgAccSub").textContent = `n = ${bt.n} sinyal`; }
+
+  const lv = s.levels;
+  if ((buy || sell) && lv) {
+    $("sgPlan").style.display = "block"; $("sgNoTrade").style.display = "none";
+    $("sgEntryLabel").textContent = buy ? "BUY RANGE" : "SHORT RANGE";
+    $("sgEntry").textContent = `${fmtP(lv.low)} - ${fmtP(lv.high)}`;
+    $("sgSL").textContent = fmtP(lv.sl); $("sgSLpct").textContent = `Risiko ${(lv.risk / lv.mid * 100).toFixed(2)}%`;
+    lv.tps.forEach((t, i) => { $("sgT" + (i + 1)).textContent = fmtP(t); $("sgRR" + (i + 1)).textContent = `1:${lv.rr[i]}`; });
+  } else {
+    $("sgPlan").style.display = "none"; $("sgNoTrade").style.display = "block"; $("sgNoTradeText").textContent = s.reason || "Tidak ada rekomendasi transaksi.";
+  }
+  $("sgReason").textContent = s.reason || "--"; $("sgInvalid").textContent = s.invalid || "--";
+  $("sgUpdated").textContent = `Dihitung dari candle tertutup ${fmtTime(s.time)}.`;
+  $("sgTable").innerHTML = s.list.length
+    ? s.list.map(x => { const u = DIR_UI[x.dir] || DIR_UI.na; return `<tr><td>${esc(x.name)}</td><td>${esc(x.value)}</td><td>${u[0]}</td><td><span class="badge ${u[1]}">${u[2]}</span></td><td class="wrap">${esc(x.note)}</td></tr>`; }).join("")
+    : '<tr><td colspan="5" class="muted text-center">Menunggu data...</td></tr>';
+}
+
+/* ================= CHART & WEBSOCKET ================= */
+function initChart() {
+  if (!window.LightweightCharts) return;
+  state.chart = LightweightCharts.createChart($("chart"), {
+    layout: { background: { type: "solid", color: "#131722" }, textColor: "#d1d4dc" },
+    grid: { vertLines: { color: "#1e222d" }, horzLines: { color: "#1e222d" } },
+    rightPriceScale: { borderColor: "#2a2e39" },
+    timeScale: { borderColor: "#2a2e39", timeVisible: true },
+    crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+    width: $("chart").clientWidth, height: $("chart").clientHeight
+  });
+  state.candleSeries = state.chart.addCandlestickSeries({ upColor: "#26a69a", downColor: "#ef5350" });
+  state.volumeSeries = state.chart.addHistogramSeries({ priceFormat: { type: "volume" }, priceScaleId: "volume" });
+  state.chart.priceScale("volume").applyOptions({ scaleMargins: { top: 0.82, bottom: 0 } });
+}
+function showLegend(d) {
+  const up = d.close >= d.open, col = up ? "#26a69a" : "#ef5350", ch = d.open ? (d.close - d.open) / d.open * 100 : 0;
+  $("legend").innerHTML = `<b>${CONFIG.symbol}</b> · ${CONFIG.interval} &nbsp; <span style="color:${col}">O ${fmtP(d.open)} H ${fmtP(d.high)} L ${fmtP(d.low)} C ${fmtP(d.close)} (${ch >= 0 ? "+" : ""}${ch.toFixed(2)}%)</span>`;
+}
+function setChartData(cs, fit) {
+  if (!state.candleSeries || !cs.length) return;
+  state.candleSeries.setData(cs.filter(c => [c.time, c.open, c.high, c.low, c.close].every(finite)).map(c => ({ time: toCT(c.time), open: c.open, high: c.high, low: c.low, close: c.close })));
+  state.volumeSeries.setData(cs.filter(c => finite(c.time) && finite(c.volume)).map(c => ({ time: toCT(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,.35)" : "rgba(239,83,80,.35)" })));
+  if (fit) state.chart.timeScale().fitContent();
+  const l = cs[cs.length - 1];
+  showLegend({ open: l.open, high: l.high, low: l.low, close: l.close });
+}
+
+async function fetchHistory() {
+  const gen = ++state.generation;
+  try {
+    const { data } = await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${encodeURIComponent(CONFIG.interval)}&limit=${CONFIG.historyLimit}`);
+    if (gen !== state.generation) return;
+    const now = Date.now();
+    state.candles = data.map(d => ({ time: +d[0], open: +d[1], high: +d[2], low: +d[3], close: +d[4], volume: +d[5], closeTime: +d[6] })).filter(c => c.closeTime < now);
+    state.currentPrice = state.candles[state.candles.length - 1].close;
+    state.liveCandle = null;
+    clearSignalLines(); state.sigKey = ""; state.signal = null; state.bt = null;
+    setChartData(state.candles, true);
+    updateSignal();
+    scheduleBacktest();
+    EMA_EXP.init();
+    connectWS();
+  } catch (_) {
+    setTimeout(fetchHistory, 3000);
+  }
+}
+
+function connectWS() {
+  if (state.ws) { try { state.ws.close(); } catch (_) {} }
+  let ws;
+  try { ws = new WebSocket(CONFIG.wsBases[0] + CONFIG.symbol.toLowerCase() + "@kline_" + CONFIG.interval); } catch (_) { setTimeout(fetchHistory, 3000); return; }
+  state.ws = ws;
+  ws.onopen = () => setStatus("Terhubung · " + CONFIG.symbol, "green");
+  ws.onmessage = e => { try { const m = JSON.parse(e.data); if (m.k) processKline(m.k); } catch (_) {} };
+  ws.onclose = () => setTimeout(fetchHistory, 3000);
+}
+
+function processKline(k) {
+  const c = { time: +k.t, open: +k.o, high: +k.h, low: +k.l, close: +k.c, volume: +k.v, closeTime: +k.T, isClosed: !!k.x };
+  state.currentPrice = c.close;
+  state.liveCandle = c;
+  $("sgPrice").textContent = "$" + fmtP(c.close);
+  showLegend(c);
+  if (state.candleSeries) {
+    state.candleSeries.update({ time: toCT(c.time), open: c.open, high: c.high, low: c.low, close: c.close });
+    state.volumeSeries.update({ time: toCT(c.time), value: c.volume, color: c.close >= c.open ? "rgba(38,166,154,.35)" : "rgba(239,83,80,.35)" });
+  }
+  if (!c.isClosed) return;
+  const idx = state.candles.findIndex(x => x.time === c.time);
+  if (idx >= 0) state.candles[idx] = c; else state.candles.push(c);
+  state.liveCandle = null;
+  updateSignal();
+  scheduleBacktest();
+  if (idx < 0) EMA_EXP.init();
+}
+
+function reconnectNow() {
+  state.generation++;
+  if (state.ws) { try { state.ws.close(); } catch (_) {} }
+  state.candles = [];
+  fetchHistory();
+}
+
+function mountTV() {
+  if (state.tab !== "tv") return;
+  $("tvWidget").innerHTML = "";
+  const make = () => { try { new TradingView.widget({ autosize: true, symbol: "BINANCE:" + CONFIG.symbol, interval: TV_INTERVAL[CONFIG.interval] || "5", theme: "dark", container_id: "tvWidget" }); } catch (_) {} };
+  if (window.TradingView) make();
+  else { const s = document.createElement("script"); s.src = "https://s3.tradingview.com/tv.js"; s.onload = make; document.head.appendChild(s); }
+}
+function setTab(t) {
+  state.tab = t;
+  $("paneChart").style.display = t === "chart" ? "block" : "none";
+  $("paneTV").style.display = t === "tv" ? "block" : "none";
+  $("tabChart").classList.toggle("active", t === "chart");
+  $("tabTV").classList.toggle("active", t === "tv");
+  if (t === "tv") mountTV();
+}
+
+/* ================= EMA EXPERT STRATEGY MTF ================= */
+const EMA_EXP = {
+  data: null, stateStatus: "WAITING", latestSignal: null, btStats: null, remoteSync: null,
+
+  async syncRemoteEmaSignals() {
+    try {
+      const res = await fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals.json?t=" + Date.now());
+      if (!res.ok) return;
+      const all = await res.json();
+      if (!all || typeof all !== "object") return;
+      const entries = Object.entries(all)
+        .filter(([k, v]) => !k.startsWith("_") && v && v.symbol === CONFIG.symbol)
+        .map(([, v]) => v)
+        .sort((a, b) => (b.updatedAt || b.timestamp || 0) - (a.updatedAt || a.timestamp || 0));
+      if (entries.length) {
+        this.remoteSync = entries[0];
+        this.renderUI();
+      }
+    } catch (_) {}
+  },
+
+  async init() {
+    const trTf = $("emaTrendTf").value, puTf = $("emaPullTf").value, enTf = $("emaEntryTf").value;
+    $("emaBadge").textContent = "MEMUAT MTF..."; $("emaBadge").className = "badge warning";
+    try {
+      const fetchTf = async tf => {
+        const { data } = await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(CONFIG.symbol)}&interval=${tf}&limit=500`);
+        return data.map(d => ({ time: +d[0], open: +d[1], high: +d[2], low: +d[3], close: +d[4], volume: +d[5] }));
+      };
+      const [dt, dp, de] = await Promise.all([fetchTf(trTf), fetchTf(puTf), fetchTf(enTf)]);
+
+      const calcInd = cs => {
+        const c = cs.map(x => x.close), h = cs.map(x => x.high), l = cs.map(x => x.low), v = cs.map(x => x.volume);
+        const e8 = TA.emaSeries(c, 8), e21 = TA.emaSeries(c, 21), e125 = TA.emaSeries(c, 125);
+        const atr = TA.atrSeries(h, l, c, 14), volAvg = TA.smaSeries(v, 20);
+        return cs.map((candle, i) => ({
+          ...candle, e8: e8[i], e21: e21[i], e125: e125[i], atr: atr[i],
+          rvol: volAvg[i] > 0 ? candle.volume / volAvg[i] : 1
+        }));
+      };
+
+      this.runLogic(calcInd(dt), calcInd(dp), calcInd(de));
+      this.syncRemoteEmaSignals();
+    } catch (_) {
+      $("emaBadge").textContent = "GAGAL SINKRONISASI"; $("emaBadge").className = "badge reject";
+    }
+  },
+
+  runLogic(dt, dp, de) {
+    let tIdx = 0, pIdx = 0, state = "WAITING";
+    let trades = [], activeTrade = null, lastSignal = null;
+
+    for (let i = 0; i < de.length; i++) {
+      const centry = de[i], prevEntry = i > 0 ? de[i - 1] : centry;
+      while (tIdx < dt.length - 1 && dt[tIdx + 1].time <= centry.time) tIdx++;
+      while (pIdx < dp.length - 1 && dp[pIdx + 1].time <= centry.time) pIdx++;
+
+      const ctrend = dt[tIdx], cpull = dp[pIdx];
+      if (!ctrend.e125 || !cpull.e21 || !centry.atr) continue;
+
+      if (activeTrade) {
+        const hitSL = activeTrade.dir === "BUY" ? centry.low <= activeTrade.sl : centry.high >= activeTrade.sl;
+        const hitTP = activeTrade.dir === "BUY" ? centry.high >= activeTrade.tp : centry.low <= activeTrade.tp;
+        if (hitSL || hitTP) {
+          activeTrade.out = hitTP ? "TP" : "SL";
+          trades.push(activeTrade);
+          activeTrade = null;
+          state = "WAITING";
+        }
+        if (activeTrade) continue;
+      }
+
+      const prevTrend = tIdx > 0 ? dt[tIdx - 1] : ctrend, prev2Trend = tIdx > 1 ? dt[tIdx - 2] : prevTrend;
+      const structureBull = ctrend.high >= prevTrend.high && ctrend.low >= prev2Trend.low;
+      const structureBear = ctrend.low <= prevTrend.low && ctrend.high <= prev2Trend.high;
+
+      const trendBull = ctrend.close > ctrend.e125 && ctrend.e8 > ctrend.e21 && ctrend.e21 > prevTrend.e21 && structureBull;
+      const trendBear = ctrend.close < ctrend.e125 && ctrend.e8 < ctrend.e21 && ctrend.e21 < prevTrend.e21 && structureBear;
+      const dynRR = clamp(Math.round(2 + Math.max(0, (centry.rvol || 1) - 1.15) * 1.5), 2, 5);
+
+      if (state === "WAITING" || state.startsWith("TREND")) {
+        if (trendBull) state = "TREND_DETECTED_BULL";
+        else if (trendBear) state = "TREND_DETECTED_BEAR";
+        else state = "WAITING";
+
+        if (state === "TREND_DETECTED_BULL") {
+          const tol = cpull.atr * 0.2;
+          if (cpull.low <= cpull.e8 + tol || cpull.low <= cpull.e21 + tol) state = "PULLBACK_DETECTED_BULL";
+        } else if (state === "TREND_DETECTED_BEAR") {
+          const tol = cpull.atr * 0.2;
+          if (cpull.high >= cpull.e8 - tol || cpull.high >= cpull.e21 - tol) state = "PULLBACK_DETECTED_BEAR";
+        }
+      } else if (state === "PULLBACK_DETECTED_BULL") {
+        if (!trendBull || centry.close < cpull.e21 - cpull.atr) state = "WAITING";
+        else if (centry.close > centry.open && centry.close > prevEntry.high) {
+          const sl = Math.min(centry.low, prevEntry.low) - centry.atr * 0.5;
+          const risk = centry.close - sl;
+          activeTrade = { dir: "BUY", entry: centry.close, sl, tp: centry.close + risk * dynRR, rrRatio: dynRR, rvol: centry.rvol, time: centry.time, idx: i };
+          lastSignal = { ...activeTrade, trEma: ctrend.e125, puEma8: cpull.e8, puEma21: cpull.e21 };
+          state = "WAITING";
+        }
+      } else if (state === "PULLBACK_DETECTED_BEAR") {
+        if (!trendBear || centry.close > cpull.e21 + cpull.atr) state = "WAITING";
+        else if (centry.close < centry.open && centry.close < prevEntry.low) {
+          const sl = Math.max(centry.high, prevEntry.high) + centry.atr * 0.5;
+          const risk = sl - centry.close;
+          activeTrade = { dir: "SELL", entry: centry.close, sl, tp: centry.close - risk * dynRR, rrRatio: dynRR, rvol: centry.rvol, time: centry.time, idx: i };
+          lastSignal = { ...activeTrade, trEma: ctrend.e125, puEma8: cpull.e8, puEma21: cpull.e21 };
+          state = "WAITING";
+        }
+      }
+    }
+
+    this.data = { trend: dt[dt.length - 1], pull: dp[dp.length - 1] };
+    this.stateStatus = state;
+
+    const w = trades.filter(t => t.out === "TP");
+    const wr = trades.length ? (w.length / trades.length) * 100 : 0;
+    this.btStats = { total: trades.length, winRate: wr };
+
+    if (lastSignal && de.length - lastSignal.idx <= 5) {
+      const rvolBonus = clamp(((lastSignal.rvol || 1) - 1) * 12, 0, 15);
+      const prob = Math.round(clamp(wr * 0.85 + rvolBonus + 10, 0, 99));
+      lastSignal.winrate = Number(wr.toFixed(1));
+      lastSignal.probability = prob;
+      lastSignal.eligibleFor50x = prob >= MIN_EXEC_PROB;
+      this.latestSignal = lastSignal;
+    } else {
+      this.latestSignal = null;
+    }
+
+    this.renderUI();
+    this.triggerFirebase();
+  },
+
+  renderUI() {
+    if (!this.data) return;
+    $("emaBadge").textContent = isBotEnabled() ? "TERHUBUNG (MTF · ≥75%)" : "STANDBY (MASTER OFF)";
+    $("emaBadge").className = isBotEnabled() ? "badge pass" : "badge warning";
+
+    $("emaState").textContent = this.stateStatus.replace(/_/g, " ");
+    $("emaStateSub").textContent = (this.remoteSync && this.remoteSync.aiSummary) ? this.remoteSync.aiSummary : "Pemantauan MTF + Dual-AI Gatekeeper";
+
+    const dt = this.data.trend, dp = this.data.pull;
+    $("emaTrend").textContent = fmtP(dt.e125);
+    $("emaTrendSub").textContent = dt.close > dt.e125 ? "Harga > EMA 125 (Bullish)" : dt.close < dt.e125 ? "Harga < EMA 125 (Bearish)" : "Netral";
+    setCard("emaTrendCard", dt.close > dt.e125 ? "card-bullish" : dt.close < dt.e125 ? "card-bearish" : "card-neutral");
+
+    $("emaPull").textContent = `8: ${fmtP(dp.e8)} | 21: ${fmtP(dp.e21)}`;
+    $("emaPullSub").textContent = dp.e8 > dp.e21 ? "EMA 8 > EMA 21" : "EMA 8 < EMA 21";
+    setCard("emaPullCard", dp.e8 > dp.e21 ? "card-bullish" : "card-bearish");
+
+    if (this.latestSignal) {
+      const sig = this.latestSignal;
+      $("emaSig").textContent = `Sinyal ${sig.dir} (${sig.probability}%)`;
+      $("emaSigSub").textContent = sig.eligibleFor50x ? `⚡ Lolos ≥75% · ${fmtTime(sig.time)}` : `👀 Pantau (<75%) · ${fmtTime(sig.time)}`;
+      setCard("emaSigCard", sig.dir === "BUY" ? "card-bullish" : "card-bearish");
+      $("emaPlan").style.display = "block";
+      $("emaEntryVal").textContent = fmtP(sig.entry);
+      $("emaSlVal").textContent = fmtP(sig.sl);
+      $("emaTpLabel").textContent = `TAKE PROFIT (1:${sig.rrRatio || 2})`;
+      $("emaTpVal").textContent = fmtP(sig.tp);
+    } else {
+      $("emaSig").textContent = "MENUNGGU";
+      $("emaSigSub").textContent = "Belum ada entry valid (≥75%)";
+      setCard("emaSigCard", "card-neutral");
+      $("emaPlan").style.display = "none";
+    }
+
+    if (this.btStats) {
+      $("emaBtVal").textContent = `Winrate ${fmt(this.btStats.winRate, 1)}%`;
+      const eligText = this.latestSignal ? (this.latestSignal.eligibleFor50x ? " · SIAP EKSEKUSI 50x" : " · DITAHAN (<75%)") : "";
+      $("emaBtSub").textContent = `${this.btStats.total} trade historis${eligText}`;
+    }
+  },
+
+  triggerFirebase() {
+    if (!this.latestSignal || !isBotEnabled()) return;
+    const sig = this.latestSignal;
+    const payload = {
+      symbol: CONFIG.symbol, timestamp: Date.now(), strategy: "EMA_EXPERT_MTF",
+      trendTf: $("emaTrendTf").value, pullbackTf: $("emaPullTf").value, entryTf: $("emaEntryTf").value,
+      trendEma125: sig.trEma, pullbackEma8: sig.puEma8, pullbackEma21: sig.puEma21,
+      signal: sig.dir, entryPrice: sig.entry, stopLoss: sig.sl, takeProfit: sig.tp,
+      riskReward: `1:${sig.rrRatio || 2}`, rvol: Number((sig.rvol || 1).toFixed(2)),
+      winrate: sig.winrate, probability: sig.probability, minExecProb: MIN_EXEC_PROB,
+      eligibleFor50x: sig.eligibleFor50x, status: this.stateStatus
+    };
+    window.emaExpertLastPayload = payload;
+    window.dispatchEvent(new CustomEvent("onEmaExpertSignal", { detail: payload }));
+  }
+};
+
+/* ================= EARLY VOLUME RADAR (RINGKAS & PARALEL) ================= */
+const R_ST = { EB: ["EARLY BULLISH", "up"], EE: ["EARLY BEARISH", "down"], VS: ["VOLUME SURGE", "warning"], NO: ["NORMAL", "unknown"] };
+const radar = { uni: new Map(), feat: new Map(), busy: false, rows: [] };
+
+function radarFeatures(cs) {
+  const n = cs.length;
+  if (n < 36) return null;
+  const c = cs.map(x => x.close), h = cs.map(x => x.high), l = cs.map(x => x.low), qv = cs.map(x => x.qv);
+  const m20 = i => mean(qv.slice(i - 20, i)), recent = [];
+  for (let i = n - 12; i < n; i++) { const b = m20(i); recent.push({ rv: b > 0 ? qv[i] / b : NaN, open: cs[i].open, time: cs[i].time }); }
+  const rvol = recent[recent.length - 1].rv, bP = mean(qv.slice(n - 23, n - 3));
+  const persist = [n - 3, n - 2, n - 1].filter(i => bP > 0 && qv[i] >= 1.5 * bP).length;
+  const q3 = mean(qv.slice(n - 6, n - 3)), accel = q3 > 0 ? mean(qv.slice(n - 3)) / q3 : NaN;
+  const atr = TA.atrSeries(h, l, c, 14)[n - 1];
+  const ema21 = TA.ema(c, 21), rsi = TA.rsi(c), mac = TA.macd(c), m3 = atr > 0 ? (c[n - 1] - c[n - 4]) / atr : 0;
+  let bu = 0, be = 0;
+  if (m3 > 0.5) bu++; else if (m3 < -0.5) be++;
+  if (c[n - 1] > ema21) bu++; else if (c[n - 1] < ema21) be++;
+  if (rsi >= 55) bu++; else if (rsi <= 45) be++;
+  if (mac.histogram > 0) bu++; else if (mac.histogram < 0) be++;
+  const direction = bu >= 3 && be <= 1 ? "bull" : be >= 3 && bu <= 1 ? "bear" : "mixed";
+  const chg = k => (n - 1 - k >= 0) ? (c[n - 1] / c[n - 1 - k] - 1) * 100 : NaN;
+  return { rvol, accel, persist, recent, direction, chg5: chg(1), chg15: chg(3), chg60: chg(12), expire: cs[n - 1].closeTime + 302000 };
+}
+
+function radarClassify(sym) {
+  const u = radar.uni.get(sym), f = radar.feat.get(sym);
+  const o = { sym, price: u.price, q24: u.q24, status: "NO", score: 0, dist: NaN, start: null, rvol: NaN, accel: NaN, ch5: NaN, ch15: NaN, ch60: NaN };
+  if (!f) return o;
+  o.rvol = f.rvol; o.accel = f.accel; o.ch5 = f.chg5; o.ch15 = f.chg15; o.ch60 = f.chg60;
+  const cand = f.recent.filter(r => finite(r.rv) && r.rv >= 2);
+  const active = cand.length > 0 && (f.rvol >= 1.5 || f.persist >= 2);
+  if (active) {
+    o.start = cand[0];
+    o.dist = ((u.price - o.start.open) / o.start.open) * 100;
+    o.status = f.direction === "bull" ? "EB" : f.direction === "bear" ? "EE" : "VS";
+  }
+  o.score = finite(f.rvol) ? f.rvol * 15 + f.persist * 10 + (f.direction !== "mixed" ? 20 : 0) : 0;
+  return o;
+}
+
+function radarSetUniverse(list) {
+  const m = new Map();
+  for (const c of list) m.set(c.symbol, { symbol: c.symbol, price: c.price, q24: c.volume });
+  radar.uni = m;
+  radarCycle(true);
+}
+
+async function radarLoad(s) {
+  try {
+    const { data } = await apiFetch(`/api/v3/klines?symbol=${encodeURIComponent(s)}&interval=5m&limit=60`);
+    if (!Array.isArray(data)) return;
+    const now = Date.now();
+    const cs = data.map(d => ({ time: +d[0], open: +d[1], high: +d[2], low: +d[3], close: +d[4], closeTime: +d[6], qv: +d[7] })).filter(c => c.closeTime < now);
+    const f = radarFeatures(cs);
+    if (f) radar.feat.set(s, f);
+  } catch (_) {}
+}
+
+async function radarCycle(manual = false) {
+  if (!manual && !isBotEnabled()) {
+    $("rdBadge").textContent = "STANDBY"; $("rdBadge").className = "badge warning";
+    return;
+  }
+  if (radar.busy || !radar.uni.size) return;
+  radar.busy = true;
+  $("rdBadge").textContent = "MEMINDAI..."; $("rdBadge").className = "badge warning";
+  try {
+    const now = Date.now();
+    const syms = [...radar.uni.values()].sort((a, b) => b.q24 - a.q24).slice(0, 30).map(u => u.symbol);
+    for (let i = 0; i < syms.length; i += 5) {
+      const batch = syms.slice(i, i + 5).filter(s => { const f = radar.feat.get(s); return !f || now >= f.expire; });
+      if (batch.length) await Promise.all(batch.map(radarLoad));
+    }
+    $("rdBadge").textContent = "AKTIF (5M)"; $("rdBadge").className = "badge pass";
+    $("rdMeta").textContent = `Memantau 30 pasangan paling likuid · Update: ${new Date().toLocaleTimeString("id-ID")}`;
+  } finally {
+    radar.busy = false;
+    radarRender();
+  }
+}
+
+const pcl = v => finite(v) ? `<span class="${v > 0 ? "text-green-400" : v < 0 ? "text-red-400" : ""}">${v > 0 ? "+" : ""}${v.toFixed(2)}%</span>` : "--";
+function radarRender() {
+  const syms = [...radar.uni.values()].sort((a, b) => b.q24 - a.q24).slice(0, 30).map(u => u.symbol);
+  const allRows = syms.map(radarClassify).sort((a, b) => b.score - a.score);
+  radar.rows = allRows;
+
+  $("rdTotal").textContent = String(allRows.length);
+  $("rdEB").textContent = String(allRows.filter(x => x.status === "EB").length);
+  $("rdEE").textContent = String(allRows.filter(x => x.status === "EE").length);
+  $("rdVS").textContent = String(allRows.filter(x => x.status === "VS").length);
+
+  const qs = ($("rdSearch").value || "").trim().toUpperCase();
+  const flt = $("rdFilter").value;
+  let list = allRows;
+  if (qs) list = list.filter(o => o.sym.includes(qs));
+  if (flt !== "all") list = list.filter(o => o.status === flt);
+
+  $("rdBody").innerHTML = list.length
+    ? list.map((o, i) => {
+        const st = R_ST[o.status] || R_ST.NO;
+        return `<tr>
+          <td>${i + 1}</td><td><b>${esc(o.sym)}</b></td><td>${fmtP(o.price)}</td>
+          <td>${pcl(o.ch5)}</td><td>${pcl(o.ch15)}</td><td>${pcl(o.ch60)}</td>
+          <td>${compactUSD(o.q24)}</td><td>${finite(o.rvol) ? fmt(o.rvol, 2) + "x" : "--"}</td>
+          <td>${finite(o.accel) ? fmt(o.accel, 2) + "x" : "--"}</td><td>${pcl(o.dist)}</td>
+          <td>${fmt(o.score, 0)}</td><td><span class="badge ${st[1]}">${st[0]}</span></td>
+          <td>${o.start ? fmtTime(o.start.time) : "--"}</td>
+          <td><button class="btn text-xs" onclick="radarToChart('${esc(o.sym)}')">Grafik</button></td>
+        </tr>`;
+      }).join("")
+    : '<tr><td colspan="14" class="muted text-center">Tidak ada koin yang cocok dengan filter.</td></tr>';
+}
+
+function radarToChart(sym) { setTab("chart"); CONFIG.symbol = sym; $("symbolSelect").value = sym; reconnectNow(); }
+
+/* ================= EVENT BINDING & BOOT ================= */
+$("timeframeSelect").addEventListener("change", () => { CONFIG.interval = $("timeframeSelect").value; reconnectNow(); });
+$("symbolSelect").addEventListener("change", () => { CONFIG.symbol = $("symbolSelect").value; reconnectNow(); });
+$("reconnectButton").addEventListener("click", reconnectNow);
+$("refreshCoinsButton").addEventListener("click", loadTop500);
+$("fitChartButton").addEventListener("click", () => { if (state.chart) state.chart.timeScale().fitContent(); });
+$("tabChart").addEventListener("click", () => setTab("chart"));
+$("tabTV").addEventListener("click", () => setTab("tv"));
+$("emaRefreshBtn").addEventListener("click", () => EMA_EXP.init());
+$("rdRefreshBtn").addEventListener("click", () => radarCycle(true));
+$("rdSearch").addEventListener("input", radarRender);
+$("rdFilter").addEventListener("change", radarRender);
+window.addEventListener("onBotControlChange", () => EMA_EXP.renderUI());
+
+initChart();
+renderSignal();
+setInterval(() => radarCycle(false), 30000);
+loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
+</script>
+<script type="module" src="firebase-signals.js"></script>
+
+
+
+<script src="./swc/swc-ui.js?v=1794907847245"></script>
+</body>
+</html>
+
+=== FILE: swc.sh ===
+#!/data/data/com.termux/files/usr/bin/bash
+DIR="$HOME/octa-analyzer/swc"
+PID_FILE="$DIR/swc.pid"
+LOG_FILE="$DIR/swc.log"
+
+case "$1" in
+  start)
+    if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+      echo "🟢 SWC Backend sudah aktif (PID: $(cat "$PID_FILE"))."
+      exit 0
+    fi
+    nohup node "$DIR/server.js" > "$LOG_FILE" 2>&1 &
+    echo $! > "$PID_FILE"
+    echo "✅ SWC Backend aktif di latar belakang (PID: $! | Port: 8765)."
+    ;;
+  stop)
+    if [ -f "$PID_FILE" ]; then
+      PID=$(cat "$PID_FILE")
+      kill "$PID" 2>/dev/null || true
+      rm -f "$PID_FILE"
+      echo "🛑 SWC Backend dihentikan."
+    else
+      echo "ℹ️ SWC Backend tidak sedang berjalan."
+    fi
+    ;;
+  status)
+    if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
+      echo "🟢 Status SWC: AKTIF (PID: $(cat "$PID_FILE"))"
+    else
+      echo "🔴 Status SWC: MATI"
+    fi
+    tail -n 10 "$LOG_FILE" 2>/dev/null || true
+    ;;
+  *)
+    echo "Gunakan: ./swc.sh {start|stop|status}"
+    ;;
+esac

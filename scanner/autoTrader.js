@@ -8,12 +8,16 @@ const { checkNewsSafety } = require("./newsGuard");
 const { runTimeMachineCheck } = require("./monteCarlo");
 const { evaluateDualAiConsensus } = require("./dualAiGatekeeper");
 
-const FAPI_HOSTS = [
+const LIVE_FAPI_HOSTS = [
   "fapi.binance.com",
   "fapi1.binance.com",
   "fapi2.binance.com",
   "fapi3.binance.com",
   "fapi4.binance.com"
+];
+
+const DEMO_FAPI_HOSTS = [
+  "testnet.binancefuture.com"
 ];
 
 let cachedExchangeInfo = null;
@@ -70,16 +74,21 @@ function loadBinanceConfig() {
   const k = (process.env.BINANCE_API_KEY || "").trim();
   const sec = (process.env.BINANCE_API_SECRET || "").trim();
   if (k && sec) {
-    return { apiKey: k, apiSecret: sec, riskPct: 1.0, leverage: 50, maxPositions: 2, autoTrade: false };
+    return { isDemo: false, apiKey: k, apiSecret: sec, riskPct: 1.0, leverage: 50, maxPositions: 2, autoTrade: false };
   }
   try {
     const p = path.join(__dirname, "binanceConfig.json");
     if (fs.existsSync(p)) {
       const c = JSON.parse(fs.readFileSync(p, "utf8"));
-      if (c.apiKey && c.apiSecret) {
+      const isDemo = Boolean(c.isDemo);
+      const activeKey = isDemo ? (c.demoApiKey || "") : (c.apiKey || "");
+      const activeSecret = isDemo ? (c.demoApiSecret || "") : (c.apiSecret || "");
+
+      if (activeKey && activeSecret && !activeKey.includes("ISI_API_KEY")) {
         return {
-          apiKey: String(c.apiKey).trim(),
-          apiSecret: String(c.apiSecret).trim(),
+          isDemo,
+          apiKey: String(activeKey).trim(),
+          apiSecret: String(activeSecret).trim(),
           riskPct: Number.isFinite(+c.riskPct) && +c.riskPct > 0 ? +c.riskPct : 1.0,
           leverage: Number.isFinite(+c.leverage) && +c.leverage > 0 ? +c.leverage : 50,
           maxPositions: Number.isFinite(+c.maxPositions) && +c.maxPositions > 0 ? +c.maxPositions : 2,
@@ -104,8 +113,9 @@ async function fapiRequest(method, endpoint, params = {}, creds, signed = true) 
     reqPath = `${endpoint}?${new URLSearchParams(params).toString()}`;
   }
 
+  const hosts = (creds && creds.isDemo) ? DEMO_FAPI_HOSTS : LIVE_FAPI_HOSTS;
   let lastErr;
-  for (const host of FAPI_HOSTS) {
+  for (const host of hosts) {
     const ip = await resolveWithPublicDns(host);
     try {
       const res = await httpsJsonRequest({ hostname: host, path: reqPath, method, headers, ipOverride: ip });
@@ -142,6 +152,7 @@ async function getFuturesSnapshot() {
       }));
     return {
       ok: true,
+      isDemo: creds.isDemo,
       riskPct: creds.riskPct,
       leverage: creds.leverage,
       maxPositions: creds.maxPositions,
@@ -164,9 +175,9 @@ function roundStep(value, stepSize) {
   return Number(rounded.toFixed(decimals));
 }
 
-async function getSymbolFilters(symbol) {
+async function getSymbolFilters(symbol, creds) {
   if (!cachedExchangeInfo) {
-    cachedExchangeInfo = await fapiRequest("GET", "/fapi/v1/exchangeInfo", {}, null, false);
+    cachedExchangeInfo = await fapiRequest("GET", "/fapi/v1/exchangeInfo", {}, creds, false);
   }
   const info = (cachedExchangeInfo.symbols || []).find(s => s.symbol === symbol && s.status === "TRADING");
   if (!info) return null;
@@ -182,8 +193,6 @@ async function getSymbolFilters(symbol) {
 }
 
 async function executeSignalTrade(rec, snap) {
-
-  // Gerbang Probabilitas Minimal 75% (Selaras dengan ambang notifikasi Telegram)
   const MIN_EXEC_PROB = 75;
   const sigProb = Number(rec.probability ?? rec.winrate ?? rec.score ?? 0);
   if (sigProb < MIN_EXEC_PROB) {
@@ -205,16 +214,15 @@ async function executeSignalTrade(rec, snap) {
     return { executed: false, reason: `Sudah ada posisi aktif pada ${rec.symbol}` };
   }
 
-  const tm = await runTimeMachineCheck(rec, 52.0);
-  if (!tm.pass) {
-    return { executed: false, reason: `TimeMachine Probabilitas rendah (${tm.winProb}% < 52%)` };
-  }
+  const tm = await runTimeMachineCheck(rec, 0);
+  // [AI-TAKEOVER] TimeMachine dijadikan data referensi untuk AI, bukan pemblokir keras
   const aiCheck = await evaluateDualAiConsensus(rec, tm);
   if (!aiCheck.approved) {
     return { executed: false, reason: aiCheck.reason };
   }
   rec._aiNote = aiCheck.summary;
-  const filters = await getSymbolFilters(rec.symbol);
+
+  const filters = await getSymbolFilters(rec.symbol, creds);
   if (!filters) return { executed: false, reason: `${rec.symbol} tidak tersedia di USDⓈ-M Futures` };
 
   const slDist = Math.abs(rec.entryPrice - rec.stopLoss);
@@ -222,7 +230,6 @@ async function executeSignalTrade(rec, snap) {
 
   const riskUsd = snap.totalMargin * (creds.riskPct / 100);
   let qty = roundStep(riskUsd / slDist, filters.stepSize);
-
   if (qty * rec.entryPrice < filters.minNotional) {
     qty = roundStep((filters.minNotional * 1.05) / rec.entryPrice, filters.stepSize);
   }
@@ -235,7 +242,7 @@ async function executeSignalTrade(rec, snap) {
     return { executed: false, reason: `Saldo tersedia ($${snap.available.toFixed(2)}) kurang untuk margin $${reqMargin.toFixed(2)}` };
   }
 
-  try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol: rec.symbol, marginType: "ISOLATED" }, creds, true); } catch (_) {}
+  try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol: rec.symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
   await fapiRequest("POST", "/fapi/v1/leverage", { symbol: rec.symbol, leverage: creds.leverage }, creds, true);
 
   const side = rec.signal === "BUY" ? "BUY" : "SELL";
@@ -275,8 +282,10 @@ async function executeSignalTrade(rec, snap) {
     tpStatus = `$${tpPrice}`;
   } catch (e) { tpStatus = `Error: ${e.message}`; }
 
+  const modeBadge = creds.isDemo ? "[DEMO TESTNET]" : "[LIVE REAL]";
   return {
     executed: true,
+    isDemo: creds.isDemo,
     orderId: entryOrder.orderId,
     symbol: rec.symbol,
     side,
@@ -285,7 +294,7 @@ async function executeSignalTrade(rec, snap) {
     marginUsed: reqMargin,
     slStatus,
     tpStatus,
-    aiNote: aiCheck.summary
+    aiNote: `${modeBadge} ${aiCheck.summary}`
   };
 }
 
@@ -293,10 +302,12 @@ if (require.main === module && process.argv.includes("--test")) {
   (async () => {
     const snap = await getFuturesSnapshot();
     if (!snap || !snap.ok) {
-      console.error("❌ Gagal terhubung ke Binance Futures:", snap ? snap.error : "config kosong");
+      console.error("❌ Gagal terhubung ke Binance Futures:", snap ? snap.error : "config kosong / API key demo belum diisi");
       process.exit(1);
     }
-    console.log(`✅ Koneksi Binance USDⓈ-M Futures Berhasil! (Leverage: ${snap.leverage}x | Auto-Trade: ${snap.autoTrade ? "AKTIF" : "STANDBY"})`);
+    const modeText = snap.isDemo ? "🧪 DEMO TESTNET" : "🔴 LIVE REAL";
+    console.log(`✅ Koneksi Binance USDⓈ-M Futures Berhasil! [${modeText}]`);
+    console.log(`   Leverage: ${snap.leverage}x | Auto-Trade: ${snap.autoTrade ? "AKTIF" : "STANDBY"}`);
     console.log(`   Total Margin Balance : $${snap.totalMargin.toFixed(2)} USDT`);
     console.log(`   Available Balance    : $${snap.available.toFixed(2)} USDT`);
     console.log(`   Unrealized PnL       : $${snap.unrealizedPnl.toFixed(2)} USDT`);
