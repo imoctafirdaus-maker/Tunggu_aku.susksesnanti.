@@ -1,7 +1,8 @@
 "use strict";
 (function () {
   const CANDIDATE_BASES = [
-    window.location.protocol === "http:" ? "" : "http://127.0.0.1:8765",
+    window.location.protocol === "http:" ? "" : "https://127.0.0.1:8766",
+    "http://127.0.0.1:8765",
     "http://127.0.0.1:8765",
     "http://localhost:8765"
   ];
