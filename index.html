@@ -41,6 +41,86 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </head>
 <body>
 
+  <!-- VoltAgent GitHub Navigation Header (Isolated) -->
+  <style>
+    #voltagent-nav-header {
+      background: #161b22;
+      border-bottom: 1px solid #30363d;
+      padding: 8px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: sticky;
+      top: 0;
+      z-index: 999999;
+      font-family: "Inter", -apple-system, sans-serif;
+      box-sizing: border-box;
+    }
+    .va-repo-title {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #f0f6fc;
+    }
+    .va-badge {
+      font-family: "JetBrains Mono", monospace;
+      font-size: 10px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      color: #10b981;
+      padding: 2px 6px;
+      border-radius: 10px;
+      margin-left: 6px;
+    }
+    .va-tab-btn {
+      padding: 5px 12px;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #8b949e;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: "Inter", sans-serif;
+    }
+    .va-tab-btn.active {
+      color: #06b6d4;
+      border-color: #06b6d4;
+      background: #0d1117;
+    }
+    #voltagent-wifi-drawer {
+      display: none;
+      width: 100%;
+      height: calc(100vh - 45px);
+      background: #0d1117;
+      position: fixed;
+      top: 45px;
+      left: 0;
+      z-index: 999998;
+    }
+  </style>
+
+  <div id="voltagent-nav-header">
+    <div class="va-repo-title">
+      <span style="color:#58a6ff;">VoltAgent</span>
+      <span style="color:#6e7681;">/</span>
+      <span>octa-analyzer</span>
+      <span class="va-badge">DESIGN.md v2</span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button id="vaBtnCrypto" class="va-tab-btn active" onclick="switchVoltTab('crypto')">📈 Crypto Radar</button>
+      <button id="vaBtnWifi" class="va-tab-btn" onclick="switchVoltTab('wifi')">📶 Wi-Fi Gateway</button>
+    </div>
+  </div>
+
+  <div id="voltagent-wifi-drawer">
+    <iframe src="./swc/public.html" style="width:100%; height:100%; border:none; background:#0d1117;"></iframe>
+  </div>
+  
+
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
     <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
@@ -1012,6 +1092,25 @@ const EMA_EXP = {
   }
 };
 </script>
+
+  <script>
+    function switchVoltTab(tab) {
+      const drawer = document.getElementById("voltagent-wifi-drawer");
+      const btnC = document.getElementById("vaBtnCrypto");
+      const btnW = document.getElementById("vaBtnWifi");
+      
+      if (tab === "crypto") {
+        if (drawer) drawer.style.display = "none";
+        btnC.classList.add("active");
+        btnW.classList.remove("active");
+      } else {
+        if (drawer) drawer.style.display = "block";
+        btnW.classList.add("active");
+        btnC.classList.remove("active");
+      }
+    }
+  </script>
+  
 </body>
 </html>
     $("emaStateSub").textContent = (this.remoteSync && this.remoteSync.aiSummary) ? this.remoteSync.aiSummary : "Pemantauan MTF + Dual-AI Gatekeeper";
