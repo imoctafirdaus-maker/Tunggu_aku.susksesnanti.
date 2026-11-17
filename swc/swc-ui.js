@@ -301,10 +301,10 @@
     switcher.id = "swc-top-switcher";
     switcher.innerHTML = `
       <div class="swc-tabs">
-        <button class="swc-tab-btn active" data-tab="crypto">📈 Radar Sinyal</button>
-        <button class="swc-tab-btn" data-tab="wifi"><span class="swc-badge-dot" id="swc-router-dot"></span> Smart Wi-Fi</button>
+        <button class="swc-tab-btn active" data-tab="crypto">${NOC_ICONS.radar}<span>Radar Sinyal</span></button>
+        <button class="swc-tab-btn" data-tab="wifi"><span class="swc-dot" id="swc-router-dot"></span>${NOC_ICONS.router}<span>Gateway Wi-Fi</span></button>
       </div>
-      <span class="swc-swipe-hint">⇄ Geser layar</span>
+      <span class="swc-swipe-hint">${NOC_ICONS.swipe}<span>Geser</span></span>
     `;
     document.body.prepend(switcher);
 
@@ -695,7 +695,7 @@
   document.addEventListener("visibilitychange", () => { if (!document.hidden && !isMutating) pollStateOnce(); });
 
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", () => { initSwcUI(); upgradeTopSwitcherIcons(); connectStream(); });
+    document.addEventListener("DOMContentLoaded", () => { initSwcUI(); upgradeTopSwitcherIcons(); renderSwc(); connectStream(); });
   } else {
     initSwcUI();
     connectStream();
