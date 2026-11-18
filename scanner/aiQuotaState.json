@@ -1,0 +1,12 @@
+{
+  "lastUpdate": "14.24.32",
+  "gemini": [
+    {
+      "id": "Gemini #1",
+      "status": "100%",
+      "state": "Standby (100%)",
+      "mask": "AQ.Ab8R...W...",
+      "active": true
+    }
+  ]
+}
