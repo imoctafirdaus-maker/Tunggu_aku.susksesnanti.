@@ -7,7 +7,7 @@ import { getDatabase, ref, onValue, query, orderByChild, limitToLast }
   from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBBFH_9haih7f7G3pfs2e8_aRkzpVH_Xdc",
+  apiKey: "AQ.Ab8R...",
   authDomain: "cryptosignalradar.firebaseapp.com",
   databaseURL: "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app",
   projectId: "cryptosignalradar",
