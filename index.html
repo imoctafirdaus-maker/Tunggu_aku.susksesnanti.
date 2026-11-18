@@ -1,6 +1,18 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (let r of regs) r.unregister();
+  });
+}
+if ("caches" in window) {
+  caches.keys().then(keys => {
+    for (let k of keys) caches.delete(k);
+  });
+}
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#070b14">
