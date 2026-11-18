@@ -214,8 +214,10 @@ async function executeSignalTrade(rec, snap) {
     return { executed: false, reason: `Sudah ada posisi aktif pada ${rec.symbol}` };
   }
 
-  const tm = await runTimeMachineCheck(rec, 0);
-  // [AI-TAKEOVER] TimeMachine dijadikan data referensi untuk AI, bukan pemblokir keras
+  const tm = await runTimeMachineCheck(rec, 52.0);
+  if (!tm.pass) {
+    return { executed: false, reason: `TimeMachine Probabilitas rendah (${tm.winProb}% < 52%)` };
+  }
   const aiCheck = await evaluateDualAiConsensus(rec, tm);
   if (!aiCheck.approved) {
     return { executed: false, reason: aiCheck.reason };

@@ -15,7 +15,7 @@ function loadAiConfig() {
         groqModel: raw.groqModel || "llama-3.3-70b-versatile",
         geminiModel: raw.geminiModel || "gemini-3.8-flash",
         minGroqScore: Number(raw.minGroqScore) || 65,
-        minGeminiConfidence: Number(raw.minGeminiConfidence) || 60,
+        minGeminiConfidence: Number(raw.minGeminiConfidence) || 75,
         groqKeys: [...new Set((raw.groqKeys || []).map(k => String(k).trim()).filter(Boolean))],
         geminiKeys: [...new Set((raw.geminiKeys || []).map(k => String(k).trim()).filter(Boolean))]
       };
@@ -158,7 +158,7 @@ async function callGroqWithRotation(prompt, cfg, qState) {
             messages: [
               {
                 role: "system",
-                content: "MODE EKSEKUSI OTONOM AKTIF: Jika struktur sinyal teknikal logis dan RR >= 1.2, berikan skor >= 65 dan keputusan APPROVE. Anda adalah Analis Momentum & Struktur Pasar Kripto Futures. Jawab HANYA dalam JSON valid: {\"pass\": boolean, \"score\": number (0-100), \"analisis\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}."
+                content: "Anda adalah Analis Momentum & Struktur Pasar Kripto Futures. Jawab HANYA dalam JSON valid: {\"pass\": boolean, \"score\": number (0-100), \"analisis\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}."
               },
               { role: "user", content: prompt }
             ]
@@ -366,6 +366,20 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
   await saveAndPushQuota(qState);
 
   if (!gemini.ok) {
+    const is429 = String(gemini.error).includes("429") || String(gemini.error).includes("Quota exceeded");
+    if (is429) {
+      const FAILOVER_MIN = 75;
+      if (groq.score >= FAILOVER_MIN) {
+        return {
+          approved: true,
+          summary: `[GROQ-SOLO FAILOVER] Groq#${groq.keyIndex} (Skor ${groq.score}): YA · Gemini Limit (429) Bypassed`
+        };
+      }
+      return {
+        approved: false,
+        reason: `Gemini Limit (429) & Groq Skor (${groq.score}) di bawah ambang failover (${FAILOVER_MIN})`
+      };
+    }
     return { approved: false, reason: `AI Tahap 2 Gagal (${gemini.error})` };
   }
   if (!gemini.approved) {
@@ -388,7 +402,7 @@ if (require.main === module && process.argv.includes("--test")) {
       signal: "BUY",
       entryPrice: 145.5,
       stopLoss: 144.6,
-      takeProfit: 147.60,
+      takeProfit: 147.75,
       rvol: 1.85,
       winrate: 64
     };
