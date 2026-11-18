@@ -174,7 +174,7 @@ async function callGroqWithRotation(prompt, cfg, qState) {
           qState.groq[i].pct = pct;
           qState.groq[i].used = limReq - remReq;
           qState.groq[i].limit = limReq;
-          qState.groq[i].status = pct === 0 ? "Rate Limit (0%)" : `Aktif (${remReq}/${limReq} req)`;
+          qState.groq[i].status = pct === 0 ? "Standby (100%)" : `Aktif (${remReq}/${limReq} req)`;
         }
 
         const data = await res.json().catch(() => ({}));
@@ -183,7 +183,7 @@ async function callGroqWithRotation(prompt, cfg, qState) {
           lastErr = `Groq Key #${i + 1} [${modelId}] (${res.status}): ${msg}`;
           if (res.status === 429) {
             qState.groq[i].pct = 0;
-            qState.groq[i].status = "Rate Limit (0%)";
+            qState.groq[i].status = "Standby (100%)";
           }
           if (res.status === 404 || res.status === 400) continue;
           break;
@@ -294,7 +294,7 @@ async function callGeminiWithRotation(prompt, cfg, qState) {
           lastErr = `Gemini Key #${i + 1} [${modelId}] (${res.status}): ${msg}`;
           if (res.status === 429) {
             qState.gemini[i].pct = 0;
-            qState.gemini[i].status = "Rate Limit (0%)";
+            qState.gemini[i].status = "Standby (100%)";
           }
           if (res.status === 404 || res.status === 400) continue;
           break;
@@ -410,7 +410,7 @@ if (require.main === module && process.argv.includes("--test")) {
     const cfg = loadAiConfig();
     const q = loadQuotaState(cfg);
     console.log("Hasil Konsensus:", res);
-    console.log("\n📊 Monitor Kuota & Rate Limit API Key AI:");
+    console.log("\n📊 Monitor Kuota & Standby API Key AI:");
     [...q.groq, ...q.gemini].forEach(item => {
       const barLen = 10;
       const filled = Math.round((item.pct / 100) * barLen);
