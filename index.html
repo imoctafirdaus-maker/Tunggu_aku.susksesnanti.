@@ -25,14 +25,14 @@
 .card-bullish{background:rgba(22,163,74,0.15)!important;border-color:rgba(22,163,74,0.4)!important}
 .card-bearish{background:rgba(220,38,38,0.15)!important;border-color:rgba(220,38,38,0.4)!important}
 .card-neutral{background:rgba(202,138,4,0.15)!important;border-color:rgba(202,138,4,0.4)!important}
-table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
+table{width:10100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
 td.wrap{white-space:normal;min-width:260px;line-height:1.5}
-#connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}
-input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
+#connectionDot{width:10px;height:10px;display:inline-block;border-radius:5100%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}
+input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:10100%}
 #chartWrap{position:relative;border-radius:10px;overflow:hidden;background:#131722}
-#chart{height:500px;width:100%}
+#chart{height:500px;width:10100%}
 #legend{position:absolute;left:10px;top:8px;z-index:5;pointer-events:none;font:12px/1.5 monospace;color:#d1d4dc;text-shadow:0 0 4px #131722}
-#tvWidget{height:540px;width:100%;border-radius:10px;overflow:hidden;background:#131722}
+#tvWidget{height:540px;width:10100%;border-radius:10px;overflow:hidden;background:#131722}
 .chart-note{font-size:11px;color:var(--muted);line-height:1.5}
 .sg-text{font-size:12px;line-height:1.6;color:#d1d5db}
 
@@ -57,7 +57,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   border-radius: 0 1px 1px 0;
 }
 .battery-fill {
-  height: 100%;
+  height: 10100%;
   border-radius: 1px;
   transition: width 0.4s ease, background-color 0.4s ease;
 }
@@ -175,10 +175,10 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       <!-- OVERALL BATTERY BUBBLE SUMMARY BADGE -->
       <div id="summaryBatteryBadge" style="display:inline-flex;align-items:center;gap:6px;background:rgba(11,18,32,0.8);border:1px solid #1e293b;padding:3px 10px;border-radius:20px;">
         <div class="battery-shell">
-          <div id="summaryBatteryFill" class="battery-fill" style="width:100%;background:#10b981;"></div>
+          <div id="summaryBatteryFill" class="battery-fill" style="width:10100%;background:#10b981;"></div>
           <div class="battery-cap"></div>
         </div>
-        <span id="summaryBatteryText" style="font-size:11px;font-weight:700;color:#e2e8f0;">AI: 100%</span>
+        <span id="summaryBatteryText" style="font-size:11px;font-weight:700;color:#e2e8f0;">AI: 10100%</span>
       </div>
     </div>
     <div id="aiQuotaUpdated" style="font-size:11px;color:#64748b;">Sinkronisasi...</div>
@@ -191,7 +191,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 (function() {
   const QUOTA_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiQuota.json";
 
-  // Aturan warna baterai: Hijau (>50%), Kuning (21%-50%), Merah (<=20%)
+  // Aturan warna baterai: Hijau (>5100%), Kuning (21%-5100%), Merah (<=2100%)
   function barColor(pct) {
     return pct > 50 ? "#10b981" : pct > 20 ? "#f59e0b" : "#ef4444";
   }
@@ -208,17 +208,17 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
           <span style="font-size:12px;font-weight:700;color:#e2e8f0;">${item.name}</span>
           <div style="display:inline-flex;align-items:center;gap:6px;background:${badgeBg};padding:2px 8px;border-radius:12px;border:1px solid ${badgeCol}33;">
             <div class="battery-shell">
-              <div style="width:${pct}%;height:100%;background:${col};border-radius:1px;transition:width 0.4s ease;"></div>
+              <div style="width:${pct}%;height:10100%;background:${col};border-radius:1px;transition:width 0.4s ease;"></div>
               <div class="battery-cap"></div>
             </div>
             <span style="font-size:11px;font-weight:800;color:${badgeCol};">${pct}%</span>
           </div>
         </div>
-        <div style="width:100%;height:6px;background:#1e293b;border-radius:999px;overflow:hidden;margin-bottom:6px;">
-          <div style="width:${pct}%;height:100%;background:${col};border-radius:999px;transition:width 0.4s ease;"></div>
+        <div style="width:10100%;height:6px;background:#1e293b;border-radius:999px;overflow:hidden;margin-bottom:6px;">
+          <div style="width:${pct}%;height:10100%;background:${col};border-radius:999px;transition:width 0.4s ease;"></div>
         </div>
         <div style="display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;">
-          <span>${item.status || "Standby (100%)"}</span>
+          <span>${item.status || "Standby (10100%)"}</span>
           <span style="font-family:monospace;color:#64748b;">${item.mask || ""}</span>
         </div>
       </div>
@@ -376,7 +376,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <div class="indicator-card"><div class="muted text-xs mb-2">Simbol · Timeframe</div><div id="sgSymbol" class="indicator-value">--</div></div>
     <div class="indicator-card"><div class="muted text-xs mb-2">Harga Saat Ini</div><div id="sgPrice" class="indicator-value">--</div></div>
     <div id="sgMainCard" class="indicator-card"><div class="muted text-xs mb-2">Sinyal Utama</div><div id="sgMain" class="indicator-value text-lg">--</div><div id="sgSub" class="indicator-status">--</div></div>
-    <div class="indicator-card"><div id="sgStrengthLabel" class="muted text-xs mb-2">Kekuatan Sinyal</div><div id="sgStrength" class="indicator-value">--</div><div class="progress-track mt-2"><div id="sgBar" style="height:100%;width:0;background:#facc15;transition:width .25s"></div></div></div>
+    <div class="indicator-card"><div id="sgStrengthLabel" class="muted text-xs mb-2">Kekuatan Sinyal</div><div id="sgStrength" class="indicator-value">--</div><div class="progress-track mt-2"><div id="sgBar" style="height:10100%;width:0;background:#facc15;transition:width .25s"></div></div></div>
   </div>
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
     <div class="indicator-card card-bullish"><div class="muted text-xs mb-2">Indikator Hijau (Bullish)</div><div id="sgGreen" class="indicator-value">--</div></div>

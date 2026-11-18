@@ -1,11 +1,49 @@
 {
-  "lastUpdate": "14.24.32",
+  "lastUpdate": "14.30.43",
+  "aiTotal": "100%",
+  "groq": [
+    {
+      "id": "Groq #1",
+      "status": "100%",
+      "state": "Aktif (999/1000 req)",
+      "mask": "gsk_0Kc...MD1s",
+      "active": true
+    },
+    {
+      "id": "Groq #2",
+      "status": "100%",
+      "state": "Standby (100%)",
+      "mask": "gsk_WPh...GhnK",
+      "active": true
+    },
+    {
+      "id": "Groq #3",
+      "status": "100%",
+      "state": "Standby (100%)",
+      "mask": "gsk_DSw...PwdQ",
+      "active": true
+    }
+  ],
   "gemini": [
     {
       "id": "Gemini #1",
       "status": "100%",
       "state": "Standby (100%)",
-      "mask": "AQ.Ab8R...W...",
+      "mask": "AQ.Ab8R...vHSg",
+      "active": true
+    },
+    {
+      "id": "Gemini #2",
+      "status": "100%",
+      "state": "Standby (100%)",
+      "mask": "AQ.Ab8R...XG-A",
+      "active": true
+    },
+    {
+      "id": "Gemini #3",
+      "status": "100%",
+      "state": "Standby (100%)",
+      "mask": "AQ.Ab8R...qtog",
       "active": true
     }
   ]
