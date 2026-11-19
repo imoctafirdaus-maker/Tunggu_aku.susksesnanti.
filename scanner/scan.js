@@ -9,7 +9,7 @@ const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
 const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
-const { getFuturesSnapshot, executeSignalTrade } = require("./autoTrader");
+const { getFuturesSnapshot, executeSignalTrade, manageOpenPositions } = require("./autoTrader");
 const { syncControlWithFirebase } = require("./botControl");
 const { notifyNewSignalsToTelegram } = require("./telegramNotifier");
 
@@ -256,7 +256,12 @@ async function main() {
       await db.ref("emaScannerStatus").update({ state: "standby", updatedAt: admin.database.ServerValue.TIMESTAMP }).catch(() => {});
       process.exit(0);
     }
-    const futuresSnap = await getFuturesSnapshot();
+    let futuresSnap = await getFuturesSnapshot();
+    const tpClosed = await manageOpenPositions(futuresSnap);
+    if (tpClosed && tpClosed.length) {
+      console.log("💰 Auto Take-Profit menutup posisi:", tpClosed.map(x => `${x.symbol} (+${x.pnl.toFixed(2)})`).join(", "));
+      futuresSnap = await getFuturesSnapshot();
+    }
     if (futuresSnap && futuresSnap.ok) {
       const fPayload = {
         totalMargin: futuresSnap.totalMargin,
