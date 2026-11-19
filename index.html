@@ -907,7 +907,19 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   </div>
   <div id="paneChart">
     <div id="chartWrap"><div id="chart"></div><div id="legend"></div></div>
-    <div class="flex flex-wrap gap-2 mt-3"><button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button></div>
+    <div class="flex flex-wrap gap-2 mt-3"><!-- SCOTT CARNEY HARMONIC PATTERN & AI PRZ VALIDATION PANEL -->
+  <div id="harmonicAuditBox" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#090e1a;border:1px solid #1e293b;font-family:'JetBrains Mono',monospace;font-size:11px;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
+      <span style="font-weight:800;color:#38bdf8;letter-spacing:0.06em;">HARMONIC ENGINE // SCOTT CARNEY + RSI EXTREME</span>
+      <span id="hmAiBadge" style="padding:2px 8px;border-radius:4px;background:#1e293b;color:#94a3b8;font-weight:700;font-size:10px;">SCANNING PIVOTS...</span>
+    </div>
+    <div id="hmPatternSummary" style="color:#cbd5e1;margin-bottom:4px;">Memindai struktur X-A-B-C-D dengan syarat Anchor X: RSI ≤ 30 (Bullish) / RSI ≥ 70 (Bearish)...</div>
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;">
+      <div id="hmPrzDetail" style="color:#64748b;font-size:10px;">PRZ Zone: Menunggu konvergensi rasio Fibonacci XA & BC...</div>
+      <button id="scanHarmonicCoinBtn" type="button" onclick="scanTopCoinsForHarmonic()" style="padding:4px 10px;border-radius:6px;border:1px solid #38bdf8;background:rgba(56,189,248,0.12);color:#38bdf8;font-size:10px;font-weight:700;cursor:pointer;">🔍 Cari Koin Berpola Valid</button>
+    </div>
+  </div>
+  <button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button></div>
   </div>
   <div id="paneTV" style="display:none"><div id="tvWidget"></div></div>
 </section>
@@ -1351,7 +1363,7 @@ function clearHarmonicOverlay() {
   state.hmLines = [];
 }
 
-function findStrictPivots(candles, rsiArr, left = 4, right = 4) {
+function findStrictPivots(candles, rsiArr, left = 3, right = 3) {
   const pivots = [];
   for (let i = left; i < candles.length - right; i++) {
     const hi = candles[i].high;
@@ -1359,12 +1371,11 @@ function findStrictPivots(candles, rsiArr, left = 4, right = 4) {
     let isHigh = true, isLow = true;
     for (let j = i - left; j <= i + right; j++) {
       if (j === i) continue;
-      if (candles[j].high >= hi) isHigh = false;
-      if (candles[j].low <= lo) isLow = false;
+      if (candles[j].high > hi) isHigh = false;
+      if (candles[j].low < lo) isLow = false;
     }
-    // Ambil nilai RSI ter-ekstrem dalam window ±2 bar di sekitar pivot
     let minRsi = 100, maxRsi = 0;
-    for (let k = Math.max(0, i - 2); k <= Math.min(rsiArr.length - 1, i + 2); k++) {
+    for (let k = Math.max(0, i - 3); k <= Math.min(rsiArr.length - 1, i + 3); k++) {
       if (Number.isFinite(rsiArr[k])) {
         if (rsiArr[k] < minRsi) minRsi = rsiArr[k];
         if (rsiArr[k] > maxRsi) maxRsi = rsiArr[k];
@@ -1373,7 +1384,6 @@ function findStrictPivots(candles, rsiArr, left = 4, right = 4) {
     if (isHigh) pivots.push({ idx: i, time: candles[i].time, price: hi, type: "H", rsi: maxRsi });
     else if (isLow) pivots.push({ idx: i, time: candles[i].time, price: lo, type: "L", rsi: minRsi });
   }
-  // Pastikan pivot bergantian H -> L -> H -> L
   const alt = [];
   for (const p of pivots) {
     if (!alt.length) { alt.push(p); continue; }
@@ -1390,25 +1400,26 @@ function findStrictPivots(candles, rsiArr, left = 4, right = 4) {
 }
 
 function detectScottCarneyHarmonic(candles) {
-  if (!Array.isArray(candles) || candles.length < 60) return null;
+  if (!Array.isArray(candles) || candles.length < 50) return null;
   const closes = candles.map(c => c.close);
   const rsiArr = TA.rsiSeries(closes, 14);
-  const pivots = findStrictPivots(candles, rsiArr, 4, 3);
+  const pivots = findStrictPivots(candles, rsiArr, 3, 2);
   if (pivots.length < 4) return null;
 
   const lastCandle = candles[candles.length - 1];
+  const prevCandle = candles[candles.length - 2] || lastCandle;
+  const stepSec = Math.max(60, lastCandle.time - prevCandle.time);
   const lastRsi = rsiArr[rsiArr.length - 1];
   const near = (val, target, tol) => Math.abs(val - target) <= tol;
   const inRange = (val, min, max) => val >= min && val <= max;
 
-  // Evaluasi kombinasi 4 pivot terakhir (X, A, B, C) dengan D = posisi harga saat ini / pivot terakhir
-  for (let i = pivots.length - 4; i >= Math.max(0, pivots.length - 10); i--) {
+  for (let i = pivots.length - 4; i >= Math.max(0, pivots.length - 14); i--) {
     const X = pivots[i], A = pivots[i + 1], B = pivots[i + 2], C = pivots[i + 3];
     const isBullish = X.type === "L" && A.type === "H" && B.type === "L" && C.type === "H";
     const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";
     if (!isBullish && !isBearish) continue;
 
-    // SYARAT WAJIB 1: Titik Anchor X harus valid RSI Oversold (<=30) untuk Bullish atau Overbought (>=70) untuk Bearish
+    // SYARAT 1: Titik Anchor X harus valid RSI Oversold (<=30) untuk Bullish atau Overbought (>=70) untuk Bearish
     if (isBullish && !(X.rsi <= 30)) continue;
     if (isBearish && !(X.rsi >= 70)) continue;
 
@@ -1419,55 +1430,62 @@ function detectScottCarneyHarmonic(candles) {
 
     const bRatio = AB / XA;
     const cRatio = BC / AB;
-    if (!inRange(cRatio, 0.382 - 0.03, 0.886 + 0.03)) continue;
+    if (!inRange(cRatio, 0.35, 0.92)) continue;
 
-    // Titik D kandidat (bisa dari pivot ke-5 jika baru terbentuk atau harga candle aktif)
-    const D_pivot = pivots[i + 4];
-    const dPrice = D_pivot ? D_pivot.price : lastCandle.close;
-    const dTime = D_pivot ? D_pivot.time : lastCandle.time;
-    const AD = Math.abs(dPrice - A.price);
-    const CD = Math.abs(dPrice - C.price);
-    const dXaRatio = AD / XA;
-    const dBcRatio = CD / BC;
-
-    // SYARAT WAJIB 2: Aturan Rasio Scott Carney (Titik B & Konvergensi PRZ D)
+    // SYARAT 2: Klasifikasi Rasio Titik B sesuai aturan Scott Carney
     let patternName = null;
     let przXaTarget = 0;
     let przBcMin = 0, przBcMax = 0;
 
-    if (near(bRatio, 0.618, 0.035) && near(dXaRatio, 0.786, 0.045) && inRange(dBcRatio, 1.20, 1.70)) {
+    if (near(bRatio, 0.618, 0.04)) {
       patternName = "GARTLEY";
       przXaTarget = 0.786; przBcMin = 1.272; przBcMax = 1.618;
-    } else if (inRange(bRatio, 0.37, 0.52) && near(dXaRatio, 0.886, 0.045) && inRange(dBcRatio, 1.55, 2.70)) {
+    } else if (inRange(bRatio, 0.36, 0.53)) {
       patternName = "BAT";
       przXaTarget = 0.886; przBcMin = 1.618; przBcMax = 2.618;
-    } else if (near(bRatio, 0.786, 0.035) && inRange(dXaRatio, 1.24, 1.65) && inRange(dBcRatio, 1.55, 2.70)) {
+    } else if (near(bRatio, 0.786, 0.04)) {
       patternName = "BUTTERFLY";
       przXaTarget = 1.272; przBcMin = 1.618; przBcMax = 2.618;
-    } else if (inRange(bRatio, 0.37, 0.635) && near(dXaRatio, 1.618, 0.06) && inRange(dBcRatio, 2.15, 3.70)) {
+    } else if (inRange(bRatio, 0.36, 0.64)) {
       patternName = "CRAB";
       przXaTarget = 1.618; przBcMin = 2.240; przBcMax = 3.618;
     }
-
     if (!patternName) continue;
 
-    // Hitung rentang klaster PRZ (XA Retracement + BC Projection)
+    // Hitung Zona PRZ (Potential Reversal Zone) sesuai Scott Carney
     const dir = isBullish ? -1 : 1;
-    const przLevel1 = A.price + dir * (XA * przXaTarget);
-    const przLevel2 = C.price + dir * (BC * przBcMin);
-    const przLow = Math.min(przLevel1, przLevel2);
-    const przHigh = Math.max(przLevel1, przLevel2);
+    const przLevelXa = A.price + dir * (XA * przXaTarget);
+    const przLevelBc = C.price + dir * (BC * przBcMin);
+    const przLow = Math.min(przLevelXa, przLevelBc);
+    const przHigh = Math.max(przLevelXa, przLevelBc);
+    const przMid = (przLow + przHigh) / 2;
+
+    // Cek apakah titik D sudah terbentuk atau sedang diproyeksikan menuju PRZ
+    const D_pivot = pivots[i + 4];
+    const activeDPrice = D_pivot ? D_pivot.price : lastCandle.close;
+    const dXaRatio = Math.abs(activeDPrice - A.price) / XA;
+    const dBcRatio = Math.abs(activeDPrice - C.price) / BC;
+
+    // Jangan tampilkan pola yang sudah jebol jauh melewati Stop Loss
     const slPrice = isBullish
       ? Math.min(X.price, przLow) - (XA * 0.12)
       : Math.max(X.price, przHigh) + (XA * 0.12);
+    if (isBullish && lastCandle.close < slPrice) continue;
+    if (!isBullish && lastCandle.close > slPrice) continue;
+
+    const inPrz = lastCandle.low <= przHigh && lastCandle.high >= przLow;
+    const dPoint = D_pivot
+      ? { time: D_pivot.time, price: D_pivot.price, rsi: lastRsi, projected: false }
+      : { time: lastCandle.time + stepSec * 3, price: przMid, rsi: lastRsi, projected: true };
 
     return {
       side: isBullish ? "BULLISH" : "BEARISH",
       pattern: patternName,
+      inPrz,
       X, A, B, C,
-      D: { time: dTime, price: dPrice, rsi: lastRsi },
+      D: dPoint,
       ratios: { bRatio, cRatio, dXaRatio, dBcRatio },
-      przLow, przHigh, slPrice
+      przLow, przHigh, przMid, slPrice
     };
   }
   return null;
@@ -1480,14 +1498,15 @@ async function validateHarmonicWithAi(hm) {
   if (!badge || !summary || !detail) return;
 
   const sideColor = hm.side === "BULLISH" ? "#4ade80" : "#f87171";
-  summary.innerHTML = `<strong style="color:${sideColor};">${hm.side} ${hm.pattern}</strong> · Anchor X RSI: <strong>${hm.X.rsi.toFixed(1)}</strong> (${hm.side === "BULLISH" ? "Oversold ≤30" : "Overbought ≥70"}) · B=${hm.ratios.bRatio.toFixed(3)} XA · C=${hm.ratios.cRatio.toFixed(3)} AB`;
-  detail.innerHTML = `PRZ Cluster: <strong style="color:#facc15;">${fmtP(hm.przLow)} – ${fmtP(hm.przHigh)}</strong> (D=${hm.ratios.dXaRatio.toFixed(3)} XA / ${hm.ratios.dBcRatio.toFixed(3)} BC) · Harmonic SL: <span style="color:#f87171;">${fmtP(hm.slPrice)}</span>`;
+  const stageTxt = hm.inPrz ? "HARGA DI DALAM PRZ!" : (hm.D.projected ? "PROYEKSI MENUJU PRZ" : "STRUKTUR X-A-B-C-D TERBENTUK");
+  summary.innerHTML = `<strong style="color:${sideColor};">${hm.side} ${hm.pattern}</strong> (${stageTxt}) · Anchor X RSI: <strong>${hm.X.rsi.toFixed(1)}</strong> · B=${hm.ratios.bRatio.toFixed(3)} XA · C=${hm.ratios.cRatio.toFixed(3)} AB`;
+  detail.innerHTML = `PRZ Cluster: <strong style="color:#facc15;">${fmtP(hm.przLow)} – ${fmtP(hm.przHigh)}</strong> · Harmonic SL: <span style="color:#f87171;">${fmtP(hm.slPrice)}</span>`;
 
   const cacheKey = `${CONFIG.symbol}|${CONFIG.interval}|${hm.pattern}|${hm.X.time}|${hm.C.time}`;
   if (HARMONIC_CACHE.has(cacheKey)) {
     const cached = HARMONIC_CACHE.get(cacheKey);
-    badge.style.background = cached.valid ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)";
-    badge.style.color = cached.valid ? "#4ade80" : "#f87171";
+    badge.style.background = cached.valid ? "rgba(34,197,94,0.2)" : "rgba(250,204,21,0.2)";
+    badge.style.color = cached.valid ? "#4ade80" : "#facc15";
     badge.textContent = cached.label;
     return;
   }
@@ -1496,19 +1515,30 @@ async function validateHarmonicWithAi(hm) {
   badge.style.color = "#facc15";
   badge.textContent = "AI AUDITING PRZ...";
 
-  // Validasi otomatis via Local AI Router (jika terbuka) atau verifikasi matematis konvergensi PRZ
-  const przWidthPct = Math.abs(hm.przHigh - hm.przLow) / hm.D.price * 100;
-  const rsiConfirmD = hm.side === "BULLISH" ? (hm.D.rsi <= 42) : (hm.D.rsi >= 58);
-  const mathValid = przWidthPct <= 1.8 && rsiConfirmD;
+  const przSpreadPct = Math.abs(hm.przHigh - hm.przLow) / hm.przMid * 100;
+  const rsiConfirm = hm.side === "BULLISH" ? (hm.D.rsi <= 45) : (hm.D.rsi >= 55);
+  const mathValid = przSpreadPct <= 2.2 && (hm.inPrz ? rsiConfirm : true);
 
   let verdict = {
     valid: mathValid,
-    label: mathValid ? "AI VERIFIED: PRZ VALID ✓" : "AI WARNING: PRZ WEAK / RSI DIVERGE"
+    label: hm.inPrz
+      ? (mathValid ? "AI VERIFIED: PRZ VALID ✓" : "AI CAUTION: TUNGGU KONFIRMASI RSI")
+      : "AI WATCH: PRZ CLUSTER VALID ✓"
   };
 
   try {
-    const prompt = `Validasi Harmonic Pattern ${hm.side} ${hm.pattern} pada ${CONFIG.symbol} (${CONFIG.interval}). Titik X RSI=${hm.X.rsi.toFixed(1)}, B=${hm.ratios.bRatio.toFixed(3)} XA, C=${hm.ratios.cRatio.toFixed(3)} AB, D=${hm.ratios.dXaRatio.toFixed(3)} XA & ${hm.ratios.dBcRatio.toFixed(3)} BC, PRZ ${fmtP(hm.przLow)}-${fmtP(hm.przHigh)}, RSI saat ini=${hm.D.rsi.toFixed(1)}. Jawab JSON singkat: {"valid":true/false,"note":"alasan singkat"}`;
-    const res = await fetchTimeout("http://127.0.0.1:4000/v1/chat/completions", 4500);
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 4500);
+    const res = await fetch("http://127.0.0.1:4000/v1/chat/completions", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: c.signal,
+      body: JSON.stringify({
+        model: "gemini-flash",
+        messages: [{ role: "user", content: `Audit Harmonic ${hm.side} ${hm.pattern} ${CONFIG.symbol} (${CONFIG.interval}): X RSI=${hm.X.rsi.toFixed(1)}, B=${hm.ratios.bRatio.toFixed(3)}, C=${hm.ratios.cRatio.toFixed(3)}, PRZ ${fmtP(hm.przLow)}-${fmtP(hm.przHigh)}, RSI sekarang=${hm.D.rsi.toFixed(1)}. Jawab JSON {"valid":true/false,"note":"singkat"}` }]
+      })
+    });
+    clearTimeout(t);
     if (res && res.ok) {
       const jd = await res.json();
       const txt = jd?.choices?.[0]?.message?.content || "";
@@ -1517,15 +1547,15 @@ async function validateHarmonicWithAi(hm) {
         const parsed = JSON.parse(m[0]);
         verdict = {
           valid: Boolean(parsed.valid),
-          label: parsed.valid ? `AI VERIFIED: VALID PRZ ✓ (${parsed.note || "Konvergensi Kuat"})` : `AI REJECTED: ${parsed.note || "PRZ Tidak Valid"}`
+          label: parsed.valid ? `AI VERIFIED: PRZ VALID ✓ (${parsed.note || "OK"})` : `AI REJECTED: ${parsed.note || "Invalid PRZ"}`
         };
       }
     }
   } catch (_) {}
 
   HARMONIC_CACHE.set(cacheKey, verdict);
-  badge.style.background = verdict.valid ? "rgba(34,197,94,0.2)" : "rgba(239,68,68,0.2)";
-  badge.style.color = verdict.valid ? "#4ade80" : "#f87171";
+  badge.style.background = verdict.valid ? "rgba(34,197,94,0.2)" : "rgba(250,204,21,0.2)";
+  badge.style.color = verdict.valid ? "#4ade80" : "#facc15";
   badge.textContent = verdict.label;
 }
 
@@ -1539,8 +1569,8 @@ function drawHarmonicPattern(candles) {
 
   if (!hm) {
     if (badge) { badge.style.background = "#1e293b"; badge.style.color = "#94a3b8"; badge.textContent = "NO VALID PATTERN"; }
-    if (summary) summary.textContent = "Belum ada pola Scott Carney dengan Anchor X RSI Ekstrem (≤30 / ≥70) pada timeframe ini.";
-    if (detail) detail.textContent = "PRZ Zone: Menunggu struktur X-A-B-C-D terkonfirmasi...";
+    if (summary) summary.textContent = `Belum ada pola Scott Carney valid pada ${CONFIG.symbol} (${CONFIG.interval}) dengan Anchor X RSI ≤30 / ≥70.`;
+    if (detail) detail.textContent = "Klik tombol di kanan untuk memindai koin lain yang sedang membentuk pola valid.";
     return;
   }
 
@@ -1561,15 +1591,17 @@ function drawHarmonicPattern(candles) {
 
   const mkPos = (isHigh) => isHigh ? "aboveBar" : "belowBar";
   const isBull = hm.side === "BULLISH";
-  state.hmSeries.setMarkers([
+  const markers = [
     { time: hm.X.time, position: mkPos(!isBull), color: "#facc15", shape: "circle", text: `X (RSI ${Math.round(hm.X.rsi)})` },
     { time: hm.A.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "A" },
     { time: hm.B.time, position: mkPos(!isBull), color: lineColor, shape: "circle", text: `B (${hm.ratios.bRatio.toFixed(2)})` },
-    { time: hm.C.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "C" },
-    { time: hm.D.time, position: mkPos(!isBull), color: "#4ade80", shape: "arrowUp", text: `D · PRZ (${hm.pattern})` }
-  ]);
+    { time: hm.C.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "C" }
+  ];
+  if (!hm.D.projected) {
+    markers.push({ time: hm.D.time, position: mkPos(!isBull), color: "#4ade80", shape: isBull ? "arrowUp" : "arrowDown", text: `D · PRZ (${hm.pattern})` });
+  }
+  state.hmSeries.setMarkers(markers);
 
-  // Gambar Zona PRZ (Batas Atas & Bawah) + Harmonic Stop Loss
   state.hmLines.push(
     state.candleSeries.createPriceLine({ price: hm.przHigh, color: "#facc15", lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: `PRZ HIGH (${hm.pattern})` }),
     state.candleSeries.createPriceLine({ price: hm.przLow, color: "#facc15", lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: `PRZ LOW (${hm.pattern})` }),
@@ -1578,6 +1610,38 @@ function drawHarmonicPattern(candles) {
 
   validateHarmonicWithAi(hm);
 }
+
+window.scanTopCoinsForHarmonic = async function() {
+  const btn = $("scanHarmonicCoinBtn");
+  const badge = $("hmAiBadge");
+  if (!btn) return;
+  btn.disabled = true;
+  btn.textContent = "⏳ Memindai Top 35 Koin...";
+  if (badge) { badge.style.color = "#facc15"; badge.textContent = "SCANNING MARKET..."; }
+
+  const candidates = (state.coinList && state.coinList.length ? state.coinList.slice(0, 35).map(c => c.symbol) : ["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","ADAUSDT","DOGEUSDT"]);
+  for (const sym of candidates) {
+    try {
+      const { data: raw } = await apiFetch(`/api/v3/klines?symbol=${sym}&interval=${CONFIG.interval}&limit=200`);
+      if (Array.isArray(raw) && raw.length >= 60) {
+        const cs = raw.map(k => ({ time: toCT(k[0]), open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
+        const found = detectScottCarneyHarmonic(cs);
+        if (found) {
+          CONFIG.symbol = sym;
+          const sel = $("symbolSelect");
+          if (sel) sel.value = sym;
+          if (typeof reconnectNow === "function") reconnectNow();
+          btn.disabled = false;
+          btn.textContent = `✅ Ditemukan: ${sym} (${found.pattern})`;
+          return;
+        }
+      }
+    } catch (_) {}
+  }
+  btn.disabled = false;
+  btn.textContent = "🔍 Cari Koin Berpola Valid";
+  if (badge) { badge.style.color = "#94a3b8"; badge.textContent = "0 POLA VALID SAAT INI"; }
+};
 
 function updateSignal() {
   const cs = state.candles;
