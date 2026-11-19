@@ -478,4 +478,4 @@ async function manageOpenPositions(snap) {
   return closedResults;
 }
 
-module.exports = { loadBinanceConfig, getFuturesSnapshot, executeSignalTrade, manageOpenPositions };
+module.exports = { loadBinanceConfig, getFuturesSnapshot, executeSignalTrade, manageOpenPositions, fapiRequest, getSymbolFilters, roundStep };

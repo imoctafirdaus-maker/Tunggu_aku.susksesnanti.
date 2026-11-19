@@ -954,7 +954,96 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       <button id="scanHarmonicCoinBtn" type="button" onclick="scanTopCoinsForHarmonic()" style="padding:4px 10px;border-radius:6px;border:1px solid #38bdf8;background:rgba(56,189,248,0.12);color:#38bdf8;font-size:10px;font-weight:700;cursor:pointer;">🔍 Cari Koin Berpola Valid</button>
     </div>
   </div>
-  <button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button></div>
+  <button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button>
+    <button class="btn text-sm" id="toggleHarmonicSettingsBtn" type="button" onclick="toggleHarmonicDrawer()" style="border-color:#38bdf8;color:#38bdf8;">⚙️ Settings & Backtest Harmonic</button>
+  </div>
+
+  <!-- DRAWER SETTINGS, PAPER TRADING, BACKTEST & LOG SINYAL HARMONIC -->
+  <div id="harmonicDrawer" style="display:none;margin-top:12px;padding:14px;border-radius:12px;background:#070c18;border:1px solid #1e3a5f;font-size:12px;color:#e2e8f0;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;padding-bottom:10px;border-bottom:1px solid #1e293b;">
+      <div>
+        <div style="font-weight:800;color:#38bdf8;font-size:13px;">HARMONIC AUTO-TRADE // SCOTT CARNEY MTF (4H → 1H → 15M)</div>
+        <div style="font-size:10px;color:#94a3b8;">Audit: Groq AI Only (Kuota Gemini difokuskan 100% ke 3 EMA Expert)</div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;align-items:center;">
+        <label style="display:inline-flex;align-items:center;gap:4px;background:#0f172a;padding:4px 8px;border-radius:6px;border:1px solid #334155;cursor:pointer;">
+          <input type="checkbox" id="hmCfgEnabled" checked onchange="saveHarmonicUiSettings()"> <span>Engine ON</span>
+        </label>
+        <label style="display:inline-flex;align-items:center;gap:4px;background:#0f172a;padding:4px 8px;border-radius:6px;border:1px solid #334155;cursor:pointer;">
+          <input type="checkbox" id="hmCfgPaper" checked onchange="saveHarmonicUiSettings()"> <span>Paper Trading</span>
+        </label>
+        <button type="button" onclick="requestHarmonicPushPermission()" style="padding:4px 9px;border-radius:6px;border:1px solid #22c55e;background:rgba(34,197,94,0.12);color:#4ade80;font-size:11px;font-weight:700;cursor:pointer;">🔔 Push Notif</button>
+      </div>
+    </div>
+
+    <!-- PILIHAN POLA SCOTT CARNEY -->
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:6px;">POLA AKTIF (STANDAR SCOTT CARNEY)</div>
+      <div id="hmPatternToggles" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+    </div>
+
+    <!-- PARAMETER TOLERANSI, RSI & RISK MANAGEMENT -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(135px,1fr));gap:8px;margin-top:12px;">
+      <label style="background:#0f172a;padding:7px;border-radius:8px;border:1px solid #1e293b;">
+        <div style="font-size:10px;color:#94a3b8;">Toleransi Rasio (%)</div>
+        <input id="hmCfgTol" type="number" step="0.5" min="1" max="8" value="3.0" onchange="saveHarmonicUiSettings()" style="width:100%;margin-top:3px;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 6px;">
+      </label>
+      <label style="background:#0f172a;padding:7px;border-radius:8px;border:1px solid #1e293b;">
+        <div style="font-size:10px;color:#94a3b8;">Min Skor PRZ (0-100)</div>
+        <input id="hmCfgPrzScore" type="number" step="5" min="30" max="95" value="60" onchange="saveHarmonicUiSettings()" style="width:100%;margin-top:3px;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 6px;">
+      </label>
+      <label style="background:#0f172a;padding:7px;border-radius:8px;border:1px solid #1e293b;">
+        <div style="font-size:10px;color:#94a3b8;">Mode Konfirmasi RSI</div>
+        <select id="hmCfgRsiMode" onchange="saveHarmonicUiSettings()" style="width:100%;margin-top:3px;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 6px;">
+          <option value="both" selected>Level + Divergence</option>
+          <option value="level">RSI Level Saja</option>
+          <option value="divergence">Divergence Saja</option>
+        </select>
+      </label>
+      <label style="background:#0f172a;padding:7px;border-radius:8px;border:1px solid #1e293b;">
+        <div style="font-size:10px;color:#94a3b8;">RSI OS / OB</div>
+        <div style="display:flex;gap:4px;margin-top:3px;">
+          <input id="hmCfgRsiOs" type="number" min="15" max="45" value="35" onchange="saveHarmonicUiSettings()" style="width:50%;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 4px;">
+          <input id="hmCfgRsiOb" type="number" min="55" max="85" value="65" onchange="saveHarmonicUiSettings()" style="width:50%;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 4px;">
+        </div>
+      </label>
+      <label style="background:#0f172a;padding:7px;border-radius:8px;border:1px solid #1e293b;">
+        <div style="font-size:10px;color:#94a3b8;">Risk/Trade (%) & Max Pos</div>
+        <div style="display:flex;gap:4px;margin-top:3px;">
+          <input id="hmCfgRisk" type="number" step="0.25" min="0.25" max="5" value="1.0" onchange="saveHarmonicUiSettings()" style="width:55%;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 4px;">
+          <input id="hmCfgMaxPos" type="number" min="1" max="10" value="3" onchange="saveHarmonicUiSettings()" style="width:45%;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 4px;">
+        </div>
+      </label>
+      <label style="background:#0f172a;padding:7px;border-radius:8px;border:1px solid #1e293b;">
+        <div style="font-size:10px;color:#94a3b8;">Max Daily DD (%)</div>
+        <input id="hmCfgMaxDd" type="number" step="0.5" min="1" max="25" value="5.0" onchange="saveHarmonicUiSettings()" style="width:100%;margin-top:3px;background:#020617;color:#fff;border:1px solid #334155;border-radius:4px;padding:3px 6px;">
+      </label>
+    </div>
+
+    <!-- BACKTEST HISTORIS & STATUS PAPER TRADING -->
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-top:12px;padding:9px 10px;background:#0f172a;border-radius:8px;border:1px solid #1e293b;">
+      <div id="hmPaperStats" style="font-family:'JetBrains Mono',monospace;font-size:11px;color:#cbd5e1;">
+        Paper Balance: <strong style="color:#4ade80;">$1,000.00</strong> · Posisi Aktif: <strong>0</strong>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <select id="hmBtTf" style="background:#020617;color:#fff;border:1px solid #334155;border-radius:6px;padding:4px 6px;font-size:11px;">
+          <option value="4h">4H</option>
+          <option value="1h" selected>1H</option>
+          <option value="15m">15M</option>
+        </select>
+        <button id="runHmBacktestBtn" type="button" onclick="runHarmonicUiBacktest()" style="padding:5px 10px;border-radius:6px;border:1px solid #facc15;background:rgba(250,204,21,0.12);color:#facc15;font-size:11px;font-weight:700;cursor:pointer;">📊 Jalankan Backtest</button>
+      </div>
+    </div>
+    <div id="hmBacktestResult" style="display:none;margin-top:8px;padding:8px 10px;border-radius:8px;background:#020617;border:1px solid #334155;font-family:'JetBrains Mono',monospace;font-size:11px;"></div>
+
+    <!-- LOG SINYAL & ALASAN MASUK / DITOLAK -->
+    <div style="margin-top:10px;">
+      <div style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:4px;">LOG AUDIT & EKSEKUSI HARMONIC (MASUK / DITOLAK)</div>
+      <div id="hmDecisionLogs" style="max-height:130px;overflow-y:auto;padding:6px 8px;border-radius:8px;background:#020617;border:1px solid #1e293b;font-family:'JetBrains Mono',monospace;font-size:10px;color:#94a3b8;">
+        Menunggu siklus pemindaian 4h → 1h → 15m...
+      </div>
+    </div>
+  </div>
   </div>
   <div id="paneTV" style="display:none"><div id="tvWidget"></div></div>
 </section>
@@ -3180,6 +3269,194 @@ if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   });
 }
+</script>
+
+<script src="./strategies/harmonic/config.js"></script>
+<script src="./strategies/harmonic/swingDetector.js"></script>
+<script src="./strategies/harmonic/przValidator.js"></script>
+<script src="./strategies/harmonic/rsiConfirmation.js"></script>
+<script src="./strategies/harmonic/engine.js"></script>
+<script src="./strategies/harmonic/backtester.js"></script>
+<script>
+(function() {
+  const HM_STORAGE_KEY = "octa_harmonic_settings_v1";
+  const HM_RTDB = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
+  let lastNotifiedKey = "";
+
+  window.getHarmonicUiSettings = function() {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem(HM_STORAGE_KEY) || "{}"); } catch (_) {}
+    return window.HarmonicConfig ? window.HarmonicConfig.mergeSettings(saved) : saved;
+  };
+
+  window.toggleHarmonicDrawer = function() {
+    const el = document.getElementById("harmonicDrawer");
+    if (!el) return;
+    el.style.display = el.style.display === "none" ? "block" : "none";
+  };
+
+  window.requestHarmonicPushPermission = async function() {
+    if (!("Notification" in window)) {
+      alert("Browser ini tidak mendukung Push Notification API.");
+      return;
+    }
+    const perm = await Notification.requestPermission();
+    if (perm === "granted") {
+      new Notification("Octa-Analyzer Harmonic Engine", {
+        body: "Notifikasi pola Scott Carney & eksekusi order aktif!",
+        icon: "./icon-192.png"
+      });
+    }
+  };
+
+  function sendLocalHarmonicPush(title, body, uniqueKey) {
+    if (uniqueKey && uniqueKey === lastNotifiedKey) return;
+    lastNotifiedKey = uniqueKey;
+    if ("Notification" in window && Notification.permission === "granted") {
+      try {
+        new Notification(title, { body, icon: "./icon-192.png" });
+      } catch (_) {}
+    }
+  }
+
+  function renderPatternCheckboxes() {
+    const wrap = document.getElementById("hmPatternToggles");
+    if (!wrap || !window.HarmonicConfig) return;
+    const cfg = window.getHarmonicUiSettings();
+    wrap.innerHTML = Object.entries(cfg.patterns).map(([k, p]) => {
+      return `<label style="display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:6px;background:#0f172a;border:1px solid ${p.enabled ? "#38bdf8" : "#1e293b"};font-size:11px;cursor:pointer;">
+        <input type="checkbox" data-hm-pat="${k}" ${p.enabled ? "checked" : ""} onchange="saveHarmonicUiSettings()">
+        <span>${p.label}</span>
+      </label>`;
+    }).join("");
+
+    const elEn = document.getElementById("hmCfgEnabled");
+    const elPa = document.getElementById("hmCfgPaper");
+    const elTol = document.getElementById("hmCfgTol");
+    const elPrz = document.getElementById("hmCfgPrzScore");
+    const elRsiM = document.getElementById("hmCfgRsiMode");
+    const elRsiOs = document.getElementById("hmCfgRsiOs");
+    const elRsiOb = document.getElementById("hmCfgRsiOb");
+    const elRisk = document.getElementById("hmCfgRisk");
+    const elMaxP = document.getElementById("hmCfgMaxPos");
+    const elMaxD = document.getElementById("hmCfgMaxDd");
+
+    if (elEn) elEn.checked = cfg.enabled !== false;
+    if (elPa) elPa.checked = cfg.paperTrading !== false;
+    if (elTol) elTol.value = ((cfg.ratioTolerance || 0.03) * 100).toFixed(1);
+    if (elPrz) elPrz.value = cfg.minPrzScore || 60;
+    if (elRsiM) elRsiM.value = cfg.rsiMode || "both";
+    if (elRsiOs) elRsiOs.value = cfg.rsiOversold || 35;
+    if (elRsiOb) elRsiOb.value = cfg.rsiOverbought || 65;
+    if (elRisk) elRisk.value = cfg.riskPerTradePct || 1.0;
+    if (elMaxP) elMaxP.value = cfg.maxOpenPositions || 3;
+    if (elMaxD) elMaxD.value = cfg.maxDailyDrawdownPct || 5.0;
+  }
+
+  window.saveHarmonicUiSettings = function() {
+    if (!window.HarmonicConfig) return;
+    const cfg = window.getHarmonicUiSettings();
+    cfg.enabled = Boolean(document.getElementById("hmCfgEnabled")?.checked);
+    cfg.paperTrading = Boolean(document.getElementById("hmCfgPaper")?.checked);
+    cfg.ratioTolerance = Math.max(0.005, (Number(document.getElementById("hmCfgTol")?.value) || 3) / 100);
+    cfg.minPrzScore = Number(document.getElementById("hmCfgPrzScore")?.value) || 60;
+    cfg.rsiMode = document.getElementById("hmCfgRsiMode")?.value || "both";
+    cfg.rsiOversold = Number(document.getElementById("hmCfgRsiOs")?.value) || 35;
+    cfg.rsiOverbought = Number(document.getElementById("hmCfgRsiOb")?.value) || 65;
+    cfg.riskPerTradePct = Number(document.getElementById("hmCfgRisk")?.value) || 1.0;
+    cfg.maxOpenPositions = Number(document.getElementById("hmCfgMaxPos")?.value) || 3;
+    cfg.maxDailyDrawdownPct = Number(document.getElementById("hmCfgMaxDd")?.value) || 5.0;
+
+    document.querySelectorAll("[data-hm-pat]").forEach(cb => {
+      const k = cb.getAttribute("data-hm-pat");
+      if (cfg.patterns[k]) cfg.patterns[k].enabled = cb.checked;
+    });
+
+    try { localStorage.setItem(HM_STORAGE_KEY, JSON.stringify(cfg)); } catch (_) {}
+    renderPatternCheckboxes();
+    // Sinkronkan juga ke Firebase harmonicConfig agar backend Termux memakai setting yang sama
+    fetch(`${HM_RTDB}/harmonicConfig.json`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(cfg)
+    }).catch(() => {});
+  };
+
+  window.runHarmonicUiBacktest = async function() {
+    const btn = document.getElementById("runHmBacktestBtn");
+    const box = document.getElementById("hmBacktestResult");
+    const tf = document.getElementById("hmBtTf")?.value || "1h";
+    if (!btn || !box || !window.HarmonicBacktester) return;
+
+    btn.disabled = true;
+    btn.textContent = "⏳ Backtesting 500 Bar...";
+    box.style.display = "block";
+    box.textContent = `Mengambil 500 candle historis ${CONFIG.symbol} (${tf})...`;
+
+    try {
+      const { data: raw } = await apiFetch(`/api/v3/klines?symbol=${CONFIG.symbol}&interval=${tf}&limit=500`);
+      const candles = (raw || []).slice(0, -1).map(k => ({
+        time: Math.floor(k[0] / 1000),
+        open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5],
+        closed: true
+      }));
+      const res = window.HarmonicBacktester.runBacktest(candles, tf, window.getHarmonicUiSettings(), 1000);
+      if (res.error) {
+        box.innerHTML = `<span style="color:#f87171;">${res.error}</span>`;
+      } else {
+        const pnlColor = res.netProfitPct >= 0 ? "#4ade80" : "#f87171";
+        box.innerHTML = `
+          <div style="color:#38bdf8;font-weight:700;margin-bottom:4px;">HASIL BACKTEST ${CONFIG.symbol} (${tf}) · 500 BAR CLOSED</div>
+          <div>Pola Ditemukan: <strong>${res.totalPatterns}</strong> (Win: ${res.wins} | Loss: ${res.losses})</div>
+          <div>Win Rate: <strong style="color:#facc15;">${res.winRate}%</strong> · Profit Factor: <strong style="color:#38bdf8;">${res.profitFactor}</strong> · Max DD: <strong style="color:#f87171;">${res.maxDrawdownPct}%</strong></div>
+          <div>Modal Awal $1,000 → Akhir: <strong style="color:${pnlColor};">${res.finalBalance} (${res.netProfitPct >= 0 ? "+" : ""}${res.netProfitPct}%)</strong></div>
+        `;
+      }
+    } catch (e) {
+      box.innerHTML = `<span style="color:#f87171;">Gagal menjalankan backtest: ${e.message}</span>`;
+    }
+    btn.disabled = false;
+    btn.textContent = "📊 Jalankan Backtest";
+  };
+
+  async function pollHarmonicStatus() {
+    try {
+      const res = await fetch(`${HM_RTDB}/harmonicStatus.json`);
+      if (!res.ok) return;
+      const st = await res.json();
+      if (!st) return;
+
+      const paperEl = document.getElementById("hmPaperStats");
+      if (paperEl && typeof st.paperBalance === "number") {
+        paperEl.innerHTML = `Paper Balance: <strong style="color:#4ade80;">${st.paperBalance.toFixed(2)}</strong> · Posisi Aktif: <strong>${st.openPaperCount || 0}</strong> · Scan Terakhir: <strong>${st.scanned || 0} koin</strong>`;
+      }
+
+      const logEl = document.getElementById("hmDecisionLogs");
+      if (logEl && Array.isArray(st.recentLogs) && st.recentLogs.length) {
+        logEl.innerHTML = st.recentLogs.slice().reverse().map(l => {
+          const c = l.status === "EXECUTED" ? "#4ade80" : "#fbbf24";
+          const tm = new Date(l.time || Date.now()).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+          return `<div style="padding:3px 0;border-bottom:1px solid #0f172a;"><span style="color:#64748b;">[${tm}]</span> <strong style="color:${c};">[${l.status}]</strong> ${l.symbol} (${l.timeframe}) ${l.pattern} ${l.side} — ${l.reason}</div>`;
+        }).join("");
+
+        const latest = st.recentLogs[st.recentLogs.length - 1];
+        if (latest && latest.status === "EXECUTED") {
+          sendLocalHarmonicPush(
+            `Harmonic ${latest.pattern} (${latest.symbol})`,
+            `${latest.side} [${latest.timeframe}] · ${latest.reason}`,
+            `${latest.symbol}_${latest.time}`
+          );
+        }
+      }
+    } catch (_) {}
+  }
+
+  document.addEventListener("DOMContentLoaded", function() {
+    renderPatternCheckboxes();
+    pollHarmonicStatus();
+    setInterval(pollHarmonicStatus, 15000);
+  });
+})();
 </script>
 </body>
 </html>

@@ -1,0 +1,128 @@
+(function (root, factory) {
+  if (typeof module === "object" && module.exports) module.exports = factory();
+  else root.HarmonicConfig = factory();
+})(typeof self !== "undefined" ? self : this, function () {
+  "use strict";
+
+  const PATTERNS = {
+    GARTLEY: {
+      enabled: true,
+      label: "Gartley",
+      beyondX: false,
+      bRange: [0.618, 0.618],
+      cRange: [0.382, 0.886],
+      dXa: [0.786, 0.786],
+      dBc: [1.272, 1.618],
+      dXc: null
+    },
+    BAT: {
+      enabled: true,
+      label: "Bat",
+      beyondX: false,
+      bRange: [0.382, 0.50],
+      cRange: [0.382, 0.886],
+      dXa: [0.886, 0.886],
+      dBc: [1.618, 2.618],
+      dXc: null
+    },
+    ALT_BAT: {
+      enabled: true,
+      label: "Alt Bat",
+      beyondX: true,
+      bRange: [0.382, 0.382],
+      cRange: [0.382, 0.886],
+      dXa: [1.13, 1.13],
+      dBc: [2.0, 3.618],
+      dXc: null
+    },
+    BUTTERFLY: {
+      enabled: true,
+      label: "Butterfly",
+      beyondX: true,
+      bRange: [0.786, 0.786],
+      cRange: [0.382, 0.886],
+      dXa: [1.27, 1.618],
+      dBc: [1.618, 2.618],
+      dXc: null
+    },
+    CRAB: {
+      enabled: true,
+      label: "Crab",
+      beyondX: true,
+      bRange: [0.382, 0.618],
+      cRange: [0.382, 0.886],
+      dXa: [1.618, 1.618],
+      dBc: [2.24, 3.618],
+      dXc: null
+    },
+    DEEP_CRAB: {
+      enabled: true,
+      label: "Deep Crab",
+      beyondX: true,
+      bRange: [0.886, 0.886],
+      cRange: [0.382, 0.886],
+      dXa: [1.618, 1.618],
+      dBc: [2.0, 3.618],
+      dXc: null
+    },
+    CYPHER: {
+      enabled: true,
+      label: "Cypher",
+      beyondX: false,
+      bRange: [0.382, 0.618],
+      cRange: [1.272, 1.414], // ekstensi XC
+      cIsXcExtension: true,
+      dXa: null,
+      dBc: [1.272, 2.0],
+      dXc: [0.786, 0.786]
+    }
+  };
+
+  const DEFAULT_SETTINGS = {
+    enabled: true,
+    paperTrading: true,
+    timeframes: ["4h", "1h", "15m"], // urutan wajib: 4h -> 1h -> 15m
+    ratioTolerance: 0.03,            // ±3% standar Scott Carney
+    swingDepth: 3,
+    minDeviationPct: 0.35,
+    atrPeriod: 14,
+    minLegAtrMult: 0.8,
+    minPrzConfluence: 3,
+    maxPrzWidthAtrMult: 1.35,
+    maxPrzWidthPct: 2.2,
+    minPrzScore: 60,
+    rsiPeriod: 14,
+    rsiOversold: 35,
+    rsiOverbought: 65,
+    rsiMode: "both",                 // "level" | "divergence" | "both"
+    requireReversalCandle: true,
+    slAtrBufferMult: 0.35,
+    tp1Fib: 0.382,
+    tp2Fib: 0.618,
+    tp1CloseRatio: 0.5,
+    minRR: 2.0,
+    riskPerTradePct: 1.0,
+    maxOpenPositions: 3,
+    maxDailyDrawdownPct: 5.0,
+    patterns: JSON.parse(JSON.stringify(PATTERNS))
+  };
+
+  function mergeSettings(custom) {
+    const base = JSON.parse(JSON.stringify(DEFAULT_SETTINGS));
+    if (!custom || typeof custom !== "object") return base;
+    for (const k of Object.keys(custom)) {
+      if (k === "patterns" && custom.patterns) {
+        for (const pKey of Object.keys(custom.patterns)) {
+          if (base.patterns[pKey]) {
+            base.patterns[pKey] = Object.assign({}, base.patterns[pKey], custom.patterns[pKey]);
+          }
+        }
+      } else if (custom[k] !== undefined) {
+        base[k] = custom[k];
+      }
+    }
+    return base;
+  }
+
+  return { PATTERNS, DEFAULT_SETTINGS, mergeSettings };
+});

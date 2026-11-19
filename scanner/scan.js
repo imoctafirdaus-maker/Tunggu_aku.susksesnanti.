@@ -12,6 +12,7 @@ const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
 const { getFuturesSnapshot, executeSignalTrade, manageOpenPositions } = require("./autoTrader");
 const { syncControlWithFirebase } = require("./botControl");
 const { notifyNewSignalsToTelegram } = require("./telegramNotifier");
+const { runHarmonicScanCycle } = require("./harmonicRunner");
 
 const DB_URL = process.env.FIREBASE_DB_URL ||
   "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -339,7 +340,8 @@ async function main() {
       }
     } catch (_) {}
 
-    console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written}`);
+    const hmRes = await runHarmonicScanCycle({ candidates: cands, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
+    console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m): scanned=${hmRes.scanned} found=${hmRes.found}`);
     await admin.app().delete();
   }
   process.exitCode = st.ok ? 0 : 1;
