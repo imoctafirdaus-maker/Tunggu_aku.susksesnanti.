@@ -76,7 +76,32 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 
 @media(max-width:640px){th,td{padding:8px}#chart{height:360px}#tvWidget{height:420px}}
 </style>
+
+<style id="nav-toggle-style">
+  #topNavMenuBtn {
+    position: fixed;
+    top: 10px;
+    right: 12px;
+    z-index: 99999;
+    background: rgba(15, 23, 42, 0.85);
+    color: #f8fafc;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.4);
+  }
+  #topNavMenuBtn:active { scale: 0.95; background: #1e293b; }
+</style>
 </head>
+
+<button id="topNavMenuBtn" onclick="window.toggleNavMenu ? window.toggleNavMenu() : (document.body.classList.toggle(show-wifi-tab))" title="Menu Navigasi">☰</button>
 <body>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
