@@ -97,6 +97,40 @@ async function saveAndPushQuota(state) {
   } catch (_) {}
 }
 
+
+const LOCAL_ROUTER_URL = "http://127.0.0.1:4000/v1/chat/completions";
+
+async function queryLocalAiRouter(targetModel, systemPrompt, userPrompt, temperature = 0.15, timeoutMs = 16000) {
+  const c = new AbortController();
+  const t = setTimeout(() => c.abort(), timeoutMs);
+  try {
+    const res = await fetch(LOCAL_ROUTER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model: targetModel,
+        temperature,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt }
+        ]
+      }),
+      signal: c.signal
+    });
+    if (!res.ok) return null;
+    const routedTo = res.headers.get("x-routed-to") || "";
+    const cacheHit = res.headers.get("x-router-cache") || "";
+    const data = await res.json().catch(() => null);
+    const content = data?.choices?.[0]?.message?.content || "";
+    if (!content) return null;
+    return { content, routedTo, cacheHit, model: data?.model || targetModel };
+  } catch (_) {
+    return null;
+  } finally {
+    clearTimeout(t);
+  }
+}
+
 function extractJson(text) {
   if (!text) return null;
   const cleaned = String(text).replace(/```json/gi, "").replace(/```/g, "").trim();
@@ -126,7 +160,7 @@ async function getActiveGroqModels(apiKey, preferredModel) {
         .map(m => m.id)
         .filter(id => id && !/whisper|guard|tts|embed|vision/i.test(id));
       if (ids.length) {
-        return [...fallbackList.filter(m => ids.includes(m)), ...ids.filter(m => !fallbackList.includes(m))].slice(0, 4);
+        return [...fallbackList.filter(m => ids.includes(m)), ...ids.filter(m => !fallbackList.includes(m))].slice(0, 2);
       }
     }
   } catch (_) {}
@@ -134,6 +168,29 @@ async function getActiveGroqModels(apiKey, preferredModel) {
 }
 
 async function callGroqWithRotation(prompt, cfg, qState) {
+  const sysGroq = "Anda adalah Analis Momentum & Struktur Pasar Kripto Futures. Jawab HANYA dalam JSON valid: {\"pass\": boolean, \"score\": number (0-100), \"analisis\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}.";
+  const viaRouter = await queryLocalAiRouter("analis-groq", sysGroq, prompt, 0.15, 15000);
+  if (viaRouter) {
+    const parsed = extractJson(viaRouter.content);
+    if (parsed && typeof parsed.pass === "boolean") {
+      const suffix = viaRouter.routedTo.split(":").pop() || "";
+      let idx = cfg.groqKeys.findIndex(k => suffix && k.endsWith(suffix));
+      if (idx < 0) idx = 0;
+      if (qState.groq[idx]) {
+        qState.groq[idx].used = (qState.groq[idx].used || 0) + (viaRouter.cacheHit === "HIT" ? 0 : 1);
+        qState.groq[idx].pct = Math.max(1, 100 - Math.min(99, Math.round((qState.groq[idx].used / 1000) * 100)));
+        qState.groq[idx].status = viaRouter.cacheHit === "HIT" ? "Cache Hemat Kuota" : `Router (${qState.groq[idx].used} req)`;
+      }
+      return {
+        ok: true,
+        keyIndex: idx + 1,
+        modelUsed: viaRouter.model,
+        pass: parsed.pass && Number(parsed.score || 0) >= cfg.minGroqScore,
+        score: Number(parsed.score || 0),
+        analisis: String(parsed.analisis || "Struktur sesuai").slice(0, 140)
+      };
+    }
+  }
   if (!cfg.groqKeys.length) throw new Error("Daftar groqKeys kosong");
   let lastErr = "Semua Groq API Key gagal";
 
@@ -185,7 +242,7 @@ async function callGroqWithRotation(prompt, cfg, qState) {
             qState.groq[i].pct = 0;
             qState.groq[i].status = "Standby (100%)";
           }
-          if (res.status === 404 || res.status === 400) continue;
+          if ([400, 404, 429, 500, 502, 503].includes(res.status)) continue;
           break;
         }
 
@@ -244,7 +301,7 @@ async function getActiveGeminiModels(apiKey, preferredModel) {
         .map(m => String(m.name || "").replace(/^models\//, ""))
         .filter(id => id && /flash/i.test(id) && !/lite-preview|image|audio|tts/i.test(id));
       if (ids.length) {
-        return [...fallbackList.filter(m => ids.includes(m)), ...ids.filter(m => !fallbackList.includes(m))].slice(0, 4);
+        return [...fallbackList.filter(m => ids.includes(m)), ...ids.filter(m => !fallbackList.includes(m))].slice(0, 2);
       }
     }
   } catch (_) {}
@@ -252,6 +309,33 @@ async function getActiveGeminiModels(apiKey, preferredModel) {
 }
 
 async function callGeminiWithRotation(prompt, cfg, qState) {
+  const sysGem = "Anda adalah Auditor Risiko Senior Binance USDⓈ-M Futures Leverage 50x (Isolated). Tugas Anda mengaudit usulan sinyal & argumen analis pertama. Tolak (decision: TIDAK) jika jarak SL terlalu sempit (<0.25%) atau terlalu lebar (>1.6%), rasio kurang sehat, atau rawan likuidasi 50x. Jawab HANYA JSON valid: {\"decision\": \"YA\" atau \"TIDAK\", \"confidence\": number (0-100), \"alasan\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}.";
+  const viaRouter = await queryLocalAiRouter("auditor-gemini", sysGem, prompt, 0.1, 18000);
+  if (viaRouter) {
+    const parsed = extractJson(viaRouter.content);
+    if (parsed && parsed.decision) {
+      const suffix = viaRouter.routedTo.split(":").pop() || "";
+      let idx = cfg.geminiKeys.findIndex(k => suffix && k.endsWith(suffix));
+      if (idx < 0) idx = 0;
+      if (qState.gemini[idx]) {
+        const dailyCap = qState.gemini[idx].limit || 250;
+        qState.gemini[idx].used = (qState.gemini[idx].used || 0) + (viaRouter.cacheHit === "HIT" ? 0 : 1);
+        qState.gemini[idx].pct = Math.max(1, Math.round(((dailyCap - qState.gemini[idx].used) / dailyCap) * 100));
+        qState.gemini[idx].status = viaRouter.cacheHit === "HIT" ? "Cache Hemat Kuota" : `Router (${qState.gemini[idx].used}/${dailyCap})`;
+      }
+      const verdict = String(parsed.decision).toUpperCase().trim();
+      const conf = Number(parsed.confidence || 0);
+      return {
+        ok: true,
+        keyIndex: idx + 1,
+        modelUsed: viaRouter.model,
+        approved: verdict === "YA" && conf >= cfg.minGeminiConfidence,
+        decision: verdict,
+        confidence: conf,
+        alasan: String(parsed.alasan || "Risiko terukur").slice(0, 140)
+      };
+    }
+  }
   if (!cfg.geminiKeys.length) throw new Error("Daftar geminiKeys kosong");
   let lastErr = "Semua Gemini API Key gagal";
 
@@ -293,8 +377,10 @@ async function callGeminiWithRotation(prompt, cfg, qState) {
           const msg = data?.error?.message || `HTTP ${res.status}`;
           lastErr = `Gemini Key #${i + 1} [${modelId}] (${res.status}): ${msg}`;
           if (res.status === 429) {
-            qState.gemini[i].pct = 0;
-            qState.gemini[i].status = "Standby (100%)";
+            const dailyCap = qState.gemini[i].limit || 250;
+            const remPct = Math.max(5, Math.round(((dailyCap - (qState.gemini[i].used || 0)) / dailyCap) * 100));
+            qState.gemini[i].pct = remPct;
+            qState.gemini[i].status = "Cooldown RPM (60d)";
           }
           if (res.status === 404 || res.status === 400) continue;
           break;
@@ -332,7 +418,34 @@ async function callGeminiWithRotation(prompt, cfg, qState) {
   return { ok: false, error: lastErr };
 }
 
+
+const AUDIT_CACHE_PATH = path.join(__dirname, ".aiAuditCache.json");
+function getCachedAudit(key) {
+  try {
+    if (!fs.existsSync(AUDIT_CACHE_PATH)) return null;
+    const all = JSON.parse(fs.readFileSync(AUDIT_CACHE_PATH, "utf8"));
+    const item = all[key];
+    if (item && Date.now() - item.ts < 2700000) return item.res;
+  } catch (_) {}
+  return null;
+}
+function setCachedAudit(key, res) {
+  try {
+    let all = {};
+    if (fs.existsSync(AUDIT_CACHE_PATH)) all = JSON.parse(fs.readFileSync(AUDIT_CACHE_PATH, "utf8"));
+    const now = Date.now();
+    for (const k of Object.keys(all)) {
+      if (now - (all[k]?.ts || 0) > 2700000) delete all[k];
+    }
+    all[key] = { ts: now, res };
+    fs.writeFileSync(AUDIT_CACHE_PATH, JSON.stringify(all, null, 2));
+  } catch (_) {}
+}
+
 async function evaluateDualAiConsensus(rec, tmResult = null) {
+  const cacheKey = `${rec.symbol}_${rec.signal}_${rec.timeframe || "5m"}`;
+  const cachedDecision = getCachedAudit(cacheKey);
+  if (cachedDecision) return cachedDecision;
   const cfg = loadAiConfig();
   const qState = loadQuotaState(cfg);
   if (!cfg.enabled) return { approved: true, summary: "Dual-AI nonaktif" };
@@ -383,16 +496,20 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
     return { approved: false, reason: `AI Tahap 2 Gagal (${gemini.error})` };
   }
   if (!gemini.approved) {
-    return {
+    const rejOut = {
       approved: false,
       reason: `Ditolak Gemini #${gemini.keyIndex} (${gemini.decision} · Conf ${gemini.confidence}%): ${gemini.alasan}`
     };
+    setCachedAudit(cacheKey, rejOut);
+    return rejOut;
   }
 
-  return {
+  const okOut = {
     approved: true,
     summary: `Groq#${groq.keyIndex}(${groq.score}) → Gemini#${gemini.keyIndex}: YA (${gemini.confidence}%) · ${gemini.alasan}`
   };
+  setCachedAudit(cacheKey, okOut);
+  return okOut;
 }
 
 if (require.main === module && process.argv.includes("--test")) {
