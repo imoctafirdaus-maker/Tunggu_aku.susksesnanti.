@@ -3,7 +3,7 @@
 async function runNetDiag(devices = []) {
   const { exec } = require("child_process");
   const pingHost = (host) => new Promise((resolve) => {
-    exec(`ping -c 4 -W 1 ${host}`, (err, stdout) => {
+    exec(`ping -c 3 -W 2 ${host}`, (err, stdout) => {
       const out = String(stdout || "");
       const lossMatch = out.match(/(\d+)%\s*packet\s*loss/i);
       const rttMatch = out.match(/rtt\s+min\/avg\/max\/mdev\s*=\s*([\d.]+)\/([\d.]+)\/([\d.]+)\/([\d.]+)/i);
@@ -268,6 +268,19 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if ((req.url || "").startsWith("/api/net-diag")) {
+      const devs = (typeof db !== "undefined" && db.prepare)
+        ? db.prepare("SELECT * FROM devices").all()
+        : (typeof getLatestDevices === "function" ? getLatestDevices() : []);
+      runNetDiag(devs).then(data => {
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(data));
+      }).catch(e => {
+        res.writeHead(500, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      });
+      return;
+    }
     if (req.method === "GET" && url.pathname === "/api/state") {
       return sendJson(200, getSnapshot());
     }

@@ -398,7 +398,7 @@
   }
 
   async function pollStateOnce() {
-    if (isMutating) return;
+    if (isMutating || speedState.running || diagState.scanning) return;
     try {
       const r = await fetchWithFallback("/api/state");
       const j = await r.json();
@@ -708,13 +708,16 @@
       if (diagState.scanning) return;
       diagState = { ...diagState, scanning: true };
       renderSwc();
+      const devs = swcData.devices || [];
+      const onlineDevs = devs.filter(d => d.status === "online");
+      const unknownOnline = onlineDevs.filter(d => !d.is_known);
       try {
-        const r = await fetchWithFallback("/api/net-diag");
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 9000);
+        const r = await fetchWithFallback("/api/net-diag", { signal: ctrl.signal });
+        clearTimeout(timer);
+        if (!r.ok) throw new Error("HTTP " + r.status);
         const j = await r.json();
-        // Gabungkan analisis lokal client jika perangkat asing terdeteksi di state UI
-        const devs = swcData.devices || [];
-        const onlineDevs = devs.filter(d => d.status === "online");
-        const unknownOnline = onlineDevs.filter(d => !d.is_known);
         const issues = Array.isArray(j.issues) ? [...j.issues] : [];
         if (unknownOnline.length > 0 && !issues.some(x => x.title.includes("Perangkat Asing"))) {
           issues.unshift({
@@ -727,10 +730,14 @@
         if (j.wan && j.wan.avg !== null && speedState.ping === null) speedState.ping = Math.round(j.wan.avg);
         diagState = { scanning: false, result: { ...j, onlineCount: onlineDevs.length, issues } };
       } catch (e) {
-        // Fallback analisis dari data perangkat saat ini jika endpoint belum merespons
-        const devs = swcData.devices || [];
-        const onlineDevs = devs.filter(d => d.status === "online");
-        const unknownOnline = onlineDevs.filter(d => !d.is_known);
+        // Fallback diagnostik langsung dari browser + data perangkat router
+        const t0 = performance.now();
+        let wanMs = null;
+        try {
+          await fetch("https://1.1.1.1/cdn-cgi/trace?t=" + Date.now(), { cache: "no-store" });
+          wanMs = Math.round(performance.now() - t0);
+          if (speedState.ping === null) speedState.ping = wanMs;
+        } catch {}
         const fallbackIssues = [];
         if (unknownOnline.length > 0) {
           fallbackIssues.push({ level: "high", title: `${unknownOnline.length} Perangkat Asing Menyedot Bandwidth`, detail: unknownOnline.map(d => `${d.alias || d.hostname} (${d.ip})`).join(", ") });
@@ -738,8 +745,11 @@
         if (onlineDevs.length >= 5) {
           fallbackIssues.push({ level: "warn", title: `${onlineDevs.length} Perangkat Online Bersamaan`, detail: "Kepadatan trafik Wi-Fi membagi kecepatan unduh antar perangkat." });
         }
+        if (wanMs !== null && wanMs > 90) {
+          fallbackIssues.push({ level: "warn", title: `Latensi Internet Tinggi (${wanMs} ms)`, detail: "Jalur ISP eksternal sedang padat atau melambat." });
+        }
         if (fallbackIssues.length === 0) {
-          fallbackIssues.push({ level: "ok", title: "Tidak Ada Perangkat Asing Aktif", detail: `Tercatat ${onlineDevs.length} perangkat resmi terhubung ke router.` });
+          fallbackIssues.push({ level: "ok", title: "Tidak Ditemukan Hambatan Wi-Fi", detail: `Tercatat ${onlineDevs.length} perangkat resmi aktif${wanMs !== null ? " • Ping internet " + wanMs + " ms" : ""}.` });
         }
         diagState = { scanning: false, result: { gw: { loss: 0 }, onlineCount: onlineDevs.length, issues: fallbackIssues } };
       }
