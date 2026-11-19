@@ -12,7 +12,17 @@ const PAPER_FILE = path.join(__dirname, ".harmonicPaperState.json");
 const AI_CFG_PATH = path.join(__dirname, "aiConfig.json");
 const LIVE_RADAR_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json";
 
-function loadHarmonicSettings() {
+async function loadHarmonicSettings() {
+  try {
+    const res = await fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/harmonicConfig.json");
+    if (res.ok) {
+      const remote = await res.json();
+      if (remote && typeof remote === "object") {
+        fs.writeFileSync(SETTINGS_FILE, JSON.stringify(remote, null, 2));
+        return HarmonicConfig.mergeSettings(remote);
+      }
+    }
+  } catch (_) {}
   try {
     if (fs.existsSync(SETTINGS_FILE)) {
       return HarmonicConfig.mergeSettings(JSON.parse(fs.readFileSync(SETTINGS_FILE, "utf8")));
@@ -310,7 +320,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
  * Runner Utama Pemindaian Harmonic Pattern (Hierarki wajib: 4h -> 1h -> 15m)
  */
 async function runHarmonicScanCycle({ candidates, apiGetFn, db, admin }) {
-  const cfg = loadHarmonicSettings();
+  const cfg = await loadHarmonicSettings();
   const paper = loadPaperState();
   if (!cfg.enabled) return { scanned: 0, found: 0 };
 
