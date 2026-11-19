@@ -1,6 +1,36 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+
+<script id="hard-touch-blocker">
+(function() {
+    let startX = 0, startY = 0;
+    
+    // Tangkap titik awal sentuhan
+    window.addEventListener("touchstart", function(e) {
+        if (e.touches && e.touches.length === 1) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
+    }, { capture: true, passive: true });
+
+    // Hentikan propagasi jika terdeteksi geseran horizontal (swipe)
+    window.addEventListener("touchmove", function(e) {
+        if (e.touches && e.touches.length === 1) {
+            let diffX = Math.abs(e.touches[0].clientX - startX);
+            let diffY = Math.abs(e.touches[0].clientY - startY);
+            
+            // Jika gerakan lebih dominan horizontal daripada vertikal, blokir event alih tab
+            if (diffX > 15 && diffX > diffY) {
+                e.stopPropagation();
+            }
+        } else if (e.touches && e.touches.length > 1) {
+            // Izinkan dua jari untuk pinch-zoom chart
+            e.stopPropagation();
+        }
+    }, { capture: true, passive: true });
+})();
+</script>
 <script>
 if ("serviceWorker" in navigator) {
   navigator.serviceWorker.getRegistrations().then(regs => {
