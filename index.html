@@ -2,6 +2,116 @@
 <html lang="id">
 <head>
 
+<script id="hard-touch-blocker">
+(function() {
+    let startX = 0, startY = 0;
+    
+    // Tangkap titik awal sentuhan
+    window.addEventListener("touchstart", function(e) {
+        if (e.touches && e.touches.length === 1) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+        }
+    }, { capture: true, passive: true });
+
+    // Hentikan propagasi jika terdeteksi geseran horizontal (swipe)
+    window.addEventListener("touchmove", function(e) {
+        if (e.touches && e.touches.length === 1) {
+            let diffX = Math.abs(e.touches[0].clientX - startX);
+            let diffY = Math.abs(e.touches[0].clientY - startY);
+            
+            // Jika gerakan lebih dominan horizontal daripada vertikal, blokir event alih tab
+            if (diffX > 15 && diffX > diffY) {
+                e.stopPropagation();
+            }
+        } else if (e.touches && e.touches.length > 1) {
+            // Izinkan dua jari untuk pinch-zoom chart
+            e.stopPropagation();
+        }
+    }, { capture: true, passive: true });
+})();
+</script>
+<script>
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.getRegistrations().then(regs => {
+    for (let r of regs) r.unregister();
+  });
+}
+if ("caches" in window) {
+  caches.keys().then(keys => {
+    for (let k of keys) caches.delete(k);
+  });
+}
+</script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#070b14">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="1791748937891.jpg">
+<title>Binance Top 500 · Multi-Indicator + EMA Expert + Early Volume Radar</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/lightweight-charts@4.2.2/dist/lightweight-charts.standalone.production.js"></script>
+<style>
+:root{--bg:#070b14;--panel:#101827;--border:#243047;--muted:#94a3b8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#e5e7eb;font-family:Arial,sans-serif}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:14px}.muted{color:var(--muted)}
+.btn{padding:9px 14px;border-radius:8px;font-weight:700;cursor:pointer;background:#253247;color:white;border:0;transition:background 0.2s}
+.btn:hover{background:#334155}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.active{background:#2962ff}
+.btn.active:hover{background:#1d4ed8}
+.badge{display:inline-block;padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800}
+.up,.pass{color:#86efac;background:#123322}.down,.reject{color:#fca5a5;background:#431717}.neutral,.warning{color:#fde68a;background:#3b2e0a}.unknown{color:#cbd5e1;background:#293548}
+.indicator-card{background:#0b1220;border:1px solid var(--border);padding:12px;border-radius:99px;min-width:0;transition:all 0.3s ease}
+.indicator-value{font-weight:800;font-size:14px;overflow-wrap:anywhere}.indicator-status{font-size:10px;text-transform:uppercase;margin-top:6px;color:var(--muted)}
+.card-bullish{background:rgba(22,163,74,0.15)!important;border-color:rgba(22,163,74,0.4)!important}
+.card-bearish{background:rgba(220,38,38,0.15)!important;border-color:rgba(220,38,38,0.4)!important}
+.card-neutral{background:rgba(202,138,4,0.15)!important;border-color:rgba(202,138,4,0.4)!important}
+table{width:100%;text-align:left;border-collapse:collapse}th,td{padding:10px;border-bottom:1px solid var(--border);font-size:12px;white-space:nowrap}th{color:var(--muted);font-weight:normal}
+td.wrap{white-space:normal;min-width:260px;line-height:1.5}
+#connectionDot{width:10px;height:10px;display:inline-block;border-radius:50%;background:#facc15}.progress-track{height:8px;border-radius:8px;overflow:hidden;background:#293548}
+input,select{background:#0b1220;border:1px solid var(--border);color:white;padding:8px;border-radius:7px;max-width:100%}
+#chartWrap{position:relative;border-radius:10px;overflow:hidden;background:#131722}
+#chart{height:500px;width:100%}
+#legend{position:absolute;left:10px;top:8px;z-index:5;pointer-events:none;font:12px/1.5 monospace;color:#d1d4dc;text-shadow:0 0 4px #131722}
+#tvWidget{height:540px;width:100%;border-radius:10px;overflow:hidden;background:#131722}
+.chart-note{font-size:11px;color:var(--muted);line-height:1.5}
+.sg-text{font-size:12px;line-height:1.6;color:#d1d5db}
+
+/* BATTERY BUBBLE COMPONENT STYLE */
+.battery-shell {
+  width: 22px;
+  height: 11px;
+  border: 1.5px solid #94a3b8;
+  border-radius: 3px;
+  padding: 1px;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.battery-cap {
+  width: 2px;
+  height: 4px;
+  background: #94a3b8;
+  position: absolute;
+  right: -3px;
+  top: 2px;
+  border-radius: 0 1px 1px 0;
+}
+.battery-fill {
+  height: 100%;
+  border-radius: 1px;
+  transition: width 0.4s ease, background-color 0.4s ease;
+}
+
+@media(max-width:640px){th,td{padding:8px}#chart{height:360px}#tvWidget{height:420px}}
+</style>
+
+
+
+
+
+
 <style id="swipe-lock-css">
   html, body, #quantTerminalSuite, #tvchart, canvas {
     touch-action: pan-y pinch-zoom !important;
