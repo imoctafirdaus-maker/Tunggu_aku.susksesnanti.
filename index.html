@@ -129,6 +129,55 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     }
 })();
 </script>
+
+<script id="swc-master-nav-fix">
+(function() {
+    function injectBtn() {
+        if (!document.getElementById("fixedNavMenuBtn")) {
+            const btn = document.createElement("button");
+            btn.id = "fixedNavMenuBtn";
+            btn.innerHTML = "☰";
+            btn.setAttribute("style", "position:fixed !important; top:8px !important; right:10px !important; z-index:2147483647 !important; background:#0f172a !important; color:#f59e0b !important; border:2px solid #f59e0b !important; border-radius:8px !important; width:44px !important; height:38px !important; font-size:22px !important; font-weight:bold !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; box-shadow:0 0 12px rgba(245,158,11,0.9) !important;");
+            
+            btn.onclick = function(e) {
+                e.stopPropagation();
+                e.preventDefault();
+                const wifiContainer = document.getElementById("swcUiContainer") || document.querySelector(".swc-ui-bridge");
+                const radarContainer = document.getElementById("quantTerminalSuite") || document.querySelector(".quant-suite");
+                if (wifiContainer && radarContainer) {
+                    if (wifiContainer.style.display === "none") {
+                        wifiContainer.style.display = "block";
+                        radarContainer.style.display = "none";
+                    } else {
+                        wifiContainer.style.display = "none";
+                        radarContainer.style.display = "block";
+                    }
+                } else {
+                    document.body.classList.toggle("show-wifi-tab");
+                }
+            };
+            document.documentElement.appendChild(btn);
+        }
+    }
+
+    // Suntikkan ke documentElement agar berada di luar siklus render body
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", injectBtn);
+    } else {
+        injectBtn();
+    }
+    setInterval(injectBtn, 1000);
+
+    // Blokir total event swipe / touchmove horizontal yang mentrigger switch tab
+    const blockGesture = function(e) {
+        if (e.touches && e.touches.length > 1) {
+            e.stopPropagation();
+        }
+    };
+    window.addEventListener("touchmove", blockGesture, { capture: true, passive: true });
+    window.addEventListener("touchstart", blockGesture, { capture: true, passive: true });
+})();
+</script>
 </head>
 
 <button id="topNavMenuBtn" onclick="window.toggleNavMenu ? window.toggleNavMenu() : (document.body.classList.toggle(show-wifi-tab))" title="Menu Navigasi">☰</button>
