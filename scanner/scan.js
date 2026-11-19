@@ -340,7 +340,8 @@ async function main() {
       }
     } catch (_) {}
 
-    const hmRes = await runHarmonicScanCycle({ candidates: cands, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
+    const hmCands = await loadCandidates().catch(() => []);
+    const hmRes = await runHarmonicScanCycle({ candidates: hmCands, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
     console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m): scanned=${hmRes.scanned} found=${hmRes.found}`);
     await admin.app().delete();
   }

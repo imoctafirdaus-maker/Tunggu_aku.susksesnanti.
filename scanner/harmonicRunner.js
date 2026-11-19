@@ -380,6 +380,19 @@ async function runHarmonicScanCycle({ candidates, apiGetFn, db, admin }) {
           reason: execRes.reason
         };
         paper.logs.push(logEntry);
+      } else if (res.logs && res.logs.length) {
+        const interesting = res.logs.find(l => l.includes("PRZ OK") || l.includes("ditolak: RR"));
+        if (interesting) {
+          paper.logs.push({
+            time: Date.now(),
+            symbol: sym,
+            timeframe: "MTF",
+            pattern: "SCAN",
+            side: "-",
+            status: "WATCH",
+            reason: interesting
+          });
+        }
 
         upFirebase[`${sym}_${sig.timeframe}`] = {
           symbol: sym,
