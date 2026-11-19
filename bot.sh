@@ -25,6 +25,7 @@ case "$1" in
     nohup bash -c '
       cd ~/octa-analyzer
       LAST_SCAN=0
+      LAST_GUARD=0
       PREV_STATE="off"
       while true; do
         if ! curl -s --max-time 2 "http://127.0.0.1:4000/v1/models" >/dev/null; then
@@ -35,6 +36,10 @@ case "$1" in
         STATE=$(curl -s --max-time 6 "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl/autoTrade.json" || echo "null")
         NOW=$(date +%s)
         if [ "$STATE" = "true" ]; then
+          if [ $((NOW - LAST_GUARD)) -ge 20 ]; then
+            node scanner/positionGuard.js >> scanner/bot.log 2>&1
+            LAST_GUARD=$(date +%s)
+          fi
           if [ "$PREV_STATE" != "true" ] || [ $((NOW - LAST_SCAN)) -ge 300 ]; then
             echo "=== [$(date "+%Y-%m-%d %H:%M:%S")] Mulai Scan (Sakelar ON) ===" >> scanner/bot.log
             node scanner/scan.js >> scanner/bot.log 2>&1
@@ -51,8 +56,7 @@ case "$1" in
       done
     ' >/dev/null 2>&1 &
     echo $! > "$PID_FILE"
-    echo "✅ Bot & Local AI Router aktif di latar belakang (Bot PID: $!, Router PID: $(cat "$ROUTER_PID_FILE"))."
-    echo "   Siap merespons sakelar ON/OFF dari PWA dalam 5 detik."
+    echo "✅ Bot, Fast Position Guard (20d), & Local AI Router aktif di latar belakang (Bot PID: $!, Router PID: $(cat "$ROUTER_PID_FILE"))."
     ;;
   stop)
     if [ -f "$PID_FILE" ]; then
@@ -76,7 +80,7 @@ case "$1" in
       echo "🔴 AI Router (Port 4000): MATI"
     fi
     if [ -f "$PID_FILE" ] && kill -0 "$(cat "$PID_FILE")" 2>/dev/null; then
-      echo "🟢 Bot Scanner: AKTIF (PID: $(cat "$PID_FILE"))"
+      echo "🟢 Bot Scanner + Fast Guard 20d: AKTIF (PID: $(cat "$PID_FILE"))"
     else
       echo "🔴 Bot Scanner: MATI"
     fi

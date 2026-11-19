@@ -179,6 +179,205 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 })();
 </script>
 
+<!-- LIVE TERMINAL RADAR & DUAL-AI FLOW WIDGET -->
+<div id="liveTerminalRadarPanel" style="max-width:1200px;margin:12px auto;padding:0;border-radius:12px;background:#090d16;border:1px solid #1e293b;font-family:'JetBrains Mono','Fira Code',ui-monospace,SFMono-Regular,Menlo,monospace;overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,0.45);">
+  <!-- Header Bar -->
+  <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 16px;background:#111827;border-bottom:1px solid #1e293b;font-size:11px;letter-spacing:0.06em;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span style="color:#f8fafc;font-weight:700;">OCTA-ANALYZER</span>
+      <span style="color:#475569;">|</span>
+      <span style="display:inline-flex;align-items:center;gap:6px;color:#cbd5e1;">
+        <span id="ltrEngineDot" style="width:7px;height:7px;border-radius:50%;background:#4ade80;display:inline-block;"></span>
+        <span id="ltrEngineLabel">ENGINE ONLINE</span>
+      </span>
+    </div>
+    <div id="ltrClock" style="color:#94a3b8;font-size:11px;">--:--:-- WIB</div>
+  </div>
+
+  <!-- Main Grid: Panel 01 -> Bus -> Panel 02 -->
+  <div style="padding:14px 16px;display:flex;flex-direction:column;gap:12px;">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:center;">
+      <!-- 01 MARKET SCANNER / CANDIDATE -->
+      <div id="ltrBoxLeft" style="border:1px solid #1e293b;border-radius:8px;background:#0b1120;padding:10px 12px;">
+        <div id="ltrLeftHeader" style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#38bdf8;border-bottom:1px solid #1e293b;padding-bottom:6px;margin-bottom:8px;">01 · MARKET SCANNER</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px;">
+          <span style="color:#64748b;">PAIR</span>
+          <span id="ltrPairVal" style="color:#f8fafc;font-weight:700;">BTCUSDT</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;">
+          <span style="color:#64748b;">STATE</span>
+          <span id="ltrStateVal" style="color:#fbbf24;font-weight:600;">SCANNING TOP 500</span>
+        </div>
+      </div>
+
+      <!-- DATA STREAM BUS -->
+      <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-width:64px;text-align:center;">
+        <div id="ltrBusTop" style="font-size:9px;letter-spacing:0.12em;color:#64748b;margin-bottom:3px;">IDLE</div>
+        <div id="ltrBusMid" style="font-size:12px;font-weight:700;color:#334155;letter-spacing:1px;">──────</div>
+        <div id="ltrBusBot" style="font-size:9px;letter-spacing:0.12em;color:#475569;margin-top:3px;">BUS</div>
+      </div>
+
+      <!-- 02 DUAL-AI CONSENSUS -->
+      <div id="ltrBoxRight" style="border:1px solid #1e293b;border-radius:8px;background:#0b1120;padding:10px 12px;">
+        <div style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#38bdf8;border-bottom:1px solid #1e293b;padding-bottom:6px;margin-bottom:8px;">02 · DUAL-AI CONSENSUS</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:4px;">
+          <span style="color:#cbd5e1;">GROQ</span>
+          <span id="ltrGroqBadge" style="color:#64748b;font-weight:700;">[ IDLE ]</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:11px;">
+          <span style="color:#cbd5e1;">GEMINI</span>
+          <span id="ltrGeminiBadge" style="color:#64748b;font-weight:700;">[ IDLE ]</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 03 EXECUTION VERDICT -->
+    <div id="ltrBoxVerdict" style="border:1px solid #1e293b;border-radius:8px;background:#0b1120;padding:10px 14px;">
+      <div id="ltrVerdictTitle" style="font-size:10px;font-weight:700;letter-spacing:0.08em;color:#64748b;margin-bottom:4px;">03 · EXECUTION VERDICT</div>
+      <div id="ltrVerdictStatus" style="font-size:11px;font-weight:700;color:#94a3b8;margin-bottom:3px;">STANDBY · MENUNGGU KANDIDAT TERVERIFIKASI</div>
+      <div id="ltrVerdictDetail" style="font-size:11px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">Menunggu konvergensi sinyal EMA MTF & volume</div>
+    </div>
+  </div>
+</div>
+<style>
+@media (max-width: 640px) {
+  #liveTerminalRadarPanel > div:nth-child(2) > div:first-child {
+    grid-template-columns: 1fr !important;
+  }
+}
+</style>
+<script>
+(function() {
+  const LIVE_RADAR_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json";
+  const WATCHLIST = ["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","ADAUSDT","DOGEUSDT"];
+  const STREAM_FRAMES = ["──────","▸─────","─▸────","──▸───","───▸──","────▸─","─────▸"];
+  let tick = 0;
+  let remoteState = null;
+
+  function renderBadgeHtml(status, isAuditing) {
+    if (status === "PASS") return "<span style=\"color:#4ade80;\">[ PASS ]</span>";
+    if (status === "FAIL") return "<span style=\"color:#f87171;\">[ FAIL ]</span>";
+    if (isAuditing) {
+      const dot = tick % 2 === 0 ? "●" : "○";
+      return "<span style=\"color:#fbbf24;\">[ " + dot + " .. ]</span>";
+    }
+    return "<span style=\"color:#64748b;\">[ IDLE ]</span>";
+  }
+
+  function paintRadar() {
+    const now = new Date();
+    const clockEl = document.getElementById("ltrClock");
+    if (clockEl) clockEl.textContent = now.toTimeString().slice(0, 8) + " WIB";
+
+    const st = remoteState || {};
+    const ageSec = st.updatedAt ? Math.floor((Date.now() - st.updatedAt) / 1000) : 999;
+    const phase = ageSec > 90 ? "SCANNING" : (st.phase || "SCANNING");
+    const isAuditing = phase === "AUDITING";
+    const isResult = phase === "RESULT";
+
+    const leftBox = document.getElementById("ltrBoxLeft");
+    const leftHead = document.getElementById("ltrLeftHeader");
+    const pairVal = document.getElementById("ltrPairVal");
+    const stateVal = document.getElementById("ltrStateVal");
+    const busTop = document.getElementById("ltrBusTop");
+    const busMid = document.getElementById("ltrBusMid");
+    const busBot = document.getElementById("ltrBusBot");
+    const groqEl = document.getElementById("ltrGroqBadge");
+    const gemEl = document.getElementById("ltrGeminiBadge");
+    const vBox = document.getElementById("ltrBoxVerdict");
+    const vTitle = document.getElementById("ltrVerdictTitle");
+    const vStatus = document.getElementById("ltrVerdictStatus");
+    const vDetail = document.getElementById("ltrVerdictDetail");
+
+    if (!leftBox) return;
+
+    if (isAuditing || isResult) {
+      const dir = String(st.signal || "").toUpperCase();
+      const dirColor = dir === "SELL" ? "#f87171" : "#4ade80";
+      leftBox.style.borderColor = "#0ea5e9";
+      leftHead.style.color = "#4ade80";
+      leftHead.textContent = "01 · CANDIDATE LOCKED";
+      pairVal.innerHTML = (st.candidate || "-") + " <span style=\"color:" + dirColor + ";\">" + dir + "</span>";
+      stateVal.style.color = "#38bdf8";
+      stateVal.textContent = "DISPATCHED TO AI";
+    } else {
+      leftBox.style.borderColor = "#1e293b";
+      leftHead.style.color = "#38bdf8";
+      leftHead.textContent = "01 · MARKET SCANNER";
+      pairVal.textContent = WATCHLIST[tick % WATCHLIST.length];
+      stateVal.style.color = "#fbbf24";
+      stateVal.textContent = "SCANNING TOP 500";
+    }
+
+    if (isAuditing) {
+      busTop.style.color = "#fbbf24";
+      busTop.textContent = "SYNC";
+      busMid.style.color = "#38bdf8";
+      busMid.textContent = STREAM_FRAMES[tick % STREAM_FRAMES.length];
+      busBot.textContent = "LINK";
+    } else if (isResult) {
+      const ok = st.tradeResult === "SUCCESS";
+      busTop.style.color = "#94a3b8";
+      busTop.textContent = "DONE";
+      busMid.style.color = ok ? "#4ade80" : "#f87171";
+      busMid.textContent = "━━━━━▸";
+      busBot.textContent = "VERDICT";
+    } else {
+      busTop.style.color = "#64748b";
+      busTop.textContent = "IDLE";
+      busMid.style.color = "#334155";
+      busMid.textContent = "──────";
+      busBot.textContent = "BUS";
+    }
+
+    const gStat = phase === "SCANNING" ? "IDLE" : (st.groqStatus || "IDLE");
+    const mStat = phase === "SCANNING" ? "IDLE" : (st.geminiStatus || "IDLE");
+    groqEl.innerHTML = renderBadgeHtml(gStat, isAuditing);
+    gemEl.innerHTML = renderBadgeHtml(mStat, isAuditing);
+
+    if (isAuditing) {
+      vBox.style.borderColor = "#0ea5e9";
+      vTitle.style.color = "#38bdf8";
+      vStatus.style.color = "#fbbf24";
+      vStatus.textContent = "EVALUATING · MENUNGGU KEPUTUSAN GROQ & GEMINI";
+      vDetail.style.color = "#cbd5e1";
+      vDetail.textContent = st.tradeReason || "Mengirim kandidat ke konsensus Dual-AI...";
+    } else if (isResult) {
+      const ok = st.tradeResult === "SUCCESS";
+      vBox.style.borderColor = ok ? "#22c55e" : "#ef4444";
+      vTitle.style.color = ok ? "#4ade80" : "#f87171";
+      vStatus.style.color = ok ? "#4ade80" : "#f87171";
+      vStatus.textContent = ok
+        ? "TRADE EXECUTED · ORDER TERKIRIM KE BINANCE"
+        : "TRADE FAILED · EKSEKUSI DIBATALKAN";
+      vDetail.style.color = "#cbd5e1";
+      vDetail.textContent = st.tradeReason || "-";
+    } else {
+      vBox.style.borderColor = "#1e293b";
+      vTitle.style.color = "#64748b";
+      vStatus.style.color = "#94a3b8";
+      vStatus.textContent = "STANDBY · MENUNGGU KANDIDAT TERVERIFIKASI";
+      vDetail.style.color = "#64748b";
+      vDetail.textContent = "Menunggu konvergensi sinyal EMA MTF & volume";
+    }
+
+    tick++;
+  }
+
+  async function pollLiveRadar() {
+    try {
+      const res = await fetch(LIVE_RADAR_URL + "?t=" + Date.now());
+      if (res.ok) remoteState = await res.json();
+    } catch (_) {}
+  }
+
+  setInterval(paintRadar, 260);
+  setInterval(pollLiveRadar, 2000);
+  paintRadar();
+  pollLiveRadar();
+})();
+</script>
+
 <!-- AI QUOTA MONITOR WIDGET WITH BATTERY BUBBLE DESIGN -->
 <div id="aiQuotaPanel" style="max-width:1200px;margin:12px auto;padding:14px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(148,163,184,0.22);">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">

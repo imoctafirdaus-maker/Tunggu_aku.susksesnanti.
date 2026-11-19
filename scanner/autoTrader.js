@@ -7,6 +7,7 @@ const path = require("path");
 const { checkNewsSafety } = require("./newsGuard");
 const { runTimeMachineCheck } = require("./monteCarlo");
 const { evaluateDualAiConsensus } = require("./dualAiGatekeeper");
+const { notifyAiRejection } = require("./telegramNotifier");
 
 const LIVE_FAPI_HOSTS = [
   "fapi.binance.com",
@@ -192,6 +193,87 @@ async function getSymbolFilters(symbol, creds) {
   };
 }
 
+
+async function recordAiRejection(rec, reason) {
+  try { await notifyAiRejection(rec, reason); } catch (_) {}
+  try {
+    const admin = require("firebase-admin");
+    const saPath = path.join(__dirname, "serviceAccountKey.json");
+    if (!admin.apps.length && fs.existsSync(saPath)) {
+      const sa = JSON.parse(fs.readFileSync(saPath, "utf8"));
+      admin.initializeApp({
+        credential: admin.credential.cert(sa),
+        databaseURL: "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app"
+      });
+    }
+    if (admin.apps.length) {
+      const ref = admin.database().ref("emaSignals/_aiRejections");
+      const snap = await ref.get();
+      const list = Array.isArray(snap.val()) ? snap.val() : [];
+      const item = {
+        symbol: rec.symbol,
+        timeframe: rec.timeframe || "5m",
+        signal: rec.signal || "BUY",
+        probability: Number(rec.probability || rec.score || 0),
+        entryPrice: rec.entryPrice || rec.price || null,
+        stopLoss: rec.stopLoss || null,
+        reason: String(reason || "Ditolak Dual-AI"),
+        rejectedAt: Date.now()
+      };
+      const filtered = list.filter(x => !(x && x.symbol === item.symbol && x.signal === item.signal && Math.abs(item.rejectedAt - (x.rejectedAt || 0)) < 900000));
+      filtered.unshift(item);
+      await ref.set(filtered.slice(0, 15));
+    }
+  } catch (_) {}
+}
+
+
+function calcEmaSeries(values, period) {
+  if (!Array.isArray(values) || values.length < period) return null;
+  const k = 2 / (period + 1);
+  let ema = values.slice(0, period).reduce((a, b) => a + b, 0) / period;
+  for (let i = period; i < values.length; i++) {
+    ema = values[i] * k + ema * (1 - k);
+  }
+  return ema;
+}
+
+async function checkBtcMacroRegime(rec) {
+  try {
+    if (!rec || rec.symbol === "BTCUSDT") return { pass: true };
+    const res = await fetch("https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=220");
+    if (!res.ok) return { pass: true };
+    const klines = await res.json();
+    const closes = (Array.isArray(klines) ? klines : []).map(k => Number(k[4])).filter(n => n > 0);
+    if (closes.length < 205) return { pass: true };
+
+    const price = closes[closes.length - 1];
+    const ema50 = calcEmaSeries(closes, 50);
+    const ema200 = calcEmaSeries(closes, 200);
+    const prob = Number(rec.probability || 0);
+    const dir = String(rec.signal || "").toUpperCase();
+
+    const isBearRegime = price < ema200 && ema50 < ema200;
+    const isBullRegime = price > ema200 && ema50 > ema200;
+
+    if (dir === "BUY" && isBearRegime && prob < 82) {
+      return {
+        pass: false,
+        reason: `Filter Makro BTC Bearish (BTC ${price.toFixed(0)} < EMA200 ${ema200.toFixed(0)}): BUY ditolak karena Prob ${prob}% < 82%`
+      };
+    }
+    if (dir === "SELL" && isBullRegime && prob < 82) {
+      return {
+        pass: false,
+        reason: `Filter Makro BTC Bullish (BTC ${price.toFixed(0)} > EMA200 ${ema200.toFixed(0)}): SELL ditolak karena Prob ${prob}% < 82%`
+      };
+    }
+    return { pass: true };
+  } catch (_) {
+    return { pass: true };
+  }
+}
+
 async function executeSignalTrade(rec, snap) {
   const MIN_EXEC_PROB = 75;
   const sigProb = Number(rec.probability ?? rec.winrate ?? rec.score ?? 0);
@@ -203,6 +285,10 @@ async function executeSignalTrade(rec, snap) {
   if (!creds || !creds.autoTrade) return { executed: false, reason: "Auto-Trade nonaktif" };
   if (!snap || !snap.ok) return { executed: false, reason: "Koneksi Futures gagal" };
 
+  const btcMacro = await checkBtcMacroRegime(rec);
+  if (!btcMacro.pass) {
+    return { executed: false, reason: btcMacro.reason };
+  }
   const newsCheck = await checkNewsSafety(rec, 30);
   if (!newsCheck.safe) {
     return { executed: false, reason: newsCheck.reason };
@@ -220,6 +306,7 @@ async function executeSignalTrade(rec, snap) {
   }
   const aiCheck = await evaluateDualAiConsensus(rec, tm);
   if (!aiCheck.approved) {
+    await recordAiRejection(rec, aiCheck.reason);
     return { executed: false, reason: aiCheck.reason };
   }
   rec._aiNote = aiCheck.summary;
@@ -247,6 +334,11 @@ async function executeSignalTrade(rec, snap) {
   try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol: rec.symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
   await fapiRequest("POST", "/fapi/v1/leverage", { symbol: rec.symbol, leverage: creds.leverage }, creds, true);
 
+  try {
+      const livePayload = { phase: "RESULT", candidate: rec.symbol, signal: rec.signal, groqStatus: "PASS", geminiStatus: "PASS", tradeResult: "SUCCESS", tradeReason: "Order MARKET berhasil dikirim ke Binance!", updatedAt: Date.now() };
+      require("fs").writeFileSync(require("path").join(__dirname, ".liveUiState.json"), JSON.stringify(livePayload, null, 2));
+      fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(livePayload) }).catch(() => {});
+    } catch (_) {}
   const side = rec.signal === "BUY" ? "BUY" : "SELL";
   const closeSide = side === "BUY" ? "SELL" : "BUY";
   const slPrice = roundStep(rec.stopLoss, filters.tickSize);
@@ -317,4 +409,73 @@ if (require.main === module && process.argv.includes("--test")) {
   })();
 }
 
-module.exports = { loadBinanceConfig, getFuturesSnapshot, executeSignalTrade };
+
+async function manageOpenPositions(snap) {
+  const creds = loadBinanceConfig();
+  if (!creds || !creds.autoTrade || !snap || !snap.ok || !Array.isArray(snap.openPositions) || !snap.openPositions.length) {
+    return [];
+  }
+  const closedResults = [];
+  const TARGET_ROI_PCT = 45; // Otomatis Take Profit saat ROI >= +45% (0.9% gerak harga di 50x)
+
+  for (const pos of snap.openPositions) {
+    try {
+      const sym = pos.symbol;
+      const amt = Number(pos.positionAmt ?? pos.amt ?? 0);
+      if (!sym || amt === 0) continue;
+
+      const entry = Number(pos.entryPrice || 0);
+      const upnl = Number(pos.unrealizedProfit ?? pos.unRealizedProfit ?? pos.pnl ?? 0);
+      const lev = Number(pos.leverage || creds.leverage || 50);
+      const notional = Math.abs(amt) * entry;
+      const initMargin = notional > 0 ? (notional / lev) : 0;
+      const roiPct = initMargin > 0 ? (upnl / initMargin) * 100 : 0;
+
+      // Cek apakah ada order TAKE_PROFIT aktif di Binance untuk simbol ini
+      let hasTpOrder = false;
+      try {
+        const openOrders = await fapiRequest("GET", "/fapi/v1/openOrders", { symbol: sym }, creds, true);
+        if (Array.isArray(openOrders)) {
+          hasTpOrder = openOrders.some(o => String(o.type || "").includes("TAKE_PROFIT"));
+        }
+      } catch (_) {}
+
+      // Tutup otomatis jika ROI >= 45%, ATAU jika order TP ternyata tidak terpasang di Binance saat ROI >= 20%
+      if (roiPct >= TARGET_ROI_PCT || (!hasTpOrder && roiPct >= 20)) {
+        const closeSide = amt > 0 ? "SELL" : "BUY";
+        const closeQty = Math.abs(amt);
+        const orderRes = await fapiRequest("POST", "/fapi/v1/order", {
+          symbol: sym,
+          side: closeSide,
+          type: "MARKET",
+          quantity: closeQty,
+          reduceOnly: "true"
+        }, creds, true);
+
+        // Bersihkan sisa order SL/TP di simbol tersebut
+        try { await fapiRequest("DELETE", "/fapi/v1/allOpenOrders", { symbol: sym }, creds, true); } catch (_) {}
+
+        const reasonText = roiPct >= TARGET_ROI_PCT
+          ? `Target ROI +${roiPct.toFixed(1)}% tercapai`
+          : `Proteksi TP (Order TP tidak terpasang di bursa, ROI +${roiPct.toFixed(1)}%)`;
+
+        closedResults.push({ symbol: sym, side: amt > 0 ? "LONG" : "SHORT", qty: closeQty, pnl: upnl, roiPct, reason: reasonText, orderId: orderRes.orderId });
+
+        try {
+          const { sendTelegramAlert } = require("./telegramNotifier");
+          await sendTelegramAlert(
+            `💰 *AUTO TAKE-PROFIT BERHASIL*\n` +
+            `• *Koin:* \`${sym}\` (${amt > 0 ? "LONG" : "SHORT"} ${lev}x)\n` +
+            `• *Profit Realisasi:* *+${upnl.toFixed(2)} USDT* (+${roiPct.toFixed(1)}% ROI)\n` +
+            `• *Alasan:* ${reasonText}`
+          );
+        } catch (_) {}
+      }
+    } catch (e) {
+      console.error(`[TP-GUARD] Gagal evaluasi posisi ${pos.symbol}:`, e.message);
+    }
+  }
+  return closedResults;
+}
+
+module.exports = { loadBinanceConfig, getFuturesSnapshot, executeSignalTrade, manageOpenPositions };
