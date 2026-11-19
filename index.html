@@ -1039,15 +1039,7 @@ const CONFIG = {
   interval: "5m",
   historyLimit: 500,
   costPct: 0.0012,
-  restEndpoints: [
-    "https://data-api.binance.vision",
-    "https://api.binance.com",
-    "https://api-gcp.binance.com",
-    "https://api1.binance.com",
-    "https://api2.binance.com",
-    "https://api3.binance.com",
-    "https://corsproxy.io/?https://api.binance.com"
-  ],
+  restEndpoints: ["https://data-api.binance.vision", "https://api.binance.com", "https://api-gcp.binance.com", "https://api1.binance.com", "https://api2.binance.com", "https://api3.binance.com", "https://corsproxy.io/?https://api.binance.com"],
   wsBases: ["wss://stream.binance.com:9443/ws/", "wss://data-stream.binance.vision/ws/"]
 };
 
@@ -1129,6 +1121,40 @@ async function loadTop500() {
     $("sourceText").textContent = `REST: ${new URL(base).hostname} · ${state.coinList.length} pasangan`;
     if (!state.candles.length) reconnectNow();
   } catch (e) {
+    try {
+      const fbRes = await fetchTimeout("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/signals.json?t=" + Date.now(), 10000);
+      if (fbRes.ok) {
+        const fbData = await fbRes.json();
+        const rows = fbData && typeof fbData === "object" ? Object.values(fbData) : [];
+        const fbList = rows
+          .filter(r => r && r.symbol && Number(r.price || r.entry || 0) > 0)
+          .sort((a, b) => Number(b.volume24h || b.quoteVolume || 0) - Number(a.volume24h || a.quoteVolume || 0))
+          .slice(0, 500)
+          .map(r => ({
+            symbol: r.symbol,
+            price: Number(r.price || r.entry || 0),
+            volume: Number(r.volume24h || r.quoteVolume || 1000000),
+            chg: Number(r.change24h || r.chg || 0)
+          }));
+        if (fbList.length) {
+          state.coinList = fbList;
+          if (!state.coinList.some(x => x.symbol === CONFIG.symbol)) CONFIG.symbol = state.coinList[0].symbol;
+          const sel = $("symbolSelect");
+          sel.innerHTML = "";
+          state.coinList.forEach((c, i) => {
+            const o = document.createElement("option");
+            o.value = c.symbol;
+            o.textContent = `${i + 1}. ${c.symbol} · Firebase Sync (${fmtP(c.price)})`;
+            sel.appendChild(o);
+          });
+          sel.value = CONFIG.symbol;
+          radarSetUniverse(state.coinList);
+          $("sourceText").textContent = `Firebase Relay · ${state.coinList.length} pasangan (Anti-Blokir ISP)`;
+          setStatus("Terhubung via Firebase Relay", "green");
+          return;
+        }
+      }
+    } catch (_) {}
     setStatus("Gagal memuat Top 500", "red");
   } finally {
     $("refreshCoinsButton").disabled = false;
