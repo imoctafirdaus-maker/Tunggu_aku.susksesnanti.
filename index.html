@@ -271,7 +271,14 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 
     const st = remoteState || {};
     const ageSec = st.updatedAt ? Math.floor((Date.now() - st.updatedAt) / 1000) : 999;
-    const phase = ageSec > 90 ? "SCANNING" : (st.phase || "SCANNING");
+    const isBotOn = window.__botControlState ? window.__botControlState.autoTrade !== false : true;
+    const dotEl = document.getElementById("ltrEngineDot");
+    const lblEl = document.getElementById("ltrEngineLabel");
+    if (dotEl && lblEl) {
+      dotEl.style.background = isBotOn ? "#4ade80" : "#f59e0b";
+      lblEl.textContent = isBotOn ? "ENGINE ONLINE" : "ENGINE STANDBY (OFF)";
+    }
+    const phase = !isBotOn ? "STANDBY" : (ageSec > 360 ? "SCANNING" : (st.phase || "SCANNING"));
     const isAuditing = phase === "AUDITING";
     const isResult = phase === "RESULT";
     const isCompleted = phase === "COMPLETED";
@@ -301,6 +308,14 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       pairVal.innerHTML = (st.candidate || "-") + " <span style=\"color:" + dirColor + ";\">" + dir + "</span>";
       stateVal.style.color = "#38bdf8";
       stateVal.textContent = "DISPATCHED TO AI";
+    } else if (phase === "STANDBY") {
+      leftBox.style.borderColor = "#334155";
+      leftHead.style.color = "#f59e0b";
+      leftHead.textContent = "01 · SCANNER PAUSED";
+      pairVal.style.color = "#94a3b8";
+      pairVal.textContent = "STANDBY";
+      stateVal.style.color = "#f59e0b";
+      stateVal.textContent = "SAKELAR OFF";
     } else if (isCompleted) {
       leftBox.style.borderColor = "#334155";
       leftHead.style.color = "#94a3b8";
@@ -365,7 +380,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       vBox.style.borderColor = "#1e293b";
       vTitle.style.color = "#64748b";
       vStatus.style.color = "#94a3b8";
-      vStatus.textContent = "STANDBY · MENUNGGU KANDIDAT TERVERIFIKASI";
+      vStatus.textContent = phase === "STANDBY" ? "NONAKTIF · SAKELAR AUTO-TRADE DALAM POSISI OFF" : "STANDBY · MENUNGGU KANDIDAT TERVERIFIKASI";
       vDetail.style.color = "#64748b";
       vDetail.textContent = "Menunggu konvergensi sinyal EMA MTF & volume";
     }

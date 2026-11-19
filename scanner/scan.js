@@ -316,9 +316,9 @@ async function main() {
     
     try {
       const timeWib = new Date().toTimeString().slice(0, 5) + " WIB";
-      const regCount = typeof records !== "undefined" && Array.isArray(records) ? records.length : 0;
-      const expCount = typeof emaExpertRecords !== "undefined" && Array.isArray(emaExpertRecords) ? emaExpertRecords.length : 0;
-      if (expCount === 0) {
+      const regTotal = (st && (st.buy + st.sell)) || 0;
+      const expTotal = (emaSt && (emaSt.buy + emaSt.sell)) || 0;
+      if (expTotal === 0) {
         const uiPayload = {
           phase: "COMPLETED",
           scanCoin: "TOP-500",
@@ -327,11 +327,11 @@ async function main() {
           groqStatus: "IDLE",
           geminiStatus: "IDLE",
           tradeResult: "IDLE",
-          tradeReason: `Siklus selesai (${timeWib}): 0 kandidat EMA Expert (${regCount} pola reguler disaring)`,
+          tradeReason: `Siklus selesai (${timeWib}): 0 kandidat EMA Expert (${regTotal} pola reguler disaring)`,
           updatedAt: Date.now()
         };
         require("fs").writeFileSync(require("path").join(__dirname, ".liveUiState.json"), JSON.stringify(uiPayload, null, 2));
-        fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json", {
+        await fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(uiPayload)
