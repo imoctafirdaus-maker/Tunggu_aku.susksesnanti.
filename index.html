@@ -102,6 +102,33 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   }
   .swc-nav-hamburger:active { scale: 0.90; background: #1e293b !important; }
 </style>
+
+<script id="swipe-hard-lock">
+(function() {
+    // 1. Matikan pembacaan swipe di seluruh window/document level
+    window.addEventListener("touchstart", function(e) {
+        if (e.touches && e.touches.length > 1) {
+            e.stopPropagation();
+        }
+    }, { capture: true, passive: true });
+
+    window.addEventListener("touchmove", function(e) {
+        // Jika pinch zoom (dua jari) atau interaksi di area canvas/chart, tahan pembacaan swipe tab
+        if ((e.touches && e.touches.length > 1) || e.target.closest("#tvchart, #chart, canvas, .tv-lightweight-charts")) {
+            e.stopPropagation();
+        }
+    }, { capture: true, passive: true });
+
+    // 2. Override fungsi perubah tab bawaan agar tidak merespons swipe
+    if (typeof window.switchTab === "function") {
+        const _origSwitch = window.switchTab;
+        window.switchTab = function(target, isFromGesture) {
+            if (isFromGesture) return false; // Abaikan jika dipanggil dari gestur swipe
+            return _origSwitch.apply(this, arguments);
+        };
+    }
+})();
+</script>
 </head>
 
 <button id="topNavMenuBtn" onclick="window.toggleNavMenu ? window.toggleNavMenu() : (document.body.classList.toggle(show-wifi-tab))" title="Menu Navigasi">☰</button>
