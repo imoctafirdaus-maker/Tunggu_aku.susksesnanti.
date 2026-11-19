@@ -79,32 +79,34 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 
 
 
+
 <style id="nav-toggle-style">
-  #topNavMenuBtn {
+  .swc-nav-hamburger {
     position: fixed !important;
     top: 6px !important;
-    right: 10px !important;
-    z-index: 9999999 !important;
+    right: 8px !important;
+    z-index: 2147483647 !important;
     background: #0f172a !important;
     color: #f59e0b !important;
     border: 2px solid #f59e0b !important;
-    border-radius: 8px !important;
-    width: 38px !important;
-    height: 38px !important;
-    font-size: 22px !important;
+    border-radius: 6px !important;
+    width: 42px !important;
+    height: 34px !important;
+    font-size: 20px !important;
     font-weight: bold !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     cursor: pointer !important;
-    box-shadow: 0 0 10px rgba(245, 158, 11, 0.6) !important;
+    box-shadow: 0 0 12px rgba(245, 158, 11, 0.8) !important;
   }
-  #topNavMenuBtn:active { scale: 0.92; background: #1e293b !important; }
+  .swc-nav-hamburger:active { scale: 0.90; background: #1e293b !important; }
 </style>
 </head>
 
 <button id="topNavMenuBtn" onclick="window.toggleNavMenu ? window.toggleNavMenu() : (document.body.classList.toggle(show-wifi-tab))" title="Menu Navigasi">☰</button>
 <body>
+<button class="swc-nav-hamburger" onclick="window.toggleNavMenu()" title="Menu Navigasi">☰</button>
 
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:12px;">
     <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
@@ -2169,5 +2171,36 @@ loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
   
 <script src="./swc/swc-ui.js?v=1795082093211"></script>
 <script type="module" src="firebase-signals.js"></script>
+
+<script id="nav-toggle-script">
+(function() {
+    window.toggleNavMenu = function() {
+        const wifiTab = document.getElementById("swcUiContainer") || document.querySelector(".swc-header-bridge") || document.getElementById("wifiGatewayTab");
+        const quantTab = document.getElementById("quantTerminalSuite") || document.getElementById("radarTab");
+        
+        if (quantTab) {
+            if (quantTab.style.display === "none") {
+                quantTab.style.display = "block";
+                if(wifiTab) wifiTab.style.display = "none";
+            } else {
+                quantTab.style.display = "none";
+                if(wifiTab) wifiTab.style.display = "block";
+            }
+        } else {
+            document.body.classList.toggle("show-wifi-tab");
+        }
+    };
+
+    // Matikan swipe otomatis horizontal yang mengganggu zoom chart
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartElem = document.getElementById("tvchart") || document.getElementById("chart") || document.body;
+        chartElem.addEventListener("touchmove", function(e) {
+            if (e.touches && e.touches.length > 1) {
+                e.stopPropagation(); // Blokir event pembacaan gesture tab saat zoom
+            }
+        }, { passive: false });
+    });
+})();
+</script>
 </body>
 </html>
