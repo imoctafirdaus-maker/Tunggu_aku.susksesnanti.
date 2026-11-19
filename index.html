@@ -2503,15 +2503,7 @@ loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
         radial-gradient(120% 45% at 50% 0%, rgba(234, 88, 12, 0.08) 0%, rgba(250, 246, 240, 0) 70%),
         var(--ag-cream) !important;
     }
-    #swc-top-switcher {
-      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 54px !important;
-      z-index: 999999 !important;
-      background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%) !important;
-      border-bottom: 1px solid rgba(154, 52, 18, 0.45) !important;
-      box-shadow: 0 4px 14px -4px rgba(194, 65, 12, 0.35) !important;
-      display: flex !important; align-items: center !important; justify-content: space-between !important;
-      padding: 0 14px !important; font-family: var(--ag-sans) !important; box-sizing: border-box;
-    }
+    #swc-top-switcher { position: sticky; top: 0; z-index: 9999; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #090e1a; border-bottom: 1px solid #1e293b; font-family: "JetBrains Mono", ui-monospace, monospace; transition: background 0.2s ease, border-color 0.2s ease; }
     .ag-seg {
       display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px;
       background: rgba(124, 45, 18, 0.35); border: 1px solid rgba(255, 255, 255, 0.18);
@@ -2802,56 +2794,52 @@ loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
     const badgeEl = switcher ? switcher.querySelector(".ag-badge-env") : null;
     const menuBtn = document.getElementById("swc-hamburger-btn");
     const dropdown = document.getElementById("swc-menu-dropdown");
-
     const isWifi = currentTab === "wifi";
 
-    // Terapkan tema dinamis pada headbar sesuai halaman aktif
     if (switcher) {
       if (isWifi) {
-        // Tema Gateway Wi-Fi: Oranye & Krem
-        switcher.style.background = "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)";
-        switcher.style.borderBottom = "1px solid #fdba74";
-        switcher.style.boxShadow = "0 4px 16px rgba(234, 88, 12, 0.25)";
+        switcher.style.setProperty("background", "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)", "important");
+        switcher.style.setProperty("border-bottom", "1px solid #fdba74", "important");
+        switcher.style.setProperty("box-shadow", "0 4px 16px rgba(234, 88, 12, 0.25)", "important");
       } else {
-        // Tema Radar Sinyal: Gelap Kuantitatif selaras UI utama
-        switcher.style.background = "#090e1a";
-        switcher.style.borderBottom = "1px solid #1e293b";
-        switcher.style.boxShadow = "0 4px 16px rgba(2, 6, 23, 0.65)";
+        switcher.style.setProperty("background", "#090e1a", "important");
+        switcher.style.setProperty("border-bottom", "1px solid #1e293b", "important");
+        switcher.style.setProperty("box-shadow", "0 4px 16px rgba(2, 6, 23, 0.75)", "important");
       }
     }
 
     if (titleEl) {
       titleEl.textContent = isWifi ? "GATEWAY WI-FI" : "RADAR SINYAL";
-      titleEl.style.color = isWifi ? "#fffbeb" : "#f8fafc";
+      titleEl.style.setProperty("color", isWifi ? "#fffbeb" : "#f8fafc", "important");
     }
 
     if (badgeEl) {
-      badgeEl.style.background = isWifi ? "#fef3c7" : "#111827";
-      badgeEl.style.color = isWifi ? "#9a3412" : "#38bdf8";
-      badgeEl.style.border = isWifi ? "1px solid #fcd34d" : "1px solid #1e293b";
-      badgeEl.style.fontWeight = "700";
+      badgeEl.style.setProperty("background", isWifi ? "#fef3c7" : "#111827", "important");
+      badgeEl.style.setProperty("color", isWifi ? "#9a3412" : "#38bdf8", "important");
+      badgeEl.style.setProperty("border", isWifi ? "1px solid #fcd34d" : "1px solid #1e293b", "important");
     }
 
     if (menuBtn) {
-      menuBtn.style.background = isWifi ? "#fffbeb" : "#111827";
-      menuBtn.style.color = isWifi ? "#c2410c" : "#38bdf8";
-      menuBtn.style.border = isWifi ? "1px solid #fde68a" : "1px solid #334155";
+      menuBtn.style.setProperty("background", isWifi ? "#fffbeb" : "#111827", "important");
+      menuBtn.style.setProperty("color", isWifi ? "#c2410c" : "#38bdf8", "important");
+      menuBtn.style.setProperty("border", isWifi ? "1px solid #fde68a" : "1px solid #334155", "important");
+      menuBtn.style.setProperty("z-index", "10001", "important");
     }
 
     if (dropdown) {
-      dropdown.style.background = isWifi ? "#fffbeb" : "#0f172a";
-      dropdown.style.border = isWifi ? "1px solid #fdba74" : "1px solid #334155";
+      dropdown.style.setProperty("background", isWifi ? "#fffbeb" : "#0f172a", "important");
+      dropdown.style.setProperty("border", isWifi ? "1px solid #fdba74" : "1px solid #334155", "important");
     }
 
     document.querySelectorAll(".swc-tab-btn").forEach(b => {
       const isAct = b.dataset.tab === currentTab;
       b.classList.toggle("active", isAct);
       if (isWifi) {
-        b.style.background = isAct ? "#ffedd5" : "transparent";
-        b.style.color = isAct ? "#c2410c" : "#7c2d12";
+        b.style.setProperty("background", isAct ? "#ffedd5" : "transparent", "important");
+        b.style.setProperty("color", isAct ? "#c2410c" : "#7c2d12", "important");
       } else {
-        b.style.background = isAct ? "rgba(56, 189, 248, 0.15)" : "transparent";
-        b.style.color = isAct ? "#38bdf8" : "#cbd5e1";
+        b.style.setProperty("background", isAct ? "rgba(56, 189, 248, 0.15)" : "transparent", "important");
+        b.style.setProperty("color", isAct ? "#38bdf8" : "#cbd5e1", "important");
       }
     });
 
