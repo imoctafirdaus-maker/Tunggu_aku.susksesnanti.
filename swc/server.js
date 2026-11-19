@@ -1,3 +1,53 @@
+
+// [SWC-DIAG] Endpoint pengukuran latensi gateway & deteksi hambatan Wi-Fi
+async function runNetDiag(devices = []) {
+  const { exec } = require("child_process");
+  const pingHost = (host) => new Promise((resolve) => {
+    exec(`ping -c 4 -W 1 ${host}`, (err, stdout) => {
+      const out = String(stdout || "");
+      const lossMatch = out.match(/(\d+)%\s*packet\s*loss/i);
+      const rttMatch = out.match(/rtt\s+min\/avg\/max\/mdev\s*=\s*([\d.]+)\/([\d.]+)\/([\d.]+)\/([\d.]+)/i);
+      resolve({
+        ok: !err && !!rttMatch,
+        loss: lossMatch ? parseInt(lossMatch[1], 10) : 100,
+        min: rttMatch ? parseFloat(rttMatch[1]) : null,
+        avg: rttMatch ? parseFloat(rttMatch[2]) : null,
+        max: rttMatch ? parseFloat(rttMatch[3]) : null,
+        jitter: rttMatch ? parseFloat(rttMatch[4]) : null
+      });
+    });
+  });
+
+  const [gw, wan] = await Promise.all([pingHost("192.168.1.1"), pingHost("1.1.1.1")]);
+  const onlineDevs = (devices || []).filter(d => d.status === "online");
+  const unknownOnline = onlineDevs.filter(d => !d.is_known);
+  const issues = [];
+
+  if (!gw.ok || gw.loss > 0) {
+    issues.push({ level: "high", title: "Interferensi Sinyal / Packet Loss Lokal", detail: `Hilang paket ${gw.loss}% menuju router 192.168.1.1 (jarak terlalu jauh atau kanal Wi-Fi penuh).` });
+  }
+  if (gw.avg !== null && gw.avg > 25) {
+    issues.push({ level: "high", title: "Latensi Lokal Router Tinggi (" + gw.avg + " ms)", detail: "Trafik Wi-Fi padat atau router ZTE F672Y mengalami antrean paket (bufferbloat)." });
+  }
+  if (gw.jitter !== null && gw.jitter > 15) {
+    issues.push({ level: "warn", title: "Kestabilan Sinyal Fluktuatif (Jitter " + gw.jitter + " ms)", detail: "Sinyal Wi-Fi tidak stabil, menyebabkan game online atau video call tersendat." });
+  }
+  if (unknownOnline.length > 0) {
+    issues.push({ level: "high", title: `${unknownOnline.length} Perangkat Asing Aktif Menyedot Bandwidth`, detail: unknownOnline.map(d => `${d.alias || d.hostname} (${d.ip})`).join(", ") });
+  }
+  if (onlineDevs.length >= 6) {
+    issues.push({ level: "warn", title: `Kepadatan Klien Tinggi (${onlineDevs.length} Perangkat Online)`, detail: "Banyak perangkat aktif bersamaan membagi kapasitas airtime Wi-Fi 2.4GHz." });
+  }
+  if (gw.ok && (!wan.ok || (wan.avg !== null && wan.avg > 90))) {
+    issues.push({ level: "warn", title: "Hambatan Jalur ISP / WAN Eksternal", detail: wan.ok ? `Ping internet tinggi (${wan.avg} ms) sementara Wi-Fi lokal normal.` : "Router terhubung, namun jalur internet ISP sedang putus/timeout." });
+  }
+  if (issues.length === 0) {
+    issues.push({ level: "ok", title: "Tidak Ditemukan Hambatan Jaringan", detail: `Gateway 192.168.1.1 responsif (${gw.avg ?? "-"} ms) dan jalur internet normal (${wan.avg ?? "-"} ms).` });
+  }
+
+  return { ok: true, gw, wan, onlineCount: onlineDevs.length, unknownOnlineCount: unknownOnline.length, issues, testedAt: Date.now() };
+}
+
 "use strict";
 const http = require("http");
 const https = require("https");
@@ -318,3 +368,15 @@ try {
 } catch (err) {
   console.error("[SWC] Error HTTPS Bridge:", err.message);
 }
+
+
+// HEARTBEAT_KEEP_ALIVE: Ping router setiap 45 detik agar sesi tidak expire
+setInterval(async () => {
+  try {
+    if (typeof zteDriver !== "undefined" && zteDriver) {
+      await zteDriver.getConnectedDevices();
+    }
+  } catch (e) {
+    // Silent catch, auto-relogin akan menangani jika cookie expired
+  }
+}, 45000);

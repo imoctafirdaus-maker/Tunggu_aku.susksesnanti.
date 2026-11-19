@@ -9,6 +9,8 @@
   let filterMode = "all";
   let searchQuery = "";
   let isMutating = false;
+  let speedState = { running: false, phase: "SIAP UJI", mbps: 0, ping: null, jitter: null, gwPing: null, progress: 0 };
+  let diagState = { scanning: false, result: null };
   let swcData = {
     state: { routerOnline: false, lastScanAt: null, lastError: "MENGHUBUNGKAN KE GATEWAY..." },
     devices: [],
@@ -258,6 +260,27 @@
     }
     @keyframes agSpin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
     .ag-spin { animation: agSpin 0.8s linear infinite; }
+
+    .ag-speed-grid { display: grid; grid-template-columns: 155px 1fr; gap: 12px; align-items: center; }
+    @media (max-width: 500px) { .ag-speed-grid { grid-template-columns: 1fr; } }
+    .ag-gauge-wrap { position: relative; width: 155px; height: 96px; margin: 0 auto; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
+    .ag-gauge-val { font-family: var(--ag-mono); font-size: 22px; font-weight: 800; color: var(--ag-ink); line-height: 1; font-variant-numeric: tabular-nums; }
+    .ag-gauge-unit { font-family: var(--ag-mono); font-size: 9.5px; font-weight: 700; color: var(--ag-orange); letter-spacing: 0.06em; margin-top: 2px; }
+    .ag-mini-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+    .ag-mini-box { background: var(--ag-cream); border: 1px solid var(--ag-stroke); border-radius: 8px; padding: 7px 8px; }
+    .ag-mini-lbl { font-family: var(--ag-mono); font-size: 9px; font-weight: 700; color: var(--ag-ink-dim); }
+    .ag-mini-val { font-family: var(--ag-mono); font-size: 13px; font-weight: 700; color: var(--ag-ink); margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .ag-diag-item { display: flex; gap: 8px; align-items: flex-start; padding: 8px 10px; border-radius: 9px; margin-top: 7px; border: 1px solid var(--ag-stroke); background: var(--ag-cream); }
+    .ag-diag-item.high { background: #FEF2F2; border-color: #FECACA; }
+    .ag-diag-item.warn { background: #FFFBEB; border-color: #FDE68A; }
+    .ag-diag-item.ok { background: #ECFDF5; border-color: #A7F3D0; }
+    .ag-diag-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 4px; flex-shrink: 0; background: var(--ag-orange); }
+    .ag-diag-item.high .ag-diag-dot { background: #DC2626; }
+    .ag-diag-item.warn .ag-diag-dot { background: #D97706; }
+    .ag-diag-item.ok .ag-diag-dot { background: #059669; }
+    .ag-diag-t { font-size: 12px; font-weight: 700; color: var(--ag-ink); }
+    .ag-diag-d { font-size: 11px; color: var(--ag-ink-muted); margin-top: 2px; line-height: 1.35; }
+  
 `;
   document.head.appendChild(style);
 
@@ -483,6 +506,66 @@
           </div>
         </div>
 
+        
+        <div class="ag-glass" id="swc-speed-card">
+          <div class="ag-sec-title" style="justify-content:space-between">
+            <span style="display:inline-flex;align-items:center;gap:6px">${SVG.radar}<span>Speedmeter & Diagnosa Hambatan Wi-Fi</span></span>
+            <span style="font-family:var(--ag-mono);font-size:10px;color:var(--ag-orange)">${esc(speedState.phase)}</span>
+          </div>
+          <div class="ag-speed-grid">
+            <div class="ag-gauge-wrap">
+              <svg viewBox="0 0 160 95" width="155" height="92" style="position:absolute;top:0;left:0">
+                <path d="M 16 84 A 64 64 0 0 1 144 84" fill="none" stroke="#E6DDD0" stroke-width="11" stroke-linecap="round"/>
+                <path d="M 16 84 A 64 64 0 0 1 144 84" fill="none" stroke="#EA580C" stroke-width="11" stroke-linecap="round"
+                  stroke-dasharray="201" stroke-dashoffset="${Math.max(0, 201 - (Math.min(speedState.mbps, 100) / 100) * 201)}"/>
+              </svg>
+              <div class="ag-gauge-val">${speedState.mbps > 0 ? speedState.mbps.toFixed(1) : "0.0"}</div>
+              <div class="ag-gauge-unit">MBPS DOWNLOAD</div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <div class="ag-mini-stats">
+                <div class="ag-mini-box">
+                  <div class="ag-mini-lbl">PING WAN</div>
+                  <div class="ag-mini-val">${speedState.ping !== null ? speedState.ping + " ms" : "--"}</div>
+                </div>
+                <div class="ag-mini-box">
+                  <div class="ag-mini-lbl">ROUTER</div>
+                  <div class="ag-mini-val">${speedState.gwPing !== null ? speedState.gwPing + " ms" : "--"}</div>
+                </div>
+                <div class="ag-mini-box">
+                  <div class="ag-mini-lbl">JITTER</div>
+                  <div class="ag-mini-val">${speedState.jitter !== null ? speedState.jitter + " ms" : "--"}</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:6px">
+                <button class="swc-btn swc-btn-primary" style="flex:1" id="swc-btn-speed" ${speedState.running ? "disabled" : ""}>
+                  ${speedState.running ? SVG.spin : SVG.radar}<span>${speedState.running ? "Mengukur..." : "Tes Kecepatan"}</span>
+                </button>
+                <button class="swc-btn" style="flex:1" id="swc-btn-diag" ${diagState.scanning ? "disabled" : ""}>
+                  ${diagState.scanning ? SVG.spin : SVG.search}<span>${diagState.scanning ? "Menganalisis..." : "Scan Hambatan"}</span>
+                </button>
+              </div>
+            </div>
+          </div>
+          ${diagState.result ? `
+            <div style="margin-top:10px;padding-top:8px;border-top:1px solid var(--ag-stroke)">
+              <div style="font-family:var(--ag-mono);font-size:10px;font-weight:700;color:var(--ag-ink-dim);display:flex;justify-content:space-between">
+                <span>HASIL AUDIT PENGHAMBAT WI-FI</span>
+                <span>LOSS: ${diagState.result.gw?.loss ?? 0}% • AKTIF: ${diagState.result.onlineCount ?? devs.filter(d=>d.status==="online").length} DEVICE</span>
+              </div>
+              ${(diagState.result.issues || []).map(it => `
+                <div class="ag-diag-item ${esc(it.level)}">
+                  <span class="ag-diag-dot"></span>
+                  <div>
+                    <div class="ag-diag-t">${esc(it.title)}</div>
+                    <div class="ag-diag-d">${esc(it.detail)}</div>
+                  </div>
+                </div>
+              `).join("")}
+            </div>
+          ` : ""}
+        </div>
+  
         <div class="ag-toolbar">
           <div class="ag-search">
             ${SVG.search}
@@ -577,6 +660,92 @@
       }
     }
 
+    
+    document.getElementById("swc-btn-speed")?.addEventListener("click", async () => {
+      if (speedState.running) return;
+      speedState = { ...speedState, running: true, phase: "PING & JITTER...", mbps: 0 };
+      renderSwc();
+      try {
+        // 1. Ukur ping & jitter internet via Cloudflare trace
+        const rtts = [];
+        for (let i = 0; i < 4; i++) {
+          const t0 = performance.now();
+          await fetch("https://1.1.1.1/cdn-cgi/trace?t=" + Date.now() + i, { cache: "no-store" });
+          rtts.push(performance.now() - t0);
+        }
+        const avgPing = Math.round(rtts.reduce((a, b) => a + b, 0) / rtts.length);
+        const jitter = Math.round(Math.max(...rtts) - Math.min(...rtts));
+        speedState = { ...speedState, phase: "DOWNLOAD STREAM...", ping: avgPing, jitter };
+        renderSwc();
+
+        // 2. Ukur kecepatan download nyata (8MB stream dari Cloudflare speed endpoint)
+        const dlStart = performance.now();
+        const res = await fetch("https://speed.cloudflare.com/__down?bytes=8000000&t=" + Date.now(), { cache: "no-store" });
+        const reader = res.body.getReader();
+        let received = 0;
+        let lastUi = 0;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          received += value.length;
+          const elapsed = (performance.now() - dlStart) / 1000;
+          if (elapsed > 0.15 && performance.now() - lastUi > 180) {
+            speedState.mbps = (received * 8) / (elapsed * 1000000);
+            lastUi = performance.now();
+            renderSwc();
+          }
+        }
+        const totalSec = Math.max(0.1, (performance.now() - dlStart) / 1000);
+        const finalMbps = (received * 8) / (totalSec * 1000000);
+        speedState = { ...speedState, running: false, phase: "SELESAI", mbps: finalMbps };
+      } catch (e) {
+        speedState = { ...speedState, running: false, phase: "GAGAL UJI" };
+      }
+      renderSwc();
+    });
+
+    document.getElementById("swc-btn-diag")?.addEventListener("click", async () => {
+      if (diagState.scanning) return;
+      diagState = { ...diagState, scanning: true };
+      renderSwc();
+      try {
+        const r = await fetchWithFallback("/api/net-diag");
+        const j = await r.json();
+        // Gabungkan analisis lokal client jika perangkat asing terdeteksi di state UI
+        const devs = swcData.devices || [];
+        const onlineDevs = devs.filter(d => d.status === "online");
+        const unknownOnline = onlineDevs.filter(d => !d.is_known);
+        const issues = Array.isArray(j.issues) ? [...j.issues] : [];
+        if (unknownOnline.length > 0 && !issues.some(x => x.title.includes("Perangkat Asing"))) {
+          issues.unshift({
+            level: "high",
+            title: `${unknownOnline.length} Perangkat Asing Aktif di Wi-Fi`,
+            detail: unknownOnline.map(d => `${d.alias || d.hostname} (${d.ip})`).join(", ")
+          });
+        }
+        if (j.gw && j.gw.avg !== null) speedState.gwPing = Math.round(j.gw.avg);
+        if (j.wan && j.wan.avg !== null && speedState.ping === null) speedState.ping = Math.round(j.wan.avg);
+        diagState = { scanning: false, result: { ...j, onlineCount: onlineDevs.length, issues } };
+      } catch (e) {
+        // Fallback analisis dari data perangkat saat ini jika endpoint belum merespons
+        const devs = swcData.devices || [];
+        const onlineDevs = devs.filter(d => d.status === "online");
+        const unknownOnline = onlineDevs.filter(d => !d.is_known);
+        const fallbackIssues = [];
+        if (unknownOnline.length > 0) {
+          fallbackIssues.push({ level: "high", title: `${unknownOnline.length} Perangkat Asing Menyedot Bandwidth`, detail: unknownOnline.map(d => `${d.alias || d.hostname} (${d.ip})`).join(", ") });
+        }
+        if (onlineDevs.length >= 5) {
+          fallbackIssues.push({ level: "warn", title: `${onlineDevs.length} Perangkat Online Bersamaan`, detail: "Kepadatan trafik Wi-Fi membagi kecepatan unduh antar perangkat." });
+        }
+        if (fallbackIssues.length === 0) {
+          fallbackIssues.push({ level: "ok", title: "Tidak Ada Perangkat Asing Aktif", detail: `Tercatat ${onlineDevs.length} perangkat resmi terhubung ke router.` });
+        }
+        diagState = { scanning: false, result: { gw: { loss: 0 }, onlineCount: onlineDevs.length, issues: fallbackIssues } };
+      }
+      renderSwc();
+    });
+  
     document.getElementById("swc-btn-scan")?.addEventListener("click", async () => {
       if (isMutating) return;
       const btn = document.getElementById("swc-btn-scan");
