@@ -269,6 +269,63 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 })();
 </script>
 
+<!-- AI REJECTION LOG WIDGET -->
+<div id="aiRejectionPanel" style="max-width:1200px;margin:12px auto;padding:14px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(239,68,68,0.28);">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span style="font-size:13px;">🛑</span>
+      <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#fca5a5;font-weight:700;">Log Penolakan Dual-AI (Audit Risiko)</div>
+    </div>
+    <div id="aiRejectionUpdated" style="font-size:11px;color:#64748b;">Menunggu audit...</div>
+  </div>
+  <div id="aiRejectionList" style="display:flex;flex-direction:column;gap:8px;">
+    <div style="font-size:12px;color:#94a3b8;">Belum ada catatan penolakan AI terbaru.</div>
+  </div>
+</div>
+<script>
+(function() {
+  const REJ_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiRejections.json";
+  function esc(s) {
+    return String(s || "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
+  }
+  async function refreshAiRejections() {
+    try {
+      const res = await fetch(REJ_URL + "?t=" + Date.now());
+      if (!res.ok) return;
+      const list = await res.json();
+      const box = document.getElementById("aiRejectionList");
+      const upd = document.getElementById("aiRejectionUpdated");
+      if (!Array.isArray(list) || !list.length) return;
+      if (upd && list[0].rejectedAt) {
+        upd.textContent = "Terakhir: " + new Date(list[0].rejectedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+      }
+      if (box) {
+        box.innerHTML = list.slice(0, 6).map(item => {
+          const isBuy = String(item.signal).toUpperCase() === "BUY";
+          const dirColor = isBuy ? "#4ade80" : "#f87171";
+          const tm = item.rejectedAt ? new Date(item.rejectedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) : "";
+          return `
+            <div style="background:#0b1220;border:1px solid rgba(239,68,68,0.22);border-left:3px solid #ef4444;border-radius:8px;padding:9px 12px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;gap:8px;">
+                <div style="font-size:12px;font-weight:700;color:#f1f5f9;">
+                  ${esc(item.symbol)} <span style="color:#94a3b8;font-weight:500;">(${esc(item.timeframe || "5m")})</span>
+                  · <span style="color:${dirColor};">${esc(item.signal)}</span>
+                  ${item.probability ? `<span style="color:#94a3b8;font-weight:500;"> · Prob ${esc(item.probability)}%</span>` : ""}
+                </div>
+                <span style="font-size:11px;color:#64748b;font-family:monospace;">${tm}</span>
+              </div>
+              <div style="font-size:12px;color:#fca5a5;line-height:1.45;">${esc(item.reason)}</div>
+            </div>
+          `;
+        }).join("");
+      }
+    } catch (_) {}
+  }
+  refreshAiRejections();
+  setInterval(refreshAiRejections, 8000);
+})();
+</script>
+
 <!-- PORTFOLIO FETCH SCRIPT -->
 <script>
 (function() {
