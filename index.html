@@ -1039,8 +1039,8 @@ const CONFIG = {
   interval: "5m",
   historyLimit: 500,
   costPct: 0.0012,
-  restEndpoints: ["https://data-api.binance.vision", "https://api.binance.com", "https://api-gcp.binance.com", "https://api1.binance.com", "https://api2.binance.com", "https://api3.binance.com", "https://corsproxy.io/?https://api.binance.com"],
-  wsBases: ["wss://stream.binance.com:9443/ws/", "wss://data-stream.binance.vision/ws/"]
+  restEndpoints: ["https://data-api.binance.vision", "https://api-gcp.binance.com", "https://api1.binance.com"],
+  wsBases: ["wss://data-stream.binance.vision/ws/", "wss://stream.binance.com:9443/ws/"]
 };
 
 const SIG = { window: 300, minCandles: 60, minValid: 7, maxBars: 24, minSample: 30, backtestStart: 100 };
@@ -1077,7 +1077,7 @@ function fmtTime(t) { return finite(t) ? new Date(t).toLocaleString("id-ID", { d
 function compactUSD(n) { return n >= 1e9 ? "$" + (n / 1e9).toFixed(2) + "B" : n >= 1e6 ? "$" + (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? "$" + (n / 1e3).toFixed(1) + "K" : "$" + Math.round(n); }
 function setStatus(t, c = "yellow") { $("connectionText").textContent = t; $("lastUpdate").textContent = "Terakhir: " + new Date().toLocaleTimeString("id-ID"); $("connectionDot").style.background = ({ green: "#22c55e", yellow: "#facc15", red: "#ef4444" })[c] || "#94a3b8"; }
 
-async function fetchTimeout(url, ms = 12000) {
+async function fetchTimeout(url, ms = 4000) {
   const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
   try { return await fetch(url, { signal: c.signal, cache: "no-store" }); } finally { clearTimeout(t); }
 }
@@ -1095,19 +1095,14 @@ async function apiFetch(path) {
 
 async function loadTop500() {
   $("refreshCoinsButton").disabled = true;
-  try {
-    const [{ data: ex, base }, { data: ticks }] = await Promise.all([apiFetch("/api/v3/exchangeInfo"), apiFetch("/api/v3/ticker/24hr")]);
-    const valid = new Set(ex.symbols.filter(s => s.status === "TRADING" && s.isSpotTradingAllowed && s.quoteAsset === "USDT" && s.baseAsset !== "USDT").map(s => s.symbol));
-    const excluded = /(UPUSDT|DOWNUSDT|BULLUSDT|BEARUSDT|[235]LUSDT|[235]SUSDT)$/;
-    const stable = /^(USDC|FDUSD|TUSD|USDP|DAI|BUSD|AEUR|EUR|USD1|RLUSD|USDE|UST)USDT$/;
+  const excluded = /(UPUSDT|DOWNUSDT|BULLUSDT|BEARUSDT|[235]LUSDT|[235]SUSDT)$/;
+  const stable = /^(USDC|FDUSD|TUSD|USDP|DAI|BUSD|AEUR|EUR|USD1|RLUSD|USDE|UST)USDT$/;
 
-    state.coinList = ticks
-      .filter(t => valid.has(t.symbol) && !excluded.test(t.symbol) && !stable.test(t.symbol) && finite(+t.quoteVolume) && +t.lastPrice > 0)
-      .sort((a, b) => +b.quoteVolume - +a.quoteVolume)
-      .slice(0, 500)
-      .map(t => ({ symbol: t.symbol, price: +t.lastPrice, volume: +t.quoteVolume, chg: +t.priceChangePercent }));
-
-    if (!state.coinList.some(x => x.symbol === CONFIG.symbol) && state.coinList.length) CONFIG.symbol = state.coinList[0].symbol;
+  const applyList = (list, sourceLabel, statusText) => {
+    state.coinList = list;
+    if (!state.coinList.some(x => x.symbol === CONFIG.symbol) && state.coinList.length) {
+      CONFIG.symbol = state.coinList[0].symbol;
+    }
     const sel = $("symbolSelect");
     sel.innerHTML = "";
     state.coinList.forEach((c, i) => {
@@ -1117,40 +1112,54 @@ async function loadTop500() {
       sel.appendChild(o);
     });
     sel.value = CONFIG.symbol;
-    radarSetUniverse(state.coinList);
-    $("sourceText").textContent = `REST: ${new URL(base).hostname} · ${state.coinList.length} pasangan`;
-    if (!state.candles.length) reconnectNow();
+    if (typeof radarSetUniverse === "function") radarSetUniverse(state.coinList);
+    $("sourceText").textContent = sourceLabel;
+    setStatus(statusText, "green");
+    if (!state.candles.length && typeof reconnectNow === "function") reconnectNow();
+  };
+
+  try {
+    const { data: ticks, base } = await apiFetch("/api/v3/ticker/24hr");
+    const list = (Array.isArray(ticks) ? ticks : [])
+      .filter(t => t && String(t.symbol).endsWith("USDT") && t.symbol !== "USDTUSDT" && !excluded.test(t.symbol) && !stable.test(t.symbol) && finite(+t.quoteVolume) && +t.quoteVolume > 500000 && +t.lastPrice > 0)
+      .sort((a, b) => +b.quoteVolume - +a.quoteVolume)
+      .slice(0, 500)
+      .map(t => ({ symbol: t.symbol, price: +t.lastPrice, volume: +t.quoteVolume, chg: +t.priceChangePercent }));
+
+    if (!list.length) throw Error("Data ticker kosong");
+    applyList(list, `REST: ${new URL(base).hostname} · ${list.length} pasangan`, "Terhubung (Tanpa VPN)");
   } catch (e) {
     try {
-      const fbRes = await fetchTimeout("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/signals.json?t=" + Date.now(), 10000);
+      const fbRes = await fetchTimeout("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals.json?t=" + Date.now(), 6000);
       if (fbRes.ok) {
         const fbData = await fbRes.json();
-        const rows = fbData && typeof fbData === "object" ? Object.values(fbData) : [];
-        const fbList = rows
-          .filter(r => r && r.symbol && Number(r.price || r.entry || 0) > 0)
-          .sort((a, b) => Number(b.volume24h || b.quoteVolume || 0) - Number(a.volume24h || a.quoteVolume || 0))
-          .slice(0, 500)
-          .map(r => ({
-            symbol: r.symbol,
-            price: Number(r.price || r.entry || 0),
-            volume: Number(r.volume24h || r.quoteVolume || 1000000),
-            chg: Number(r.change24h || r.chg || 0)
-          }));
-        if (fbList.length) {
-          state.coinList = fbList;
-          if (!state.coinList.some(x => x.symbol === CONFIG.symbol)) CONFIG.symbol = state.coinList[0].symbol;
-          const sel = $("symbolSelect");
-          sel.innerHTML = "";
-          state.coinList.forEach((c, i) => {
-            const o = document.createElement("option");
-            o.value = c.symbol;
-            o.textContent = `${i + 1}. ${c.symbol} · Firebase Sync (${fmtP(c.price)})`;
-            sel.appendChild(o);
+        const rows = [];
+        const walk = (obj) => {
+          if (!obj || typeof obj !== "object") return;
+          if (obj.symbol && (obj.price || obj.entry)) {
+            rows.push(obj);
+            return;
+          }
+          Object.entries(obj).forEach(([k, v]) => {
+            if (!k.startsWith("_")) walk(v);
           });
-          sel.value = CONFIG.symbol;
-          radarSetUniverse(state.coinList);
-          $("sourceText").textContent = `Firebase Relay · ${state.coinList.length} pasangan (Anti-Blokir ISP)`;
-          setStatus("Terhubung via Firebase Relay", "green");
+        };
+        walk(fbData);
+        const dedup = new Map();
+        rows.forEach(r => {
+          const sym = String(r.symbol).toUpperCase();
+          if (!dedup.has(sym)) {
+            dedup.set(sym, {
+              symbol: sym,
+              price: Number(r.price || r.entry || 0),
+              volume: Number(r.volume24h || r.quoteVolume || 1000000),
+              chg: Number(r.change24h || r.chg || 0)
+            });
+          }
+        });
+        const fbList = Array.from(dedup.values()).filter(x => x.price > 0).slice(0, 500);
+        if (fbList.length) {
+          applyList(fbList, `Firebase Relay · ${fbList.length} pasangan (Anti-Blokir ISP)`, "Terhubung via Firebase Relay");
           return;
         }
       }
