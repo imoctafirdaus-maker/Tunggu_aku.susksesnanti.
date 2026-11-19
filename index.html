@@ -46,7 +46,10 @@ if ("caches" in window) {
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#070b14">
-<link rel="manifest" href="manifest.json">
+<link rel="manifest" href="./manifest.json">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <link rel="apple-touch-icon" href="1791748937891.jpg">
 <title>Binance Top 500 · Multi-Indicator + EMA Expert + Early Volume Radar</title>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -3095,6 +3098,14 @@ loadTop500().then(() => { if (!state.candles.length) fetchHistory(); });
         }, { passive: false });
     });
 })();
+</script>
+
+<script>
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}
 </script>
 </body>
 </html>
