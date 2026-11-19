@@ -110,56 +110,6 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 
 
 
-<style id="nav-toggle-style">
-  .swc-nav-hamburger {
-    position: fixed !important;
-    top: 6px !important;
-    right: 8px !important;
-    z-index: 2147483647 !important;
-    background: #0f172a !important;
-    color: #f59e0b !important;
-    border: 2px solid #f59e0b !important;
-    border-radius: 6px !important;
-    width: 42px !important;
-    height: 34px !important;
-    font-size: 20px !important;
-    font-weight: bold !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    cursor: pointer !important;
-    box-shadow: 0 0 12px rgba(245, 158, 11, 0.8) !important;
-  }
-  .swc-nav-hamburger:active { scale: 0.90; background: #1e293b !important; }
-</style>
-
-<script id="swipe-hard-lock">
-(function() {
-    // 1. Matikan pembacaan swipe di seluruh window/document level
-    window.addEventListener("touchstart", function(e) {
-        if (e.touches && e.touches.length > 1) {
-            e.stopPropagation();
-        }
-    }, { capture: true, passive: true });
-
-    window.addEventListener("touchmove", function(e) {
-        // Jika pinch zoom (dua jari) atau interaksi di area canvas/chart, tahan pembacaan swipe tab
-        if ((e.touches && e.touches.length > 1) || e.target.closest("#tvchart, #chart, canvas, .tv-lightweight-charts")) {
-            e.stopPropagation();
-        }
-    }, { capture: true, passive: true });
-
-    // 2. Override fungsi perubah tab bawaan agar tidak merespons swipe
-    if (typeof window.switchTab === "function") {
-        const _origSwitch = window.switchTab;
-        window.switchTab = function(target, isFromGesture) {
-            if (isFromGesture) return false; // Abaikan jika dipanggil dari gestur swipe
-            return _origSwitch.apply(this, arguments);
-        };
-    }
-})();
-</script>
-
 <script id="swc-master-nav-fix">
 (function() {
     function injectBtn() {
