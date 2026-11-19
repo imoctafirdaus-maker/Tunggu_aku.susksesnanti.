@@ -226,6 +226,13 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     setInterval(attachHamburgerToSWCHeader, 1000);
 })();
 </script>
+
+<style id="swipe-lock-css">
+  html, body, #quantTerminalSuite, #tvchart, canvas {
+    touch-action: pan-y pinch-zoom !important;
+    overscroll-behavior-x: none !important;
+  }
+</style>
 </head>
 
 <button id="topNavMenuBtn" onclick="window.toggleNavMenu ? window.toggleNavMenu() : (document.body.classList.toggle(show-wifi-tab))" title="Menu Navigasi">☰</button>
