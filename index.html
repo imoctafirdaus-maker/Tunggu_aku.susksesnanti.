@@ -1392,6 +1392,10 @@ function clearHarmonicOverlay() {
     try { state.chart.removeSeries(state.hmSeries); } catch (_) {}
     state.hmSeries = null;
   }
+  if (state.chart && state.hmWingSeries) {
+    try { state.chart.removeSeries(state.hmWingSeries); } catch (_) {}
+    state.hmWingSeries = null;
+  }
   if (state.candleSeries && Array.isArray(state.hmLines)) {
     state.hmLines.forEach(l => { try { state.candleSeries.removePriceLine(l); } catch (_) {} });
   }
@@ -1511,7 +1515,7 @@ function detectScottCarneyHarmonic(candles) {
     const inPrz = lastCandle.low <= przHigh && lastCandle.high >= przLow;
     const dPoint = D_pivot
       ? { time: D_pivot.time, price: D_pivot.price, rsi: lastRsi, projected: false }
-      : { time: lastCandle.time + stepSec * 3, price: przMid, rsi: lastRsi, projected: true };
+      : { time: lastCandle.time, price: przMid, rsi: lastRsi, projected: true };
 
     return {
       side: isBullish ? "BULLISH" : "BEARISH",
@@ -1577,7 +1581,7 @@ async function validateHarmonicWithAi(hm) {
     if (res && res.ok) {
       const jd = await res.json();
       const txt = jd?.choices?.[0]?.message?.content || "";
-      const m = txt.match(/{[sS]*}/);
+      const m = txt.match(/\{[\s\S]*\}/);
       if (m) {
         const parsed = JSON.parse(m[0]);
         verdict = {
@@ -1618,11 +1622,35 @@ function drawHarmonicPattern(candles) {
     crosshairMarkerVisible: false
   });
 
-  const pts = [hm.X, hm.A, hm.B, hm.C, hm.D]
-    .filter((p, idx, arr) => idx === 0 || p.time > arr[idx - 1].time)
-    .map(p => ({ time: p.time, value: p.price }));
-
+  const rawPts = [hm.X, hm.A, hm.B, hm.C, hm.D];
+  const pts = [];
+  for (const p of rawPts) {
+    if (!pts.length) {
+      pts.push({ time: p.time, value: p.price });
+    } else if (p.time > pts[pts.length - 1].time) {
+      pts.push({ time: p.time, value: p.price });
+    } else if (p.time === pts[pts.length - 1].time) {
+      pts[pts.length - 1].value = p.price;
+    }
+  }
   state.hmSeries.setData(pts);
+
+  // Garis bantu sayap X -> B -> D (dashed) agar struktur segitiga harmonik jelas
+  state.hmWingSeries = state.chart.addLineSeries({
+    color: hm.side === "BULLISH" ? "rgba(56,189,248,0.45)" : "rgba(232,121,249,0.45)",
+    lineWidth: 1,
+    lineStyle: 2,
+    priceLineVisible: false,
+    lastValueVisible: false,
+    crosshairMarkerVisible: false
+  });
+  const wingPts = [];
+  for (const p of [hm.X, hm.B, hm.D]) {
+    if (!wingPts.length || p.time > wingPts[wingPts.length - 1].time) {
+      wingPts.push({ time: p.time, value: p.price });
+    }
+  }
+  state.hmWingSeries.setData(wingPts);
 
   const mkPos = (isHigh) => isHigh ? "aboveBar" : "belowBar";
   const isBull = hm.side === "BULLISH";
@@ -1630,11 +1658,15 @@ function drawHarmonicPattern(candles) {
     { time: hm.X.time, position: mkPos(!isBull), color: "#facc15", shape: "circle", text: `X (RSI ${Math.round(hm.X.rsi)})` },
     { time: hm.A.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "A" },
     { time: hm.B.time, position: mkPos(!isBull), color: lineColor, shape: "circle", text: `B (${hm.ratios.bRatio.toFixed(2)})` },
-    { time: hm.C.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "C" }
-  ];
-  if (!hm.D.projected) {
-    markers.push({ time: hm.D.time, position: mkPos(!isBull), color: "#4ade80", shape: isBull ? "arrowUp" : "arrowDown", text: `D · PRZ (${hm.pattern})` });
-  }
+    { time: hm.C.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "C" },
+    {
+      time: hm.D.time,
+      position: mkPos(!isBull),
+      color: hm.D.projected ? "#facc15" : "#4ade80",
+      shape: isBull ? "arrowUp" : "arrowDown",
+      text: hm.D.projected ? `D* Target PRZ (${hm.pattern})` : `D · PRZ (${hm.pattern})`
+    }
+  ].sort((a, b) => a.time - b.time);
   state.hmSeries.setMarkers(markers);
 
   state.hmLines.push(
