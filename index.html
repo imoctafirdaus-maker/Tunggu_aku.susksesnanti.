@@ -178,6 +178,54 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     window.addEventListener("touchstart", blockGesture, { capture: true, passive: true });
 })();
 </script>
+
+<script id="swc-clean-nav-fix">
+(function() {
+    // 1. Matikan total pembacaan swipe gesture horizontal di seluruh level window
+    window.addEventListener("touchmove", function(e) {
+        if (e.touches && e.touches.length > 1) {
+            e.stopImmediatePropagation();
+        }
+    }, { capture: true, passive: false });
+
+    // 2. Suntikkan tombol ☰ ke header SWC Oranye & paksa matikan event swipe internal
+    function attachHamburgerToSWCHeader() {
+        const swcHeader = document.querySelector(".swc-header-bridge") || document.getElementById("swcUiContainer") || document.body;
+        if (swcHeader && !document.getElementById("fixedNavMenuBtn")) {
+            const btn = document.createElement("button");
+            btn.id = "fixedNavMenuBtn";
+            btn.innerHTML = "☰";
+            btn.setAttribute("style", "position:fixed !important; top:6px !important; right:10px !important; z-index:2147483647 !important; background:#0f172a !important; color:#f59e0b !important; border:2px solid #f59e0b !important; border-radius:8px !important; width:44px !important; height:36px !important; font-size:22px !important; font-weight:bold !important; display:flex !important; align-items:center !important; justify-content:center !important; cursor:pointer !important; box-shadow:0 0 12px rgba(245,158,11,0.9) !important;");
+            
+            btn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                const wifiTab = document.getElementById("swcUiContainer") || document.querySelector(".swc-ui-bridge");
+                const radarTab = document.getElementById("quantTerminalSuite") || document.querySelector(".quant-suite");
+                if (wifiTab && radarTab) {
+                    if (wifiTab.style.display === "none") {
+                        wifiTab.style.display = "block";
+                        radarTab.style.display = "none";
+                    } else {
+                        wifiTab.style.display = "none";
+                        radarTab.style.display = "block";
+                    }
+                } else {
+                    document.body.classList.toggle("show-wifi-tab");
+                }
+            };
+            document.documentElement.appendChild(btn);
+        }
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", attachHamburgerToSWCHeader);
+    } else {
+        attachHamburgerToSWCHeader();
+    }
+    setInterval(attachHamburgerToSWCHeader, 1000);
+})();
+</script>
 </head>
 
 <button id="topNavMenuBtn" onclick="window.toggleNavMenu ? window.toggleNavMenu() : (document.body.classList.toggle(show-wifi-tab))" title="Menu Navigasi">☰</button>
