@@ -274,6 +274,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     const phase = ageSec > 90 ? "SCANNING" : (st.phase || "SCANNING");
     const isAuditing = phase === "AUDITING";
     const isResult = phase === "RESULT";
+    const isCompleted = phase === "COMPLETED";
 
     const leftBox = document.getElementById("ltrBoxLeft");
     const leftHead = document.getElementById("ltrLeftHeader");
@@ -300,6 +301,14 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       pairVal.innerHTML = (st.candidate || "-") + " <span style=\"color:" + dirColor + ";\">" + dir + "</span>";
       stateVal.style.color = "#38bdf8";
       stateVal.textContent = "DISPATCHED TO AI";
+    } else if (isCompleted) {
+      leftBox.style.borderColor = "#334155";
+      leftHead.style.color = "#94a3b8";
+      leftHead.textContent = "01 · SCAN COMPLETED";
+      pairVal.style.color = "#cbd5e1";
+      pairVal.textContent = "0 CANDIDATE";
+      stateVal.style.color = "#4ade80";
+      stateVal.textContent = "CYCLE FINISHED";
     } else {
       leftBox.style.borderColor = "#1e293b";
       leftHead.style.color = "#38bdf8";

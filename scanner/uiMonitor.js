@@ -78,6 +78,7 @@ function render() {
   const activeCoin = WATCHLIST[tick % WATCHLIST.length];
   const isAuditing = phase === "AUDITING";
   const isResult = phase === "RESULT";
+  const isCompleted = phase === "COMPLETED";
 
   // Header
   const nowStr = new Date().toTimeString().slice(0, 8);
@@ -87,6 +88,11 @@ function render() {
   let leftHeader = `${A.fgCyan}${A.bold}01 · MARKET SCANNER${A.reset}`;
   let leftRow1 = `${A.fgMuted}PAIR   ${A.reset}${A.fgWhite}${activeCoin}${A.reset}`;
   let leftRow2 = `${A.fgMuted}STATE  ${A.reset}${A.fgAmber}SCANNING TOP 500${A.reset}`;
+  if (isCompleted) {
+    leftHeader = `${A.fgSilver}${A.bold}01 · SCAN COMPLETED${A.reset}`;
+    leftRow1 = `${A.fgMuted}PAIR   ${A.reset}${A.fgSilver}0 CANDIDATE${A.reset}`;
+    leftRow2 = `${A.fgMuted}STATE  ${A.reset}${A.fgMint}CYCLE FINISHED${A.reset}`;
+  }
 
   if (isAuditing || isResult) {
     const dirColor = String(st.signal).toUpperCase() === "SELL" ? A.fgCoral : A.fgMint;
