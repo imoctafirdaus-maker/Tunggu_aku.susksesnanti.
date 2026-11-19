@@ -1712,7 +1712,7 @@ window.scanTopCoinsForHarmonic = async function() {
   if (!btn) return;
   btn.disabled = true;
   btn.textContent = "⏳ Memindai Top 80 Koin...";
-  if (badge) { badge.style.style.background = "rgba(250,204,21,0.2)"; badge.style.color = "#facc15"; badge.textContent = "PARALLEL SCANNING..."; }
+  if (badge) { badge.style.background = "rgba(250,204,21,0.2)"; badge.style.color = "#facc15"; badge.textContent = "PARALLEL SCANNING..."; }
 
   const fallbackList = ["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","ADAUSDT","DOGEUSDT","DOTUSDT","NEARUSDT","APTUSDT","ARBUSDT","OPUSDT","INJUSDT","TIAUSDT","SEIUSDT","RENDERUSDT","FETUSDT"];
   const candidates = (state.coinList && state.coinList.length ? state.coinList.slice(0, 80).map(c => c.symbol) : fallbackList);
