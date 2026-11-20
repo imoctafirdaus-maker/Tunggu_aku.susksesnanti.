@@ -992,14 +992,14 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
       <div id="hmPrzDetail" style="color:#64748b;font-size:10px;">PRZ Zone: Menunggu konvergensi rasio Fibonacci XA & BC...</div>
       <div style="display:flex;flex-wrap:wrap;gap:6px;">
-        <button id="auditHarmonicAiBtn" type="button" onclick="triggerDualAiHarmonicAudit(true)" style="padding:4px 10px;border-radius:6px;border:1px solid #a855f7;background:rgba(168,85,247,0.16);color:#e9d5ff;font-size:10px;font-weight:700;cursor:pointer;">🤖 Audit Groq + Gemini + Llama-70B</button>
+        <button id="auditHarmonicAiBtn" type="button" onclick="triggerDualAiHarmonicAudit(true)" style="padding:4px 10px;border-radius:6px;border:1px solid #a855f7;background:rgba(168,85,247,0.16);color:#e9d5ff;font-size:10px;font-weight:700;cursor:pointer;">🤖 Audit Groq + Gemini + CF Llama-70B</button>
         <button id="scanHarmonicCoinBtn" type="button" onclick="scanTopCoinsForHarmonic()" style="padding:4px 10px;border-radius:6px;border:1px solid #38bdf8;background:rgba(56,189,248,0.12);color:#38bdf8;font-size:10px;font-weight:700;cursor:pointer;">🔍 Cari Koin Berpola Valid</button>
       </div>
     </div>
     <div id="hmDualAiReport" style="padding:7px 9px;border-radius:7px;background:#0f172a;border:1px solid #1e293b;color:#cbd5e1;font-size:10px;line-height:1.45;">
       <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-bottom:3px;">
         <span id="hmGroqVerdict" style="color:#94a3b8;">⚡ Groq: Menunggu pola...</span>
-        <span id="hmSambaVerdict" style="color:#38bdf8;margin-left:6px;">💎 Llama-70B: Siaga (Auto-Fallback)</span>
+        <span id="hmSambaVerdict" style="color:#38bdf8;margin-left:6px;">💎 CF Llama-70B: Siaga (Auto-Fallback)</span>
         <span id="hmGeminiVerdict" style="color:#94a3b8;">💎 Gemini: Menunggu pola...</span>
       </div>
       <div id="hmConsensusNote" style="color:#64748b;">Dual-AI akan otomatis membaca pola pada Chart & Sub-Pane AHP RSI lalu memvalidasi kelayakannya.</div>
@@ -1841,7 +1841,7 @@ Balas HANYA dalam JSON valid tanpa markdown:
 {"valid": true atau false, "confidence": 0-100, "reason": "penjelasan singkat maks 18 kata dalam Bahasa Indonesia"}`;
 
   const sambaEl = $("hmSambaVerdict");
-  if (sambaEl) sambaEl.innerHTML = `🧠 Llama-70B: <span style="color:#38bdf8;">Siaga...</span>`;
+  if (sambaEl) sambaEl.innerHTML = `☁️ CF Llama-70B: <span style="color:#38bdf8;">Siaga...</span>`;
 
   let [groqRes, gemRes] = await Promise.all([
     querySingleAiAuditor("groq", prompt),
@@ -1852,7 +1852,7 @@ Balas HANYA dalam JSON valid tanpa markdown:
   const gOkInit = groqRes && typeof groqRes.valid === "boolean";
   const mOkInit = gemRes && typeof gemRes.valid === "boolean";
   if (!gOkInit || !mOkInit) {
-    if (sambaEl) sambaEl.innerHTML = `🧠 Llama-70B: <span style="color:#facc15;">Mengambil alih...</span>`;
+    if (sambaEl) sambaEl.innerHTML = `☁️ CF Llama-70B: <span style="color:#facc15;">Mengambil alih...</span>`;
     sambaRes = await querySingleAiAuditor("sambanova", prompt);
   }
 
@@ -1867,13 +1867,13 @@ Balas HANYA dalam JSON valid tanpa markdown:
     ? `💎 Gemini: <strong style="color:${gemRes.valid ? "#4ade80" : "#fb7185"};">${gemRes.valid ? "VALID" : "TIDAK VALID"} (${gemRes.confidence || 75}%)</strong>`
     : `💎 Gemini: <span style="color:#94a3b8;">Offline/Timeout</span>`;
   const sambaHtml = sOk
-    ? `<span style="padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.16);border:1px solid rgba(56,189,248,0.4);">🧠 Llama-70B: <strong style="color:${sambaRes.valid ? "#4ade80" : "#fb7185"};">${sambaRes.valid ? "VALID" : "TIDAK VALID"} (${sambaRes.confidence || 75}%)</strong></span>`
-    : `🧠 Llama-70B: <span style="color:#38bdf8;">Siaga (Auto-Fallback)</span>`;
+    ? `<span style="padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.16);border:1px solid rgba(56,189,248,0.4);">☁️ CF Llama-70B: <strong style="color:${sambaRes.valid ? "#4ade80" : "#fb7185"};">${sambaRes.valid ? "VALID" : "TIDAK VALID"} (${sambaRes.confidence || 75}%)</strong></span>`
+    : `☁️ CF Llama-70B: <span style="color:#38bdf8;">Siaga (Auto-Fallback)</span>`;
 
   const activeVotes = [];
   if (gOk) activeVotes.push({ who: "Groq", res: groqRes });
   if (mOk) activeVotes.push({ who: "Gemini", res: gemRes });
-  if (sOk) activeVotes.push({ who: "Llama-70B", res: sambaRes });
+  if (sOk) activeVotes.push({ who: "CF Llama-70B", res: sambaRes });
 
   let finalValid = false;
   let badgeText = "TIDAK VALID ✕";
