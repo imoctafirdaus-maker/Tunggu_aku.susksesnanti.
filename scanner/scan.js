@@ -347,6 +347,7 @@ async function main() {
           updatedAt: Date.now()
         };
         require("fs").writeFileSync(require("path").join(__dirname, ".liveUiState.json"), JSON.stringify(uiPayload, null, 2));
+        if (db) await db.ref("emaSignals/_liveRadar").set(uiPayload).catch(() => {});
         await fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json", {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -354,7 +355,7 @@ async function main() {
         }).catch(() => {});
       }
     } catch (_) {}
-    console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m): scanned=${hmRes.scanned} found=${hmRes.found}`);
+    console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m->5m): scanned=${hmRes.scanned} found=${hmRes.found}`);
     await admin.app().delete();
   }
   process.exitCode = st.ok ? 0 : 1;

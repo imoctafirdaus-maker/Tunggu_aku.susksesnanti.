@@ -197,7 +197,8 @@
    */
   function evaluateMultiTimeframe(candlesByTf, userSettings) {
     const cfg = ConfigMod.mergeSettings(userSettings);
-    const order = cfg.timeframes || ["4h", "1h", "15m"];
+    const baseOrder = Array.isArray(cfg.timeframes) ? cfg.timeframes : ["4h", "1h", "15m"];
+    const order = baseOrder.includes("5m") ? baseOrder : [...baseOrder, "5m"];
     const allLogs = [];
     const foundSignals = [];
 

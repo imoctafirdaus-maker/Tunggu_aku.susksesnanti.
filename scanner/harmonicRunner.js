@@ -156,9 +156,11 @@ Jawab HANYA JSON singkat: {"approve":true/false,"confidence":0-100,"reason":"ala
   }
 }
 
-async function updateActiveCandidateUi(payload) {
+let __sharedAdminDb = null;
+async function updateActiveCandidateUi(payload, adminDb = __sharedAdminDb) {
   try {
     fs.writeFileSync(path.join(__dirname, ".liveUiState.json"), JSON.stringify(payload, null, 2));
+    if (adminDb) { await adminDb.ref("emaSignals/_liveRadar").set(payload).catch(() => {}); }
     await fetch(LIVE_RADAR_URL, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -367,6 +369,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
  * Runner Utama Pemindaian Harmonic Pattern (Hierarki wajib: 4h -> 1h -> 15m)
  */
 async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, db, admin, dryRun = false }) {
+  if (db) __sharedAdminDb = db;
   const cfg = await loadHarmonicSettings();
   cfg.enabled = true; // Pastikan Harmonic selalu aktif memindai bersama EMA Expert
   const paper = loadPaperState();
@@ -413,7 +416,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           candidate: `${sym} (${sig.patternName})`,
           signal: `${sig.side} [HARMONIC ${sig.timeframe}]`,
           groqStatus: "AUDITING",
-          geminiStatus: "EMA-ONLY",
+          geminiStatus: "AUDITING",
           tradeResult: "PENDING",
           tradeReason: sig.reason,
           updatedAt: Date.now()
