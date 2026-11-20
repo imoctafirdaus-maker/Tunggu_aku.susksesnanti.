@@ -1674,71 +1674,27 @@ async function getDualAiKeysFromFirebase() {
 }
 
 async function querySingleAiAuditor(provider, prompt) {
-  // 1. Prioritaskan Local AI Router (http://127.0.0.1:4000) di Termux
-  try {
-    const c = new AbortController();
-    const t = setTimeout(() => c.abort(), 7000);
-    const res = await fetch("http://127.0.0.1:4000/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      signal: c.signal,
-      body: JSON.stringify({
-        model: provider === "groq" ? "analis-groq" : "auditor-gemini",
-        temperature: 0.1,
-        messages: [{ role: "user", content: prompt }]
-      })
-    });
-    clearTimeout(t);
-    if (res && res.ok) {
-      const jd = await res.json();
-      const txt = jd?.choices?.[0]?.message?.content || "";
-      const m = txt.match(/\{[\s\S]*\}/);
-      if (m) return JSON.parse(m[0]);
-    }
-  } catch (_) {}
+  const bridgeBases = window.location.protocol === "http:"
+    ? ["", "http://127.0.0.1:8765"]
+    : ["https://127.0.0.1:8766"];
 
-  // 2. Fallback langsung menggunakan key di Firebase jika PWA dibuka di browser tanpa router lokal
-  const keys = await getDualAiKeysFromFirebase();
-  if (provider === "groq" && keys.groqKeys.length) {
+  for (const base of bridgeBases) {
     try {
-      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + keys.groqKeys[0] },
-        body: JSON.stringify({
-          model: keys.groqModel,
-          temperature: 0.1,
-          messages: [{ role: "user", content: prompt }]
-        })
-      });
-      if (res.ok) {
-        const jd = await res.json();
-        const txt = jd?.choices?.[0]?.message?.content || "";
-        const m = txt.match(/\{[\s\S]*\}/);
-        if (m) return JSON.parse(m[0]);
-      }
-    } catch (_) {}
-  }
-
-  if (provider === "gemini" && keys.geminiKeys.length) {
-    try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(keys.geminiModel)}:generateContent?key=${encodeURIComponent(keys.geminiKeys[0])}`;
-      const res = await fetch(url, {
+      const c = new AbortController();
+      const t = setTimeout(() => c.abort(), 12000);
+      const res = await fetch(`${base}/api/ai-audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1 }
-        })
+        signal: c.signal,
+        body: JSON.stringify({ provider, prompt })
       });
-      if (res.ok) {
+      clearTimeout(t);
+      if (res && res.ok) {
         const jd = await res.json();
-        const txt = jd?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-        const m = txt.match(/\{[\s\S]*\}/);
-        if (m) return JSON.parse(m[0]);
+        if (jd && jd.ok && jd.result) return jd.result;
       }
     } catch (_) {}
   }
-
   return null;
 }
 
