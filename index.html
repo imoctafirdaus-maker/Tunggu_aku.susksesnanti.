@@ -81,6 +81,22 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   }
 </style>
 
+<script id="desktop-zoom-pan-fix">
+(function() {
+  function syncZoomPan() {
+    const scale = (window.visualViewport && window.visualViewport.scale) ? window.visualViewport.scale : 1;
+    const isZoomed = scale > 1.05;
+    document.querySelectorAll("#chart, #chart canvas, #ahpChart, #ahpChart canvas").forEach(el => {
+      el.style.touchAction = isZoomed ? "pan-x pan-y pinch-zoom" : "none";
+    });
+  }
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener("resize", syncZoomPan);
+    window.visualViewport.addEventListener("scroll", syncZoomPan);
+  }
+  window.addEventListener("touchend", () => setTimeout(syncZoomPan, 100), { passive: true });
+})();
+</script>
 </head>
 
 <body>

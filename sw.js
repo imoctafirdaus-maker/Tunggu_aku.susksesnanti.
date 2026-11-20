@@ -1,4 +1,4 @@
-const CACHE_NAME = "octa-analyzer-v1";
+const CACHE_NAME = "octa-radar-v1795190580559";
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
