@@ -11,7 +11,7 @@ let rrCounter = 0;
 
 function loadRoutes() {
   const cfg = JSON.parse(fs.readFileSync(CFG_PATH, "utf8"));
-  const geminiModels = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"];
+  const geminiModels = [...new Set([cfg.geminiModel, "gemini-2.5-flash", "gemini-flash-latest"].filter(Boolean))];
   const geminiRoutes = [];
   for (const model of geminiModels) {
     for (const key of (cfg.geminiKeys || [])) {
@@ -20,8 +20,16 @@ function loadRoutes() {
   }
   const groqRoutes = (cfg.groqKeys || [])
     .filter(k => k && k.trim())
-    .map(k => ({ provider: "groq", model: "llama-3.3-70b-versatile", key: k.trim() }));
-  return { geminiRoutes, groqRoutes };
+    .flatMap(k => [...new Set([cfg.groqModel, "openai/gpt-oss-120b", "llama-3.1-8b-instant", "meta-llama/llama-4-scout-17b-16e-instruct"].filter(Boolean))].map(m => ({ provider: "groq", model: m, key: k.trim() })));
+
+  const sambaModels = Array.isArray(cfg.sambanovaModels) && cfg.sambanovaModels.length
+    ? cfg.sambanovaModels
+    : ["Meta-Llama-3.3-70B-Instruct", "Qwen3-32B"];
+  const sambaRoutes = (cfg.sambanovaKeys || [])
+    .filter(k => k && k.trim())
+    .flatMap(k => sambaModels.map(m => ({ provider: "sambanova", model: m, key: k.trim() })));
+
+  return { geminiRoutes, groqRoutes, sambaRoutes };
 }
 
 async function forwardToGemini(route, messages, temperature = 0.2) {
@@ -37,6 +45,7 @@ async function forwardToGemini(route, messages, temperature = 0.2) {
   const res = await fetch(url, {
     method: "POST",
     headers,
+    signal: AbortSignal.timeout(8000),
     body: JSON.stringify({
       contents: [{ role: "user", parts: [{ text: promptText }] }],
       generationConfig: { temperature }
@@ -57,13 +66,14 @@ async function forwardToGemini(route, messages, temperature = 0.2) {
   };
 }
 
-async function forwardToGroq(route, messages, temperature = 0.2) {
-  const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+async function forwardToOpenAICompat(endpoint, route, messages, temperature = 0.2) {
+  const res = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${route.key}`
     },
+    signal: AbortSignal.timeout(9000),
     body: JSON.stringify({ model: route.model, messages, temperature })
   });
   const data = await res.json().catch(() => ({}));
@@ -77,13 +87,13 @@ async function forwardToGroq(route, messages, temperature = 0.2) {
 
 const server = http.createServer(async (req, res) => {
   if (req.method === "GET" && req.url === "/v1/models") {
-    const { geminiRoutes, groqRoutes } = loadRoutes();
+    const { geminiRoutes, groqRoutes, sambaRoutes } = loadRoutes();
     res.writeHead(200, { "Content-Type": "application/json" });
     return res.end(JSON.stringify({
       object: "list",
       data: [
-        { id: "auditor-gemini", active_routes: geminiRoutes.length },
-        { id: "analis-groq", active_routes: groqRoutes.length }
+        { id: "auditor-gemini", active_routes: geminiRoutes.length, fallback_sambanova: sambaRoutes.length },
+        { id: "analis-groq", active_routes: groqRoutes.length, fallback_sambanova: sambaRoutes.length }
       ]
     }));
   }
@@ -103,21 +113,32 @@ const server = http.createServer(async (req, res) => {
           return res.end(JSON.stringify(cached.data));
         }
 
-        const { geminiRoutes, groqRoutes } = loadRoutes();
-        const pool = target.includes("groq") ? groqRoutes : geminiRoutes;
+        const { geminiRoutes, groqRoutes, sambaRoutes } = loadRoutes();
+        const primaryPool = target.includes("groq") ? groqRoutes : geminiRoutes;
         const now = Date.now();
-        const start = (rrCounter++) % Math.max(1, pool.length);
+        const start = (rrCounter++) % Math.max(1, primaryPool.length);
+
+        const orderedPrimary = [];
+        for (let step = 0; step < primaryPool.length; step++) {
+          orderedPrimary.push(primaryPool[(start + step) % primaryPool.length]);
+        }
+        // Gabungkan rute utama di depan, diikuti SambaNova sebagai fallback otomatis
+        const fullQueue = [...orderedPrimary, ...sambaRoutes];
 
         let lastErr = null;
-        for (let step = 0; step < pool.length; step++) {
-          const route = pool[(start + step) % pool.length];
+        for (const route of fullQueue) {
           const routeId = `${route.provider}:${route.model}:${route.key.slice(-6)}`;
           if ((cooldownMap.get(routeId) || 0) > now) continue;
 
           try {
-            const result = route.provider === "gemini"
-              ? await forwardToGemini(route, messages, payload.temperature ?? 0.2)
-              : await forwardToGroq(route, messages, payload.temperature ?? 0.2);
+            let result;
+            if (route.provider === "gemini") {
+              result = await forwardToGemini(route, messages, payload.temperature ?? 0.2);
+            } else if (route.provider === "sambanova") {
+              result = await forwardToOpenAICompat("https://api.sambanova.ai/v1/chat/completions", route, messages, payload.temperature ?? 0.2);
+            } else {
+              result = await forwardToOpenAICompat("https://api.groq.com/openai/v1/chat/completions", route, messages, payload.temperature ?? 0.2);
+            }
 
             responseCache.set(cacheKey, { ts: now, data: result });
             if (responseCache.size > 200) responseCache.delete(responseCache.keys().next().value);
@@ -126,8 +147,9 @@ const server = http.createServer(async (req, res) => {
             return res.end(JSON.stringify(result));
           } catch (e) {
             lastErr = e;
-            if (e.status === 429 || e.status === 503 || e.status === 400 || e.status === 403 || e.status === 404) {
-              cooldownMap.set(routeId, now + 60000);
+            const isTimeout = e.name === "TimeoutError" || String(e.message).toLowerCase().includes("timeout");
+            if (isTimeout || e.status === 429 || e.status === 503 || e.status === 400 || e.status === 403 || e.status === 404) {
+              cooldownMap.set(routeId, now + (isTimeout ? 30000 : 60000));
             }
           }
         }
@@ -146,5 +168,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, "127.0.0.1", () => {
-  console.log(`🚀 Local AI Router aktif di http://127.0.0.1:${PORT}`);
+  console.log(`🚀 Local AI Router (Gemini + Groq + SambaNova Fallback) aktif di http://127.0.0.1:${PORT}`);
 });
