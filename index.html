@@ -1824,6 +1824,7 @@ async function validateHarmonicWithAi(hm, forceRefresh = false) {
     badge.textContent = cached.badgeText;
     if (groqEl) groqEl.innerHTML = cached.groqHtml;
     if (gemEl) gemEl.innerHTML = cached.gemHtml;
+    const sEl = $("hmSambaVerdict"); if (sEl && cached.sambaHtml) sEl.innerHTML = cached.sambaHtml;
     if (noteEl) noteEl.textContent = cached.consensusText;
     return;
   }
@@ -1852,13 +1853,25 @@ Evaluasi ketepatan struktur swing X-A-B-C-D, rasio Fibonacci (AB/XA, BC/AB, AD/X
 Balas HANYA dalam JSON valid tanpa markdown:
 {"valid": true atau false, "confidence": 0-100, "reason": "penjelasan singkat maks 18 kata dalam Bahasa Indonesia"}`;
 
-  const [groqRes, gemRes] = await Promise.all([
+  const sambaEl = $("hmSambaVerdict");
+  if (sambaEl) sambaEl.innerHTML = `💠 SambaNova: <span style="color:#38bdf8;">Siaga...</span>`;
+
+  let [groqRes, gemRes] = await Promise.all([
     querySingleAiAuditor("groq", prompt),
     querySingleAiAuditor("gemini", prompt)
   ]);
 
-  const gOk = groqRes && typeof groqRes.valid === "boolean";
-  const mOk = gemRes && typeof gemRes.valid === "boolean";
+  let sambaRes = null;
+  const gOkInit = groqRes && typeof groqRes.valid === "boolean";
+  const mOkInit = gemRes && typeof gemRes.valid === "boolean";
+  if (!gOkInit || !mOkInit) {
+    if (sambaEl) sambaEl.innerHTML = `💠 SambaNova: <span style="color:#facc15;">Mengambil alih...</span>`;
+    sambaRes = await querySingleAiAuditor("sambanova", prompt);
+  }
+
+  const gOk = gOkInit;
+  const mOk = mOkInit;
+  const sOk = sambaRes && typeof sambaRes.valid === "boolean";
 
   const groqHtml = gOk
     ? `⚡ Groq: <strong style="color:${groqRes.valid ? "#4ade80" : "#fb7185"};">${groqRes.valid ? "VALID" : "TIDAK VALID"} (${groqRes.confidence || 75}%)</strong>`
@@ -1866,30 +1879,38 @@ Balas HANYA dalam JSON valid tanpa markdown:
   const gemHtml = mOk
     ? `💎 Gemini: <strong style="color:${gemRes.valid ? "#4ade80" : "#fb7185"};">${gemRes.valid ? "VALID" : "TIDAK VALID"} (${gemRes.confidence || 75}%)</strong>`
     : `💎 Gemini: <span style="color:#94a3b8;">Offline/Timeout</span>`;
+  const sambaHtml = sOk
+    ? `💠 SambaNova: <strong style="color:${sambaRes.valid ? "#4ade80" : "#fb7185"};">${sambaRes.valid ? "VALID" : "TIDAK VALID"} (${sambaRes.confidence || 75}%)</strong>`
+    : `💠 SambaNova: <span style="color:#38bdf8;">Siaga (Auto-Fallback)</span>`;
+
+  const activeVotes = [];
+  if (gOk) activeVotes.push({ who: "Groq", res: groqRes });
+  if (mOk) activeVotes.push({ who: "Gemini", res: gemRes });
+  if (sOk) activeVotes.push({ who: "SambaNova", res: sambaRes });
 
   let finalValid = false;
   let badgeText = "TIDAK VALID ✕";
   let consensusText = "";
 
-  if (gOk && mOk) {
-    finalValid = groqRes.valid && gemRes.valid;
+  if (activeVotes.length >= 2) {
+    const validCount = activeVotes.filter(v => v.res.valid).length;
+    finalValid = validCount === activeVotes.length;
     badgeText = finalValid
-      ? "DUAL-AI: POLA VALID ✓"
-      : (groqRes.valid || gemRes.valid ? "DUAL-AI: RAGU (1/2 VALID)" : "DUAL-AI: TIDAK VALID ✕");
-    consensusText = `Groq: "${groqRes.reason}" | Gemini: "${gemRes.reason}"`;
-  } else if (gOk || mOk) {
-    const single = gOk ? groqRes : gemRes;
-    const who = gOk ? "Groq" : "Gemini";
-    finalValid = single.valid;
-    badgeText = finalValid ? `${who.toUpperCase()}: POLA VALID ✓` : `${who.toUpperCase()}: TIDAK VALID ✕`;
-    consensusText = `${who}: "${single.reason}"`;
+      ? "MULTI-AI: POLA VALID ✓"
+      : (validCount > 0 ? `MULTI-AI: RAGU (${validCount}/${activeVotes.length} VALID)` : "MULTI-AI: TIDAK VALID ✕");
+    consensusText = activeVotes.map(v => `${v.who}: "${v.res.reason}"`).join(" | ");
+  } else if (activeVotes.length === 1) {
+    const single = activeVotes[0];
+    finalValid = single.res.valid;
+    badgeText = finalValid ? `${single.who.toUpperCase()}: POLA VALID ✓` : `${single.who.toUpperCase()}: TIDAK VALID ✕`;
+    consensusText = `${single.who}: "${single.res.reason}"`;
   } else {
     finalValid = fitScore >= 62 && statusLabel === "CONFIRMED";
     badgeText = finalValid ? "MATH ENGINE: VALID ✓" : "MATH ENGINE: BELUM VALID";
     consensusText = "Router AI lokal & API cadangan sedang tidak merespons; memakai verifikasi skor matematis.";
   }
 
-  const verdict = { valid: finalValid, badgeText, groqHtml, gemHtml, consensusText };
+  const verdict = { valid: finalValid, badgeText, groqHtml, gemHtml, sambaHtml, consensusText };
   HARMONIC_CACHE.set(cacheKey, verdict);
 
   badge.style.background = finalValid ? "rgba(34,197,94,0.22)" : "rgba(244,63,94,0.22)";
@@ -1897,6 +1918,7 @@ Balas HANYA dalam JSON valid tanpa markdown:
   badge.textContent = badgeText;
   if (groqEl) groqEl.innerHTML = groqHtml;
   if (gemEl) gemEl.innerHTML = gemHtml;
+  if (sambaEl) sambaEl.innerHTML = sambaHtml;
   if (noteEl) noteEl.textContent = consensusText;
 }
 
