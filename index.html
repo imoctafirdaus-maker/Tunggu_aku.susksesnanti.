@@ -1923,6 +1923,66 @@ Balas HANYA JSON valid tanpa markdown:
   }
 
   const verdict = { valid: finalValid, badgeText, groqHtml, gemHtml, sambaHtml, consensusText };
+  if (!finalValid && activeVotes.length > 0 && typeof window.pushAiRejectionLog === "function") {
+    window.pushAiRejectionLog({
+      symbol: CONFIG.symbol,
+      timeframe: CONFIG.interval,
+      pattern: hm.pattern || "Scott Carney",
+      direction: sideUpper,
+      reason: consensusText,
+      auditor: activeVotes.map(v => v.who).join(" + ")
+    });
+  }
+  if (finalValid) {
+    if (!window.__lastExecSigKey) window.__lastExecSigKey = "";
+    const sigKey = CONFIG.symbol + "_" + CONFIG.interval + "_" + hm.pattern + "_" + sideUpper;
+    if (window.__lastExecSigKey !== sigKey) {
+      window.__lastExecSigKey = sigKey;
+      const entryP = Number(hm.D?.price || hm.przMid || 0);
+      const slP = Number(hm.slPrice || 0);
+      const adSpan = Math.abs((hm.A?.price || entryP) - entryP);
+      const isBuySide = sideUpper === "BULLISH" || sideUpper === "BUY";
+      const tp1P = isBuySide ? entryP + adSpan * 0.382 : entryP - adSpan * 0.382;
+      const tp2P = isBuySide ? entryP + adSpan * 0.618 : entryP - adSpan * 0.618;
+      const rrVal = Math.abs(entryP - slP) > 0 ? Math.abs(tp2P - entryP) / Math.abs(entryP - slP) : 1.5;
+      const execPayload = {
+        symbol: CONFIG.symbol,
+        sig: {
+          patternName: hm.pattern,
+          timeframe: CONFIG.interval,
+          side: isBuySide ? "BUY" : "SELL",
+          entry: entryP,
+          sl: slP,
+          tp1: tp1P,
+          tp2: tp2P,
+          rr: rrVal,
+          przScore: fitScore,
+          prz: { low: hm.przLow || entryP, high: hm.przHigh || entryP, count: 3 },
+          ratios: {
+            bRatio: Number(bRat) || 0,
+            cRatio: Number(cRat) || 0,
+            dXaRatio: Number(dRat) || 0
+          }
+        }
+      };
+      const execBases = window.location.protocol === "http:" ? ["", "http://127.0.0.1:8765"] : ["https://127.0.0.1:8766"];
+      for (const base of execBases) {
+        fetch(base + "/api/harmonic-execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(execPayload)
+        }).then(r => r.json()).then(res => {
+          if (noteEl) {
+            if (res && res.executed) {
+              noteEl.textContent = consensusText + " → 🚀 ORDER DIEKSEKUSI (" + (res.mode || "AKTIF") + ")";
+            } else if (res && res.reason) {
+              noteEl.textContent = consensusText + " → ⚠️ Info Eksekusi: " + res.reason;
+            }
+          }
+        }).catch(() => {});
+      }
+    }
+  }
   HARMONIC_CACHE.set(cacheKey, verdict);
 
   badge.style.background = finalValid ? "rgba(34,197,94,0.22)" : "rgba(244,63,94,0.22)";
