@@ -2010,16 +2010,27 @@ function drawHarmonicPattern(candles) {
 }
 
 window.selectHarmonicCoin = function(sym) {
-  CONFIG.symbol = sym;
+  const clean = String(sym || "").toUpperCase().trim();
+  if (!clean) return;
+  CONFIG.symbol = clean;
   state.sigKey = "";
   const sel = $("symbolSelect");
-  if (sel) sel.value = sym;
+  if (sel) {
+    if (!Array.from(sel.options).some(o => o.value === clean)) {
+      const opt = document.createElement("option");
+      opt.value = clean;
+      opt.textContent = clean + " (Harmonic Candidate)";
+      sel.appendChild(opt);
+    }
+    sel.value = clean;
+  }
+  if (typeof setTab === "function") setTab("chart");
   if (typeof reconnectNow === "function") reconnectNow();
   setTimeout(() => {
     if (Array.isArray(state.candles) && state.candles.length) {
       drawHarmonicPattern(state.candles);
     }
-  }, 900);
+  }, 1100);
 };
 
 window.scanTopCoinsForHarmonic = async function() {
