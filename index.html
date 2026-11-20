@@ -827,7 +827,29 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 </div>
 <script>
 (function() {
-  const REJ_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiRejections.json";
+  window.pushAiRejectionLog = async function(entry) {
+  try {
+    const url = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiRejections.json";
+    const r = await fetch(url + "?t=" + Date.now());
+    const cur = r.ok ? await r.json() : [];
+    const arr = Array.isArray(cur) ? cur : (cur && typeof cur === "object" ? Object.values(cur) : []);
+    arr.unshift({
+      symbol: entry.symbol || "UNKNOWN",
+      timeframe: entry.timeframe || "-",
+      pattern: entry.pattern || "Harmonic Audit",
+      direction: entry.direction || "AUDIT",
+      reason: entry.reason || "Ditolak oleh auditor AI",
+      auditor: entry.auditor || "Groq + CF Llama-70B",
+      rejectedAt: Date.now()
+    });
+    await fetch(url, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(arr.slice(0, 20))
+    });
+  } catch (_) {}
+};
+      const REJ_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_aiRejections.json";
   function esc(s) {
     return String(s || "").replace(/[&<>"]/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;" }[c]));
   }
@@ -835,7 +857,8 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     try {
       const res = await fetch(REJ_URL + "?t=" + Date.now());
       if (!res.ok) return;
-      const list = await res.json();
+      const raw = await res.json();
+        const list = Array.isArray(raw) ? raw : (raw && typeof raw === "object" ? Object.values(raw).sort((a,b) => (b.rejectedAt||0) - (a.rejectedAt||0)) : []);
       const box = document.getElementById("aiRejectionList");
       const upd = document.getElementById("aiRejectionUpdated");
       if (!Array.isArray(list) || !list.length) return;
