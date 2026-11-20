@@ -954,7 +954,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <div class="flex flex-wrap gap-2 mt-3"><!-- SCOTT CARNEY HARMONIC PATTERN & AI PRZ VALIDATION PANEL -->
   <div id="harmonicAuditBox" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#090e1a;border:1px solid #1e293b;font-family:'JetBrains Mono',monospace;font-size:11px;">
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
-      <span style="font-weight:800;color:#38bdf8;letter-spacing:0.06em;">HARMONIC ENGINE // SCOTT CARNEY + RSI EXTREME</span>
+      <span style="font-weight:800;color:#38bdf8;letter-spacing:0.06em;">HARMONIC ENGINE // PURE SCOTT CARNEY FIBONACCI</span>
       <span id="hmAiBadge" style="padding:2px 8px;border-radius:4px;background:#1e293b;color:#94a3b8;font-weight:700;font-size:10px;">SCANNING PIVOTS...</span>
     </div>
     <div id="hmPatternSummary" style="color:#cbd5e1;margin-bottom:4px;">Memindai struktur X-A-B-C-D dengan syarat Anchor X: RSI ≤ 30 (Bullish) / RSI ≥ 70 (Bearish)...</div>
@@ -1566,9 +1566,7 @@ function detectScottCarneyHarmonic(candles) {
     const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";
     if (!isBullish && !isBearish) continue;
 
-    // SYARAT 1: Titik Anchor X harus valid RSI Oversold (<=30) untuk Bullish atau Overbought (>=70) untuk Bearish
-    if (isBullish && !(X.rsi <= 30)) continue;
-    if (isBearish && !(X.rsi >= 70)) continue;
+    // Validasi murni struktur & rasio Fibonacci Scott Carney (tanpa syarat wajib RSI ekstrem)
 
     const XA = Math.abs(A.price - X.price);
     const AB = Math.abs(B.price - A.price);
@@ -1681,7 +1679,7 @@ async function querySingleAiAuditor(provider, prompt) {
   for (const base of bridgeBases) {
     try {
       const c = new AbortController();
-      const t = setTimeout(() => c.abort(), 12000);
+      const t = setTimeout(() => c.abort(), 22000);
       const res = await fetch(`${base}/api/ai-audit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1764,7 +1762,7 @@ Periksa apakah pola pada chart berikut VALID atau TIDAK VALID untuk setup tradin
 - Rasio Terukur: AB/XA=${bRat}, BC/AB=${cRat}, AD/XA=${dRat}
 - Zona PRZ: ${Number.isFinite(hm.przLow) ? fmtP(hm.przLow) + " - " + fmtP(hm.przHigh) : "Berdasarkan gelombang AHP RSI"}
 
-Evaluasi ketepatan rasio harmonik, posisi RSI di titik D (oversold <=40 untuk Bullish atau overbought >=60 untuk Bearish), dan risiko false breakout.
+Evaluasi ketepatan struktur swing X-A-B-C-D, rasio Fibonacci (AB/XA, BC/AB, AD/XA), dan akurasi zona PRZ murni sesuai standar Scott Carney. JANGAN menolak pola hanya karena RSI tidak oversold atau overbought; jadikan RSI sekadar catatan momentum.
 Balas HANYA dalam JSON valid tanpa markdown:
 {"valid": true atau false, "confidence": 0-100, "reason": "penjelasan singkat maks 18 kata dalam Bahasa Indonesia"}`;
 
@@ -1997,7 +1995,7 @@ window.scanTopCoinsForHarmonic = async function() {
   if (!matches.length) {
     btn.textContent = "🔍 Cari Koin Berpola Valid";
     if (badge) { badge.style.background = "#1e293b"; badge.style.color = "#94a3b8"; badge.textContent = "0 POLA SEGAR (80 KOIN)"; }
-    if (detail) detail.textContent = `Tidak ditemukan struktur Scott Carney segar (X RSI ≤30 / ≥70) pada ${candidates.length} koin di TF ${CONFIG.interval}.`;
+    if (detail) detail.textContent = `Tidak ditemukan struktur rasio Scott Carney segar pada ${candidates.length} koin di TF ${CONFIG.interval}.`;
     return;
   }
 

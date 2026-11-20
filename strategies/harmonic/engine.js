@@ -127,9 +127,9 @@
           cfg
         });
 
+        // Mode Pure Scott Carney: PRZ terkonfirmasi tetap valid tanpa wajib RSI oversold/overbought
         if (!rsiCheck.valid) {
-          logs.push(`[${timeframe}] ${pCfg.label} PRZ OK, menunggu konfirmasi: ${rsiCheck.reason}`);
-          continue;
+          logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney) · Catatan RSI: ${rsiCheck.reason}`);
         }
 
         // 6. Kalkulasi Entry, Stop Loss (di luar X atau luar PRZ + buffer ATR), TP1 (0.382 AD), TP2 (0.618 AD), & RR >= 1:2
