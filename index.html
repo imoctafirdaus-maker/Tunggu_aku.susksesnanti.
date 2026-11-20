@@ -1701,22 +1701,60 @@ async function validateHarmonicWithAi(hm) {
   badge.textContent = verdict.label;
 }
 
+function resolveChartHarmonic(candles) {
+  const closed = candles.length > 2 ? candles.slice(0, -1) : candles;
+  if (window.HarmonicEngine && typeof window.HarmonicEngine.analyzeSingleTimeframe === "function") {
+    const uiCfg = typeof window.getHarmonicUiSettings === "function" ? window.getHarmonicUiSettings() : {};
+    const res = window.HarmonicEngine.analyzeSingleTimeframe(closed, CONFIG.interval, uiCfg);
+    if (res && res.signal) {
+      const s = res.signal;
+      return {
+        source: "ENGINE",
+        pattern: s.patternName,
+        side: s.side === "BUY" ? "BULLISH" : "BEARISH",
+        X: s.points.X,
+        A: s.points.A,
+        B: s.points.B,
+        C: s.points.C,
+        D: { ...s.points.D, projected: false },
+        ratios: s.ratios,
+        przHigh: s.prz.high,
+        przLow: s.prz.low,
+        przScore: s.przScore,
+        slPrice: s.sl,
+        tp1Price: s.tp1,
+        tp2Price: s.tp2,
+        rr: s.rr,
+        rsi: s.rsi,
+        reason: s.reason
+      };
+    }
+  }
+  const legacy = typeof detectScottCarneyHarmonic === "function" ? detectScottCarneyHarmonic(candles) : null;
+  if (legacy) {
+    legacy.source = "PROJECTED";
+    return legacy;
+  }
+  return null;
+}
+
 function drawHarmonicPattern(candles) {
   clearHarmonicOverlay();
   if (!state.chart || !state.candleSeries || !Array.isArray(candles)) return;
-  const hm = detectScottCarneyHarmonic(candles);
+  const hm = resolveChartHarmonic(candles);
   const badge = $("hmAiBadge");
   const summary = $("hmPatternSummary");
   const detail = $("hmPrzDetail");
 
   if (!hm) {
     if (badge) { badge.style.background = "#1e293b"; badge.style.color = "#94a3b8"; badge.textContent = "NO VALID PATTERN"; }
-    if (summary) summary.textContent = `Belum ada pola Scott Carney valid pada ${CONFIG.symbol} (${CONFIG.interval}) dengan Anchor X RSI ≤30 / ≥70.`;
-    if (detail) detail.textContent = "Klik tombol di kanan untuk memindai koin lain yang sedang membentuk pola valid.";
+    if (summary) summary.textContent = `Belum ada pola Scott Carney terkonfirmasi pada ${CONFIG.symbol} (${CONFIG.interval}).`;
+    if (detail) detail.textContent = "Klik tombol di kanan untuk memindai 80 koin lain yang sedang membentuk pola.";
     return;
   }
 
-  const lineColor = hm.side === "BULLISH" ? "#38bdf8" : "#e879f9";
+  const isBull = hm.side === "BULLISH";
+  const lineColor = isBull ? "#38bdf8" : "#e879f9";
   state.hmSeries = state.chart.addLineSeries({
     color: lineColor,
     lineWidth: 2,
@@ -1728,6 +1766,7 @@ function drawHarmonicPattern(candles) {
   const rawPts = [hm.X, hm.A, hm.B, hm.C, hm.D];
   const pts = [];
   for (const p of rawPts) {
+    if (!p || !Number.isFinite(p.time) || !Number.isFinite(p.price)) continue;
     if (!pts.length) {
       pts.push({ time: p.time, value: p.price });
     } else if (p.time > pts[pts.length - 1].time) {
@@ -1738,9 +1777,8 @@ function drawHarmonicPattern(candles) {
   }
   state.hmSeries.setData(pts);
 
-  // Garis bantu sayap X -> B -> D (dashed) agar struktur segitiga harmonik jelas
   state.hmWingSeries = state.chart.addLineSeries({
-    color: hm.side === "BULLISH" ? "rgba(56,189,248,0.45)" : "rgba(232,121,249,0.45)",
+    color: isBull ? "rgba(56,189,248,0.45)" : "rgba(232,121,249,0.45)",
     lineWidth: 1,
     lineStyle: 2,
     priceLineVisible: false,
@@ -1749,6 +1787,7 @@ function drawHarmonicPattern(candles) {
   });
   const wingPts = [];
   for (const p of [hm.X, hm.B, hm.D]) {
+    if (!p || !Number.isFinite(p.time)) continue;
     if (!wingPts.length || p.time > wingPts[wingPts.length - 1].time) {
       wingPts.push({ time: p.time, value: p.price });
     }
@@ -1756,11 +1795,11 @@ function drawHarmonicPattern(candles) {
   state.hmWingSeries.setData(wingPts);
 
   const mkPos = (isHigh) => isHigh ? "aboveBar" : "belowBar";
-  const isBull = hm.side === "BULLISH";
+  const xLabel = Number.isFinite(hm.X.rsi) ? `X (RSI ${Math.round(hm.X.rsi)})` : "X";
   const markers = [
-    { time: hm.X.time, position: mkPos(!isBull), color: "#facc15", shape: "circle", text: `X (RSI ${Math.round(hm.X.rsi)})` },
+    { time: hm.X.time, position: mkPos(!isBull), color: "#facc15", shape: "circle", text: xLabel },
     { time: hm.A.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "A" },
-    { time: hm.B.time, position: mkPos(!isBull), color: lineColor, shape: "circle", text: `B (${hm.ratios.bRatio.toFixed(2)})` },
+    { time: hm.B.time, position: mkPos(!isBull), color: lineColor, shape: "circle", text: `B (${(hm.ratios?.bRatio || 0).toFixed(2)})` },
     { time: hm.C.time, position: mkPos(isBull), color: lineColor, shape: "circle", text: "C" },
     {
       time: hm.D.time,
@@ -1769,7 +1808,7 @@ function drawHarmonicPattern(candles) {
       shape: isBull ? "arrowUp" : "arrowDown",
       text: hm.D.projected ? `D* Target PRZ (${hm.pattern})` : `D · PRZ (${hm.pattern})`
     }
-  ].sort((a, b) => a.time - b.time);
+  ].filter(m => Number.isFinite(m.time)).sort((a, b) => a.time - b.time);
   state.hmSeries.setMarkers(markers);
 
   state.hmLines.push(
@@ -1778,7 +1817,24 @@ function drawHarmonicPattern(candles) {
     state.candleSeries.createPriceLine({ price: hm.slPrice, color: "#f43f5e", lineWidth: 1, lineStyle: 3, axisLabelVisible: true, title: "HARMONIC SL" })
   );
 
-  validateHarmonicWithAi(hm);
+  if (Number.isFinite(hm.tp1Price)) {
+    state.hmLines.push(
+      state.candleSeries.createPriceLine({ price: hm.tp1Price, color: "#22c55e", lineWidth: 1, lineStyle: 2, axisLabelVisible: true, title: "TP1 (0.382 AD)" })
+    );
+  }
+  if (Number.isFinite(hm.tp2Price)) {
+    state.hmLines.push(
+      state.candleSeries.createPriceLine({ price: hm.tp2Price, color: "#10b981", lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: "TP2 (0.618 AD)" })
+    );
+  }
+
+  if (hm.source === "ENGINE") {
+    if (badge) { badge.style.background = "rgba(34,197,94,0.2)"; badge.style.color = "#4ade80"; badge.textContent = `CONFIRMED · PRZ ${hm.przScore}/100`; }
+    if (summary) summary.textContent = hm.reason;
+    if (detail) detail.textContent = `PRZ: ${fmtP(hm.przLow)} - ${fmtP(hm.przHigh)} | SL: ${fmtP(hm.slPrice)} | TP1: ${fmtP(hm.tp1Price)} | TP2: ${fmtP(hm.tp2Price)} (RR 1:${hm.rr.toFixed(2)})`;
+  } else {
+    validateHarmonicWithAi(hm);
+  }
 }
 
 window.selectHarmonicCoin = function(sym) {
@@ -1816,7 +1872,7 @@ window.scanTopCoinsForHarmonic = async function() {
         const { data: raw } = await apiFetch(`/api/v3/klines?symbol=${sym}&interval=${CONFIG.interval}&limit=200`);
         if (Array.isArray(raw) && raw.length >= 60) {
           const cs = raw.map(k => ({ time: toCT(k[0]), open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5] }));
-          const found = detectScottCarneyHarmonic(cs);
+          const found = resolveChartHarmonic(cs);
           if (found) {
             matches.push({ sym, found });
           }
