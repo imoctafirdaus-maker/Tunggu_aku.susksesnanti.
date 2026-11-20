@@ -290,6 +290,7 @@
     sig15m.timeframe = "15m";
     sig15m.mtfConfirmed = true;
     sig15m.bias4hPattern = sig4h.patternName;
+    sig15m.bias4hDetail = `${sig4h.patternName} (${sig4h.side}) | AB/XA=${sig4h.ratios.bRatio.toFixed(3)}, BC/AB=${sig4h.ratios.cRatio.toFixed(3)}, AD/XA=${sig4h.ratios.dXaRatio.toFixed(3)} | PRZ ${sig4h.prz.low.toFixed(4)}-${sig4h.prz.high.toFixed(4)}`;
     sig15m.confirm1hNote = confirm1hNote;
     sig15m.reason = `[SNIPER 15M PRZ] Bias 4H: ${sig4h.patternName} (${biasSide}) -> Konfirmasi 1H (${confirm1hNote}) -> Entry 15M ${sig15m.patternName} (RR 1:${sig15m.rr.toFixed(2)})`;
 

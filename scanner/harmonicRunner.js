@@ -68,22 +68,24 @@ async function auditHarmonicDualAi(symbol, sig) {
     const cfAccountId = String(aiCfg.cfAccountId || "").trim();
     const cfApiToken = String(aiCfg.cfApiToken || "").trim();
 
-    const prompt = `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading.
-Audit ketepatan matematis & risiko sinyal 15M Sniper berikut (Bias 4H: ${sig.bias4hPattern || "-"}, Konfirmasi 1H: ${sig.confirm1hNote || "-"}):
-- Pair & Timeframe: ${symbol} (${sig.timeframe})
-- Pola & Arah: ${sig.side} ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
-- Rasio Aktual: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
-- Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
+    const prompt = `Kamu adalah Auditor Kuantitatif Multi-Timeframe (MTF) Scott Carney Harmonic Trading.
+Sistem menggunakan hierarki Top-Down wajib 3 lapis:
+1) TIMEFRAME 4H (Pembaca Struktur Pola Makro - BUKAN eksekusi): ${sig.bias4hDetail || sig.bias4hPattern || "-"}
+2) TIMEFRAME 1H (Validasi Struktur & Momentum Searah): ${sig.confirm1hNote || "-"}
+3) TIMEFRAME 15M (Zona PRZ Sniper Eksekusi):
+   - Pair: ${symbol} | Arah: ${sig.side} | Pola 15M: ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
+   - Rasio 15M: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
+   - Zona PRZ 15M: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
 
-Aturan Wajib:
-Validasi rasio Scott Carney (toleransi ±0.035) dan kelayakan RR >= 1.2 untuk entry leverage 50x. Jika valid dan layak, jawab valid=true (confidence >= 75). Jika rasio melenceng atau risiko tidak sehat, jawab valid=false.
+Tugas Audit:
+Validasi apakah (a) arah entry 15M selaras dengan struktur 4H & validasi 1H, (b) rasio Harmonic 15M memenuhi toleransi ±0.035 Scott Carney, dan (c) RR >= 1.2 aman untuk leverage 50x.
 Balas HANYA JSON valid tanpa markdown:
-{"valid": true atau false, "confidence": 0-100, "reason": "sebutkan angka rasio & deviasi maks 16 kata bahasa Indonesia"}`;
+{"valid": true atau false, "confidence": 0-100, "reason": "ringkas keselarasan 4H-1H-15M & deviasi rasio maks 18 kata bahasa Indonesia"}`;
 
     const votes = [];
     const errors = [];
 
-    // 1. Audit Groq Llama-3.3-70B (Rotasi semua key jika ada yang limit/timeout)
+    // 1. Audit Groq Llama-3.3-70B (Rotasi semua key)
     if (groqKeys.length) {
       const startIdx = Math.floor(Math.random() * groqKeys.length);
       for (let i = 0; i < groqKeys.length; i++) {
@@ -122,7 +124,7 @@ Balas HANYA JSON valid tanpa markdown:
       }
     }
 
-    // 2. Audit Cloudflare Workers AI atau Gemini sebagai Auditor Kedua
+    // 2. Audit Cloudflare Workers AI atau Rotasi Multi-Key Gemini
     if (cfAccountId && cfApiToken) {
       try {
         const c = new AbortController(); const t = setTimeout(() => c.abort(), 12000);
@@ -155,42 +157,45 @@ Balas HANYA JSON valid tanpa markdown:
         errors.push(`CF err: ${e.message}`);
       }
     } else if (geminiKeys.length) {
-      const gKey = geminiKeys[Math.floor(Math.random() * geminiKeys.length)];
-      try {
-        const c = new AbortController(); const t = setTimeout(() => c.abort(), 12000);
-        const gModel = aiCfg.geminiModel || "gemini-2.0-flash";
-        const gUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${gKey}`;
-        const r = await fetch(gUrl, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          signal: c.signal,
-          body: JSON.stringify({
-            generationConfig: { temperature: 0.1 },
-            contents: [{ parts: [{ text: prompt }] }]
-          })
-        });
-        clearTimeout(t);
-        if (r.ok) {
-          const d = await r.json();
-          const rawTxt = d?.candidates?.[0]?.content?.parts?.[0]?.text || "";
-          const m = rawTxt.match(/\{[\s\S]*\}/);
-          if (m) {
-            const p = JSON.parse(m[0]);
-            votes.push({
-              who: "Gemini",
-              valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 70,
-              reason: p.reason || ""
-            });
+      const gStart = Math.floor(Math.random() * geminiKeys.length);
+      for (let i = 0; i < geminiKeys.length; i++) {
+        const gKey = geminiKeys[(gStart + i) % geminiKeys.length];
+        try {
+          const c = new AbortController(); const t = setTimeout(() => c.abort(), 12000);
+          const gModel = aiCfg.geminiModel || "gemini-2.0-flash";
+          const gUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${gKey}`;
+          const r = await fetch(gUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            signal: c.signal,
+            body: JSON.stringify({
+              generationConfig: { temperature: 0.1 },
+              contents: [{ parts: [{ text: prompt }] }]
+            })
+          });
+          clearTimeout(t);
+          if (r.ok) {
+            const d = await r.json();
+            const rawTxt = d?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+            const m = rawTxt.match(/\{[\s\S]*\}/);
+            if (m) {
+              const p = JSON.parse(m[0]);
+              votes.push({
+                who: "Gemini",
+                valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 70,
+                reason: p.reason || ""
+              });
+              break;
+            }
+          } else {
+            errors.push(`Gemini HTTP ${r.status}`);
           }
-        } else {
-          errors.push(`Gemini HTTP ${r.status}`);
+        } catch (e) {
+          errors.push(`Gemini err: ${e.message}`);
         }
-      } catch (e) {
-        errors.push(`Gemini err: ${e.message}`);
       }
     }
 
-    // WAJIB minimal 1 AI merespons dan SEMUA AI yang merespons menyatakan valid=true
     if (votes.length > 0) {
       const okCount = votes.filter(v => v.valid).length;
       const approved = okCount === votes.length;
@@ -198,7 +203,6 @@ Balas HANYA JSON valid tanpa markdown:
       return { approved, reason: summary };
     }
 
-    // DILARANG keras fallback matematis tanpa AI
     return {
       approved: false,
       reason: `Ditolak: Wajib lolos audit AI namun API gagal merespons (${errors.slice(0, 2).join(", ") || "tidak ada respons AI"})`
