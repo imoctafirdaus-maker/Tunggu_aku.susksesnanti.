@@ -958,9 +958,19 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       <span id="hmAiBadge" style="padding:2px 8px;border-radius:4px;background:#1e293b;color:#94a3b8;font-weight:700;font-size:10px;">SCANNING PIVOTS...</span>
     </div>
     <div id="hmPatternSummary" style="color:#cbd5e1;margin-bottom:4px;">Memindai struktur X-A-B-C-D dengan syarat Anchor X: RSI ≤ 30 (Bullish) / RSI ≥ 70 (Bearish)...</div>
-    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px;">
       <div id="hmPrzDetail" style="color:#64748b;font-size:10px;">PRZ Zone: Menunggu konvergensi rasio Fibonacci XA & BC...</div>
-      <button id="scanHarmonicCoinBtn" type="button" onclick="scanTopCoinsForHarmonic()" style="padding:4px 10px;border-radius:6px;border:1px solid #38bdf8;background:rgba(56,189,248,0.12);color:#38bdf8;font-size:10px;font-weight:700;cursor:pointer;">🔍 Cari Koin Berpola Valid</button>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;">
+        <button id="auditHarmonicAiBtn" type="button" onclick="triggerDualAiHarmonicAudit(true)" style="padding:4px 10px;border-radius:6px;border:1px solid #a855f7;background:rgba(168,85,247,0.16);color:#e9d5ff;font-size:10px;font-weight:700;cursor:pointer;">🤖 Audit Groq & Gemini</button>
+        <button id="scanHarmonicCoinBtn" type="button" onclick="scanTopCoinsForHarmonic()" style="padding:4px 10px;border-radius:6px;border:1px solid #38bdf8;background:rgba(56,189,248,0.12);color:#38bdf8;font-size:10px;font-weight:700;cursor:pointer;">🔍 Cari Koin Berpola Valid</button>
+      </div>
+    </div>
+    <div id="hmDualAiReport" style="padding:7px 9px;border-radius:7px;background:#0f172a;border:1px solid #1e293b;color:#cbd5e1;font-size:10px;line-height:1.45;">
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;margin-bottom:3px;">
+        <span id="hmGroqVerdict" style="color:#94a3b8;">⚡ Groq: Menunggu pola...</span>
+        <span id="hmGeminiVerdict" style="color:#94a3b8;">💎 Gemini: Menunggu pola...</span>
+      </div>
+      <div id="hmConsensusNote" style="color:#64748b;">Dual-AI akan otomatis membaca pola pada Chart & Sub-Pane AHP RSI lalu memvalidasi kelayakannya.</div>
     </div>
   </div>
   <button class="btn text-sm" id="fitChartButton">Sesuaikan Grafik</button>
@@ -1642,51 +1652,40 @@ function detectScottCarneyHarmonic(candles) {
   return null;
 }
 
-async function validateHarmonicWithAi(hm) {
-  const badge = $("hmAiBadge");
-  const summary = $("hmPatternSummary");
-  const detail = $("hmPrzDetail");
-  if (!badge || !summary || !detail) return;
+let cachedAiKeys = null;
+async function getDualAiKeysFromFirebase() {
+  if (cachedAiKeys && (cachedAiKeys.groqKeys?.length || cachedAiKeys.geminiKeys?.length)) return cachedAiKeys;
+  try {
+    const r = await fetch("https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json");
+    if (r.ok) {
+      const d = await r.json();
+      if (d) {
+        cachedAiKeys = {
+          groqKeys: Array.isArray(d.groqKeys) ? d.groqKeys.filter(Boolean) : [],
+          geminiKeys: Array.isArray(d.geminiKeys) ? d.geminiKeys.filter(Boolean) : [],
+          groqModel: d.groqModel || "llama-3.3-70b-versatile",
+          geminiModel: d.geminiModel || "gemini-2.5-flash"
+        };
+        return cachedAiKeys;
+      }
+    }
+  } catch (_) {}
+  return { groqKeys: [], geminiKeys: [], groqModel: "llama-3.3-70b-versatile", geminiModel: "gemini-2.5-flash" };
+}
 
-  const sideColor = hm.side === "BULLISH" ? "#4ade80" : "#f87171";
-  const stageTxt = hm.inPrz ? "HARGA DI DALAM PRZ!" : (hm.D.projected ? "PROYEKSI MENUJU PRZ" : "STRUKTUR X-A-B-C-D TERBENTUK");
-  summary.innerHTML = `<strong style="color:${sideColor};">${hm.side} ${hm.pattern}</strong> (${stageTxt}) · Anchor X RSI: <strong>${hm.X.rsi.toFixed(1)}</strong> · B=${hm.ratios.bRatio.toFixed(3)} XA · C=${hm.ratios.cRatio.toFixed(3)} AB`;
-  detail.innerHTML = `PRZ Cluster: <strong style="color:#facc15;">${fmtP(hm.przLow)} – ${fmtP(hm.przHigh)}</strong> · Harmonic SL: <span style="color:#f87171;">${fmtP(hm.slPrice)}</span>`;
-
-  const cacheKey = `${CONFIG.symbol}|${CONFIG.interval}|${hm.pattern}|${hm.X.time}|${hm.C.time}`;
-  if (HARMONIC_CACHE.has(cacheKey)) {
-    const cached = HARMONIC_CACHE.get(cacheKey);
-    badge.style.background = cached.valid ? "rgba(34,197,94,0.2)" : "rgba(250,204,21,0.2)";
-    badge.style.color = cached.valid ? "#4ade80" : "#facc15";
-    badge.textContent = cached.label;
-    return;
-  }
-
-  badge.style.background = "rgba(250,204,21,0.2)";
-  badge.style.color = "#facc15";
-  badge.textContent = "AI AUDITING PRZ...";
-
-  const przSpreadPct = Math.abs(hm.przHigh - hm.przLow) / hm.przMid * 100;
-  const rsiConfirm = hm.side === "BULLISH" ? (hm.D.rsi <= 45) : (hm.D.rsi >= 55);
-  const mathValid = przSpreadPct <= 2.2 && (hm.inPrz ? rsiConfirm : true);
-
-  let verdict = {
-    valid: mathValid,
-    label: hm.inPrz
-      ? (mathValid ? "AI VERIFIED: PRZ VALID ✓" : "AI CAUTION: TUNGGU KONFIRMASI RSI")
-      : "AI WATCH: PRZ CLUSTER VALID ✓"
-  };
-
+async function querySingleAiAuditor(provider, prompt) {
+  // 1. Prioritaskan Local AI Router (http://127.0.0.1:4000) di Termux
   try {
     const c = new AbortController();
-    const t = setTimeout(() => c.abort(), 4500);
+    const t = setTimeout(() => c.abort(), 7000);
     const res = await fetch("http://127.0.0.1:4000/v1/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       signal: c.signal,
       body: JSON.stringify({
-        model: "gemini-flash",
-        messages: [{ role: "user", content: `Audit Harmonic ${hm.side} ${hm.pattern} ${CONFIG.symbol} (${CONFIG.interval}): X RSI=${hm.X.rsi.toFixed(1)}, B=${hm.ratios.bRatio.toFixed(3)}, C=${hm.ratios.cRatio.toFixed(3)}, PRZ ${fmtP(hm.przLow)}-${fmtP(hm.przHigh)}, RSI sekarang=${hm.D.rsi.toFixed(1)}. Jawab JSON {"valid":true/false,"note":"singkat"}` }]
+        model: provider === "groq" ? "analis-groq" : "auditor-gemini",
+        temperature: 0.1,
+        messages: [{ role: "user", content: prompt }]
       })
     });
     clearTimeout(t);
@@ -1694,20 +1693,171 @@ async function validateHarmonicWithAi(hm) {
       const jd = await res.json();
       const txt = jd?.choices?.[0]?.message?.content || "";
       const m = txt.match(/\{[\s\S]*\}/);
-      if (m) {
-        const parsed = JSON.parse(m[0]);
-        verdict = {
-          valid: Boolean(parsed.valid),
-          label: parsed.valid ? `AI VERIFIED: PRZ VALID ✓ (${parsed.note || "OK"})` : `AI REJECTED: ${parsed.note || "Invalid PRZ"}`
-        };
-      }
+      if (m) return JSON.parse(m[0]);
     }
   } catch (_) {}
 
+  // 2. Fallback langsung menggunakan key di Firebase jika PWA dibuka di browser tanpa router lokal
+  const keys = await getDualAiKeysFromFirebase();
+  if (provider === "groq" && keys.groqKeys.length) {
+    try {
+      const res = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": "Bearer " + keys.groqKeys[0] },
+        body: JSON.stringify({
+          model: keys.groqModel,
+          temperature: 0.1,
+          messages: [{ role: "user", content: prompt }]
+        })
+      });
+      if (res.ok) {
+        const jd = await res.json();
+        const txt = jd?.choices?.[0]?.message?.content || "";
+        const m = txt.match(/\{[\s\S]*\}/);
+        if (m) return JSON.parse(m[0]);
+      }
+    } catch (_) {}
+  }
+
+  if (provider === "gemini" && keys.geminiKeys.length) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(keys.geminiModel)}:generateContent?key=${encodeURIComponent(keys.geminiKeys[0])}`;
+      const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.1 }
+        })
+      });
+      if (res.ok) {
+        const jd = await res.json();
+        const txt = jd?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+        const m = txt.match(/\{[\s\S]*\}/);
+        if (m) return JSON.parse(m[0]);
+      }
+    } catch (_) {}
+  }
+
+  return null;
+}
+
+window.triggerDualAiHarmonicAudit = async function(forceRefresh = false) {
+  const target = window.latestChartOrAhpPattern;
+  if (!target) {
+    const noteEl = $("hmConsensusNote");
+    if (noteEl) noteEl.textContent = "Belum ada pola aktif di Chart maupun Sub-Pane AHP RSI untuk diaudit.";
+    return;
+  }
+  await validateHarmonicWithAi(target, forceRefresh);
+};
+
+async function validateHarmonicWithAi(hm, forceRefresh = false) {
+  const badge = $("hmAiBadge");
+  const summary = $("hmPatternSummary");
+  const detail = $("hmPrzDetail");
+  const groqEl = $("hmGroqVerdict");
+  const gemEl = $("hmGeminiVerdict");
+  const noteEl = $("hmConsensusNote");
+  if (!badge || !summary || !detail) return;
+
+  const sideUpper = String(hm.side || "BULLISH").toUpperCase();
+  const sideColor = sideUpper.includes("BULL") ? "#4ade80" : "#f87171";
+  const bRat = hm.ratios?.bRatio ? hm.ratios.bRatio.toFixed(3) : "-";
+  const cRat = hm.ratios?.cRatio ? hm.ratios.cRatio.toFixed(3) : "-";
+  const dRat = hm.ratios?.dXaRatio ? hm.ratios.dXaRatio.toFixed(3) : "-";
+  const fitScore = hm.fit || hm.przScore || 70;
+  const statusLabel = hm.status || (hm.D?.projected ? "GHOST" : "CONFIRMED");
+
+  summary.innerHTML = `<strong style="color:${sideColor};">${sideUpper} ${hm.pattern}</strong> [${statusLabel} · Fit ${fitScore}/100] · Sumber: <strong>${hm.origin || "CHART+AHP"}</strong> · B=${bRat} | C=${cRat} | D/XA=${dRat}`;
+  if (Number.isFinite(hm.przLow) && Number.isFinite(hm.przHigh)) {
+    detail.innerHTML = `PRZ: <strong style="color:#facc15;">${fmtP(hm.przLow)} – ${fmtP(hm.przHigh)}</strong> · SL: <span style="color:#f87171;">${fmtP(hm.slPrice)}</span> · TP1: <span style="color:#4ade80;">${fmtP(hm.tp1Price)}</span>`;
+  } else {
+    detail.innerHTML = `Titik RSI X=${hm.X?.rsi?.toFixed(1)} → A=${hm.A?.rsi?.toFixed(1)} → B=${hm.B?.rsi?.toFixed(1)} → C=${hm.C?.rsi?.toFixed(1)} → D=${hm.D?.rsi?.toFixed(1)} | Harga D: ${fmtP(hm.D?.price || state.currentPrice)}`;
+  }
+
+  const cacheKey = `${CONFIG.symbol}|${CONFIG.interval}|${hm.pattern}|${statusLabel}|${hm.X?.time}|${hm.D?.time}`;
+  if (!forceRefresh && HARMONIC_CACHE.has(cacheKey)) {
+    const cached = HARMONIC_CACHE.get(cacheKey);
+    badge.style.background = cached.valid ? "rgba(34,197,94,0.22)" : "rgba(244,63,94,0.22)";
+    badge.style.color = cached.valid ? "#4ade80" : "#fb7185";
+    badge.textContent = cached.badgeText;
+    if (groqEl) groqEl.innerHTML = cached.groqHtml;
+    if (gemEl) gemEl.innerHTML = cached.gemHtml;
+    if (noteEl) noteEl.textContent = cached.consensusText;
+    return;
+  }
+
+  badge.style.background = "rgba(250,204,21,0.2)";
+  badge.style.color = "#facc15";
+  badge.textContent = "DUAL-AI AUDITING (GROQ + GEMINI)...";
+  if (groqEl) groqEl.innerHTML = `⚡ Groq: <span style="color:#facc15;">Memeriksa struktur...</span>`;
+  if (gemEl) gemEl.innerHTML = `💎 Gemini: <span style="color:#facc15;">Mengaudit Fibonacci & RSI...</span>`;
+  if (noteEl) noteEl.textContent = "Mengirim koordinat X-A-B-C-D & AHP RSI ke Groq dan Gemini secara paralel...";
+
+  const prompt = `Kamu adalah auditor institusional pola Harmonic Trading (Scott Carney & Adaptive Harmonic Patterns RSI).
+Periksa apakah pola pada chart berikut VALID atau TIDAK VALID untuk setup trading:
+- Pair & Timeframe: ${CONFIG.symbol} (${CONFIG.interval})
+- Pola & Arah: ${sideUpper} ${hm.pattern} (Status: ${statusLabel}, Fit/PRZ Score: ${fitScore}/100, Sumber: ${hm.origin || "CHART+AHP"})
+- Titik Harga & RSI:
+  X: harga=${hm.X?.price}, RSI=${hm.X?.rsi?.toFixed(1)}
+  A: harga=${hm.A?.price}, RSI=${hm.A?.rsi?.toFixed(1)}
+  B: harga=${hm.B?.price}, RSI=${hm.B?.rsi?.toFixed(1)}
+  C: harga=${hm.C?.price}, RSI=${hm.C?.rsi?.toFixed(1)}
+  D: harga=${hm.D?.price}, RSI=${hm.D?.rsi?.toFixed(1)}
+- Rasio Terukur: AB/XA=${bRat}, BC/AB=${cRat}, AD/XA=${dRat}
+- Zona PRZ: ${Number.isFinite(hm.przLow) ? fmtP(hm.przLow) + " - " + fmtP(hm.przHigh) : "Berdasarkan gelombang AHP RSI"}
+
+Evaluasi ketepatan rasio harmonik, posisi RSI di titik D (oversold <=40 untuk Bullish atau overbought >=60 untuk Bearish), dan risiko false breakout.
+Balas HANYA dalam JSON valid tanpa markdown:
+{"valid": true atau false, "confidence": 0-100, "reason": "penjelasan singkat maks 18 kata dalam Bahasa Indonesia"}`;
+
+  const [groqRes, gemRes] = await Promise.all([
+    querySingleAiAuditor("groq", prompt),
+    querySingleAiAuditor("gemini", prompt)
+  ]);
+
+  const gOk = groqRes && typeof groqRes.valid === "boolean";
+  const mOk = gemRes && typeof gemRes.valid === "boolean";
+
+  const groqHtml = gOk
+    ? `⚡ Groq: <strong style="color:${groqRes.valid ? "#4ade80" : "#fb7185"};">${groqRes.valid ? "VALID" : "TIDAK VALID"} (${groqRes.confidence || 75}%)</strong>`
+    : `⚡ Groq: <span style="color:#94a3b8;">Offline/Timeout</span>`;
+  const gemHtml = mOk
+    ? `💎 Gemini: <strong style="color:${gemRes.valid ? "#4ade80" : "#fb7185"};">${gemRes.valid ? "VALID" : "TIDAK VALID"} (${gemRes.confidence || 75}%)</strong>`
+    : `💎 Gemini: <span style="color:#94a3b8;">Offline/Timeout</span>`;
+
+  let finalValid = false;
+  let badgeText = "TIDAK VALID ✕";
+  let consensusText = "";
+
+  if (gOk && mOk) {
+    finalValid = groqRes.valid && gemRes.valid;
+    badgeText = finalValid
+      ? "DUAL-AI: POLA VALID ✓"
+      : (groqRes.valid || gemRes.valid ? "DUAL-AI: RAGU (1/2 VALID)" : "DUAL-AI: TIDAK VALID ✕");
+    consensusText = `Groq: "${groqRes.reason}" | Gemini: "${gemRes.reason}"`;
+  } else if (gOk || mOk) {
+    const single = gOk ? groqRes : gemRes;
+    const who = gOk ? "Groq" : "Gemini";
+    finalValid = single.valid;
+    badgeText = finalValid ? `${who.toUpperCase()}: POLA VALID ✓` : `${who.toUpperCase()}: TIDAK VALID ✕`;
+    consensusText = `${who}: "${single.reason}"`;
+  } else {
+    finalValid = fitScore >= 62 && statusLabel === "CONFIRMED";
+    badgeText = finalValid ? "MATH ENGINE: VALID ✓" : "MATH ENGINE: BELUM VALID";
+    consensusText = "Router AI lokal & API cadangan sedang tidak merespons; memakai verifikasi skor matematis.";
+  }
+
+  const verdict = { valid: finalValid, badgeText, groqHtml, gemHtml, consensusText };
   HARMONIC_CACHE.set(cacheKey, verdict);
-  badge.style.background = verdict.valid ? "rgba(34,197,94,0.2)" : "rgba(250,204,21,0.2)";
-  badge.style.color = verdict.valid ? "#4ade80" : "#facc15";
-  badge.textContent = verdict.label;
+
+  badge.style.background = finalValid ? "rgba(34,197,94,0.22)" : "rgba(244,63,94,0.22)";
+  badge.style.color = finalValid ? "#4ade80" : "#fb7185";
+  badge.textContent = badgeText;
+  if (groqEl) groqEl.innerHTML = groqHtml;
+  if (gemEl) gemEl.innerHTML = gemHtml;
+  if (noteEl) noteEl.textContent = consensusText;
 }
 
 function resolveChartHarmonic(candles) {
@@ -1838,13 +1988,9 @@ function drawHarmonicPattern(candles) {
     );
   }
 
-  if (hm.source === "ENGINE") {
-    if (badge) { badge.style.background = "rgba(34,197,94,0.2)"; badge.style.color = "#4ade80"; badge.textContent = `CONFIRMED · PRZ ${hm.przScore}/100`; }
-    if (summary) summary.textContent = hm.reason;
-    if (detail) detail.textContent = `PRZ: ${fmtP(hm.przLow)} - ${fmtP(hm.przHigh)} | SL: ${fmtP(hm.slPrice)} | TP1: ${fmtP(hm.tp1Price)} | TP2: ${fmtP(hm.tp2Price)} (RR 1:${hm.rr.toFixed(2)})`;
-  } else {
-    validateHarmonicWithAi(hm);
-  }
+  hm.origin = hm.source === "ENGINE" ? "CANDLE CHART" : "PROJECTED CHART";
+  window.latestChartOrAhpPattern = hm;
+  validateHarmonicWithAi(hm);
 }
 
 window.selectHarmonicCoin = function(sym) {
@@ -3883,6 +4029,25 @@ if ("serviceWorker" in navigator) {
     if (vr) chartInst.timeScale().setVisibleLogicalRange(vr);
 
     ahpPatternsCache = detectAllAhpPatterns(candles, rsiArr);
+    if (ahpPatternsCache.length) {
+      const latestAhp = ahpPatternsCache[ahpPatternsCache.length - 1];
+      const xa = Math.abs(latestAhp.A.rsi - latestAhp.X.rsi) || 1;
+      const ab = Math.abs(latestAhp.B.rsi - latestAhp.A.rsi) || 1;
+      const bc = Math.abs(latestAhp.C.rsi - latestAhp.B.rsi) || 1;
+      const ahpPayload = {
+        ...latestAhp,
+        origin: "AHP RSI SUB-PANE",
+        ratios: {
+          bRatio: ab / xa,
+          cRatio: bc / ab,
+          dXaRatio: Math.abs(latestAhp.D.rsi - latestAhp.X.rsi) / xa
+        }
+      };
+      if (!window.latestChartOrAhpPattern || window.latestChartOrAhpPattern.origin === "AHP RSI SUB-PANE") {
+        window.latestChartOrAhpPattern = ahpPayload;
+        validateHarmonicWithAi(ahpPayload);
+      }
+    }
     requestAnimationFrame(renderAhpCanvasAndCards);
     setTimeout(renderAhpCanvasAndCards, 150);
   };
