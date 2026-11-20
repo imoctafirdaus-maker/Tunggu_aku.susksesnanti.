@@ -1973,11 +1973,11 @@ Balas HANYA JSON valid tanpa markdown:
       if (noteEl) noteEl.textContent = consensusText + " → ⏳ Mengirim order ke mesin eksekusi...";
       // Jalur 1: Firebase Queue (Tembus HTTPS/Android tanpa blokir SSL lokal)
       const qUrl = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_harmonicOrderQueue.json";
-      fetch(qUrl, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(execPayload)
-      }).then(() => {
+      Promise.allSettled([
+        fetch(qUrl, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(execPayload) }),
+        fetch("http://127.0.0.1:8765/api/harmonic-execute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(execPayload) }),
+        fetch("https://127.0.0.1:8766/api/harmonic-execute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(execPayload) })
+      ]).then(() => {
         let tries = 0;
         const pollRes = setInterval(async () => {
           tries++;

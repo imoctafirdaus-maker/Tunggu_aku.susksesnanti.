@@ -1,4 +1,4 @@
-const CACHE_NAME = "octa-radar-v1795190580559";
+const CACHE_NAME = 'octa-v' + Date.now();
 
 self.addEventListener("install", (event) => {
   self.skipWaiting();
