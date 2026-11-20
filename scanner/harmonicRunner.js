@@ -388,8 +388,9 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
         // Gunakan kembali candle 1h & 15m dari siklus utama jika sudah ada
         if (sharedCandles[sym]?.["1h"]) candlesByTf["1h"] = sharedCandles[sym]["1h"];
         if (sharedCandles[sym]?.["15m"]) candlesByTf["15m"] = sharedCandles[sym]["15m"];
+        if (sharedCandles[sym]?.["5m"]) candlesByTf["5m"] = sharedCandles[sym]["5m"];
 
-        const neededTfs = ["4h", "1h", "15m"].filter(tf => !candlesByTf[tf]);
+        const neededTfs = ["4h", "1h", "15m", "5m"].filter(tf => !candlesByTf[tf]);
         for (const tf of neededTfs) {
           const raw = await apiGetFn(`/api/v3/klines?symbol=${sym}&interval=${tf}&limit=160`);
           if (Array.isArray(raw) && raw.length >= 50) {
