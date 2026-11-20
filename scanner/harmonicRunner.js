@@ -309,8 +309,11 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   if (snap.openPositions.some(p => p.symbol === symbol)) {
     return { executed: false, reason: `Sudah ada posisi Futures aktif di ${symbol}` };
   }
-  if (snap.openPositions.length >= (cfg.maxOpenPositions || 3)) {
-    return { executed: false, reason: `Maksimal ${cfg.maxOpenPositions} posisi Futures tercapai` };
+  paper.liveSymbols = Array.isArray(paper.liveSymbols)
+    ? paper.liveSymbols.filter(s => snap.openPositions.some(p => p.symbol === s))
+    : [];
+  if (paper.liveSymbols.length >= (cfg.maxOpenPositions || 3)) {
+    return { executed: false, reason: `Maksimal ${cfg.maxOpenPositions || 3} slot independen Harmonic tercapai` };
   }
 
   const filters = await getSymbolFilters(symbol, creds);
@@ -356,7 +359,8 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     `Audit: ${groqAudit.reason}`
   ).catch(() => {});
 
-  return { executed: true, mode: "LIVE", reason: `Live Order ${sig.patternName} terkirim (${groqAudit.reason})` };
+  paper.liveSymbols.push(symbol);
+  return { executed: true, mode: "LIVE", reason: `Live Order Independen ${sig.patternName} terkirim (${groqAudit.reason})` };
 }
 
 /**

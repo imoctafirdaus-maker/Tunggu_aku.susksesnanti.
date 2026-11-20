@@ -15,7 +15,7 @@ function loadAiConfig() {
         groqModel: raw.groqModel || "llama-3.3-70b-versatile",
         geminiModel: raw.geminiModel || "gemini-3.8-flash",
         minGroqScore: Number(raw.minGroqScore) || 65,
-        minGeminiConfidence: Number(raw.minGeminiConfidence) || 75,
+        minGeminiConfidence: Math.max(75, Number(raw.minGeminiConfidence || 75)) || 75,
         groqKeys: [...new Set((raw.groqKeys || []).map(k => String(k).trim()).filter(Boolean))],
         geminiKeys: [...new Set((raw.geminiKeys || []).map(k => String(k).trim()).filter(Boolean))]
       };
@@ -309,7 +309,10 @@ async function getActiveGeminiModels(apiKey, preferredModel) {
 }
 
 async function callGeminiWithRotation(prompt, cfg, qState) {
-  const sysGem = "Anda adalah Auditor Risiko Senior Binance USDⓈ-M Futures Leverage 50x (Isolated). Tugas Anda mengaudit usulan sinyal & argumen analis pertama. Tolak (decision: TIDAK) jika jarak SL terlalu sempit (<0.25%) atau terlalu lebar (>1.6%), rasio kurang sehat, atau rawan likuidasi 50x. Jawab HANYA JSON valid: {\"decision\": \"YA\" atau \"TIDAK\", \"confidence\": number (0-100), \"alasan\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}.";
+  const isHarmonicPrompt = String(prompt).includes("HARMONIC_CARNEY");
+  const sysGem = isHarmonicPrompt
+    ? "Anda adalah Auditor Risiko Senior Scott Carney Harmonic Pattern Binance USDⓈ-M Futures. Evaluasi validitas rasio Fibonacci (B, C, D/XA), konfluensi PRZ, dan Risk-Reward (>= 1:1.2). Jangan menolak hanya karena jarak SL > 1.6% selama R:R sehat dan ukuran posisi menyesuaikan risiko. Beri confidence >= 75 jika valid. Jawab HANYA JSON valid: {\"decision\": \"YA\" atau \"TIDAK\", \"confidence\": number (0-100), \"alasan\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}."
+    : "Anda adalah Auditor Risiko Senior Binance USDⓈ-M Futures Leverage 50x (Isolated). Tugas Anda mengaudit usulan sinyal & argumen analis pertama. Tolak (decision: TIDAK) jika jarak SL terlalu sempit (<0.25%) atau terlalu lebar (>1.6%), rasio kurang sehat, atau rawan likuidasi 50x. Jawab HANYA JSON valid: {\"decision\": \"YA\" atau \"TIDAK\", \"confidence\": number (0-100), \"alasan\": \"penjelasan singkat maks 18 kata bahasa Indonesia\"}.";
   const viaRouter = await queryLocalAiRouter("auditor-gemini", sysGem, prompt, 0.1, 18000);
   if (viaRouter) {
     const parsed = extractJson(viaRouter.content);
@@ -443,7 +446,8 @@ function setCachedAudit(key, res) {
 }
 
 async function evaluateDualAiConsensus(rec, tmResult = null) {
-  const cacheKey = `${rec.symbol}_${rec.signal}_${rec.timeframe || "5m"}`;
+  const stratTag = rec.strategy || "EMA_EXPERT";
+  const cacheKey = `${stratTag}_${rec.symbol}_${rec.signal}_${rec.timeframe || "5m"}`;
   const cachedDecision = getCachedAudit(cacheKey);
   if (cachedDecision) return cachedDecision;
   const cfg = loadAiConfig();
@@ -453,10 +457,18 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
   const slPct = rec.entryPrice > 0 ? ((Math.abs(rec.entryPrice - rec.stopLoss) / rec.entryPrice) * 100).toFixed(2) : "0";
   const tpPct = rec.entryPrice > 0 ? ((Math.abs(rec.takeProfit - rec.entryPrice) / rec.entryPrice) * 100).toFixed(2) : "0";
 
-  const marketBrief = [
+  const isHarmonic = rec.strategy === "HARMONIC_CARNEY";
+  const marketBrief = isHarmonic ? [
+    `Strategi Independen: HARMONIC_CARNEY (${rec.patternName || "Harmonic"}) | Timeframe: ${rec.timeframe || "1h"}`,
     `Koin: ${rec.symbol} | Arah Sinyal: ${rec.signal}`,
-    `Entry: $${rec.entryPrice} | Stop Loss: $${rec.stopLoss} (${slPct}%) | Take Profit: $${rec.takeProfit} (${tpPct}%) | Risk-Reward: 1:${(Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(1)}`,
-    `Struktur Tren: EMA Expert MTF (1h > 15m > 5m) searah`,
+    `Entry: ${rec.entryPrice} | Stop Loss: ${rec.stopLoss} (${slPct}%) | TP1: ${rec.tp1 || "-"} | TP2: ${rec.takeProfit} (${tpPct}%) | Risk-Reward: 1:${rec.riskReward || (Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(2)}`,
+    `Zona PRZ: ${rec.przLow || "-"} - ${rec.przHigh || "-"} | Skor Konfluensi PRZ: ${rec.przScore || 80}/100`,
+    rec.reason ? `Detail Struktur Fibonacci: ${rec.reason}` : "",
+    tmResult && tmResult.winProb ? `Skor Struktur Scott Carney: ${tmResult.winProb}/100` : ""
+  ].filter(Boolean).join("\n") : [
+    `Strategi Independen: EMA_EXPERT MTF (1h > 15m > 5m) | Timeframe: ${rec.timeframe || "5m"}`,
+    `Koin: ${rec.symbol} | Arah Sinyal: ${rec.signal}`,
+    `Entry: ${rec.entryPrice} | Stop Loss: ${rec.stopLoss} (${slPct}%) | Take Profit: ${rec.takeProfit} (${tpPct}%) | Risk-Reward: 1:${(Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(1)}`,
     `Volume Relatif (RVOL): ${rec.rvol || "≥1.15"}x | Backtest Winrate: ${rec.winrate || "-"}%`,
     tmResult && tmResult.winProb ? `Simulasi Monte Carlo (2000 skenario): Probabilitas TP ${tmResult.winProb}%` : ""
   ].filter(Boolean).join("\n");
