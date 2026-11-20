@@ -319,20 +319,31 @@ async function main() {
     } catch (e) { console.error("Gagal menulis status:", e.message); st.ok = false; }
 
     
+    const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
+
     try {
       const timeWib = new Date().toTimeString().slice(0, 5) + " WIB";
       const regTotal = (st && (st.buy + st.sell)) || 0;
       const expTotal = (emaSt && (emaSt.buy + emaSt.sell)) || 0;
+      const hmTotal = (hmRes && hmRes.found) || 0;
+
       if (expTotal === 0) {
+        const topHm = hmRes && hmRes.top ? hmRes.top : null;
+        const candLabel = topHm ? `${topHm.symbol} (${topHm.sig.patternName})` : "NONE";
+        const sigLabel = topHm ? `${topHm.sig.side} [HARMONIC ${topHm.sig.timeframe}]` : "-";
+        const reasonText = topHm
+          ? `Siklus selesai (${timeWib}): Harmonic menemukan ${hmTotal} pola · Top: ${topHm.symbol} ${topHm.sig.patternName} ${topHm.sig.side} (PRZ ${topHm.sig.przScore}/100)`
+          : `Siklus selesai (${timeWib}): 0 EMA Expert & 0 Harmonic dari ${hmRes.scanned || st.coins} pair (${regTotal} reguler disaring)`;
+
         const uiPayload = {
           phase: "COMPLETED",
-          scanCoin: "TOP-500",
-          candidate: "NONE",
-          signal: "-",
-          groqStatus: "IDLE",
-          geminiStatus: "IDLE",
+          scanCoin: topHm ? topHm.symbol : "TOP-500",
+          candidate: candLabel,
+          signal: sigLabel,
+          groqStatus: topHm ? "DONE" : "IDLE",
+          geminiStatus: topHm ? "DONE" : "IDLE",
           tradeResult: "IDLE",
-          tradeReason: `Siklus selesai (${timeWib}): 0 kandidat EMA Expert (${regTotal} pola reguler disaring)`,
+          tradeReason: reasonText,
           updatedAt: Date.now()
         };
         require("fs").writeFileSync(require("path").join(__dirname, ".liveUiState.json"), JSON.stringify(uiPayload, null, 2));
@@ -343,8 +354,6 @@ async function main() {
         }).catch(() => {});
       }
     } catch (_) {}
-
-    const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
     console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m): scanned=${hmRes.scanned} found=${hmRes.found}`);
     await admin.app().delete();
   }

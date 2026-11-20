@@ -624,8 +624,9 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       if (candState) { candState.style.color = "#38bdf8"; candState.textContent = phase === "AUDITING" ? "AUDITING CONSENSUS..." : "AUDIT COMPLETE"; }
       if (funnelPhase) { funnelPhase.style.color = "#fbbf24"; funnelPhase.textContent = phase; }
     } else if (phase === "COMPLETED") {
-      if (candPair) { candPair.style.color = "#cbd5e1"; candPair.textContent = "0 CANDIDATE"; }
-      if (candState) { candState.style.color = "#4ade80"; candState.textContent = "CYCLE FINISHED"; }
+      const hasCand = st.candidate && st.candidate !== "NONE";
+      if (candPair) { candPair.style.color = hasCand ? "#38bdf8" : "#cbd5e1"; candPair.textContent = hasCand ? st.candidate : "0 CANDIDATE"; }
+      if (candState) { candState.style.color = "#4ade80"; candState.textContent = hasCand ? (st.signal || "HARMONIC FOUND") : "EMA + HARMONIC DONE"; }
       if (funnelPhase) { funnelPhase.style.color = "#4ade80"; funnelPhase.textContent = "COMPLETED"; }
     } else if (phase === "STANDBY") {
       if (candPair) { candPair.style.color = "#94a3b8"; candPair.textContent = "PAUSED"; }
