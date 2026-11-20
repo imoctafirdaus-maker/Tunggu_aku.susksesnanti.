@@ -4269,5 +4269,268 @@ window.addEventListener("load", function() {
   }, 2500);
 });
 </script>
+
+<!-- WIDGET RIWAYAT TRAFFIC & GRAFIK GARIS EVALUASI HARIAN -->
+<div id="dailyTrafficEvalSuite" style="max-width:1200px;margin:16px auto 28px auto;border-radius:14px;background:#070b12;border:1px solid #1e293b;font-family:'JetBrains Mono','Fira Code',ui-monospace,SFMono-Regular,Menlo,monospace;color:#e2e8f0;padding:16px;box-shadow:0 18px 40px rgba(0,0,0,0.6);">
+  <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #1e293b;padding-bottom:12px;margin-bottom:14px;">
+    <div>
+      <div style="font-size:13px;font-weight:700;letter-spacing:0.06em;color:#38bdf8;">📈 RIWAYAT TRAFFIC &amp; GRAFIK GARIS EVALUASI HARIAN</div>
+      <div id="dailyAnalyticsSub" style="font-size:11px;color:#94a3b8;margin-top:2px;">Memuat kurva PnL harian, traffic pemindaian &amp; evaluasi sinyal...</div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <button id="btnChartModeHourly" type="button" style="padding:5px 10px;font-size:11px;border-radius:7px;border:1px solid #38bdf8;background:rgba(56,189,248,0.18);color:#38bdf8;cursor:pointer;font-weight:600;">Hari Ini (Per Jam)</button>
+      <button id="btnChartModeDaily" type="button" style="padding:5px 10px;font-size:11px;border-radius:7px;border:1px solid #334155;background:#0f172a;color:#94a3b8;cursor:pointer;font-weight:600;">Riwayat Harian</button>
+    </div>
+  </div>
+
+  <!-- 4 Kartu KPI Hari Ini -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:16px;">
+    <div style="background:#0d1320;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+      <div style="font-size:10px;color:#94a3b8;">PNL HARI INI (WIB)</div>
+      <div id="kpiTodayPnl" style="font-size:16px;font-weight:700;color:#22c55e;margin-top:4px;">+$0.00 USDT</div>
+    </div>
+    <div style="background:#0d1320;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+      <div style="font-size:10px;color:#94a3b8;">WIN RATE &amp; TRADE</div>
+      <div id="kpiTodayWinRate" style="font-size:16px;font-weight:700;color:#f8fafc;margin-top:4px;">0% (0 Trade)</div>
+    </div>
+    <div style="background:#0d1320;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+      <div style="font-size:10px;color:#94a3b8;">TRAFFIC SCAN HARI INI</div>
+      <div id="kpiTodayTraffic" style="font-size:16px;font-weight:700;color:#38bdf8;margin-top:4px;">0 Pair</div>
+    </div>
+    <div style="background:#0d1320;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+      <div style="font-size:10px;color:#94a3b8;">SINYAL VALID / NEWS HOLD</div>
+      <div id="kpiTodaySignals" style="font-size:16px;font-weight:700;color:#fbbf24;margin-top:4px;">0 Valid · 0 Hold</div>
+    </div>
+  </div>
+
+  <!-- Canvas Grafik Garis -->
+  <div style="background:#0a0f18;border:1px solid #1e293b;border-radius:12px;padding:12px;margin-bottom:14px;">
+    <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;font-size:11px;margin-bottom:8px;gap:8px;">
+      <span id="chartLegendLeft" style="color:#38bdf8;font-weight:600;">● Traffic Pemindaian (Pair)</span>
+      <span id="chartLegendRight" style="color:#22c55e;font-weight:600;">● Sinyal Harmonic / Realized PnL</span>
+    </div>
+    <canvas id="dailyTrafficLineCanvas" style="width:100%;height:210px;display:block;"></canvas>
+  </div>
+
+  <!-- Evaluasi & Riwayat Eksekusi Terbaru -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;">
+    <div style="background:#0d1320;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;margin-bottom:8px;">🧾 RIWAYAT REALIZED PNL / ORDER TERBARU</div>
+      <div id="recentTradesEvalList" style="font-size:11px;color:#94a3b8;max-height:175px;overflow-y:auto;line-height:1.6;">Belum ada riwayat trade tercatat.</div>
+    </div>
+    <div style="background:#0d1320;border:1px solid #1e293b;border-radius:10px;padding:10px 12px;">
+      <div style="font-size:11px;font-weight:700;color:#cbd5e1;margin-bottom:8px;">🔍 LOG EVALUASI SCANNER &amp; GUARD HARI INI</div>
+      <div id="recentGuardEvalList" style="font-size:11px;color:#94a3b8;max-height:175px;overflow-y:auto;line-height:1.6;">Menunggu siklus pemindaian...</div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const ANALYTICS_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_dailyAnalytics.json";
+  let chartMode = "hourly";
+  let cachedData = null;
+
+  const btnHourly = document.getElementById("btnChartModeHourly");
+  const btnDaily = document.getElementById("btnChartModeDaily");
+  if (btnHourly && btnDaily) {
+    btnHourly.onclick = () => {
+      chartMode = "hourly";
+      btnHourly.style.borderColor = "#38bdf8"; btnHourly.style.background = "rgba(56,189,248,0.18)"; btnHourly.style.color = "#38bdf8";
+      btnDaily.style.borderColor = "#334155"; btnDaily.style.background = "#0f172a"; btnDaily.style.color = "#94a3b8";
+      if (cachedData) renderAnalytics(cachedData);
+    };
+    btnDaily.onclick = () => {
+      chartMode = "daily";
+      btnDaily.style.borderColor = "#38bdf8"; btnDaily.style.background = "rgba(56,189,248,0.18)"; btnDaily.style.color = "#38bdf8";
+      btnHourly.style.borderColor = "#334155"; btnHourly.style.background = "#0f172a"; btnHourly.style.color = "#94a3b8";
+      if (cachedData) renderAnalytics(cachedData);
+    };
+  }
+
+  function drawLineChart(labels, seriesA, seriesB, isDailyPnl) {
+    const canvas = document.getElementById("dailyTrafficLineCanvas");
+    if (!canvas) return;
+    const dpr = window.devicePixelRatio || 1;
+    const rect = canvas.getBoundingClientRect();
+    const w = Math.max(300, rect.width || 600);
+    const h = 210;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, w, h);
+
+    const padL = 42, padR = 18, padT = 18, padB = 28;
+    const plotW = w - padL - padR;
+    const plotH = h - padT - padB;
+
+    // Grid horizontal
+    ctx.strokeStyle = "#1e293b";
+    ctx.lineWidth = 1;
+    for (let i = 0; i <= 4; i++) {
+      const y = padT + (plotH / 4) * i;
+      ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+    }
+
+    if (!labels.length) {
+      ctx.fillStyle = "#64748b";
+      ctx.font = "12px monospace";
+      ctx.fillText("Menunggu data traffic siklus pertama...", padL + 12, padT + plotH / 2);
+      return;
+    }
+
+    const maxA = Math.max(1, ...seriesA);
+    const minB = isDailyPnl ? Math.min(0, ...seriesB) : 0;
+    const maxB = Math.max(1, ...seriesB);
+    const spanB = Math.max(0.01, maxB - minB);
+
+    const getX = (idx) => labels.length === 1 ? padL + plotW / 2 : padL + (plotW / (labels.length - 1)) * idx;
+    const getYA = (val) => padT + plotH - (val / maxA) * plotH;
+    const getYB = (val) => padT + plotH - ((val - minB) / spanB) * plotH;
+
+    // Label sumbu Y kiri (Traffic)
+    ctx.fillStyle = "#64748b";
+    ctx.font = "10px monospace";
+    ctx.fillText(String(Math.round(maxA)), 4, padT + 8);
+    ctx.fillText("0", 4, padT + plotH);
+
+    // Garis Seri A (Traffic Scan - Biru Cyan)
+    ctx.strokeStyle = "#38bdf8";
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    seriesA.forEach((v, i) => {
+      const x = getX(i), y = getYA(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Area gradien Seri A
+    ctx.fillStyle = "rgba(56, 189, 248, 0.10)";
+    ctx.lineTo(getX(labels.length - 1), padT + plotH);
+    ctx.lineTo(getX(0), padT + plotH);
+    ctx.closePath();
+    ctx.fill();
+
+    // Garis Seri B (Sinyal Valid / PnL - Hijau Emerald)
+    ctx.strokeStyle = "#22c55e";
+    ctx.lineWidth = 2.4;
+    ctx.beginPath();
+    seriesB.forEach((v, i) => {
+      const x = getX(i), y = getYB(v);
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    });
+    ctx.stroke();
+
+    // Titik & Label Sumbu X
+    labels.forEach((lbl, i) => {
+      const x = getX(i);
+      const yA = getYA(seriesA[i]);
+      const yB = getYB(seriesB[i]);
+
+      ctx.fillStyle = "#38bdf8";
+      ctx.beginPath(); ctx.arc(x, yA, 3, 0, Math.PI * 2); ctx.fill();
+
+      ctx.fillStyle = "#22c55e";
+      ctx.beginPath(); ctx.arc(x, yB, 3.5, 0, Math.PI * 2); ctx.fill();
+
+      if (labels.length <= 8 || i % Math.ceil(labels.length / 6) === 0 || i === labels.length - 1) {
+        ctx.fillStyle = "#94a3b8";
+        ctx.font = "10px monospace";
+        ctx.fillText(lbl, Math.max(padL - 8, x - 14), h - 8);
+      }
+    });
+  }
+
+  function renderAnalytics(data) {
+    cachedData = data;
+    const sum = data.summary || {};
+    const subEl = document.getElementById("dailyAnalyticsSub");
+    if (subEl) {
+      const upd = data.updatedAt ? new Date(data.updatedAt).toLocaleTimeString("id-ID") : "-";
+      subEl.textContent = "Tanggal WIB: " + (data.todayWib || "-") + " · Update: " + upd + " · Ekuitas: $" + Number(sum.equity || 0).toFixed(2);
+    }
+
+    const pnlEl = document.getElementById("kpiTodayPnl");
+    if (pnlEl) {
+      const p = Number(sum.todayRealizedPnl || 0);
+      pnlEl.textContent = (p >= 0 ? "+$" : "-$") + Math.abs(p).toFixed(2) + " USDT";
+      pnlEl.style.color = p >= 0 ? "#22c55e" : "#ef4444";
+    }
+    const wrEl = document.getElementById("kpiTodayWinRate");
+    if (wrEl) wrEl.textContent = (sum.winRateToday || 0) + "% (" + (sum.todayTradesCount || 0) + " Trade)";
+
+    const trEl = document.getElementById("kpiTodayTraffic");
+    if (trEl) trEl.textContent = (sum.totalScansToday || 0) + " Pair";
+
+    const sgEl = document.getElementById("kpiTodaySignals");
+    if (sgEl) sgEl.textContent = (sum.totalFoundToday || 0) + " Valid · " + (sum.todaySkippedNews || 0) + " Hold";
+
+    const legR = document.getElementById("chartLegendRight");
+    if (chartMode === "hourly") {
+      if (legR) legR.textContent = "● Sinyal Harmonic Valid (Per Jam Hari Ini)";
+      const hrObj = data.hourlyTraffic || {};
+      const hours = Object.keys(hrObj).sort();
+      drawLineChart(
+        hours,
+        hours.map(h => hrObj[h].scans || 0),
+        hours.map(h => hrObj[h].signalsFound || 0),
+        false
+      );
+    } else {
+      if (legR) legR.textContent = "● Realized PnL Harian (USDT)";
+      const days = Array.isArray(data.dailySeries) ? data.dailySeries : [];
+      drawLineChart(
+        days.map(d => (d.date || "").slice(5)),
+        days.map(d => d.scans || 0),
+        days.map(d => Number(d.realizedPnl || 0)),
+        true
+      );
+    }
+
+    const tradesEl = document.getElementById("recentTradesEvalList");
+    if (tradesEl) {
+      const trs = Array.isArray(data.recentTrades) ? data.recentTrades : [];
+      tradesEl.innerHTML = trs.length
+        ? trs.map(t => {
+            const tm = new Date(t.time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+            const c = t.pnl >= 0 ? "#22c55e" : "#ef4444";
+            return "<div style='border-bottom:1px solid #1e293b;padding:4px 0;display:flex;justify-content:space-between;'>" +
+              "<span><b>" + t.symbol + "</b> <span style='color:#64748b'>(" + tm + ")</span></span>" +
+              "<span style='color:" + c + ";font-weight:700;'>" + (t.pnl >= 0 ? "+" : "") + Number(t.pnl).toFixed(2) + " USDT</span></div>";
+          }).join("")
+        : "Belum ada posisi yang ditutup / Realized PnL hari ini.";
+    }
+
+    const evalEl = document.getElementById("recentGuardEvalList");
+    if (evalEl) {
+      const evs = Array.isArray(data.recentEvaluations) ? data.recentEvaluations : [];
+      evalEl.innerHTML = evs.length
+        ? evs.map(ev => {
+            const tm = new Date(ev.time).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+            const badgeColor = ev.status === "SKIPPED" ? "#f59e0b" : (ev.status === "WATCH" ? "#64748b" : "#22c55e");
+            return "<div style='border-bottom:1px solid #1e293b;padding:4px 0;'>" +
+              "<span style='color:" + badgeColor + ";font-weight:700;'>[" + ev.status + "]</span> " +
+              "<b>" + ev.symbol + "</b> (" + ev.timeframe + ") · <span style='color:#cbd5e1;'>" + (ev.reason || ev.pattern) + "</span> <span style='color:#64748b;'>(" + tm + ")</span></div>";
+          }).join("")
+        : "Menunggu siklus evaluasi berikutnya...";
+    }
+  }
+
+  async function pollDailyAnalytics() {
+    try {
+      const r = await fetch(ANALYTICS_URL + "?t=" + Date.now());
+      if (r.ok) {
+        const d = await r.json();
+        if (d) renderAnalytics(d);
+      }
+    } catch (_) {}
+  }
+
+  pollDailyAnalytics();
+  setInterval(pollDailyAnalytics, 15000);
+})();
+</script>
+
 </body>
 </html>

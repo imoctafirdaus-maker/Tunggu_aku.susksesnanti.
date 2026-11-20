@@ -13,6 +13,7 @@ const { getFuturesSnapshot, executeSignalTrade, manageOpenPositions } = require(
 const { syncControlWithFirebase } = require("./botControl");
 const { notifyNewSignalsToTelegram } = require("./telegramNotifier");
 const { runHarmonicScanCycle } = require("./harmonicRunner");
+const { syncDailyAnalyticsToFirebase } = require("./dailyAnalyticsSync");
 
 const DB_URL = process.env.FIREBASE_DB_URL ||
   "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
@@ -370,6 +371,7 @@ async function main() {
 
     
     const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
+    await syncDailyAnalyticsToFirebase(db, admin, { scanned: (hmRes && hmRes.scanned) || 0, found: (hmRes && hmRes.found) || 0 }).catch(() => {});
 
     try {
       const timeWib = new Date().toTimeString().slice(0, 5) + " WIB";
