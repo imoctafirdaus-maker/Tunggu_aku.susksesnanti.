@@ -1867,7 +1867,7 @@ Balas HANYA dalam JSON valid tanpa markdown:
     ? `💎 Gemini: <strong style="color:${gemRes.valid ? "#4ade80" : "#fb7185"};">${gemRes.valid ? "VALID" : "TIDAK VALID"} (${gemRes.confidence || 75}%)</strong>`
     : `💎 Gemini: <span style="color:#94a3b8;">Offline/Timeout</span>`;
   const sambaHtml = sOk
-    ? `💠 SambaNova: <strong style="color:${sambaRes.valid ? "#4ade80" : "#fb7185"};">${sambaRes.valid ? "VALID" : "TIDAK VALID"} (${sambaRes.confidence || 75}%)</strong>`
+    ? `<span style="padding:2px 6px;border-radius:4px;background:rgba(56,189,248,0.16);border:1px solid rgba(56,189,248,0.4);">💠 SambaNova: <strong style="color:${sambaRes.valid ? "#4ade80" : "#fb7185"};">${sambaRes.valid ? "VALID" : "TIDAK VALID"} (${sambaRes.confidence || 75}%)</strong></span>`
     : `💠 SambaNova: <span style="color:#38bdf8;">Siaga (Auto-Fallback)</span>`;
 
   const activeVotes = [];

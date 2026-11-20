@@ -124,7 +124,7 @@ const server = http.createServer(async (req, res) => {
           orderedPrimary.push(primaryPool[(start + step) % primaryPool.length]);
         }
         // Gabungkan rute utama di depan, diikuti SambaNova sebagai fallback otomatis
-        const fullQueue = target.includes("samba") ? orderedPrimary : [...orderedPrimary, ...sambaRoutes];
+        const fullQueue = orderedPrimary;
 
         let lastErr = null;
         for (const route of fullQueue) {
