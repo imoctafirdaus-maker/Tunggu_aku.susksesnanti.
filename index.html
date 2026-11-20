@@ -248,7 +248,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <div style="background:#070a11;padding:12px 16px;">
       <div style="font-size:9px;letter-spacing:0.12em;color:#64748b;margin-bottom:4px;">ACTIVE CANDIDATE</div>
       <div id="qtCandPair" style="font-size:16px;font-weight:800;color:#38bdf8;margin-top:2px;">SCANNING...</div>
-      <div id="qtCandState" style="font-size:10px;color:#fbbf24;margin-top:3px;">TOP 500 EMA MTF</div>
+      <div id="qtCandState" style="font-size:10px;color:#fbbf24;margin-top:3px;">HARMONIC + 3 EMA</div>
     </div>
     <div style="background:#070a11;padding:12px 16px;">
       <div style="display:flex;justify-content:space-between;font-size:9px;letter-spacing:0.12em;color:#64748b;margin-bottom:6px;">
@@ -351,26 +351,6 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     const isBotOn = window.__botControlState ? window.__botControlState.autoTrade !== false : true;
     if (!isBotOn) return "STANDBY";
     const st = radarState || {};
-    try {
-      const rawCand = String(st.scanCoin || st.candidate || "").trim();
-      const cleanSym = rawCand.split(/[\s(]/)[0].toUpperCase();
-      const hasValidSym = /^[A-Z0-9]{2,15}USDT$/.test(cleanSym);
-      const isCandidatePhase = ["AUDITING", "RESULT", "COMPLETED"].includes(phase) && st.candidate && st.candidate !== "NONE";
-      const eventStamp = cleanSym + "_" + (st.updatedAt || "");
-      if (hasValidSym && isCandidatePhase && window.__lastAutoChartStamp !== eventStamp) {
-        window.__lastAutoChartStamp = eventStamp;
-        if (typeof CONFIG !== "undefined" && CONFIG.symbol !== cleanSym && typeof radarToChart === "function") {
-          const selEl = document.getElementById("symbolSelect");
-          if (selEl && !Array.from(selEl.options).some(o => o.value === cleanSym)) {
-            const opt = document.createElement("option");
-            opt.value = cleanSym;
-            opt.textContent = cleanSym + " (Kandidat Scanner)";
-            selEl.appendChild(opt);
-          }
-          radarToChart(cleanSym);
-        }
-      }
-    } catch (_) {}
     const ageSec = st.updatedAt ? Math.floor((Date.now() - st.updatedAt) / 1000) : 999;
     if (ageSec > 360) return "SCANNING";
     return st.phase || "SCANNING";
@@ -389,73 +369,116 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     for (let y = 0; y < h; y += 28) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
 
     const midY = h * 0.5;
-    const x0 = 16, x1 = w * 0.36, x2 = w * 0.68, x3 = w - 24;
+    const topY = h * 0.27;
+    const botY = h * 0.73;
+    const x0 = 14, x1 = w * 0.34, x2 = w * 0.67, x3 = w - 26;
 
-    // Gambar garis batas corong (Funnel Envelope)
+    // Jalur Atas: HARMONIC PATTERN (Independen) -> DUAL-AI -> 50X
     ctx.beginPath();
-    ctx.moveTo(x0, 14);
-    ctx.bezierCurveTo(x1 * 0.6, 14, x1 * 0.8, midY - 34, x1, midY - 34);
-    ctx.lineTo(x2, midY - 16);
-    ctx.lineTo(x3, midY - 12);
-    ctx.strokeStyle = "rgba(56,189,248,0.45)";
-    ctx.lineWidth = 1.5;
+    ctx.moveTo(x0, topY);
+    ctx.lineTo(x1, topY);
+    ctx.bezierCurveTo(x1 + (x2 - x1) * 0.55, topY, x2 - 14, midY - 10, x2, midY - 6);
+    ctx.lineTo(x3, midY - 3);
+    ctx.strokeStyle = "rgba(56,189,248,0.65)";
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    // Jalur Bawah: 3 EMA MTF (Independen) -> DUAL-AI -> 50X
+    ctx.beginPath();
+    ctx.moveTo(x0, botY);
+    ctx.lineTo(x1, botY);
+    ctx.bezierCurveTo(x1 + (x2 - x1) * 0.55, botY, x2 - 14, midY + 10, x2, midY + 6);
+    ctx.lineTo(x3, midY + 3);
+    ctx.strokeStyle = "rgba(129,140,248,0.65)";
+    ctx.lineWidth = 1.6;
+    ctx.stroke();
+
+    // Corong luar pembungkus konvergensi
+    ctx.beginPath();
+    ctx.moveTo(x0, 12);
+    ctx.lineTo(x1, 14);
+    ctx.lineTo(x2, midY - 18);
+    ctx.lineTo(x3, midY - 11);
+    ctx.strokeStyle = "rgba(148,163,184,0.22)";
+    ctx.lineWidth = 1;
     ctx.stroke();
 
     ctx.beginPath();
-    ctx.moveTo(x0, h - 14);
-    ctx.bezierCurveTo(x1 * 0.6, h - 14, x1 * 0.8, midY + 34, x1, midY + 34);
-    ctx.lineTo(x2, midY + 16);
-    ctx.lineTo(x3, midY + 12);
+    ctx.moveTo(x0, h - 12);
+    ctx.lineTo(x1, h - 14);
+    ctx.lineTo(x2, midY + 18);
+    ctx.lineTo(x3, midY + 11);
     ctx.stroke();
 
-    // Garis gerbang vertikal (EMA MTF -> GROQ -> GEMINI)
+    // Gerbang vertikal: STRATEGI INDEPENDEN & DUAL-AI >= 75%
     const gates = [
-      { x: x1, label: "EMA MTF", color: "#38bdf8" },
-      { x: x2, label: "DUAL-AI", color: "#a855f7" }
+      { x: x1, label: "INDEPENDENT SCAN", color: "#38bdf8" },
+      { x: x2, label: "DUAL-AI ≥75%", color: "#a855f7" }
     ];
     gates.forEach(g => {
       ctx.setLineDash([3, 3]);
       ctx.beginPath();
       ctx.moveTo(g.x, 12);
       ctx.lineTo(g.x, h - 12);
-      ctx.strokeStyle = "rgba(148,163,184,0.3)";
+      ctx.strokeStyle = "rgba(148,163,184,0.35)";
       ctx.stroke();
       ctx.setLineDash([]);
       ctx.fillStyle = g.color;
       ctx.font = "bold 9px monospace";
-      ctx.fillText(g.label, g.x - 20, 11);
+      ctx.fillText(g.label, g.x - 28, 10);
     });
 
-    // Aliran partikel koin
-    const activeSpeed = phase === "STANDBY" ? 0.15 : (phase === "AUDITING" ? 1.6 : 1.0);
-    particles.forEach(p => {
-      p.x += p.speed * activeSpeed;
-      if (p.x > 1) { p.x = 0; p.y = (Math.random() - 0.5) * 0.85; }
+    // Label Node Jalur Atas (HARMONIC) & Jalur Bawah (3 EMA)
+    ctx.fillStyle = "#38bdf8";
+    ctx.font = "bold 9px monospace";
+    ctx.fillText("HARMONIC", x0 + 2, topY - 6);
 
-      const px = x0 + p.x * (x3 - x0);
-      let spread = (h * 0.42) * (1 - p.x * 0.82);
-      if (!p.passStage1 && p.x > 0.36) spread *= 1.4;
-      const py = midY + p.y * spread + Math.sin(frame * 0.05 + p.x * 8) * 3;
+    ctx.fillStyle = "#818cf8";
+    ctx.fillText("3 EMA MTF", x0 + 2, botY + 13);
 
+    // Simpul Aktif di Gerbang Strategi
+    [topY, botY].forEach((ny, idx) => {
       ctx.beginPath();
-      ctx.arc(px, py, p.passStage2 ? 2.6 : 1.8, 0, Math.PI * 2);
-      if (p.x > 0.68) {
-        ctx.fillStyle = p.passStage2 ? "#4ade80" : "rgba(248,113,113,0.45)";
-      } else {
-        ctx.fillStyle = p.hue;
-      }
+      ctx.arc(x1, ny, 3.5, 0, Math.PI * 2);
+      ctx.fillStyle = idx === 0 ? "#38bdf8" : "#818cf8";
       ctx.fill();
     });
 
-    // Node Output Kanan (EXECUTED / VERDICT)
-    const isSuccess = phase === "RESULT" && radarState && radarState.tradeResult === "SUCCESS";
-    const isFail = phase === "RESULT" && radarState && radarState.tradeResult !== "SUCCESS";
-    ctx.fillStyle = isSuccess ? "#4ade80" : (isFail ? "#f87171" : "#facc15");
+    // Partikel mengalir paralel di jalur HARMONIC (atas) & 3 EMA (bawah) menuju DUAL-AI -> 50X
+    const speed = phase === "STANDBY" ? 0.001 : (phase === "AUDITING" ? 0.013 : 0.0085);
+    for (let i = 0; i < 26; i++) {
+      const isHarmonicLane = i % 2 === 0;
+      const laneBaseY = isHarmonicLane ? topY : botY;
+      const prog = ((frame * speed) + (i * 0.0385)) % 1;
+      const px = x0 + prog * (x3 - x0);
+      let py = laneBaseY;
+      if (px > x1 && px <= x2) {
+        const t = (px - x1) / (x2 - x1);
+        const ease = t * t * (3 - 2 * t);
+        py = laneBaseY + (midY - laneBaseY) * ease + Math.sin(frame * 0.05 + i) * 2.5;
+      } else if (px > x2) {
+        py = midY + Math.sin(frame * 0.06 + i) * 2;
+      } else {
+        py = laneBaseY + Math.sin(frame * 0.04 + i) * 2;
+      }
+
+      const isPassed = prog > 0.68;
+      ctx.beginPath();
+      ctx.arc(px, py, isPassed ? 2.6 : 2.1, 0, Math.PI * 2);
+      ctx.fillStyle = phase === "STANDBY"
+        ? "rgba(148,163,184,0.35)"
+        : (isPassed ? "#4ade80" : (isHarmonicLane ? "rgba(56,189,248,0.9)" : "rgba(129,140,248,0.9)"));
+      ctx.fill();
+    }
+
+    // Node Eksekusi Akhir 50X
     ctx.beginPath();
-    ctx.arc(x3, midY, 5 + Math.sin(frame * 0.15) * 1.5, 0, Math.PI * 2);
+    ctx.arc(x3, midY, 5.5, 0, Math.PI * 2);
+    ctx.fillStyle = phase === "STANDBY" ? "#64748b" : (phase === "RESULT" ? "#4ade80" : "#facc15");
     ctx.fill();
+    ctx.fillStyle = "#e2e8f0";
     ctx.font = "bold 9px monospace";
-    ctx.fillText(isSuccess ? "EXEC" : (isFail ? "FAIL" : "50X"), x3 - 12, midY - 12);
+    ctx.fillText("50X", x3 - 8, midY - 10);
   }
 
   function drawOscillator(phase) {
@@ -654,7 +677,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       if (funnelPhase) { funnelPhase.style.color = "#f59e0b"; funnelPhase.textContent = "STANDBY"; }
     } else {
       if (candPair) { candPair.style.color = "#38bdf8"; candPair.textContent = WATCHLIST[Math.floor(frame / 15) % WATCHLIST.length]; }
-      if (candState) { candState.style.color = "#fbbf24"; candState.textContent = "SCANNING TOP 500"; }
+      if (candState) { const isHmTick = Math.floor(frame / 30) % 2 === 0; candState.style.color = isHmTick ? "#38bdf8" : "#818cf8"; candState.textContent = isHmTick ? "SCAN HARMONIC (4H/1H/15M)" : "SCAN 3 EMA MTF (1H/15M/5M)"; }
       if (funnelPhase) { funnelPhase.style.color = "#38bdf8"; funnelPhase.textContent = "STREAMING"; }
     }
 
