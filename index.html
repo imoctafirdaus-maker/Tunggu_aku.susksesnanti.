@@ -1643,34 +1643,29 @@ function detectScottCarneyHarmonic(candles) {
     const cRatio = BC / AB;
     if (!inRange(cRatio, 0.36, 0.90)) continue;
 
-    // Klasifikasi Rasio Titik B & Proyeksi PRZ Presisi Scott Carney
-    let patternName = null;
-    let przXaTarget = 0;
-    let przBcTargets = [];
-    let allowBeyondX = false;
+    // Evaluasi seluruh kandidat matriks resmi Scott Carney berdasarkan AB/XA + BC/AB + AD/XA terukur
+    const CARNEY_SPECS = [
+      { name: "GARTLEY",   bMin: 0.583, bMax: 0.653, bIdeal: 0.618, dXa: 0.786, bcTargets: [1.272, 1.414, 1.618], beyondX: false, specText: "AB/XA=0.618 (±0.035), BC/AB=0.382-0.886, AD/XA=0.786 (±0.035), BC_ext=1.272-1.618, D tidak tembus X" },
+      { name: "BAT",       bMin: 0.365, bMax: 0.535, bIdeal: 0.441, dXa: 0.886, bcTargets: [1.618, 2.0, 2.24, 2.618], beyondX: false, specText: "AB/XA=0.382-0.50 (±0.035), BC/AB=0.382-0.886, AD/XA=0.886 (±0.035), BC_ext=1.618-2.618, D tidak tembus X" },
+      { name: "ALT BAT",   bMin: 0.347, bMax: 0.417, bIdeal: 0.382, dXa: 1.130, bcTargets: [2.0, 2.24, 2.618, 3.14, 3.618], beyondX: true, specText: "AB/XA=0.382 (±0.035), BC/AB=0.382-0.886, AD/XA=1.130 (±0.035), BC_ext=2.0-3.618, Beyond-X valid" },
+      { name: "BUTTERFLY", bMin: 0.751, bMax: 0.821, bIdeal: 0.786, dXa: 1.272, bcTargets: [1.618, 2.0, 2.24, 2.618], beyondX: true, specText: "AB/XA=0.786 (±0.035), BC/AB=0.382-0.886, AD/XA=1.272-1.618 (±0.035), BC_ext=1.618-2.618, Beyond-X valid" },
+      { name: "CRAB",      bMin: 0.365, bMax: 0.635, bIdeal: 0.500, dXa: 1.618, bcTargets: [2.24, 2.618, 3.14, 3.618], beyondX: true, specText: "AB/XA=0.382-0.618 (±0.035), BC/AB=0.382-0.886, AD/XA=1.618 (±0.035), BC_ext=2.24-3.618, Beyond-X valid" },
+      { name: "DEEP CRAB", bMin: 0.851, bMax: 0.921, bIdeal: 0.886, dXa: 1.618, bcTargets: [2.0, 2.24, 2.618, 3.14, 3.618], beyondX: true, specText: "AB/XA=0.886 (±0.035), BC/AB=0.382-0.886, AD/XA=1.618 (±0.035), BC_ext=2.0-3.618, Beyond-X valid" }
+    ];
+    const bCandidates = CARNEY_SPECS.filter(s => inRange(bRatio, s.bMin, s.bMax));
+    if (!bCandidates.length) continue;
 
-    if (near(bRatio, 0.618, 0.035)) {
-      patternName = "GARTLEY";
-      przXaTarget = 0.786;
-      przBcTargets = [1.272, 1.414, 1.618];
-      allowBeyondX = false;
-    } else if (inRange(bRatio, 0.37, 0.52)) {
-      patternName = "BAT";
-      przXaTarget = 0.886;
-      przBcTargets = [1.618, 2.0, 2.24, 2.618];
-      allowBeyondX = false;
-    } else if (near(bRatio, 0.786, 0.035)) {
-      patternName = "BUTTERFLY";
-      przXaTarget = 1.272;
-      przBcTargets = [1.618, 2.0, 2.24, 2.618];
-      allowBeyondX = true;
-    } else if (inRange(bRatio, 0.37, 0.63)) {
-      patternName = "CRAB";
-      przXaTarget = 1.618;
-      przBcTargets = [2.24, 2.618, 3.14, 3.618];
-      allowBeyondX = true;
-    }
-    if (!patternName) continue;
+    // Pilih kandidat pola Scott Carney yang rasio AD/XA aktualnya paling dekat dengan target dXa (±0.035)
+    const D_probe = pivots[i + 4];
+    const probePrice = D_probe ? D_probe.price : lastCandle.close;
+    const probeDXa = Math.abs(probePrice - A.price) / XA;
+    const spec = bCandidates.reduce((best, cur) =>
+      Math.abs(probeDXa - cur.dXa) < Math.abs(probeDXa - best.dXa) ? cur : best, bCandidates[0]
+    );
+    const patternName = spec.name;
+    const przXaTarget = spec.dXa;
+    const przBcTargets = spec.bcTargets;
+    const allowBeyondX = spec.beyondX;
 
     // Hitung Zona PRZ Confluence (Target XA + Proyeksi BC terdekat + AB=CD)
     const dir = isBullish ? -1 : 1;
@@ -1739,7 +1734,7 @@ function detectScottCarneyHarmonic(candles) {
       distToPrzPct,
       X, A, B, C,
       D: dPoint,
-      ratios: { bRatio, cRatio, dXaRatio, dBcRatio },
+      ratios: { bRatio, cRatio, dXaRatio, dBcRatio, targetB: spec.bIdeal, targetDXa: przXaTarget, devB: Math.abs(bRatio - spec.bIdeal), devDXa: Math.abs(dXaRatio - przXaTarget), specText: spec.specText },
       przLow, przHigh, przMid, slPrice
     };
   }
@@ -1846,22 +1841,29 @@ async function validateHarmonicWithAi(hm, forceRefresh = false) {
   if (gemEl) gemEl.innerHTML = `💎 Gemini: <span style="color:#facc15;">Mengaudit Fibonacci & RSI...</span>`;
   if (noteEl) noteEl.textContent = "Mengirim koordinat X-A-B-C-D & AHP RSI ke Groq & Gemini (Cadangan otomatis: SambaNova)...";
 
-  const prompt = `Kamu adalah auditor institusional pola Harmonic Trading (Scott Carney & Adaptive Harmonic Patterns RSI).
-Periksa apakah pola pada chart berikut VALID atau TIDAK VALID untuk setup trading:
+  const rObj = hm.ratios || {};
+  const targetDXaStr = Number.isFinite(rObj.targetDXa) ? rObj.targetDXa.toFixed(3) : "-";
+  const devDXaStr = Number.isFinite(rObj.devDXa) ? rObj.devDXa.toFixed(4) : "-";
+  const carneyRuleRef = rObj.specText || "Gartley(0.618/0.786), Bat(0.382-0.50/0.886), AltBat(0.382/1.13), Butterfly(0.786/1.272-1.618), Crab(0.382-0.618/1.618), DeepCrab(0.886/1.618), toleransi ±0.035";
+  const prompt = `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading.
+Audit ketepatan matematis pola berikut secara terukur (toleransi standar Scott Carney ±0.035 pada rasio primer):
 - Pair & Timeframe: ${CONFIG.symbol} (${CONFIG.interval})
-- Pola & Arah: ${sideUpper} ${hm.pattern} (Status: ${statusLabel}, Fit/PRZ Score: ${fitScore}/100, Sumber: ${hm.origin || "CHART+AHP"})
-- Titik Harga & RSI:
+- Pola & Arah: ${sideUpper} ${hm.pattern} (Status: ${statusLabel}, Fit/PRZ Score: ${fitScore}/100, Sumber: ${hm.origin || "CHART_PRICE"})
+- Standar Resmi Scott Carney untuk ${hm.pattern}: ${carneyRuleRef}
+- Titik Pivot X-A-B-C-D:
   X: harga=${hm.X?.price}, RSI=${hm.X?.rsi?.toFixed(1)}
   A: harga=${hm.A?.price}, RSI=${hm.A?.rsi?.toFixed(1)}
   B: harga=${hm.B?.price}, RSI=${hm.B?.rsi?.toFixed(1)}
   C: harga=${hm.C?.price}, RSI=${hm.C?.rsi?.toFixed(1)}
   D: harga=${hm.D?.price}, RSI=${hm.D?.rsi?.toFixed(1)}
-- Rasio Terukur: AB/XA=${bRat}, BC/AB=${cRat}, AD/XA=${dRat}
-- Zona PRZ: ${Number.isFinite(hm.przLow) ? fmtP(hm.przLow) + " - " + fmtP(hm.przHigh) : "Berdasarkan gelombang AHP RSI"}
+- Rasio Aktual Terukur: AB/XA=${bRat}, BC/AB=${cRat}, AD/XA=${dRat} (Target AD/XA=${targetDXaStr}, Deviasi Δ=${devDXaStr})
+- Zona PRZ: ${Number.isFinite(hm.przLow) ? fmtP(hm.przLow) + " - " + fmtP(hm.przHigh) : "Berdasarkan proyeksi PRZ"}
 
-Evaluasi ketepatan struktur swing X-A-B-C-D, rasio Fibonacci (AB/XA, BC/AB, AD/XA), dan akurasi zona PRZ murni sesuai standar Scott Carney. JANGAN menolak pola hanya karena RSI tidak oversold atau overbought; jadikan RSI sekadar catatan momentum.
-Balas HANYA dalam JSON valid tanpa markdown:
-{"valid": true atau false, "confidence": 0-100, "reason": "penjelasan singkat maks 18 kata dalam Bahasa Indonesia"}`;
+Aturan Keputusan Wajib:
+1. Jika Sumber adalah AHP_RSI murni tanpa konfirmasi rasio harga X-A-B-C-D yang masuk toleransi ±0.035, tandai valid=false dan sebutkan rasio mana yang meleset beserta angkanya.
+2. Jika AB/XA, BC/AB (0.382-0.886), dan AD/XA berada dalam batas toleransi ±0.035 dari standar ${hm.pattern} di atas (serta Beyond-X sesuai aturan pola), WAJIB valid=true dengan confidence >= 80. JANGAN menolak pola hanya karena RSI tidak ekstrem.
+Balas HANYA JSON valid tanpa markdown:
+{"valid": true atau false, "confidence": 0-100, "reason": "sebutkan angka rasio & deviasi terukur maks 18 kata bahasa Indonesia"}`;
 
   const sambaEl = $("hmSambaVerdict");
   if (sambaEl) sambaEl.innerHTML = `☁️ CF Llama-70B: <span style="color:#38bdf8;">Siaga...</span>`;
