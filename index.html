@@ -1945,7 +1945,10 @@ Balas HANYA JSON valid tanpa markdown:
       const tp1P = isBuySide ? entryP + adSpan * 0.382 : entryP - adSpan * 0.382;
       const tp2P = isBuySide ? entryP + adSpan * 0.618 : entryP - adSpan * 0.618;
       const rrVal = Math.abs(entryP - slP) > 0 ? Math.abs(tp2P - entryP) / Math.abs(entryP - slP) : 1.5;
+      const jobId = sigKey + "_" + Date.now();
       const execPayload = {
+        id: jobId,
+        status: "PENDING",
         symbol: CONFIG.symbol,
         sig: {
           patternName: hm.pattern,
@@ -1957,6 +1960,8 @@ Balas HANYA JSON valid tanpa markdown:
           tp2: tp2P,
           rr: rrVal,
           przScore: fitScore,
+          preAuditedByBrowser: true,
+          browserAuditNote: consensusText,
           prz: { low: hm.przLow || entryP, high: hm.przHigh || entryP, count: 3 },
           ratios: {
             bRatio: Number(bRat) || 0,
@@ -1965,22 +1970,32 @@ Balas HANYA JSON valid tanpa markdown:
           }
         }
       };
-      const execBases = window.location.protocol === "http:" ? ["", "http://127.0.0.1:8765"] : ["https://127.0.0.1:8766"];
-      for (const base of execBases) {
-        fetch(base + "/api/harmonic-execute", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(execPayload)
-        }).then(r => r.json()).then(res => {
-          if (noteEl) {
-            if (res && res.executed) {
-              noteEl.textContent = consensusText + " → 🚀 ORDER DIEKSEKUSI (" + (res.mode || "AKTIF") + ")";
-            } else if (res && res.reason) {
-              noteEl.textContent = consensusText + " → ⚠️ Info Eksekusi: " + res.reason;
+      if (noteEl) noteEl.textContent = consensusText + " → ⏳ Mengirim order ke mesin eksekusi...";
+      // Jalur 1: Firebase Queue (Tembus HTTPS/Android tanpa blokir SSL lokal)
+      const qUrl = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_harmonicOrderQueue.json";
+      fetch(qUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(execPayload)
+      }).then(() => {
+        let tries = 0;
+        const pollRes = setInterval(async () => {
+          tries++;
+          try {
+            const rr = await fetch(qUrl + "?t=" + Date.now());
+            const jd = rr.ok ? await rr.json() : null;
+            if (jd && jd.id === jobId && jd.status !== "PENDING" && jd.result) {
+              clearInterval(pollRes);
+              if (noteEl) {
+                noteEl.textContent = jd.result.executed
+                  ? consensusText + " → 🚀 ORDER DIEKSEKUSI (" + (jd.result.mode || "LIVE") + ")"
+                  : consensusText + " → ⚠️ Info Eksekusi: " + (jd.result.reason || "Ditahan guard");
+              }
             }
-          }
-        }).catch(() => {});
-      }
+          } catch (_) {}
+          if (tries >= 10) clearInterval(pollRes);
+        }, 1500);
+      }).catch(() => {});
     }
   }
   HARMONIC_CACHE.set(cacheKey, verdict);

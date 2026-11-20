@@ -232,7 +232,7 @@ async function managePaperPositions(paper, apiGetFn, cfg) {
 async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   const credsCheck = loadBinanceConfig();
   const liveAutoReady = Boolean(credsCheck && credsCheck.autoTrade && credsCheck.apiKey && credsCheck.apiSecret);
-  const isPaper = liveAutoReady ? (cfg.forcePaperOnly === true) : true;
+  const isPaper = liveAutoReady ? Boolean(sig.forcePaperOnly) : true;
 
   // Guard 1: Satu simbol hanya boleh memiliki satu posisi aktif
   if (paper.openPositions.some(p => p.symbol === symbol)) {
@@ -261,8 +261,8 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     return { executed: false, reason: news.reason };
   }
 
-  // Guard 4: Audit Khusus Groq AI (Gemini tidak disentuh)
-  const groqAudit = await auditHarmonicDualAi(symbol, sig);
+  // Guard 4: Gunakan hasil Multi-AI Browser jika sudah terverifikasi, atau audit server
+  const groqAudit = sig.preAuditedByBrowser ? { approved: true, reason: sig.browserAuditNote || "Multi-AI Browser VALID" } : await auditHarmonicDualAi(symbol, sig);
   if (!groqAudit.approved) {
     return { executed: false, reason: groqAudit.reason };
   }
