@@ -195,42 +195,105 @@
   /**
    * Evaluasi Hierarki Multi-Timeframe: 4h -> 1h -> 15m
    */
+  function check1hStructureConfirm(cs1h, side) {
+    if (!Array.isArray(cs1h) || cs1h.length < 25) return { ok: false, reason: "Data 1H kurang" };
+    const closes = cs1h.map(c => c.close);
+    const mult = 2 / (21 + 1);
+    let ema21 = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
+    for (let i = 21; i < closes.length; i++) ema21 = (closes[i] - ema21) * mult + ema21;
+
+    let gains = 0, losses = 0;
+    for (let i = closes.length - 14; i < closes.length; i++) {
+      const diff = closes[i] - closes[i - 1];
+      if (diff >= 0) gains += diff; else losses -= diff;
+    }
+    const rs = losses === 0 ? 100 : gains / losses;
+    const rsi14 = 100 - (100 / (1 + rs));
+    const lastClose = closes[closes.length - 1];
+    const prevClose = closes[closes.length - 2];
+
+    if (side === "BUY") {
+      const ok = (lastClose >= ema21 || lastClose > prevClose) && rsi14 >= 42 && rsi14 <= 72;
+      return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}, RSI=${rsi14.toFixed(1)}` };
+    } else {
+      const ok = (lastClose <= ema21 || lastClose < prevClose) && rsi14 <= 58 && rsi14 >= 28;
+      return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}, RSI=${rsi14.toFixed(1)}` };
+    }
+  }
+
+  /**
+   * Evaluasi Hierarki Wajib Top-Down:
+   * 1) 4H: Mencari Pola Harmonic Utama (Bias Makro - DILARANG EKSEKUSI)
+   * 2) 1H: Konfirmasi Struktur / Pola Searah
+   * 3) 15M: Mencari PRZ Sniper Entry (SATU-SATUNYA TF EKSEKUSI)
+   */
   function evaluateMultiTimeframe(candlesByTf, userSettings) {
     const cfg = ConfigMod.mergeSettings(userSettings);
-    const baseOrder = Array.isArray(cfg.timeframes) ? cfg.timeframes : ["4h", "1h", "15m"];
-    const order = baseOrder.includes("5m") ? baseOrder : [...baseOrder, "5m"];
     const allLogs = [];
-    const foundSignals = [];
 
-    for (const tf of order) {
-      const cs = candlesByTf[tf];
-      if (!Array.isArray(cs) || !cs.length) {
-        allLogs.push(`[${tf}] Data candle belum tersedia`);
-        continue;
-      }
-      const res = analyzeSingleTimeframe(cs, tf, cfg);
-      allLogs.push(...res.logs);
-      if (res.signal) {
-        foundSignals.push(res.signal);
-      }
+    const cs4h = candlesByTf["4h"];
+    const cs1h = candlesByTf["1h"];
+    const cs15m = candlesByTf["15m"];
+
+    if (!Array.isArray(cs4h) || cs4h.length < 50) {
+      return { signal: null, allSignals: [], logs: ["[4h] Data candle belum cukup"] };
     }
 
-    if (!foundSignals.length) {
+    // TAHAP 1: Cari Pola Harmonic di 4H (Hanya sebagai Bias Makro, tidak pernah dieksekusi)
+    const res4h = analyzeSingleTimeframe(cs4h, "4h", cfg);
+    allLogs.push(...res4h.logs);
+    const sig4h = res4h.signal;
+
+    if (!sig4h) {
       return { signal: null, allSignals: [], logs: allLogs };
     }
 
-    // Prioritas utama: sinyal dari timeframe lebih tinggi (4h > 1h > 15m), lalu skor tertinggi
-    foundSignals.sort((a, b) => b.totalScore - a.totalScore);
-    const top = foundSignals[0];
+    const biasSide = sig4h.side; // BUY atau SELL dari 4H
 
-    // Bonus confluence jika TF bawah searah dengan sinyal TF atas
-    const alignedLower = foundSignals.filter(s => s.timeframe !== top.timeframe && s.side === top.side);
-    if (alignedLower.length) {
-      top.mtfAligned = alignedLower.map(s => s.timeframe);
-      top.reason += ` + MTF Searah (${top.mtfAligned.join(",")})`;
+    // TAHAP 2: Konfirmasi di 1H (Pola Harmonic searah ATAU Konfirmasi Struktur EMA21+RSI 1H)
+    let confirmed1h = false;
+    let confirm1hNote = "";
+    if (Array.isArray(cs1h) && cs1h.length >= 50) {
+      const res1h = analyzeSingleTimeframe(cs1h, "1h", cfg);
+      allLogs.push(...res1h.logs);
+      if (res1h.signal && res1h.signal.side === biasSide) {
+        confirmed1h = true;
+        confirm1hNote = `1H Harmonic ${res1h.signal.patternName} Searah`;
+      } else {
+        const struct1h = check1hStructureConfirm(cs1h, biasSide);
+        confirmed1h = struct1h.ok;
+        confirm1hNote = struct1h.reason;
+      }
     }
 
-    return { signal: top, allSignals: foundSignals, logs: allLogs };
+    if (!confirmed1h) {
+      allLogs.push(`[MTF HOLD] Pola 4H ${sig4h.patternName} (${biasSide}) menunggu konfirmasi 1H (${confirm1hNote})`);
+      return { signal: null, allSignals: [sig4h], logs: allLogs };
+    }
+
+    // TAHAP 3: Cari PRZ Entry presisi di 15M yang searah dengan Bias 4H
+    if (!Array.isArray(cs15m) || cs15m.length < 50) {
+      allLogs.push("[15m] Data candle belum tersedia untuk entry PRZ");
+      return { signal: null, allSignals: [sig4h], logs: allLogs };
+    }
+
+    const res15m = analyzeSingleTimeframe(cs15m, "15m", cfg);
+    allLogs.push(...res15m.logs);
+    const sig15m = res15m.signal;
+
+    if (!sig15m || sig15m.side !== biasSide) {
+      allLogs.push(`[MTF WATCH] 4H ${sig4h.patternName} (${biasSide}) + 1H OK -> Menunggu PRZ Entry di 15M`);
+      return { signal: null, allSignals: [sig4h], logs: allLogs };
+    }
+
+    // Lengkap: 4H Pola + 1H Konfirmasi + 15M PRZ Entry!
+    sig15m.timeframe = "15m";
+    sig15m.mtfConfirmed = true;
+    sig15m.bias4hPattern = sig4h.patternName;
+    sig15m.confirm1hNote = confirm1hNote;
+    sig15m.reason = `[SNIPER 15M PRZ] Bias 4H: ${sig4h.patternName} (${biasSide}) -> Konfirmasi 1H (${confirm1hNote}) -> Entry 15M ${sig15m.patternName} (RR 1:${sig15m.rr.toFixed(2)})`;
+
+    return { signal: sig15m, allSignals: [sig15m, sig4h], logs: allLogs };
   }
 
   return { analyzeSingleTimeframe, evaluateMultiTimeframe };

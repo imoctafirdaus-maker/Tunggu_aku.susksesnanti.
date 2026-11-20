@@ -61,44 +61,95 @@ function savePaperState(st) {
  */
 async function auditHarmonicDualAi(symbol, sig) {
   try {
-    const signalPayload = {
-      symbol,
-      timeframe: sig.timeframe,
-      strategy: "HARMONIC_CARNEY",
-      patternName: sig.patternName,
-      signal: sig.side,
-      entryPrice: sig.entry,
-      stopLoss: sig.sl,
-      takeProfit: sig.tp2,
-      tp1: sig.tp1,
-      riskReward: Number(sig.rr.toFixed(2)),
-      przLow: sig.prz.low,
-      przHigh: sig.prz.high,
-      przScore: sig.przScore,
-      ratios: sig.ratios,
-      rvol: 1.5,
-      winrate: Math.max(60, sig.przScore),
-      reason: `Scott Carney ${sig.patternName} (${sig.side}) · Rasio B=${sig.ratios.bRatio.toFixed(3)}, C=${sig.ratios.cRatio.toFixed(3)}, D/XA=${sig.ratios.dXaRatio.toFixed(3)} · PRZ Skor ${sig.przScore}/100 (Murni aturan Fibonacci Scott Carney tanpa syarat wajib RSI ekstrem)`
-    };
-    const consensus = await evaluateDualAiConsensus(signalPayload, { winProb: Math.max(55, sig.przScore) });
-    if (consensus && consensus.approved) {
-      return {
-        approved: true,
-        groq: consensus.groqVerdict || "APPROVE",
-        gemini: consensus.geminiVerdict || "APPROVE",
-        reason: consensus.summary || `Dual-AI VALID (${sig.patternName} PRZ ${sig.przScore}/100)`
-      };
+    let aiCfg = {};
+    try { if (fs.existsSync(AI_CFG_PATH)) aiCfg = JSON.parse(fs.readFileSync(AI_CFG_PATH, "utf8")); } catch (_) {}
+    const groqKeys = (aiCfg.groqKeys || []).map(k => String(k).trim()).filter(Boolean);
+    const cfAccountId = String(aiCfg.cfAccountId || "").trim();
+    const cfApiToken = String(aiCfg.cfApiToken || "").trim();
+
+    const prompt = `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading.
+Audit ketepatan matematis pola berikut secara terukur (toleransi standar Scott Carney ±0.035):
+- Pair & Timeframe: ${symbol} (${sig.timeframe})
+- Pola & Arah: ${sig.side} ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
+- Rasio Aktual: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
+- Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
+
+Aturan Wajib:
+Jika AB/XA, BC/AB (0.382-0.886), dan AD/XA berada dalam batas toleransi ±0.035 standar Scott Carney untuk ${sig.patternName}, WAJIB jawab valid=true (confidence >= 80). JANGAN menolak hanya karena RSI tidak ekstrem.
+Balas HANYA JSON valid tanpa markdown:
+{"valid": true atau false, "confidence": 0-100, "reason": "sebutkan angka rasio & deviasi maks 16 kata bahasa Indonesia"}`;
+
+    const votes = [];
+
+    // 1. Audit Groq Llama-3.3-70B
+    if (groqKeys.length) {
+      try {
+        const key = groqKeys[Math.floor(Math.random() * groqKeys.length)];
+        const c = new AbortController(); const t = setTimeout(() => c.abort(), 10000);
+        const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+          signal: c.signal,
+          body: JSON.stringify({
+            model: aiCfg.groqModel || "llama-3.3-70b-versatile",
+            temperature: 0.1,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+        clearTimeout(t);
+        if (r.ok) {
+          const d = await r.json();
+          const m = (d?.choices?.[0]?.message?.content || "").match(/\{[\s\S]*\}/);
+          if (m) {
+            const p = JSON.parse(m[0]);
+            votes.push({ who: "Groq", valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 65, reason: p.reason || "" });
+          }
+        }
+      } catch (_) {}
     }
-    return {
-      approved: false,
-      groq: consensus?.groqVerdict || "REJECT",
-      gemini: consensus?.geminiVerdict || "REJECT",
-      reason: consensus?.summary || "Ditolak oleh konsensus Dual-AI"
-    };
+
+    // 2. Audit Cloudflare Workers AI (Llama-3.3-70B)
+    if (cfAccountId && cfApiToken) {
+      try {
+        const c = new AbortController(); const t = setTimeout(() => c.abort(), 12000);
+        const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfAccountId}/ai/run/@cf/meta/llama-3.3-70b-instruct-fp8-fast`;
+        const r = await fetch(cfUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + cfApiToken },
+          signal: c.signal,
+          body: JSON.stringify({
+            temperature: 0.1,
+            messages: [{ role: "user", content: prompt }]
+          })
+        });
+        clearTimeout(t);
+        if (r.ok) {
+          const d = await r.json();
+          const rawTxt = d?.result?.response || "";
+          const m = rawTxt.match(/\{[\s\S]*\}/);
+          if (m) {
+            const p = JSON.parse(m[0]);
+            votes.push({ who: "CF Llama-70B", valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 65, reason: p.reason || "" });
+          }
+        }
+      } catch (_) {}
+    }
+
+    if (votes.length > 0) {
+      const okCount = votes.filter(v => v.valid).length;
+      const approved = okCount === votes.length;
+      const summary = votes.map(v => `${v.who}: "${v.reason}"`).join(" | ");
+      return { approved, reason: summary };
+    }
+
+    // Fallback matematis jika kedua API sedang rate-limit
+    const mathOk = (sig.przScore || 0) >= 60;
+    return { approved: mathOk, reason: mathOk ? `Lolos Matematis Scott Carney (PRZ ${sig.przScore}/100)` : "PRZ Score di bawah 60" };
   } catch (e) {
-    return { approved: false, reason: "Gagal evaluasi Dual-AI: " + e.message };
+    return { approved: false, reason: "Error audit Harmonic: " + e.message };
   }
 }
+
 async function _unusedOldAudit(symbol, sig) {
   try {
     if (!fs.existsSync(AI_CFG_PATH)) {
@@ -233,6 +284,11 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   const credsCheck = loadBinanceConfig();
   const liveAutoReady = Boolean(credsCheck && credsCheck.autoTrade && credsCheck.apiKey && credsCheck.apiSecret);
   const isPaper = liveAutoReady ? Boolean(sig.forcePaperOnly) : true;
+
+  // Guard 0: Dilarang keras eksekusi langsung di 4H atau 1H (Wajib 15M PRZ setelah konfirmasi 4H + 1H)
+  if (sig.timeframe !== "15m") {
+    return { executed: false, reason: `Diblokir: Timeframe ${sig.timeframe} hanya untuk analisis/konfirmasi (eksekusi wajib 15M PRZ)` };
+  }
 
   // Guard 1: Satu simbol hanya boleh memiliki satu posisi aktif
   if (paper.openPositions.some(p => p.symbol === symbol)) {
