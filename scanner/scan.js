@@ -304,9 +304,35 @@ async function main() {
         for (const [sigId, rec] of Object.entries(upEma)) {
           try {
             console.log(`🤖 [EMA-EXPERT] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`);
+            if (db) {
+              await db.ref("emaSignals/_liveRadar").set({
+                phase: "AUDITING",
+                scanCoin: rec.symbol,
+                candidate: `${rec.symbol} (3 EMA MTF)`,
+                signal: `${rec.signal} [EMA 5m]`,
+                groqStatus: "AUDITING",
+                geminiStatus: "AUDITING",
+                tradeResult: "PENDING",
+                tradeReason: `Mengaudit sinyal ${rec.signal} ${rec.symbol} (Prob ${rec.probability}%)...`,
+                updatedAt: Date.now()
+              }).catch(() => {});
+            }
             const trRes = await executeSignalTrade(rec, futuresSnap);
             console.log(`   -> Hasil ${rec.symbol}:`, trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED"));
             await db.ref(`emaSignals/${sigId}`).update({ aiAudited: true, aiAuditReason: trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED") }).catch(() => {});
+            if (db) {
+              await db.ref("emaSignals/_liveRadar").set({
+                phase: "COMPLETED",
+                scanCoin: rec.symbol,
+                candidate: `${rec.symbol} (3 EMA MTF)`,
+                signal: `${rec.signal} [EMA 5m]`,
+                groqStatus: trRes.executed ? "PASS" : "DONE",
+                geminiStatus: trRes.executed ? "PASS" : "DONE",
+                tradeResult: trRes.executed ? "SUCCESS" : "SKIPPED",
+                tradeReason: trRes.reason || (trRes.executed ? "Order 50x berhasil dikirim ke Binance!" : "Ditahan filter risiko/AI"),
+                updatedAt: Date.now()
+              }).catch(() => {});
+            }
             if (trRes.executed) futuresSnap = await getFuturesSnapshot();
           } catch (errTr) {
             console.error(`   -> Gagal eksekusi ${rec.symbol}:`, errTr.message);
