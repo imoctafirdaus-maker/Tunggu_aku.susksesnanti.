@@ -289,7 +289,21 @@ async function main() {
       if (old && old.candleTime === rec.candleTime && old.signal === rec.signal) { emaSt.unchanged++; continue; }
       upEma[id] = { ...rec, updatedAt: admin.database.ServerValue.TIMESTAMP };
     }
-    if (Object.keys(upEma).length) await db.ref("emaSignals").update(upEma);
+    if (Object.keys(upEma).length) {
+      await db.ref("emaSignals").update(upEma);
+      if (isAutoTradeEnabled && futuresSnap && futuresSnap.ok) {
+        for (const [sigId, rec] of Object.entries(upEma)) {
+          try {
+            console.log(`🤖 [EMA-EXPERT] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`);
+            const trRes = await executeSignalTrade(rec, futuresSnap);
+            console.log(`   -> Hasil ${rec.symbol}:`, trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED"));
+            if (trRes.executed) futuresSnap = await getFuturesSnapshot();
+          } catch (errTr) {
+            console.error(`   -> Gagal eksekusi ${rec.symbol}:`, errTr.message);
+          }
+        }
+      }
+    }
     const tgSent = await notifyNewSignalsToTelegram(upEma, typeof up !== "undefined" ? up : {});
     if (tgSent > 0) console.log(`📲 ${tgSent} notifikasi sinyal baru terkirim ke Telegram!`);
     emaSt.written = Object.keys(upEma).length;
@@ -327,7 +341,7 @@ async function main() {
       const expTotal = (emaSt && (emaSt.buy + emaSt.sell)) || 0;
       const hmTotal = (hmRes && hmRes.found) || 0;
 
-      if (expTotal === 0) {
+      if (true) {
         const topHm = hmRes && hmRes.top ? hmRes.top : null;
         const candLabel = topHm ? `${topHm.symbol} (${topHm.sig.patternName})` : "NONE";
         const sigLabel = topHm ? `${topHm.sig.side} [HARMONIC ${topHm.sig.timeframe}]` : "-";

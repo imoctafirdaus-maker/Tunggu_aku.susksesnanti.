@@ -159,7 +159,22 @@ async function getFuturesSnapshot() {
       maxPositions: creds.maxPositions,
       autoTrade: creds.autoTrade,
       totalMargin: +acc.totalMarginBalance || 0,
-      available: +acc.availableBalance || 0,
+      available: (() => {
+        const direct = +acc.availableBalance || 0;
+        if (direct > 0) return direct;
+        const maxW = +acc.maxWithdrawAmount || 0;
+        if (maxW > 0) return maxW;
+        if (Array.isArray(acc.assets)) {
+          const sumAssets = acc.assets.reduce((s, a) => {
+            if (["USDT", "USDC", "BNFCR", "BUSD"].includes(a.asset)) {
+              return s + (+a.availableBalance || +a.maxWithdrawAmount || 0);
+            }
+            return s;
+          }, 0);
+          if (sumAssets > 0) return sumAssets;
+        }
+        return (+acc.totalMarginBalance || 0) - (+acc.totalInitialMargin || 0);
+      })(),
       unrealizedPnl: +acc.totalUnrealizedProfit || 0,
       openPositions
     };
