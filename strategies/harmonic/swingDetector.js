@@ -77,7 +77,7 @@
       const legMove = Math.abs(p.price - last.price);
       const devPct = (legMove / Math.max(1e-9, last.price)) * 100;
       const refAtr = p.atr || last.atr || 0;
-      if (devPct >= minDevPct && (refAtr === 0 || legMove >= refAtr * minAtrMult)) {
+      if (devPct >= minDevPct || (refAtr > 0 && legMove >= refAtr * minAtrMult)) {
         swings.push(p);
       }
     }

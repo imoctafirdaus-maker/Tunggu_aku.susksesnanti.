@@ -55,7 +55,7 @@
       const D_swing = swings[s + 4];
 
       // Jangan pakai pola basi jika D terbentuk lebih dari 2 candle closed lalu
-      if (D_swing && (lastIdx - D_swing.idx) > 2) continue;
+      if (D_swing && (lastIdx - D_swing.idx) > 4) continue;
 
       const isBullish = X.type === "L" && A.type === "H" && B.type === "L" && C.type === "H";
       const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";

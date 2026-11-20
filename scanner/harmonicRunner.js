@@ -326,7 +326,7 @@ async function runHarmonicScanCycle({ candidates, apiGetFn, db, admin }) {
 
   await managePaperPositions(paper, apiGetFn, cfg);
 
-  const pool = (candidates || []).slice(0, 35);
+  const pool = (candidates || []).slice(0, 60);
   const tfOrder = ["4h", "1h", "15m"]; // Diambil dari 4h terlebih dahulu, lalu turun ke 1h dan 15m
   const detectedList = [];
   const upFirebase = {};
