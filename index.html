@@ -1748,6 +1748,7 @@ function resolveChartHarmonic(candles) {
 }
 
 function drawHarmonicPattern(candles) {
+  if (typeof window.renderAhpSubPane === "function") window.renderAhpSubPane(candles);
   clearHarmonicOverlay();
   if (!state.chart || !state.candleSeries || !Array.isArray(candles)) return;
   const hm = resolveChartHarmonic(candles);
@@ -3552,39 +3553,64 @@ if ("serviceWorker" in navigator) {
     return out;
   }
 
+  function detectRsiSwings(candles, rsiArr, depth = 3, minSwing = 4.5) {
+    const pivots = [];
+    const n = rsiArr.length;
+    for (let i = depth; i < n - depth; i++) {
+      const v = rsiArr[i];
+      if (!Number.isFinite(v)) continue;
+      let isHigh = true, isLow = true;
+      for (let k = 1; k <= depth; k++) {
+        if (!Number.isFinite(rsiArr[i - k]) || !Number.isFinite(rsiArr[i + k])) { isHigh = false; isLow = false; break; }
+        if (rsiArr[i - k] >= v || rsiArr[i + k] > v) isHigh = false;
+        if (rsiArr[i - k] <= v || rsiArr[i + k] < v) isLow = false;
+      }
+      if (!isHigh && !isLow) continue;
+      const type = isHigh ? "HIGH" : "LOW";
+      if (!pivots.length) {
+        pivots.push({ idx: i, time: toCT(candles[i].time), price: candles[i].close, rsi: v, type });
+      } else {
+        const prev = pivots[pivots.length - 1];
+        if (prev.type === type) {
+          if ((type === "HIGH" && v > prev.rsi) || (type === "LOW" && v < prev.rsi)) {
+            pivots[pivots.length - 1] = { idx: i, time: toCT(candles[i].time), price: candles[i].close, rsi: v, type };
+          }
+        } else if (Math.abs(v - prev.rsi) >= minSwing) {
+          pivots.push({ idx: i, time: toCT(candles[i].time), price: candles[i].close, rsi: v, type });
+        }
+      }
+    }
+    return pivots;
+  }
+
   function detectAllAhpPatterns(candles, rsiArr) {
-    if (!window.HarmonicSwingDetector || !window.HarmonicConfig) return [];
     const cfg = typeof window.getHarmonicUiSettings === "function"
       ? window.getHarmonicUiSettings()
-      : window.HarmonicConfig.mergeSettings({});
+      : (window.HarmonicConfig ? window.HarmonicConfig.mergeSettings({}) : { ratioTolerance: 0.08, patterns: {} });
 
-    const swings = window.HarmonicSwingDetector.detectSwings(candles, {
-      depth: 2,
-      minDeviationPct: 0.12,
-      minAtrMult: 0.25
-    });
-    if (swings.length < 5) return [];
+    const swings = detectRsiSwings(candles, rsiArr, 3, 4.5);
+    if (swings.length < 4) return [];
 
     const results = [];
-    const tol = Math.max(0.055, cfg.ratioTolerance || 0.05);
+    const tol = Math.max(0.08, (cfg.ratioTolerance || 0.05) * 1.6);
     const patterns = Object.entries(cfg.patterns || {}).filter(([, p]) => p.enabled !== false);
 
-    // Pindai seluruh histori swing agar semua pola CONFIRMED terdahulu muncul seperti di sub-pane AHP
+    // 1. Deteksi semua pola CONFIRMED historis pada gelombang RSI
     for (let i = 4; i < swings.length; i++) {
       const X = swings[i - 4], A = swings[i - 3], B = swings[i - 2], C = swings[i - 1], D = swings[i];
       const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH" && D.type === "LOW";
       const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW" && D.type === "HIGH";
       if (!isBull && !isBear) continue;
 
-      const xa = Math.abs(A.price - X.price);
-      const ab = Math.abs(B.price - A.price);
-      const bc = Math.abs(C.price - B.price);
-      const cd = Math.abs(D.price - C.price);
-      if (xa <= 0 || ab <= 0 || bc <= 0) continue;
+      const xa = Math.abs(A.rsi - X.rsi);
+      const ab = Math.abs(B.rsi - A.rsi);
+      const bc = Math.abs(C.rsi - B.rsi);
+      const cd = Math.abs(D.rsi - C.rsi);
+      if (xa < 4 || ab < 2 || bc < 2) continue;
 
       const bRatio = ab / xa;
       const cRatio = bc / ab;
-      const dXaRatio = Math.abs(D.price - X.price) / xa;
+      const dXaRatio = Math.abs(D.rsi - X.rsi) / xa;
       const dBcRatio = cd / bc;
 
       let bestMatch = null;
@@ -3597,80 +3623,68 @@ if ("serviceWorker" in navigator) {
 
         const bMid = (spec.bMin + spec.bMax) / 2;
         const dMid = (spec.dXaMin + spec.dXaMax) / 2;
-        const err = Math.abs(bRatio - bMid) / bMid + Math.abs(dXaRatio - dMid) / Math.max(0.1, dMid);
-        const fit = Math.max(52, Math.min(96, Math.round(100 - err * 120)));
+        const err = Math.abs(bRatio - bMid) / Math.max(0.15, bMid) + Math.abs(dXaRatio - dMid) / Math.max(0.15, dMid);
+        const fit = Math.max(54, Math.min(96, Math.round(100 - err * 95)));
         if (!bestMatch || fit > bestMatch.fit) {
           bestMatch = { key, label: spec.label, fit };
         }
       }
 
       if (bestMatch) {
-        const toPt = (s) => ({
-          idx: s.idx,
-          time: toCT(s.time),
-          price: s.price,
-          rsi: Number.isFinite(rsiArr[s.idx]) ? rsiArr[s.idx] : 50
-        });
         results.push({
           status: "CONFIRMED",
           side: isBull ? "Bullish" : "Bearish",
           pattern: bestMatch.label,
           fit: bestMatch.fit,
-          X: toPt(X), A: toPt(A), B: toPt(B), C: toPt(C), D: toPt(D)
+          X, A, B, C, D
         });
       }
     }
 
-    // Tambahkan pola GHOST (D Approaching PRZ · Waiting For Lock) dari 4 swing terakhir
-    if (swings.length >= 4) {
-      const X = swings[swings.length - 4], A = swings[swings.length - 3], B = swings[swings.length - 2], C = swings[swings.length - 1];
-      const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH";
-      const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW";
-      if (isBull || isBear) {
-        const xa = Math.abs(A.price - X.price);
-        const ab = Math.abs(B.price - A.price);
-        const bc = Math.abs(C.price - B.price);
-        const bRatio = xa > 0 ? ab / xa : 0;
-        const cRatio = ab > 0 ? bc / ab : 0;
-        const lastIdx = candles.length - 1;
-        const lastCandle = candles[lastIdx];
+    // 2. Deteksi pola GHOST aktif (D Approaching PRZ · Waiting For Lock) dari 4 pivot RSI terakhir
+    const X = swings[swings.length - 4], A = swings[swings.length - 3], B = swings[swings.length - 2], C = swings[swings.length - 1];
+    const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH";
+    const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW";
+    if (isBull || isBear) {
+      const xa = Math.abs(A.rsi - X.rsi);
+      const ab = Math.abs(B.rsi - A.rsi);
+      const bc = Math.abs(C.rsi - B.rsi);
+      const bRatio = xa > 0 ? ab / xa : 0;
+      const cRatio = ab > 0 ? bc / ab : 0;
+      const lastIdx = candles.length - 1;
+      const curRsi = Number.isFinite(rsiArr[lastIdx]) ? rsiArr[lastIdx] : C.rsi;
 
-        for (const [, spec] of patterns) {
-          if (bRatio >= spec.bMin * (1 - tol) && bRatio <= spec.bMax * (1 + tol) &&
-              cRatio >= spec.cMin * (1 - tol) && cRatio <= spec.cMax * (1 + tol)) {
-            const dTargetRatio = (spec.dXaMin + spec.dXaMax) / 2;
-            const dTargetPrice = isBull ? A.price - xa * dTargetRatio : A.price + xa * dTargetRatio;
-            const distPct = Math.abs(lastCandle.close - dTargetPrice) / lastCandle.close;
-            if (distPct <= 0.045) {
-              const fit = Math.max(50, Math.min(88, Math.round(85 - distPct * 650)));
-              const toPt = (s) => ({
-                idx: s.idx,
-                time: toCT(s.time),
-                price: s.price,
-                rsi: Number.isFinite(rsiArr[s.idx]) ? rsiArr[s.idx] : 50
-              });
-              results.push({
+      let bestGhost = null;
+      for (const [, spec] of patterns) {
+        if (bRatio >= spec.bMin * (1 - tol) && bRatio <= spec.bMax * (1 + tol) &&
+            cRatio >= spec.cMin * (1 - tol) && cRatio <= spec.cMax * (1 + tol)) {
+          const dTargetRatio = (spec.dXaMin + spec.dXaMax) / 2;
+          const dTargetRsi = Math.max(5, Math.min(95, isBull ? A.rsi - xa * dTargetRatio : A.rsi + xa * dTargetRatio));
+          const dist = Math.abs(curRsi - dTargetRsi);
+          if (dist <= 22) {
+            const fit = Math.max(52, Math.min(89, Math.round(90 - dist * 1.4)));
+            if (!bestGhost || fit > bestGhost.fit) {
+              bestGhost = {
                 status: "GHOST",
                 side: isBull ? "Bullish" : "Bearish",
                 pattern: spec.label,
                 fit,
-                dTargetPrice,
-                X: toPt(X), A: toPt(A), B: toPt(B), C: toPt(C),
+                X, A, B, C,
                 D: {
                   idx: lastIdx,
-                  time: toCT(lastCandle.time),
-                  price: dTargetPrice,
-                  rsi: Number.isFinite(rsiArr[lastIdx]) ? rsiArr[lastIdx] : 50
+                  time: toCT(candles[lastIdx].time),
+                  price: candles[lastIdx].close,
+                  rsi: dTargetRsi
                 }
-              });
-              break;
+              };
             }
           }
         }
       }
+      if (bestGhost) results.push(bestGhost);
     }
 
-    return results.slice(-8);
+    return results.slice(-10);
   }
 
   function ensureAhpChart() {
@@ -3821,9 +3835,7 @@ if ("serviceWorker" in navigator) {
     }
   }
 
-  const origDraw = window.drawHarmonicPattern;
-  window.drawHarmonicPattern = function(candles) {
-    if (typeof origDraw === "function") origDraw(candles);
+  window.renderAhpSubPane = function(candles) {
     if (!Array.isArray(candles) || candles.length < 20) return;
 
     const chartInst = ensureAhpChart();
