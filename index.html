@@ -941,7 +941,16 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     </div>
   </div>
   <div id="paneChart">
-    <div id="chartWrap"><div id="chart"></div><div id="legend"></div></div>
+    <div id="chartWrap"><div id="chart"></div>
+  <!-- ADAPTIVE HARMONIC PATTERNS (AHP) RSI SUB-PANE -->
+  <div id="ahpSubPane" style="position:relative;width:100%;height:260px;background:#131722;border-top:1px solid #2a2e39;overflow:hidden;user-select:none;">
+    <div id="ahpHeader" style="position:absolute;top:6px;left:10px;z-index:12;font-family:'JetBrains Mono',monospace;font-size:11px;color:#cbd5e1;background:rgba(19,23,34,0.82);padding:2px 6px;border-radius:4px;pointer-events:none;">
+      AHP ... 14 ohlc4 None 14 2 8 5 20 500 100 6 10 3 15 · <span id="ahpRsiLive" style="color:#c084fc;font-weight:700;">--</span>
+    </div>
+    <div id="ahpChart" style="width:100%;height:100%;"></div>
+    <canvas id="ahpOverlayCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;"></canvas>
+    <div id="ahpBadgesLayer" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:10;overflow:hidden;"></div>
+  </div><div id="legend"></div></div>
     <div class="flex flex-wrap gap-2 mt-3"><!-- SCOTT CARNEY HARMONIC PATTERN & AI PRZ VALIDATION PANEL -->
   <div id="harmonicAuditBox" style="margin-top:10px;padding:10px 12px;border-radius:10px;background:#090e1a;border:1px solid #1e293b;font-family:'JetBrains Mono',monospace;font-size:11px;">
     <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-bottom:6px;">
@@ -3512,6 +3521,332 @@ if ("serviceWorker" in navigator) {
     pollHarmonicStatus();
     setInterval(pollHarmonicStatus, 15000);
   });
+})();
+</script>
+
+<script>
+(function() {
+  let ahpChart = null;
+  let ahpRsiSeries = null;
+  let ahpSyncBound = false;
+  let ahpPatternsCache = [];
+
+  function calcOhlc4Rsi(candles, period = 14) {
+    const src = candles.map(c => (c.open + c.high + c.low + c.close) / 4);
+    const out = new Array(src.length).fill(NaN);
+    if (src.length <= period) return out;
+    let g = 0, l = 0;
+    for (let i = 1; i <= period; i++) {
+      const d = src[i] - src[i - 1];
+      g += Math.max(d, 0);
+      l += Math.max(-d, 0);
+    }
+    g /= period; l /= period;
+    out[period] = l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l);
+    for (let i = period + 1; i < src.length; i++) {
+      const d = src[i] - src[i - 1];
+      g = (g * (period - 1) + Math.max(d, 0)) / period;
+      l = (l * (period - 1) + Math.max(-d, 0)) / period;
+      out[i] = l === 0 ? (g === 0 ? 50 : 100) : 100 - 100 / (1 + g / l);
+    }
+    return out;
+  }
+
+  function detectAllAhpPatterns(candles, rsiArr) {
+    if (!window.HarmonicSwingDetector || !window.HarmonicConfig) return [];
+    const cfg = typeof window.getHarmonicUiSettings === "function"
+      ? window.getHarmonicUiSettings()
+      : window.HarmonicConfig.mergeSettings({});
+
+    const swings = window.HarmonicSwingDetector.detectSwings(candles, {
+      depth: 2,
+      minDeviationPct: 0.12,
+      minAtrMult: 0.25
+    });
+    if (swings.length < 5) return [];
+
+    const results = [];
+    const tol = Math.max(0.055, cfg.ratioTolerance || 0.05);
+    const patterns = Object.entries(cfg.patterns || {}).filter(([, p]) => p.enabled !== false);
+
+    // Pindai seluruh histori swing agar semua pola CONFIRMED terdahulu muncul seperti di sub-pane AHP
+    for (let i = 4; i < swings.length; i++) {
+      const X = swings[i - 4], A = swings[i - 3], B = swings[i - 2], C = swings[i - 1], D = swings[i];
+      const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH" && D.type === "LOW";
+      const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW" && D.type === "HIGH";
+      if (!isBull && !isBear) continue;
+
+      const xa = Math.abs(A.price - X.price);
+      const ab = Math.abs(B.price - A.price);
+      const bc = Math.abs(C.price - B.price);
+      const cd = Math.abs(D.price - C.price);
+      if (xa <= 0 || ab <= 0 || bc <= 0) continue;
+
+      const bRatio = ab / xa;
+      const cRatio = bc / ab;
+      const dXaRatio = Math.abs(D.price - X.price) / xa;
+      const dBcRatio = cd / bc;
+
+      let bestMatch = null;
+      for (const [key, spec] of patterns) {
+        const bOk = bRatio >= spec.bMin * (1 - tol) && bRatio <= spec.bMax * (1 + tol);
+        const cOk = cRatio >= spec.cMin * (1 - tol) && cRatio <= spec.cMax * (1 + tol);
+        const dOk = (dXaRatio >= spec.dXaMin * (1 - tol) && dXaRatio <= spec.dXaMax * (1 + tol)) ||
+                    (dBcRatio >= spec.dBcMin * (1 - tol) && dBcRatio <= spec.dBcMax * (1 + tol));
+        if (!bOk || !cOk || !dOk) continue;
+
+        const bMid = (spec.bMin + spec.bMax) / 2;
+        const dMid = (spec.dXaMin + spec.dXaMax) / 2;
+        const err = Math.abs(bRatio - bMid) / bMid + Math.abs(dXaRatio - dMid) / Math.max(0.1, dMid);
+        const fit = Math.max(52, Math.min(96, Math.round(100 - err * 120)));
+        if (!bestMatch || fit > bestMatch.fit) {
+          bestMatch = { key, label: spec.label, fit };
+        }
+      }
+
+      if (bestMatch) {
+        const toPt = (s) => ({
+          idx: s.idx,
+          time: toCT(s.time),
+          price: s.price,
+          rsi: Number.isFinite(rsiArr[s.idx]) ? rsiArr[s.idx] : 50
+        });
+        results.push({
+          status: "CONFIRMED",
+          side: isBull ? "Bullish" : "Bearish",
+          pattern: bestMatch.label,
+          fit: bestMatch.fit,
+          X: toPt(X), A: toPt(A), B: toPt(B), C: toPt(C), D: toPt(D)
+        });
+      }
+    }
+
+    // Tambahkan pola GHOST (D Approaching PRZ · Waiting For Lock) dari 4 swing terakhir
+    if (swings.length >= 4) {
+      const X = swings[swings.length - 4], A = swings[swings.length - 3], B = swings[swings.length - 2], C = swings[swings.length - 1];
+      const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH";
+      const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW";
+      if (isBull || isBear) {
+        const xa = Math.abs(A.price - X.price);
+        const ab = Math.abs(B.price - A.price);
+        const bc = Math.abs(C.price - B.price);
+        const bRatio = xa > 0 ? ab / xa : 0;
+        const cRatio = ab > 0 ? bc / ab : 0;
+        const lastIdx = candles.length - 1;
+        const lastCandle = candles[lastIdx];
+
+        for (const [, spec] of patterns) {
+          if (bRatio >= spec.bMin * (1 - tol) && bRatio <= spec.bMax * (1 + tol) &&
+              cRatio >= spec.cMin * (1 - tol) && cRatio <= spec.cMax * (1 + tol)) {
+            const dTargetRatio = (spec.dXaMin + spec.dXaMax) / 2;
+            const dTargetPrice = isBull ? A.price - xa * dTargetRatio : A.price + xa * dTargetRatio;
+            const distPct = Math.abs(lastCandle.close - dTargetPrice) / lastCandle.close;
+            if (distPct <= 0.045) {
+              const fit = Math.max(50, Math.min(88, Math.round(85 - distPct * 650)));
+              const toPt = (s) => ({
+                idx: s.idx,
+                time: toCT(s.time),
+                price: s.price,
+                rsi: Number.isFinite(rsiArr[s.idx]) ? rsiArr[s.idx] : 50
+              });
+              results.push({
+                status: "GHOST",
+                side: isBull ? "Bullish" : "Bearish",
+                pattern: spec.label,
+                fit,
+                dTargetPrice,
+                X: toPt(X), A: toPt(A), B: toPt(B), C: toPt(C),
+                D: {
+                  idx: lastIdx,
+                  time: toCT(lastCandle.time),
+                  price: dTargetPrice,
+                  rsi: Number.isFinite(rsiArr[lastIdx]) ? rsiArr[lastIdx] : 50
+                }
+              });
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    return results.slice(-8);
+  }
+
+  function ensureAhpChart() {
+    const container = document.getElementById("ahpChart");
+    if (!container || !window.LightweightCharts) return null;
+    if (!ahpChart) {
+      ahpChart = LightweightCharts.createChart(container, {
+        layout: { background: { type: "solid", color: "#131722" }, textColor: "#9ca3af" },
+        grid: { vertLines: { color: "#1e222d" }, horzLines: { color: "#1e222d" } },
+        rightPriceScale: { borderColor: "#2a2e39", minimumWidth: 68 },
+        timeScale: { borderColor: "#2a2e39", timeVisible: true, visible: true },
+        crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+        width: container.clientWidth,
+        height: container.clientHeight
+      });
+
+      ahpRsiSeries = ahpChart.addLineSeries({
+        color: "#a78bfa",
+        lineWidth: 1.5,
+        priceLineVisible: true,
+        lastValueVisible: true,
+        autoscaleInfoProvider: () => ({ priceRange: { minValue: -20, maxValue: 120 } })
+      });
+
+      [80, 60, 40, 20, 0].forEach(lvl => {
+        ahpRsiSeries.createPriceLine({
+          price: lvl,
+          color: "rgba(148,163,184,0.28)",
+          lineWidth: 1,
+          lineStyle: 2,
+          axisLabelVisible: true,
+          title: ""
+        });
+      });
+
+      window.addEventListener("resize", () => {
+        if (ahpChart && container.clientWidth > 0) {
+          ahpChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+          renderAhpCanvasAndCards();
+        }
+      });
+    }
+
+    if (!ahpSyncBound && state.chart && ahpChart) {
+      ahpSyncBound = true;
+      let syncing = false;
+      state.chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+        if (!range || syncing) return;
+        syncing = true;
+        ahpChart.timeScale().setVisibleLogicalRange(range);
+        syncing = false;
+        renderAhpCanvasAndCards();
+      });
+      ahpChart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
+        if (!range || syncing) return;
+        syncing = true;
+        state.chart.timeScale().setVisibleLogicalRange(range);
+        syncing = false;
+        renderAhpCanvasAndCards();
+      });
+    }
+    return ahpChart;
+  }
+
+  function renderAhpCanvasAndCards() {
+    const canvas = document.getElementById("ahpOverlayCanvas");
+    const badges = document.getElementById("ahpBadgesLayer");
+    if (!canvas || !badges || !ahpChart || !ahpRsiSeries) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const w = canvas.clientWidth;
+    const h = canvas.clientHeight;
+    if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
+      canvas.width = Math.round(w * dpr);
+      canvas.height = Math.round(h * dpr);
+    }
+    const ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+    badges.innerHTML = "";
+
+    const ts = ahpChart.timeScale();
+    for (const pat of ahpPatternsCache) {
+      const pts = [pat.X, pat.A, pat.B, pat.C, pat.D].map(p => ({
+        x: ts.timeToCoordinate(p.time),
+        y: ahpRsiSeries.priceToCoordinate(p.rsi),
+        rsi: p.rsi
+      }));
+      if (pts.some(p => p.x === null || p.y === null || !Number.isFinite(p.x) || !Number.isFinite(p.y))) continue;
+
+      const isGhost = pat.status === "GHOST";
+      const isBear = pat.side === "Bearish";
+      const strokeCol = isGhost ? "#22c55e" : (isBear ? "#c084fc" : "#38bdf8");
+      const fillCol = isGhost
+        ? "rgba(34, 197, 94, 0.16)"
+        : (isBear ? "rgba(168, 85, 247, 0.18)" : "rgba(45, 212, 191, 0.16)");
+
+      // Arsir segitiga X-A-B dan B-C-D
+      ctx.fillStyle = fillCol;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[1].x, pts[1].y);
+      ctx.lineTo(pts[2].x, pts[2].y);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(pts[2].x, pts[2].y);
+      ctx.lineTo(pts[3].x, pts[3].y);
+      ctx.lineTo(pts[4].x, pts[4].y);
+      ctx.closePath();
+      ctx.fill();
+
+      // Garis zig-zag X-A-B-C-D & sayap X-B-D
+      ctx.strokeStyle = strokeCol;
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash(isGhost ? [4, 3] : []);
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      for (let k = 1; k < pts.length; k++) ctx.lineTo(pts[k].x, pts[k].y);
+      ctx.stroke();
+
+      ctx.setLineDash([3, 3]);
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(pts[0].x, pts[0].y);
+      ctx.lineTo(pts[2].x, pts[2].y);
+      ctx.lineTo(pts[4].x, pts[4].y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Kartu label di titik D (sesuai gaya AHP TradingView)
+      const dPt = pts[4];
+      const card = document.createElement("div");
+      const bg = isGhost
+        ? "rgba(22, 163, 74, 0.92)"
+        : (isBear ? "rgba(147, 51, 234, 0.90)" : "rgba(14, 116, 144, 0.92)");
+      const topPos = isBear ? Math.max(26, dPt.y - 44) : Math.min(h - 46, dPt.y + 8);
+      const leftPos = Math.max(6, Math.min(w - 175, dPt.x - 65));
+
+      card.style.cssText = `position:absolute;left:${leftPos}px;top:${topPos}px;background:${bg};color:#fff;padding:3px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:9.5px;line-height:1.25;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;`;
+      if (isGhost) {
+        card.innerHTML = `<div style="font-weight:800;">GHOST ${pat.side} - ${pat.pattern}</div><div>Fit: ${pat.fit}/100</div><div style="font-size:8.5px;opacity:0.95;">D APPROACHING PRZ<br>WAITING FOR LOCK</div>`;
+      } else {
+        card.innerHTML = `<div style="font-weight:800;">${pat.side} - ${pat.pattern}</div><div>CONFIRMED | Fit ${pat.fit}/100</div>`;
+      }
+      badges.appendChild(card);
+    }
+  }
+
+  const origDraw = window.drawHarmonicPattern;
+  window.drawHarmonicPattern = function(candles) {
+    if (typeof origDraw === "function") origDraw(candles);
+    if (!Array.isArray(candles) || candles.length < 20) return;
+
+    const chartInst = ensureAhpChart();
+    if (!chartInst || !ahpRsiSeries) return;
+
+    const rsiArr = calcOhlc4Rsi(candles, 14);
+    const lineData = [];
+    for (let i = 0; i < candles.length; i++) {
+      if (Number.isFinite(rsiArr[i])) {
+        lineData.push({ time: toCT(candles[i].time), value: rsiArr[i] });
+      }
+    }
+    ahpRsiSeries.setData(lineData);
+    const lastRsi = lineData.length ? lineData[lineData.length - 1].value : NaN;
+    const rsiEl = document.getElementById("ahpRsiLive");
+    if (rsiEl && Number.isFinite(lastRsi)) rsiEl.textContent = lastRsi.toFixed(2);
+
+    const vr = state.chart && state.chart.timeScale().getVisibleLogicalRange();
+    if (vr) chartInst.timeScale().setVisibleLogicalRange(vr);
+
+    ahpPatternsCache = detectAllAhpPatterns(candles, rsiArr);
+    requestAnimationFrame(renderAhpCanvasAndCards);
+  };
 })();
 </script>
 </body>

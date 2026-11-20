@@ -65,16 +65,45 @@
       dBc: [2.0, 3.618],
       dXc: null
     },
-    CYPHER: {
-      enabled: true,
+        CYPHER: {
       label: "Cypher",
-      beyondX: false,
-      bRange: [0.382, 0.618],
-      cRange: [1.272, 1.414], // ekstensi XC
-      cIsXcExtension: true,
-      dXa: null,
-      dBc: [1.272, 2.0],
-      dXc: [0.786, 0.786]
+      enabled: true,
+      bMin: 0.382, bMax: 0.618,
+      cMin: 1.13,  cMax: 1.414,
+      dXaMin: 0.786, dXaMax: 0.786,
+      dBcMin: 1.272, dBcMax: 2.0
+    },
+    SHARK: {
+      label: "Shark",
+      enabled: true,
+      bMin: 0.382, bMax: 0.618,
+      cMin: 1.13,  cMax: 1.618,
+      dXaMin: 0.886, dXaMax: 1.13,
+      dBcMin: 1.618, dBcMax: 2.24
+    },
+    FIVE_O: {
+      label: "5-0",
+      enabled: true,
+      bMin: 1.13,  bMax: 1.618,
+      cMin: 1.618, cMax: 2.24,
+      dXaMin: 0.50,  dXaMax: 0.50,
+      dBcMin: 0.50,  dBcMax: 0.50
+    },
+    RECIPROCAL_ABCD: {
+      label: "Reciprocal AB=CD",
+      enabled: true,
+      bMin: 0.382, bMax: 0.886,
+      cMin: 1.13,  cMax: 2.618,
+      dXaMin: 0.618, dXaMax: 1.272,
+      dBcMin: 1.00,  dBcMax: 1.618
+    },
+    ALTERNATE_ABCD: {
+      label: "Alternate AB=CD",
+      enabled: true,
+      bMin: 0.382, bMax: 0.786,
+      cMin: 1.13,  cMax: 1.618,
+      dXaMin: 1.272, dXaMax: 1.618,
+      dBcMin: 1.272, dBcMax: 2.00
     }
   };
 
