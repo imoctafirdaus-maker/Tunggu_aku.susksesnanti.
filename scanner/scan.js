@@ -20,8 +20,8 @@ const SCANNER_SOURCE = process.env.SCANNER_SOURCE || "github-actions";
 const CG_API_KEY = process.env.CG_API_KEY || "CG-eHK3WLfwgdQzLf5pVqCgoGWy";
 
 const TIMEFRAMES = ["5m", "15m", "1h"];
-const N_VOLUME = 20;
-const N_GAINERS = 20;
+const N_VOLUME = 80;
+const N_GAINERS = 40;
 const POOL = 500;
 const CANDLES = 300;
 const CONCURRENCY = 6;
@@ -187,9 +187,11 @@ async function main() {
   const emaSt = { ok: false, scanned: 0, buy: 0, sell: 0, written: 0, unchanged: 0 };
   const foundOld = [];
   const foundEma = [];
+  const sharedCandles = {};
+  let cands = [];
 
   try {
-    const cands = await loadCandidates();
+    cands = await loadCandidates();
     st.coins = cands.length;
 
     await runPool(cands, async (c) => {
@@ -199,6 +201,8 @@ async function main() {
           const cs = await loadCandles(c.symbol, tf);
           if (cs.length < SIG.minCandles) { st.errors++; continue; }
           candleMap[tf] = cs;
+      if (!sharedCandles[c.symbol]) sharedCandles[c.symbol] = {};
+      sharedCandles[c.symbol][tf] = cs.slice(0, -1).map(k => ({ time: Math.floor(k.time / 1000), open: k.open, high: k.high, low: k.low, close: k.close, volume: k.volume, closed: true }));
           st.scanned++;
 
           // 1) Mesin Algoritma Lama
@@ -340,8 +344,7 @@ async function main() {
       }
     } catch (_) {}
 
-    const hmCands = await loadCandidates().catch(() => []);
-    const hmRes = await runHarmonicScanCycle({ candidates: hmCands, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
+    const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
     console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m): scanned=${hmRes.scanned} found=${hmRes.found}`);
     await admin.app().delete();
   }

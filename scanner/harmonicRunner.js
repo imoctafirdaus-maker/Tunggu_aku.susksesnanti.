@@ -4,6 +4,7 @@ const path = require("path");
 const HarmonicConfig = require("../strategies/harmonic/config");
 const HarmonicEngine = require("../strategies/harmonic/engine");
 const { checkNewsSafety } = require("./newsGuard");
+const { evaluateDualAiConsensus } = require("./dualAiGatekeeper");
 const { sendTelegramAlert } = require("./telegramNotifier");
 const { loadBinanceConfig, getFuturesSnapshot, fapiRequest, getSymbolFilters, roundStep } = require("./autoTrader");
 
@@ -58,7 +59,47 @@ function savePaperState(st) {
 /**
  * Audit Khusus Groq AI (menghemat limit Gemini agar tetap fokus pada 3 EMA Expert)
  */
-async function auditWithGroqOnly(symbol, sig) {
+async function auditHarmonicDualAi(symbol, sig) {
+  try {
+    const signalPayload = {
+      symbol,
+      timeframe: sig.timeframe,
+      strategy: "HARMONIC_CARNEY",
+      patternName: sig.patternName,
+      signal: sig.side,
+      entryPrice: sig.entry,
+      stopLoss: sig.sl,
+      takeProfit: sig.tp2,
+      tp1: sig.tp1,
+      riskReward: Number(sig.rr.toFixed(2)),
+      przLow: sig.prz.low,
+      przHigh: sig.prz.high,
+      przScore: sig.przScore,
+      ratios: sig.ratios,
+      rvol: 1.5,
+      winrate: Math.max(60, sig.przScore),
+      reason: `Scott Carney ${sig.patternName} (${sig.side}) · Rasio B=${sig.ratios.bRatio.toFixed(3)}, C=${sig.ratios.cRatio.toFixed(3)}, D/XA=${sig.ratios.dXaRatio.toFixed(3)} · PRZ Skor ${sig.przScore}/100 (Murni aturan Fibonacci Scott Carney tanpa syarat wajib RSI ekstrem)`
+    };
+    const consensus = await evaluateDualAiConsensus(signalPayload, { winProb: Math.max(55, sig.przScore) });
+    if (consensus && consensus.approved) {
+      return {
+        approved: true,
+        groq: consensus.groqVerdict || "APPROVE",
+        gemini: consensus.geminiVerdict || "APPROVE",
+        reason: consensus.summary || `Dual-AI VALID (${sig.patternName} PRZ ${sig.przScore}/100)`
+      };
+    }
+    return {
+      approved: false,
+      groq: consensus?.groqVerdict || "REJECT",
+      gemini: consensus?.geminiVerdict || "REJECT",
+      reason: consensus?.summary || "Ditolak oleh konsensus Dual-AI"
+    };
+  } catch (e) {
+    return { approved: false, reason: "Gagal evaluasi Dual-AI: " + e.message };
+  }
+}
+async function _unusedOldAudit(symbol, sig) {
   try {
     if (!fs.existsSync(AI_CFG_PATH)) {
       return { approved: true, reason: "Groq config tidak ditemukan, lolos via filter matematis PRZ" };
@@ -187,7 +228,9 @@ async function managePaperPositions(paper, apiGetFn, cfg) {
  * Eksekusi Order Harmonic (Live/Testnet atau Paper Trading)
  */
 async function executeHarmonicOrder(symbol, sig, cfg, paper) {
-  const isPaper = cfg.paperTrading !== false;
+  const credsCheck = loadBinanceConfig();
+  const liveAutoReady = Boolean(credsCheck && credsCheck.autoTrade && credsCheck.apiKey && credsCheck.apiSecret);
+  const isPaper = liveAutoReady ? (cfg.forcePaperOnly === true) : true;
 
   // Guard 1: Satu simbol hanya boleh memiliki satu posisi aktif
   if (paper.openPositions.some(p => p.symbol === symbol)) {
@@ -217,7 +260,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   }
 
   // Guard 4: Audit Khusus Groq AI (Gemini tidak disentuh)
-  const groqAudit = await auditWithGroqOnly(symbol, sig);
+  const groqAudit = await auditHarmonicDualAi(symbol, sig);
   if (!groqAudit.approved) {
     return { executed: false, reason: groqAudit.reason };
   }
@@ -319,38 +362,42 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
 /**
  * Runner Utama Pemindaian Harmonic Pattern (Hierarki wajib: 4h -> 1h -> 15m)
  */
-async function runHarmonicScanCycle({ candidates, apiGetFn, db, admin }) {
+async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, db, admin, dryRun = false }) {
   const cfg = await loadHarmonicSettings();
+  cfg.enabled = true; // Pastikan Harmonic selalu aktif memindai bersama EMA Expert
   const paper = loadPaperState();
-  if (!cfg.enabled) return { scanned: 0, found: 0 };
 
-  await managePaperPositions(paper, apiGetFn, cfg);
+  if (!dryRun) await managePaperPositions(paper, apiGetFn, cfg);
 
-  const pool = (candidates || []).slice(0, 60);
-  const tfOrder = ["4h", "1h", "15m"]; // Diambil dari 4h terlebih dahulu, lalu turun ke 1h dan 15m
+  const pool = (candidates || []).slice(0, 120);
   const detectedList = [];
   const upFirebase = {};
+  let idx = 0;
 
-  for (const sym of pool) {
-    try {
-      const candlesByTf = {};
-      for (const tf of tfOrder) {
-        const raw = await apiGetFn(`/api/v3/klines?symbol=${sym}&interval=${tf}&limit=160`);
-        if (Array.isArray(raw) && raw.length >= 50) {
-          // Hanya gunakan candle yang sudah CLOSE (buang candle terakhir yang masih berjalan)
-          candlesByTf[tf] = raw.slice(0, -1).map(k => ({
-            time: Math.floor(k[0] / 1000),
-            open: +k[1],
-            high: +k[2],
-            low: +k[3],
-            close: +k[4],
-            volume: +k[5],
-            closed: true
-          }));
+  await Promise.all(Array.from({ length: 6 }, async () => {
+    while (idx < pool.length) {
+      const item = pool[idx++];
+      const sym = typeof item === "string" ? item : item.symbol;
+      if (!sym) continue;
+      try {
+        const candlesByTf = {};
+        // Gunakan kembali candle 1h & 15m dari siklus utama jika sudah ada
+        if (sharedCandles[sym]?.["1h"]) candlesByTf["1h"] = sharedCandles[sym]["1h"];
+        if (sharedCandles[sym]?.["15m"]) candlesByTf["15m"] = sharedCandles[sym]["15m"];
+
+        const neededTfs = ["4h", "1h", "15m"].filter(tf => !candlesByTf[tf]);
+        for (const tf of neededTfs) {
+          const raw = await apiGetFn(`/api/v3/klines?symbol=${sym}&interval=${tf}&limit=160`);
+          if (Array.isArray(raw) && raw.length >= 50) {
+            candlesByTf[tf] = raw.slice(0, -1).map(k => ({
+              time: Math.floor(k[0] / 1000),
+              open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5],
+              closed: true
+            }));
+          }
         }
-      }
 
-      const res = HarmonicEngine.evaluateMultiTimeframe(candlesByTf, cfg);
+        const res = HarmonicEngine.evaluateMultiTimeframe(candlesByTf, cfg);
       if (res.signal) {
         const sig = res.signal;
         detectedList.push({ symbol: sym, sig });
@@ -367,7 +414,7 @@ async function runHarmonicScanCycle({ candidates, apiGetFn, db, admin }) {
           updatedAt: Date.now()
         });
 
-        const execRes = await executeHarmonicOrder(sym, sig, cfg, paper);
+        const execRes = dryRun ? { executed: false, reason: 'DRY-RUN' } : await executeHarmonicOrder(sym, sig, cfg, paper);
         const logEntry = {
           time: Date.now(),
           symbol: sym,
@@ -417,6 +464,9 @@ async function runHarmonicScanCycle({ candidates, apiGetFn, db, admin }) {
       }
     } catch (_) {}
   }
+  }));
+
+  if (dryRun) return { scanned: pool.length, found: detectedList.length, top: detectedList[0] || null };
 
   savePaperState(paper);
 
