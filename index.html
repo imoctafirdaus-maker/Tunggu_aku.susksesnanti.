@@ -4137,5 +4137,18 @@ if ("serviceWorker" in navigator) {
   };
 })();
 </script>
+
+<script>
+window.addEventListener("load", function() {
+  setTimeout(function() {
+    const btns = Array.from(document.querySelectorAll("button"));
+    const scanBtn = btns.find(b => b.textContent && b.textContent.includes("Cari Koin Berpola Valid"));
+    if (scanBtn && !window.__autoHarmonicStarted) {
+      window.__autoHarmonicStarted = true;
+      scanBtn.click();
+    }
+  }, 2500);
+});
+</script>
 </body>
 </html>
