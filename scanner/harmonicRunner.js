@@ -63,6 +63,12 @@ async function auditHarmonicDualAi(symbol, sig) {
   try {
     let aiCfg = {};
     try { if (fs.existsSync(AI_CFG_PATH)) aiCfg = JSON.parse(fs.readFileSync(AI_CFG_PATH, "utf8")); } catch (_) {}
+    if (aiCfg.aiAuditEnabled === false) {
+      return {
+        approved: true,
+        reason: "Audit AI dinonaktifkan via saklar UI — lolos filter MTF 4H->1H->15M"
+      };
+    }
     const groqKeys = (aiCfg.groqKeys || []).map(k => String(k).trim()).filter(Boolean);
     const geminiKeys = (aiCfg.geminiKeys || []).map(k => String(k).trim()).filter(Boolean);
     const cfAccountId = String(aiCfg.cfAccountId || "").trim();

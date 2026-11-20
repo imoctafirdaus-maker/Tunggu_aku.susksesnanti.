@@ -4,6 +4,15 @@ const path = require("path");
 const { checkNewsSafety } = require("./newsGuard");
 
 const CFG_PATH = path.join(__dirname, "binanceConfig.json");
+const AI_CFG_FILE = path.join(__dirname, "aiConfig.json");
+function setLocalAiAudit(enabled) {
+  try {
+    const cfg = fs.existsSync(AI_CFG_FILE) ? JSON.parse(fs.readFileSync(AI_CFG_FILE, "utf8")) : {};
+    cfg.aiAuditEnabled = enabled !== false;
+    fs.writeFileSync(AI_CFG_FILE, JSON.stringify(cfg, null, 2));
+  } catch (_) {}
+}
+
 
 function setLocalAutoTrade(enabled) {
   try {
@@ -33,7 +42,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const state = Boolean(forceState);
     setLocalAutoTrade(state);
     await ref.set({
-      autoTrade: state,
+      autoTrade: state, aiAuditEnabled: aiEnabled,
       newsGuardActive: false,
       source: "termux",
       updatedAt: admin.database.ServerValue.TIMESTAMP
@@ -43,6 +52,8 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
 
   const snap = await ref.once("value");
   const val = snap.val() || {};
+  const aiEnabled = typeof val.aiAuditEnabled === "boolean" ? val.aiAuditEnabled : true;
+  setLocalAiAudit(aiEnabled);
   const newsStatus = await checkNewsSafety(null, 30).catch(() => ({ safe: true }));
 
   // Jika News Guard sedang aktif, otomatis matikan saklar sementara & simpan waktu buka (unlockAt)
@@ -51,7 +62,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const resumeState = val.newsGuardActive ? (val.resumeAutoTrade !== false) : prevAuto;
     setLocalAutoTrade(false);
     await ref.set({
-      autoTrade: false,
+      autoTrade: false, aiAuditEnabled: aiEnabled,
       newsGuardActive: true,
       newsTitle: newsStatus.newsTitle || "Berita Makro High-Impact",
       unlockAt: newsStatus.unlockAt || (Date.now() + 30 * 60000),
@@ -67,7 +78,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const restore = val.resumeAutoTrade !== false;
     setLocalAutoTrade(restore);
     await ref.set({
-      autoTrade: restore,
+      autoTrade: restore, aiAuditEnabled: aiEnabled,
       newsGuardActive: false,
       source: "news-guard-resume",
       updatedAt: admin.database.ServerValue.TIMESTAMP
@@ -82,7 +93,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
 
   const localState = getLocalAutoTrade();
   await ref.set({
-    autoTrade: localState,
+    autoTrade: localState, aiAuditEnabled: aiEnabled,
     newsGuardActive: false,
     source: "init",
     updatedAt: admin.database.ServerValue.TIMESTAMP

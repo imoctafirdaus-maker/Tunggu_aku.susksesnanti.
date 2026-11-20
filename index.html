@@ -129,14 +129,19 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">Kontrol Master Rangkaian Bot · Ambang Eksekusi ≥ 75%</div>
     <div id="masterTradeStatusText" style="font-size:13px;font-weight:700;color:#94a3b8;margin-top:3px;">Memuat status bot...</div>
   </div>
-  <button id="masterTradeToggleBtn" type="button" onclick="toggleMasterAutoTrade()" style="padding:10px 16px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#334155;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-    ⏳ Memuat...
-  </button>
+  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+    <button id="masterTradeToggleBtn" type="button" onclick="toggleMasterAutoTrade()" style="padding:10px 16px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#334155;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+      ⏳ Memuat...
+    </button>
+    <button id="aiAuditToggleBtn" type="button" onclick="toggleAiAudit()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#2563eb;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+      🤖 Audit AI: ON
+    </button>
+  </div>
 </div>
 <script>
 (function() {
   const CTRL_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
-  window.__botControlState = { autoTrade: true, minProb: 75, updatedAt: 0 };
+  window.__botControlState = { autoTrade: true, aiAuditEnabled: true, minProb: 75, updatedAt: 0 };
   let busy = false;
 
   let __ngCountdownTimer = null;
@@ -181,7 +186,43 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     }
   }
 
-  function renderMasterBtn(isOn, ctrlData = null) {
+  function renderAiBtn(aiOn) {
+    const enabled = aiOn !== false;
+    window.__botControlState.aiAuditEnabled = enabled;
+    const aiBtn = document.getElementById("aiAuditToggleBtn");
+    if (!aiBtn) return;
+    aiBtn.disabled = false;
+    if (enabled) {
+      aiBtn.textContent = "🤖 Audit AI: ON";
+      aiBtn.style.background = "#2563eb";
+    } else {
+      aiBtn.textContent = "🚫 Audit AI: OFF";
+      aiBtn.style.background = "#475569";
+    }
+  }
+
+  window.toggleAiAudit = async function() {
+    if (busy) return;
+    busy = true;
+    const aiBtn = document.getElementById("aiAuditToggleBtn");
+    const nextAi = !window.__botControlState.aiAuditEnabled;
+    if (aiBtn) { aiBtn.disabled = true; aiBtn.textContent = "⏳..."; }
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ aiAuditEnabled: nextAi, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderAiBtn(nextAi);
+    } catch (err) {
+      if (aiBtn) { aiBtn.disabled = false; renderAiBtn(window.__botControlState.aiAuditEnabled); }
+    } finally {
+      busy = false;
+    }
+  };
+
+    function renderMasterBtn(isOn, ctrlData = null) {
     const enabled = Boolean(isOn);
     window.__botControlState.autoTrade = enabled;
     const txt = document.getElementById("masterTradeStatusText");
@@ -210,6 +251,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         const d = await res.json();
         if (d && typeof d.minProb === "number") window.__botControlState.minProb = d.minProb;
         renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
+        renderAiBtn(d && typeof d.aiAuditEnabled === "boolean" ? d.aiAuditEnabled : true);
       }
     } catch (_) {}
   }
@@ -226,7 +268,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       const res = await fetch(CTRL_URL, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoTrade: nextState, minProb: 75, source: "pwa", updatedAt: Date.now() })
+        body: JSON.stringify({ autoTrade: nextState, aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false, minProb: 75, source: "pwa", updatedAt: Date.now() })
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderMasterBtn(nextState);
