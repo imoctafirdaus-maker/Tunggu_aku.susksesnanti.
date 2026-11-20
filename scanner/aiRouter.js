@@ -93,7 +93,8 @@ const server = http.createServer(async (req, res) => {
       object: "list",
       data: [
         { id: "auditor-gemini", active_routes: geminiRoutes.length, fallback_sambanova: sambaRoutes.length },
-        { id: "analis-groq", active_routes: groqRoutes.length, fallback_sambanova: sambaRoutes.length }
+        { id: "analis-groq", active_routes: groqRoutes.length, fallback_sambanova: sambaRoutes.length },
+        { id: "auditor-sambanova", active_routes: sambaRoutes.length }
       ]
     }));
   }
@@ -114,7 +115,7 @@ const server = http.createServer(async (req, res) => {
         }
 
         const { geminiRoutes, groqRoutes, sambaRoutes } = loadRoutes();
-        const primaryPool = target.includes("groq") ? groqRoutes : geminiRoutes;
+        const primaryPool = target.includes("samba") ? sambaRoutes : (target.includes("groq") ? groqRoutes : geminiRoutes);
         const now = Date.now();
         const start = (rrCounter++) % Math.max(1, primaryPool.length);
 
@@ -123,7 +124,7 @@ const server = http.createServer(async (req, res) => {
           orderedPrimary.push(primaryPool[(start + step) % primaryPool.length]);
         }
         // Gabungkan rute utama di depan, diikuti SambaNova sebagai fallback otomatis
-        const fullQueue = [...orderedPrimary, ...sambaRoutes];
+        const fullQueue = target.includes("samba") ? orderedPrimary : [...orderedPrimary, ...sambaRoutes];
 
         let lastErr = null;
         for (const route of fullQueue) {
