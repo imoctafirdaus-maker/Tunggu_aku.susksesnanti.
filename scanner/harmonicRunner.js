@@ -64,51 +64,65 @@ async function auditHarmonicDualAi(symbol, sig) {
     let aiCfg = {};
     try { if (fs.existsSync(AI_CFG_PATH)) aiCfg = JSON.parse(fs.readFileSync(AI_CFG_PATH, "utf8")); } catch (_) {}
     const groqKeys = (aiCfg.groqKeys || []).map(k => String(k).trim()).filter(Boolean);
+    const geminiKeys = (aiCfg.geminiKeys || []).map(k => String(k).trim()).filter(Boolean);
     const cfAccountId = String(aiCfg.cfAccountId || "").trim();
     const cfApiToken = String(aiCfg.cfApiToken || "").trim();
 
     const prompt = `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading.
-Audit ketepatan matematis pola berikut secara terukur (toleransi standar Scott Carney ±0.035):
+Audit ketepatan matematis & risiko sinyal 15M Sniper berikut (Bias 4H: ${sig.bias4hPattern || "-"}, Konfirmasi 1H: ${sig.confirm1hNote || "-"}):
 - Pair & Timeframe: ${symbol} (${sig.timeframe})
 - Pola & Arah: ${sig.side} ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
 - Rasio Aktual: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
 - Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
 
 Aturan Wajib:
-Jika AB/XA, BC/AB (0.382-0.886), dan AD/XA berada dalam batas toleransi ±0.035 standar Scott Carney untuk ${sig.patternName}, WAJIB jawab valid=true (confidence >= 80). JANGAN menolak hanya karena RSI tidak ekstrem.
+Validasi rasio Scott Carney (toleransi ±0.035) dan kelayakan RR >= 1.2 untuk entry leverage 50x. Jika valid dan layak, jawab valid=true (confidence >= 75). Jika rasio melenceng atau risiko tidak sehat, jawab valid=false.
 Balas HANYA JSON valid tanpa markdown:
 {"valid": true atau false, "confidence": 0-100, "reason": "sebutkan angka rasio & deviasi maks 16 kata bahasa Indonesia"}`;
 
     const votes = [];
+    const errors = [];
 
-    // 1. Audit Groq Llama-3.3-70B
+    // 1. Audit Groq Llama-3.3-70B (Rotasi semua key jika ada yang limit/timeout)
     if (groqKeys.length) {
-      try {
-        const key = groqKeys[Math.floor(Math.random() * groqKeys.length)];
-        const c = new AbortController(); const t = setTimeout(() => c.abort(), 10000);
-        const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
-          signal: c.signal,
-          body: JSON.stringify({
-            model: aiCfg.groqModel || "llama-3.3-70b-versatile",
-            temperature: 0.1,
-            messages: [{ role: "user", content: prompt }]
-          })
-        });
-        clearTimeout(t);
-        if (r.ok) {
-          const d = await r.json();
-          const m = (d?.choices?.[0]?.message?.content || "").match(/\{[\s\S]*\}/);
-          if (m) {
-            const p = JSON.parse(m[0]);
-            votes.push({ who: "Groq", valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 65, reason: p.reason || "" });
+      const startIdx = Math.floor(Math.random() * groqKeys.length);
+      for (let i = 0; i < groqKeys.length; i++) {
+        const key = groqKeys[(startIdx + i) % groqKeys.length];
+        try {
+          const c = new AbortController(); const t = setTimeout(() => c.abort(), 10000);
+          const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+            method: "POST",
+            headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key },
+            signal: c.signal,
+            body: JSON.stringify({
+              model: aiCfg.groqModel || "llama-3.3-70b-versatile",
+              temperature: 0.1,
+              messages: [{ role: "user", content: prompt }]
+            })
+          });
+          clearTimeout(t);
+          if (r.ok) {
+            const d = await r.json();
+            const m = (d?.choices?.[0]?.message?.content || "").match(/\{[\s\S]*\}/);
+            if (m) {
+              const p = JSON.parse(m[0]);
+              votes.push({
+                who: "Groq-70B",
+                valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 70,
+                reason: p.reason || ""
+              });
+              break;
+            }
+          } else {
+            errors.push(`Groq HTTP ${r.status}`);
           }
+        } catch (e) {
+          errors.push(`Groq err: ${e.message}`);
         }
-      } catch (_) {}
+      }
     }
 
-    // 2. Audit Cloudflare Workers AI (Llama-3.3-70B)
+    // 2. Audit Cloudflare Workers AI atau Gemini sebagai Auditor Kedua
     if (cfAccountId && cfApiToken) {
       try {
         const c = new AbortController(); const t = setTimeout(() => c.abort(), 12000);
@@ -125,16 +139,58 @@ Balas HANYA JSON valid tanpa markdown:
         clearTimeout(t);
         if (r.ok) {
           const d = await r.json();
-          const rawTxt = d?.result?.response || "";
+          const m = (d?.result?.response || "").match(/\{[\s\S]*\}/);
+          if (m) {
+            const p = JSON.parse(m[0]);
+            votes.push({
+              who: "CF-Llama-70B",
+              valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 70,
+              reason: p.reason || ""
+            });
+          }
+        } else {
+          errors.push(`CF HTTP ${r.status}`);
+        }
+      } catch (e) {
+        errors.push(`CF err: ${e.message}`);
+      }
+    } else if (geminiKeys.length) {
+      const gKey = geminiKeys[Math.floor(Math.random() * geminiKeys.length)];
+      try {
+        const c = new AbortController(); const t = setTimeout(() => c.abort(), 12000);
+        const gModel = aiCfg.geminiModel || "gemini-2.0-flash";
+        const gUrl = `https://generativelanguage.googleapis.com/v1beta/models/${gModel}:generateContent?key=${gKey}`;
+        const r = await fetch(gUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: c.signal,
+          body: JSON.stringify({
+            generationConfig: { temperature: 0.1 },
+            contents: [{ parts: [{ text: prompt }] }]
+          })
+        });
+        clearTimeout(t);
+        if (r.ok) {
+          const d = await r.json();
+          const rawTxt = d?.candidates?.[0]?.content?.parts?.[0]?.text || "";
           const m = rawTxt.match(/\{[\s\S]*\}/);
           if (m) {
             const p = JSON.parse(m[0]);
-            votes.push({ who: "CF Llama-70B", valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 65, reason: p.reason || "" });
+            votes.push({
+              who: "Gemini",
+              valid: Boolean(p.valid) && (Number(p.confidence) || 75) >= 70,
+              reason: p.reason || ""
+            });
           }
+        } else {
+          errors.push(`Gemini HTTP ${r.status}`);
         }
-      } catch (_) {}
+      } catch (e) {
+        errors.push(`Gemini err: ${e.message}`);
+      }
     }
 
+    // WAJIB minimal 1 AI merespons dan SEMUA AI yang merespons menyatakan valid=true
     if (votes.length > 0) {
       const okCount = votes.filter(v => v.valid).length;
       const approved = okCount === votes.length;
@@ -142,11 +198,13 @@ Balas HANYA JSON valid tanpa markdown:
       return { approved, reason: summary };
     }
 
-    // Fallback matematis jika kedua API sedang rate-limit
-    const mathOk = (sig.przScore || 0) >= 60;
-    return { approved: mathOk, reason: mathOk ? `Lolos Matematis Scott Carney (PRZ ${sig.przScore}/100)` : "PRZ Score di bawah 60" };
+    // DILARANG keras fallback matematis tanpa AI
+    return {
+      approved: false,
+      reason: `Ditolak: Wajib lolos audit AI namun API gagal merespons (${errors.slice(0, 2).join(", ") || "tidak ada respons AI"})`
+    };
   } catch (e) {
-    return { approved: false, reason: "Error audit Harmonic: " + e.message };
+    return { approved: false, reason: "Ditolak: Error audit AI (" + e.message + ")" };
   }
 }
 
@@ -319,6 +377,17 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
 
   // Guard 4: Gunakan hasil Multi-AI Browser jika sudah terverifikasi, atau audit server
   const groqAudit = sig.preAuditedByBrowser ? { approved: true, reason: sig.browserAuditNote || "Multi-AI Browser VALID" } : await auditHarmonicDualAi(symbol, sig);
+  await updateActiveCandidateUi({
+    phase: groqAudit.approved ? "APPROVED" : "REJECTED",
+    scanCoin: symbol,
+    candidate: `${symbol} (${sig.patternName})`,
+    signal: `${sig.side} [HARMONIC ${sig.timeframe}]`,
+    groqStatus: groqAudit.approved ? "APPROVED" : "REJECTED",
+    geminiStatus: groqAudit.approved ? "APPROVED" : "REJECTED",
+    tradeResult: groqAudit.approved ? "EXECUTING" : "BLOCKED",
+    tradeReason: groqAudit.reason,
+    updatedAt: Date.now()
+  });
   if (!groqAudit.approved) {
     return { executed: false, reason: groqAudit.reason };
   }
