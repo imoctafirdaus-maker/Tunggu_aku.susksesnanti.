@@ -945,7 +945,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   <!-- ADAPTIVE HARMONIC PATTERNS (AHP) RSI SUB-PANE -->
   <div id="ahpSubPane" style="position:relative;width:100%;height:260px;background:#131722;border-top:1px solid #2a2e39;overflow:hidden;user-select:none;">
     <div id="ahpHeader" style="position:absolute;top:6px;left:10px;z-index:12;font-family:'JetBrains Mono',monospace;font-size:11px;color:#cbd5e1;background:rgba(19,23,34,0.82);padding:2px 6px;border-radius:4px;pointer-events:none;">
-      AHP ... 14 ohlc4 None 14 2 8 5 20 500 100 6 10 3 15 · <span id="ahpRsiLive" style="color:#c084fc;font-weight:700;">--</span>
+      AHP RSI (14, ohlc4, None, 14, 2, 8, 5, 20, 500, 100, 6, 10, 3, 15, 40, 60, 250) · <span id="ahpRsiLive" style="color:#c084fc;font-weight:700;">--</span>
     </div>
     <div id="ahpChart" style="width:100%;height:100%;"></div>
     <canvas id="ahpOverlayCanvas" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:8;"></canvas>
@@ -3553,10 +3553,34 @@ if ("serviceWorker" in navigator) {
     return out;
   }
 
-  function detectRsiSwings(candles, rsiArr, depth = 3, minSwing = 4.5) {
+  const AHP_PARAMS = {
+    rsiLength: 14,
+    source: "ohlc4",
+    smoothing: "None",
+    smoothLength: 14,
+    pivotDepth: 2,        // param #5: 2
+    tolerancePct: 8,      // param #6: 8%
+    minSwingRsi: 5,       // param #7: 5
+    minXaSpan: 2.0,       // param #8: 20 (2.0 RSI)
+    lookbackBars: 500,    // param #9: 500
+    fitScale: 100,        // param #10: 100
+    ghostWindow: 6,       // param #11: 6
+    maxPatterns: 10,      // param #12: 10
+    labelOffset: 3,       // param #13: 3
+    przBandRsi: 1.5,      // param #14: 15 (1.5 RSI)
+    lowerThresh: 40,      // param #15: 40
+    upperThresh: 60,      // param #16: 60
+    maxPatternAge: 250    // param #17: 250 bar
+  };
+
+  function detectRsiSwings(candles, rsiArr) {
+    const depth = AHP_PARAMS.pivotDepth;
+    const minSwing = AHP_PARAMS.minSwingRsi;
     const pivots = [];
     const n = rsiArr.length;
-    for (let i = depth; i < n - depth; i++) {
+    const startIdx = Math.max(depth, n - AHP_PARAMS.lookbackBars);
+
+    for (let i = startIdx; i < n - depth; i++) {
       const v = rsiArr[i];
       if (!Number.isFinite(v)) continue;
       let isHigh = true, isLow = true;
@@ -3586,18 +3610,21 @@ if ("serviceWorker" in navigator) {
   function detectAllAhpPatterns(candles, rsiArr) {
     const cfg = typeof window.getHarmonicUiSettings === "function"
       ? window.getHarmonicUiSettings()
-      : (window.HarmonicConfig ? window.HarmonicConfig.mergeSettings({}) : { ratioTolerance: 0.08, patterns: {} });
+      : (window.HarmonicConfig ? window.HarmonicConfig.mergeSettings({}) : { patterns: {} });
 
-    const swings = detectRsiSwings(candles, rsiArr, 3, 4.5);
+    const swings = detectRsiSwings(candles, rsiArr);
     if (swings.length < 4) return [];
 
     const results = [];
-    const tol = Math.max(0.08, (cfg.ratioTolerance || 0.05) * 1.6);
+    const tol = AHP_PARAMS.tolerancePct / 100; // 0.08 (8%)
+    const lastIdx = candles.length - 1;
     const patterns = Object.entries(cfg.patterns || {}).filter(([, p]) => p.enabled !== false);
 
-    // 1. Deteksi semua pola CONFIRMED historis pada gelombang RSI
+    // 1. Deteksi seluruh pola CONFIRMED dalam batas maxPatternAge (250 bar)
     for (let i = 4; i < swings.length; i++) {
       const X = swings[i - 4], A = swings[i - 3], B = swings[i - 2], C = swings[i - 1], D = swings[i];
+      if ((lastIdx - X.idx) > AHP_PARAMS.maxPatternAge) continue;
+
       const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH" && D.type === "LOW";
       const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW" && D.type === "HIGH";
       if (!isBull && !isBear) continue;
@@ -3606,7 +3633,7 @@ if ("serviceWorker" in navigator) {
       const ab = Math.abs(B.rsi - A.rsi);
       const bc = Math.abs(C.rsi - B.rsi);
       const cd = Math.abs(D.rsi - C.rsi);
-      if (xa < 4 || ab < 2 || bc < 2) continue;
+      if (xa < AHP_PARAMS.minXaSpan || ab <= 0 || bc <= 0) continue;
 
       const bRatio = ab / xa;
       const cRatio = bc / ab;
@@ -3624,7 +3651,7 @@ if ("serviceWorker" in navigator) {
         const bMid = (spec.bMin + spec.bMax) / 2;
         const dMid = (spec.dXaMin + spec.dXaMax) / 2;
         const err = Math.abs(bRatio - bMid) / Math.max(0.15, bMid) + Math.abs(dXaRatio - dMid) / Math.max(0.15, dMid);
-        const fit = Math.max(54, Math.min(96, Math.round(100 - err * 95)));
+        const fit = Math.max(50, Math.min(AHP_PARAMS.fitScale, Math.round(AHP_PARAMS.fitScale - err * 90)));
         if (!bestMatch || fit > bestMatch.fit) {
           bestMatch = { key, label: spec.label, fit };
         }
@@ -3641,7 +3668,7 @@ if ("serviceWorker" in navigator) {
       }
     }
 
-    // 2. Deteksi pola GHOST aktif (D Approaching PRZ · Waiting For Lock) dari 4 pivot RSI terakhir
+    // 2. Deteksi pola GHOST aktif (D Approaching PRZ · Waiting For Lock)
     const X = swings[swings.length - 4], A = swings[swings.length - 3], B = swings[swings.length - 2], C = swings[swings.length - 1];
     const isBull = X.type === "LOW" && A.type === "HIGH" && B.type === "LOW" && C.type === "HIGH";
     const isBear = X.type === "HIGH" && A.type === "LOW" && B.type === "HIGH" && C.type === "LOW";
@@ -3651,7 +3678,6 @@ if ("serviceWorker" in navigator) {
       const bc = Math.abs(C.rsi - B.rsi);
       const bRatio = xa > 0 ? ab / xa : 0;
       const cRatio = ab > 0 ? bc / ab : 0;
-      const lastIdx = candles.length - 1;
       const curRsi = Number.isFinite(rsiArr[lastIdx]) ? rsiArr[lastIdx] : C.rsi;
 
       let bestGhost = null;
@@ -3659,10 +3685,10 @@ if ("serviceWorker" in navigator) {
         if (bRatio >= spec.bMin * (1 - tol) && bRatio <= spec.bMax * (1 + tol) &&
             cRatio >= spec.cMin * (1 - tol) && cRatio <= spec.cMax * (1 + tol)) {
           const dTargetRatio = (spec.dXaMin + spec.dXaMax) / 2;
-          const dTargetRsi = Math.max(5, Math.min(95, isBull ? A.rsi - xa * dTargetRatio : A.rsi + xa * dTargetRatio));
+          const dTargetRsi = Math.max(0, Math.min(100, isBull ? A.rsi - xa * dTargetRatio : A.rsi + xa * dTargetRatio));
           const dist = Math.abs(curRsi - dTargetRsi);
-          if (dist <= 22) {
-            const fit = Math.max(52, Math.min(89, Math.round(90 - dist * 1.4)));
+          if (dist <= AHP_PARAMS.przBandRsi * 12) {
+            const fit = Math.max(50, Math.min(92, Math.round(92 - dist * 1.6)));
             if (!bestGhost || fit > bestGhost.fit) {
               bestGhost = {
                 status: "GHOST",
@@ -3684,7 +3710,7 @@ if ("serviceWorker" in navigator) {
       if (bestGhost) results.push(bestGhost);
     }
 
-    return results.slice(-10);
+    return results.slice(-AHP_PARAMS.maxPatterns);
   }
 
   function ensureAhpChart() {
@@ -3697,8 +3723,8 @@ if ("serviceWorker" in navigator) {
         rightPriceScale: { borderColor: "#2a2e39", minimumWidth: 68 },
         timeScale: { borderColor: "#2a2e39", timeVisible: true, visible: true },
         crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
-        width: container.clientWidth,
-        height: container.clientHeight
+        width: container.clientWidth || 360,
+        height: container.clientHeight || 260
       });
 
       ahpRsiSeries = ahpChart.addLineSeries({
@@ -3709,10 +3735,11 @@ if ("serviceWorker" in navigator) {
         autoscaleInfoProvider: () => ({ priceRange: { minValue: -20, maxValue: 120 } })
       });
 
-      [80, 60, 40, 20, 0].forEach(lvl => {
+      [80, AHP_PARAMS.upperThresh, AHP_PARAMS.lowerThresh, 20, 0].forEach(lvl => {
+        const isThresh = lvl === AHP_PARAMS.upperThresh || lvl === AHP_PARAMS.lowerThresh;
         ahpRsiSeries.createPriceLine({
           price: lvl,
-          color: "rgba(148,163,184,0.28)",
+          color: isThresh ? "rgba(167,139,250,0.42)" : "rgba(148,163,184,0.25)",
           lineWidth: 1,
           lineStyle: 2,
           axisLabelVisible: true,
@@ -3720,12 +3747,14 @@ if ("serviceWorker" in navigator) {
         });
       });
 
-      window.addEventListener("resize", () => {
-        if (ahpChart && container.clientWidth > 0) {
-          ahpChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
-          renderAhpCanvasAndCards();
-        }
-      });
+      if (typeof ResizeObserver !== "undefined") {
+        new ResizeObserver(() => {
+          if (ahpChart && container.clientWidth > 0) {
+            ahpChart.applyOptions({ width: container.clientWidth, height: container.clientHeight });
+            renderAhpCanvasAndCards();
+          }
+        }).observe(container);
+      }
     }
 
     if (!ahpSyncBound && state.chart && ahpChart) {
@@ -3757,6 +3786,7 @@ if ("serviceWorker" in navigator) {
     const dpr = window.devicePixelRatio || 1;
     const w = canvas.clientWidth;
     const h = canvas.clientHeight;
+    if (w <= 0 || h <= 0) return;
     if (canvas.width !== Math.round(w * dpr) || canvas.height !== Math.round(h * dpr)) {
       canvas.width = Math.round(w * dpr);
       canvas.height = Math.round(h * dpr);
@@ -3779,10 +3809,9 @@ if ("serviceWorker" in navigator) {
       const isBear = pat.side === "Bearish";
       const strokeCol = isGhost ? "#22c55e" : (isBear ? "#c084fc" : "#38bdf8");
       const fillCol = isGhost
-        ? "rgba(34, 197, 94, 0.16)"
-        : (isBear ? "rgba(168, 85, 247, 0.18)" : "rgba(45, 212, 191, 0.16)");
+        ? "rgba(34, 197, 94, 0.18)"
+        : (isBear ? "rgba(168, 85, 247, 0.20)" : "rgba(45, 212, 191, 0.18)");
 
-      // Arsir segitiga X-A-B dan B-C-D
       ctx.fillStyle = fillCol;
       ctx.beginPath();
       ctx.moveTo(pts[0].x, pts[0].y);
@@ -3798,7 +3827,6 @@ if ("serviceWorker" in navigator) {
       ctx.closePath();
       ctx.fill();
 
-      // Garis zig-zag X-A-B-C-D & sayap X-B-D
       ctx.strokeStyle = strokeCol;
       ctx.lineWidth = 1.6;
       ctx.setLineDash(isGhost ? [4, 3] : []);
@@ -3816,13 +3844,12 @@ if ("serviceWorker" in navigator) {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      // Kartu label di titik D (sesuai gaya AHP TradingView)
       const dPt = pts[4];
       const card = document.createElement("div");
       const bg = isGhost
-        ? "rgba(22, 163, 74, 0.92)"
-        : (isBear ? "rgba(147, 51, 234, 0.90)" : "rgba(14, 116, 144, 0.92)");
-      const topPos = isBear ? Math.max(26, dPt.y - 44) : Math.min(h - 46, dPt.y + 8);
+        ? "rgba(22, 163, 74, 0.94)"
+        : (isBear ? "rgba(147, 51, 234, 0.92)" : "rgba(14, 116, 144, 0.94)");
+      const topPos = isBear ? Math.max(24, dPt.y - 44) : Math.min(h - 46, dPt.y + 8);
       const leftPos = Math.max(6, Math.min(w - 175, dPt.x - 65));
 
       card.style.cssText = `position:absolute;left:${leftPos}px;top:${topPos}px;background:${bg};color:#fff;padding:3px 7px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:9.5px;line-height:1.25;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,0.45);white-space:nowrap;`;
@@ -3837,11 +3864,10 @@ if ("serviceWorker" in navigator) {
 
   window.renderAhpSubPane = function(candles) {
     if (!Array.isArray(candles) || candles.length < 20) return;
-
     const chartInst = ensureAhpChart();
     if (!chartInst || !ahpRsiSeries) return;
 
-    const rsiArr = calcOhlc4Rsi(candles, 14);
+    const rsiArr = calcOhlc4Rsi(candles, AHP_PARAMS.rsiLength);
     const lineData = [];
     for (let i = 0; i < candles.length; i++) {
       if (Number.isFinite(rsiArr[i])) {
@@ -3858,6 +3884,7 @@ if ("serviceWorker" in navigator) {
 
     ahpPatternsCache = detectAllAhpPatterns(candles, rsiArr);
     requestAnimationFrame(renderAhpCanvasAndCards);
+    setTimeout(renderAhpCanvasAndCards, 150);
   };
 })();
 </script>
