@@ -1560,14 +1560,25 @@ function detectScottCarneyHarmonic(candles) {
   const near = (val, target, tol) => Math.abs(val - target) <= tol;
   const inRange = (val, min, max) => val >= min && val <= max;
 
+  // Hitung ATR(14) untuk toleransi sentuhan wick PRZ yang presisi
+  let atrSum = 0, atrCnt = 0;
+  for (let k = Math.max(1, candles.length - 14); k < candles.length; k++) {
+    const tr = Math.max(
+      candles[k].high - candles[k].low,
+      Math.abs(candles[k].high - candles[k - 1].close),
+      Math.abs(candles[k].low - candles[k - 1].close)
+    );
+    atrSum += tr; atrCnt++;
+  }
+  const atr14 = atrCnt > 0 ? atrSum / atrCnt : (lastCandle.close * 0.005);
+
   for (let i = pivots.length - 4; i >= Math.max(0, pivots.length - 14); i--) {
     const X = pivots[i], A = pivots[i + 1], B = pivots[i + 2], C = pivots[i + 3];
     const isBullish = X.type === "L" && A.type === "H" && B.type === "L" && C.type === "H";
     const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";
     if (!isBullish && !isBearish) continue;
 
-    // Validasi murni struktur & rasio Fibonacci Scott Carney (tanpa syarat wajib RSI ekstrem)
-
+    // Struktur dasar: C tidak boleh menembus titik A (retracement C terhadap AB wajib 0.382 - 0.886)
     const XA = Math.abs(A.price - X.price);
     const AB = Math.abs(B.price - A.price);
     const BC = Math.abs(C.price - B.price);
@@ -1575,65 +1586,95 @@ function detectScottCarneyHarmonic(candles) {
 
     const bRatio = AB / XA;
     const cRatio = BC / AB;
-    if (!inRange(cRatio, 0.35, 0.92)) continue;
+    if (!inRange(cRatio, 0.36, 0.90)) continue;
 
-    // SYARAT 2: Klasifikasi Rasio Titik B sesuai aturan Scott Carney
+    // Klasifikasi Rasio Titik B & Proyeksi PRZ Presisi Scott Carney
     let patternName = null;
     let przXaTarget = 0;
-    let przBcMin = 0, przBcMax = 0;
+    let przBcTargets = [];
+    let allowBeyondX = false;
 
-    if (near(bRatio, 0.618, 0.04)) {
+    if (near(bRatio, 0.618, 0.035)) {
       patternName = "GARTLEY";
-      przXaTarget = 0.786; przBcMin = 1.272; przBcMax = 1.618;
-    } else if (inRange(bRatio, 0.36, 0.53)) {
+      przXaTarget = 0.786;
+      przBcTargets = [1.272, 1.414, 1.618];
+      allowBeyondX = false;
+    } else if (inRange(bRatio, 0.37, 0.52)) {
       patternName = "BAT";
-      przXaTarget = 0.886; przBcMin = 1.618; przBcMax = 2.618;
-    } else if (near(bRatio, 0.786, 0.04)) {
+      przXaTarget = 0.886;
+      przBcTargets = [1.618, 2.0, 2.24, 2.618];
+      allowBeyondX = false;
+    } else if (near(bRatio, 0.786, 0.035)) {
       patternName = "BUTTERFLY";
-      przXaTarget = 1.272; przBcMin = 1.618; przBcMax = 2.618;
-    } else if (inRange(bRatio, 0.36, 0.64)) {
+      przXaTarget = 1.272;
+      przBcTargets = [1.618, 2.0, 2.24, 2.618];
+      allowBeyondX = true;
+    } else if (inRange(bRatio, 0.37, 0.63)) {
       patternName = "CRAB";
-      przXaTarget = 1.618; przBcMin = 2.240; przBcMax = 3.618;
+      przXaTarget = 1.618;
+      przBcTargets = [2.24, 2.618, 3.14, 3.618];
+      allowBeyondX = true;
     }
     if (!patternName) continue;
 
-    // Hitung Zona PRZ (Potential Reversal Zone) sesuai Scott Carney
+    // Hitung Zona PRZ Confluence (Target XA + Proyeksi BC terdekat + AB=CD)
     const dir = isBullish ? -1 : 1;
     const przLevelXa = A.price + dir * (XA * przXaTarget);
-    const przLevelBc = C.price + dir * (BC * przBcMin);
-    const przLow = Math.min(przLevelXa, przLevelBc);
-    const przHigh = Math.max(przLevelXa, przLevelBc);
+    const bcLevels = przBcTargets.map(m => C.price + dir * (BC * m));
+    const nearestBc = bcLevels.reduce((best, cur) =>
+      Math.abs(cur - przLevelXa) < Math.abs(best - przLevelXa) ? cur : best, bcLevels[0]);
+    const abcdLevel = C.price + dir * AB;
+
+    // Pilih level konfluensi yang berdekatan dengan target utama XA
+    const cluster = [przLevelXa];
+    if (Math.abs(nearestBc - przLevelXa) <= Math.max(atr14 * 1.5, przLevelXa * 0.015)) cluster.push(nearestBc);
+    if (Math.abs(abcdLevel - przLevelXa) <= Math.max(atr14 * 1.5, przLevelXa * 0.015)) cluster.push(abcdLevel);
+
+    const przLow = Math.min(...cluster);
+    const przHigh = Math.max(...cluster);
     const przMid = (przLow + przHigh) / 2;
 
-    // Cek apakah titik D sudah terbentuk atau sedang diproyeksikan menuju PRZ
     const D_pivot = pivots[i + 4];
-    const activeDPrice = D_pivot ? D_pivot.price : lastCandle.close;
-    const dXaRatio = Math.abs(activeDPrice - A.price) / XA;
-    const dBcRatio = Math.abs(activeDPrice - C.price) / BC;
-
-    // Filter kesegaran: jika titik D sudah terbentuk lebih dari 4 candle lalu, anggap basi
     if (D_pivot && (candles.length - 1 - D_pivot.idx) > 4) continue;
 
-    // Jangan tampilkan pola yang sudah jebol jauh melewati Stop Loss
-    const slPrice = isBullish
-      ? Math.min(X.price, przLow) - (XA * 0.12)
-      : Math.max(X.price, przHigh) + (XA * 0.12);
+    // Aturan Mutlak Beyond-X Scott Carney: Gartley & Bat BATAL jika D atau harga menembus titik X
+    const activeDPrice = D_pivot ? D_pivot.price : lastCandle.close;
+    if (!allowBeyondX) {
+      if (isBullish && (activeDPrice < X.price || lastCandle.close < X.price)) continue;
+      if (isBearish && (activeDPrice > X.price || lastCandle.close > X.price)) continue;
+    }
+
+    // Stop Loss presisi di luar batas PRZ / X
+    const slPrice = allowBeyondX
+      ? (isBullish ? przLow - (XA * 0.15) : przHigh + (XA * 0.15))
+      : (isBullish ? X.price - (atr14 * 0.5) : X.price + (atr14 * 0.5));
+
     if (isBullish && lastCandle.close < slPrice) continue;
     if (!isBullish && lastCandle.close > slPrice) continue;
 
-    // Pastikan harga masih dekat atau sedang menuju PRZ (belum lari jauh meninggalkan PRZ)
+    // Toleransi sentuhan PRZ (wick menyentuh zona PRZ dengan buffer 0.35 ATR)
+    const wickBuf = atr14 * 0.35;
+    const inPrz = lastCandle.low <= (przHigh + wickBuf) && lastCandle.high >= (przLow - wickBuf);
     const distToPrzPct = Math.abs(lastCandle.close - przMid) / przMid * 100;
-    if (distToPrzPct > 6.5) continue;
 
-    const inPrz = lastCandle.low <= przHigh && lastCandle.high >= przLow;
+    // Hanya tampilkan pola yang SUDAH menyentuh PRZ atau sangat dekat (< 0.8%) agar rasio AD/XA presisi
+    if (!inPrz && !D_pivot && distToPrzPct > 0.8) continue;
+
+    const effectiveD = D_pivot ? D_pivot.price : (inPrz ? przMid : lastCandle.close);
+    const dXaRatio = Math.abs(effectiveD - A.price) / XA;
+    const dBcRatio = Math.abs(effectiveD - C.price) / BC;
+
+    // Wajib presisi rasio D/XA sesuai standar Scott Carney (toleransi ketat ±0.035)
+    if (!near(dXaRatio, przXaTarget, 0.035)) continue;
+
     const dPoint = D_pivot
       ? { time: D_pivot.time, price: D_pivot.price, rsi: lastRsi, projected: false }
-      : { time: lastCandle.time, price: przMid, rsi: lastRsi, projected: true };
+      : { time: lastCandle.time, price: przMid, rsi: lastRsi, projected: !inPrz };
 
-    // Hitung skor akurasi & kesegaran pola (semakin tinggi semakin siap entry)
-    const idealB = patternName === "GARTLEY" ? 0.618 : patternName === "BAT" ? 0.45 : patternName === "BUTTERFLY" ? 0.786 : 0.50;
-    const bAccuracy = Math.max(0, 100 - Math.abs(bRatio - idealB) * 300);
-    const score = (inPrz ? 50 : 0) + (D_pivot ? 20 : 10) + bAccuracy - distToPrzPct * 3;
+    const idealB = patternName === "GARTLEY" ? 0.618 : patternName === "BAT" ? 0.44 : patternName === "BUTTERFLY" ? 0.786 : 0.50;
+    const bAcc = Math.max(0, 100 - Math.abs(bRatio - idealB) * 280);
+    const dAcc = Math.max(0, 100 - Math.abs(dXaRatio - przXaTarget) * 900);
+    const score = Math.round((inPrz ? 35 : 15) + bAcc * 0.30 + dAcc * 0.35);
 
     return {
       side: isBullish ? "BULLISH" : "BEARISH",
