@@ -295,7 +295,7 @@ async function main() {
     const upEma = {};
     for (const { id, rec } of foundEma) {
       const old = exEma[id];
-      if (old && old.candleTime === rec.candleTime && old.signal === rec.signal) { emaSt.unchanged++; continue; }
+      if (old && old.candleTime === rec.candleTime && old.signal === rec.signal && old.aiAudited) { emaSt.unchanged++; continue; }
       upEma[id] = { ...rec, updatedAt: admin.database.ServerValue.TIMESTAMP };
     }
     if (Object.keys(upEma).length) {
@@ -306,6 +306,7 @@ async function main() {
             console.log(`🤖 [EMA-EXPERT] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`);
             const trRes = await executeSignalTrade(rec, futuresSnap);
             console.log(`   -> Hasil ${rec.symbol}:`, trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED"));
+            await db.ref(`emaSignals/${sigId}`).update({ aiAudited: true, aiAuditReason: trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED") }).catch(() => {});
             if (trRes.executed) futuresSnap = await getFuturesSnapshot();
           } catch (errTr) {
             console.error(`   -> Gagal eksekusi ${rec.symbol}:`, errTr.message);
