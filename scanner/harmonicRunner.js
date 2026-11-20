@@ -499,4 +499,4 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
   return { scanned: pool.length, found: detectedList.length, top: detectedList[0] || null };
 }
 
-module.exports = { runHarmonicScanCycle, loadHarmonicSettings, loadPaperState };
+module.exports = { runHarmonicScanCycle, loadHarmonicSettings, loadPaperState, savePaperState, executeHarmonicOrder };

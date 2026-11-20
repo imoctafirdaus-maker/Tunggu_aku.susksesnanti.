@@ -110,7 +110,7 @@
   const DEFAULT_SETTINGS = {
     enabled: true,
     paperTrading: true,
-    timeframes: ["4h", "1h", "15m"], // urutan wajib: 4h -> 1h -> 15m
+    timeframes: ["4h", "1h", "15m", "5m"], // urutan wajib: 4h -> 1h -> 15m
     ratioTolerance: 0.035,            // ±3% standar Scott Carney
     swingDepth: 2,
     minDeviationPct: 0.15,
@@ -129,7 +129,7 @@
     tp1Fib: 0.382,
     tp2Fib: 0.618,
     tp1CloseRatio: 0.5,
-    minRR: 2.0,
+    minRR: 1.2,
     riskPerTradePct: 1.0,
     maxOpenPositions: 3,
     maxDailyDrawdownPct: 5.0,
