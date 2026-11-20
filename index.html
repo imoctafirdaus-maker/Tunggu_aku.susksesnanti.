@@ -2007,13 +2007,13 @@ window.scanTopCoinsForHarmonic = async function() {
   const detail = $("hmPrzDetail");
   if (!btn) return;
   btn.disabled = true;
-  btn.textContent = "⏳ Memindai Top 80 Koin...";
+  btn.textContent = "⏳ Memindai Semua Pair USDT...";
   if (badge) { badge.style.background = "rgba(250,204,21,0.2)"; badge.style.color = "#facc15"; badge.textContent = "PARALLEL SCANNING..."; }
 
   const fallbackList = ["BTCUSDT","ETHUSDT","SOLUSDT","XRPUSDT","BNBUSDT","AVAXUSDT","LINKUSDT","SUIUSDT","ADAUSDT","DOGEUSDT","DOTUSDT","NEARUSDT","APTUSDT","ARBUSDT","OPUSDT","INJUSDT","TIAUSDT","SEIUSDT","RENDERUSDT","FETUSDT"];
-  const candidates = (state.coinList && state.coinList.length ? state.coinList.slice(0, 80).map(c => c.symbol) : fallbackList);
+  const candidates = (state.coinList && state.coinList.length ? state.coinList.map(c => c.symbol) : fallbackList);
   const matches = [];
-  const BATCH_SIZE = 8;
+  const BATCH_SIZE = 10;
 
   for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
     const batch = candidates.slice(i, i + BATCH_SIZE);
@@ -2030,12 +2030,13 @@ window.scanTopCoinsForHarmonic = async function() {
         }
       } catch (_) {}
     }));
+    await new Promise(r => setTimeout(r, 120));
   }
 
   btn.disabled = false;
   if (!matches.length) {
     btn.textContent = "🔍 Cari Koin Berpola Valid";
-    if (badge) { badge.style.background = "#1e293b"; badge.style.color = "#94a3b8"; badge.textContent = "0 POLA SEGAR (80 KOIN)"; }
+    if (badge) { badge.style.background = "#1e293b"; badge.style.color = "#94a3b8"; badge.textContent = `0 POLA SEGAR (${candidates.length} KOIN)`; }
     if (detail) detail.textContent = `Tidak ditemukan struktur rasio Scott Carney segar pada ${candidates.length} koin di TF ${CONFIG.interval}.`;
     return;
   }
@@ -2050,7 +2051,7 @@ window.scanTopCoinsForHarmonic = async function() {
   // Tampilkan daftar pintasan semua koin valid yang ditemukan
   setTimeout(() => {
     if (detail) {
-      const pills = matches.slice(0, 6).map(m => {
+      const pills = matches.slice(0, 12).map(m => {
         const c = m.found.side === "BULLISH" ? "#4ade80" : "#f87171";
         const tag = m.found.inPrz ? "IN PRZ" : `${m.found.distToPrzPct.toFixed(1)}%`;
         return `<button type="button" onclick="selectHarmonicCoin('${m.sym}')" style="margin:2px 4px 2px 0;padding:2px 7px;border-radius:4px;border:1px solid ${c};background:rgba(15,23,42,0.9);color:${c};font-size:10px;font-weight:700;cursor:pointer;">${m.sym.replace("USDT","")} · ${m.found.pattern} (${tag})</button>`;
