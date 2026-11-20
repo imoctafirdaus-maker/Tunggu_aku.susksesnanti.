@@ -60,6 +60,9 @@ async function checkNewsSafety(rec, bufferMinutes = 30) {
     const timing = diffMin >= 0 ? `dalam ${diffMin} menit` : `${Math.abs(diffMin)} menit lalu`;
     return {
       safe: false,
+      isMacroNews: true,
+      newsTitle: activeNews.title,
+      unlockAt: activeNews.timestamp + bufferMs,
       reason: `News Guard Aktif: "${activeNews.title}" (${timing}) — entry ditahan ±${bufferMinutes}m`
     };
   }

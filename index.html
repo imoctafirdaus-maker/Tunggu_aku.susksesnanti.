@@ -139,7 +139,49 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   window.__botControlState = { autoTrade: true, minProb: 75, updatedAt: 0 };
   let busy = false;
 
-  function renderMasterBtn(isOn) {
+  let __ngCountdownTimer = null;
+  function updateNewsGuardBanner(ctrl) {
+    const txt = document.getElementById("masterTradeStatusText");
+    const btn = document.getElementById("masterTradeToggleBtn");
+    let banner = document.getElementById("newsGuardCountdownBanner");
+    if (!banner && txt && txt.parentElement) {
+      banner = document.createElement("div");
+      banner.id = "newsGuardCountdownBanner";
+      banner.style.cssText = "display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.45);color:#fbbf24;font-size:12px;line-height:1.5;";
+      txt.parentElement.appendChild(banner);
+    }
+    if (__ngCountdownTimer) { clearInterval(__ngCountdownTimer); __ngCountdownTimer = null; }
+    if (ctrl && ctrl.newsGuardActive && ctrl.unlockAt > Date.now()) {
+      const renderTick = () => {
+        const remMs = Math.max(0, ctrl.unlockAt - Date.now());
+        const mins = String(Math.floor(remMs / 60000)).padStart(2, "0");
+        const secs = String(Math.floor((remMs % 60000) / 1000)).padStart(2, "0");
+        if (txt) {
+          txt.textContent = "🛡️ NEWS GUARD AKTIF — Saklar Dimatikan Otomatis (±30m)";
+          txt.style.color = "#f59e0b";
+        }
+        if (btn) {
+          btn.textContent = "⏳ Terkunci News Guard (" + mins + ":" + secs + ")";
+          btn.style.background = "#b45309";
+        }
+        if (banner) {
+          banner.style.display = "block";
+          banner.innerHTML = "⚠️ <b>PERINGATAN NEWS GUARD:</b> Jadwal <b>" + (ctrl.newsTitle || "USD High-Impact") + "</b> terdeteksi.<br>Saklar Auto-Trade dimatikan sementara untuk menghindari slippage &amp; akan terbuka otomatis dalam <b style='color:#fff;font-size:13px;background:#92400e;padding:2px 6px;border-radius:6px;'>" + mins + ":" + secs + "</b>";
+        }
+        if (remMs <= 0 && __ngCountdownTimer) {
+          clearInterval(__ngCountdownTimer);
+          __ngCountdownTimer = null;
+          syncFromServer();
+        }
+      };
+      renderTick();
+      __ngCountdownTimer = setInterval(renderTick, 1000);
+    } else if (banner) {
+      banner.style.display = "none";
+    }
+  }
+
+  function renderMasterBtn(isOn, ctrlData = null) {
     const enabled = Boolean(isOn);
     window.__botControlState.autoTrade = enabled;
     const txt = document.getElementById("masterTradeStatusText");
