@@ -41,7 +41,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
   if (forceState !== null) {
     const state = Boolean(forceState);
     setLocalAutoTrade(state);
-    await ref.set({
+    await ref.update({
       autoTrade: state, aiAuditEnabled: aiEnabled,
       newsGuardActive: false,
       source: "termux",
@@ -61,7 +61,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const prevAuto = typeof val.autoTrade === "boolean" ? val.autoTrade : getLocalAutoTrade();
     const resumeState = val.newsGuardActive ? (val.resumeAutoTrade !== false) : prevAuto;
     setLocalAutoTrade(false);
-    await ref.set({
+    await ref.update({
       autoTrade: false, aiAuditEnabled: aiEnabled,
       newsGuardActive: true,
       newsTitle: newsStatus.newsTitle || "Berita Makro High-Impact",
@@ -77,7 +77,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
   if (val.newsGuardActive) {
     const restore = val.resumeAutoTrade !== false;
     setLocalAutoTrade(restore);
-    await ref.set({
+    await ref.update({
       autoTrade: restore, aiAuditEnabled: aiEnabled,
       newsGuardActive: false,
       source: "news-guard-resume",
@@ -92,7 +92,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
   }
 
   const localState = getLocalAutoTrade();
-  await ref.set({
+  await ref.update({
     autoTrade: localState, aiAuditEnabled: aiEnabled,
     newsGuardActive: false,
     source: "init",

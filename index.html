@@ -1136,31 +1136,36 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
     showCloseNotice("Mengirim perintah Market Close " + sym + " ke eksekutor Termux...", "info");
 
-    const cmdUrl = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_manualCloseCmd/" + encodeURIComponent(sym) + ".json";
+    const ctrlPatchUrl = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
+    const statusReadUrl = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl/manualClose.json";
+    const reqId = Date.now();
     try {
-      const putRes = await fetch(cmdUrl, {
-        method: "PUT",
+      const putRes = await fetch(ctrlPatchUrl, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          symbol: sym,
-          status: "PENDING",
-          requestedAt: Date.now()
+          manualClose: {
+            reqId: reqId,
+            symbol: sym,
+            status: "PENDING",
+            requestedAt: reqId
+          }
         })
       });
       if (!putRes.ok) throw new Error("HTTP " + putRes.status);
 
       for (let i = 0; i < 15; i++) {
-        await new Promise(r => setTimeout(r, 1500));
-        const chk = await fetch(cmdUrl + "?t=" + Date.now());
+        await new Promise(r => setTimeout(r, 1200));
+        const chk = await fetch(statusReadUrl + "?t=" + Date.now());
         if (!chk.ok) continue;
         const stObj = await chk.json();
-        if (stObj && stObj.status === "DONE") {
+        if (stObj && stObj.symbol === sym && stObj.status === "DONE") {
           window.__manualCloseState[sym] = "IDLE";
           await refreshFuturesWidget();
           showCloseNotice(stObj.message || ("Posisi " + sym + " berhasil ditutup (Market)."), "ok");
           return;
         }
-        if (stObj && stObj.status === "ERROR") {
+        if (stObj && stObj.symbol === sym && stObj.status === "ERROR") {
           window.__manualCloseState[sym] = "IDLE";
           if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
           showCloseNotice("Gagal menutup " + sym + ": " + (stObj.message || "Error eksekusi"), "err");
