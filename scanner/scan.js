@@ -33,7 +33,7 @@ const ENDPOINTS = [
   "https://api2.binance.com", "https://api3.binance.com", "https://api4.binance.com"
 ];
 const EXCLUDED = /(UPUSDT|DOWNUSDT|BULLUSDT|BEARUSDT|[235]LUSDT|[235]SUSDT)$/;
-const STABLE = /^(USDC|FDUSD|TUSD|USDP|DAI|BUSD|AEUR|EUR|USD1|RLUSD|USDE|UST)USDT$/;
+const STABLE = /^(USDC|FDUSD|TUSD|USDP|DAI|BUSD|AEUR|EUR|USD1|RLUSD|USDE|UST|BFUSD)USDT$/;
 
 async function fetchJson(url, ms = 15000, headers = {}) {
   const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
