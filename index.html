@@ -136,12 +136,155 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     <button id="aiAuditToggleBtn" type="button" onclick="toggleAiAudit()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#2563eb;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
       🤖 Audit AI: ON
     </button>
+    <button id="manualMarginToggleBtn" type="button" onclick="toggleManualMargin()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#16a34a;color:#fff;box-shadow:0 4px 12px rgba(22,163,74,0.35);">
+      🟢 Margin Manual: OFF
+    </button>
+  </div>
+  <div id="manualMarginPanel" style="display:none;flex-basis:100%;width:100%;margin-top:4px;padding:12px 14px;border-radius:10px;background:rgba(2,6,23,0.75);border:1px solid rgba(34,197,94,0.4);">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+      <div style="font-size:12px;font-weight:700;color:#4ade80;">💵 NOMINAL MARGIN MANUAL (0 – 100 USDT / POSISI)</div>
+      <div id="manualMarginNotionalInfo" style="font-size:11px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,0.12);padding:3px 8px;border-radius:6px;">Est. Posisi 50x: $500 USDT</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <input id="manualMarginSlider" type="range" min="0" max="100" step="1" value="10" oninput="onManualMarginSlide(this.value)" onchange="saveManualMarginToServer()" style="flex:1;min-width:160px;accent-color:#22c55e;cursor:pointer;height:6px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <input id="manualMarginInput" type="number" min="0" max="100" step="any" value="10" oninput="onManualMarginType(this.value)" onchange="saveManualMarginToServer()" style="width:76px;padding:7px 10px;border-radius:8px;border:1px solid #22c55e;background:#0f172a;color:#fff;font-weight:700;font-size:14px;text-align:right;">
+        <span style="font-size:12px;font-weight:700;color:#94a3b8;">USDT</span>
+      </div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" onclick="setManualMarginPreset(5)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$5</button>
+        <button type="button" onclick="setManualMarginPreset(10)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$10</button>
+        <button type="button" onclick="setManualMarginPreset(25)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$25</button>
+        <button type="button" onclick="setManualMarginPreset(50)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$50</button>
+        <button type="button" onclick="setManualMarginPreset(100)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$100</button>
+      </div>
+      <div id="manualMarginSaveStatus" style="font-size:11px;color:#94a3b8;">Menggantikan auto-risk 1% saat ON</div>
+    </div>
   </div>
 </div>
 <script>
 (function() {
   const CTRL_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
-  window.__botControlState = { autoTrade: true, aiAuditEnabled: true, minProb: 75, updatedAt: 0 };
+  window.__botControlState = { autoTrade: true, aiAuditEnabled: true, manualMarginEnabled: false, manualMarginUsd: 10, minProb: 75, updatedAt: 0 };
+  let __mmEditing = false;
+  let __mmSaveTimer = null;
+
+  function clampManualMargin(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n)) return 0;
+    return Math.max(0, Math.min(100, Math.round(n * 100) / 100));
+  }
+
+  function renderManualMarginUI(enabled, usd) {
+    const isOn = Boolean(enabled);
+    const val = clampManualMargin(usd);
+    window.__botControlState.manualMarginEnabled = isOn;
+    window.__botControlState.manualMarginUsd = val;
+
+    const btn = document.getElementById("manualMarginToggleBtn");
+    const panel = document.getElementById("manualMarginPanel");
+    const slider = document.getElementById("manualMarginSlider");
+    const input = document.getElementById("manualMarginInput");
+    const info = document.getElementById("manualMarginNotionalInfo");
+
+    if (btn) {
+      btn.disabled = false;
+      if (isOn) {
+        btn.textContent = "✅ Margin Manual: ON ($" + val + ")";
+        btn.style.background = "#16a34a";
+        btn.style.outline = "2px solid #86efac";
+      } else {
+        btn.textContent = "🟢 Margin Manual: OFF";
+        btn.style.background = "#15803d";
+        btn.style.outline = "none";
+      }
+    }
+    if (panel) panel.style.display = isOn ? "block" : "none";
+    if (slider && !__mmEditing) slider.value = Math.round(val);
+    if (input && !__mmEditing) input.value = val;
+    if (info) info.textContent = "Est. Posisi 50x: $" + (val * 50).toFixed(0) + " USDT";
+  }
+
+  window.saveManualMarginToServer = async function() {
+    __mmEditing = false;
+    const st = document.getElementById("manualMarginSaveStatus");
+    if (st) { st.textContent = "⏳ Menyimpan margin..."; st.style.color = "#fbbf24"; }
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          manualMarginEnabled: Boolean(window.__botControlState.manualMarginEnabled),
+          manualMarginUsd: clampManualMargin(window.__botControlState.manualMarginUsd),
+          source: "pwa",
+          updatedAt: Date.now()
+        })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderManualMarginUI(window.__botControlState.manualMarginEnabled, window.__botControlState.manualMarginUsd);
+      if (st) { st.textContent = "✓ Tersimpan ($" + window.__botControlState.manualMarginUsd + " USDT)"; st.style.color = "#4ade80"; }
+    } catch (e) {
+      if (st) { st.textContent = "⚠️ Gagal simpan: " + e.message; st.style.color = "#f87171"; }
+    }
+  };
+
+  window.toggleManualMargin = async function() {
+    if (busy) return;
+    busy = true;
+    const btn = document.getElementById("manualMarginToggleBtn");
+    const nextOn = !window.__botControlState.manualMarginEnabled;
+    if (btn) { btn.disabled = true; btn.textContent = "⏳..."; }
+    try {
+      const val = clampManualMargin(window.__botControlState.manualMarginUsd || 10);
+      const res = await fetch(CTRL_URL, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ manualMarginEnabled: nextOn, manualMarginUsd: val, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderManualMarginUI(nextOn, val);
+    } catch (_) {
+      renderManualMarginUI(window.__botControlState.manualMarginEnabled, window.__botControlState.manualMarginUsd);
+    } finally {
+      busy = false;
+    }
+  };
+
+  window.onManualMarginSlide = function(raw) {
+    __mmEditing = true;
+    const val = clampManualMargin(raw);
+    window.__botControlState.manualMarginUsd = val;
+    const input = document.getElementById("manualMarginInput");
+    const info = document.getElementById("manualMarginNotionalInfo");
+    const btn = document.getElementById("manualMarginToggleBtn");
+    if (input) input.value = val;
+    if (info) info.textContent = "Est. Posisi 50x: $" + (val * 50).toFixed(0) + " USDT";
+    if (btn && window.__botControlState.manualMarginEnabled) btn.textContent = "✅ Margin Manual: ON ($" + val + ")";
+    clearTimeout(__mmSaveTimer);
+    __mmSaveTimer = setTimeout(() => window.saveManualMarginToServer(), 450);
+  };
+
+  window.onManualMarginType = function(raw) {
+    __mmEditing = true;
+    const val = clampManualMargin(raw);
+    window.__botControlState.manualMarginUsd = val;
+    const slider = document.getElementById("manualMarginSlider");
+    const info = document.getElementById("manualMarginNotionalInfo");
+    const btn = document.getElementById("manualMarginToggleBtn");
+    if (slider) slider.value = Math.round(val);
+    if (info) info.textContent = "Est. Posisi 50x: $" + (val * 50).toFixed(0) + " USDT";
+    if (btn && window.__botControlState.manualMarginEnabled) btn.textContent = "✅ Margin Manual: ON ($" + val + ")";
+    clearTimeout(__mmSaveTimer);
+    __mmSaveTimer = setTimeout(() => window.saveManualMarginToServer(), 600);
+  };
+
+  window.setManualMarginPreset = function(preset) {
+    __mmEditing = false;
+    renderManualMarginUI(true, preset);
+    window.saveManualMarginToServer();
+  };
   let busy = false;
 
   let __ngCountdownTimer = null;
@@ -269,6 +412,10 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         if (d && typeof d.minProb === "number") window.__botControlState.minProb = d.minProb;
         renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
         renderAiBtn(d && typeof d.aiAuditEnabled === "boolean" ? d.aiAuditEnabled : true);
+        renderManualMarginUI(
+          d && typeof d.manualMarginEnabled === "boolean" ? d.manualMarginEnabled : false,
+          d && typeof d.manualMarginUsd === "number" ? d.manualMarginUsd : 10
+        );
       }
     } catch (_) {}
   }
@@ -285,7 +432,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       const res = await fetch(CTRL_URL, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoTrade: nextState, aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false, minProb: 75, source: "pwa", updatedAt: Date.now() })
+        body: JSON.stringify({ autoTrade: nextState, aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false, manualMarginEnabled: Boolean(window.__botControlState.manualMarginEnabled), manualMarginUsd: clampManualMargin(window.__botControlState.manualMarginUsd), minProb: 75, source: "pwa", updatedAt: Date.now() })
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderMasterBtn(nextState);

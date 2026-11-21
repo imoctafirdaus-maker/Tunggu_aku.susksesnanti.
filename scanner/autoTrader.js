@@ -93,6 +93,8 @@ function loadBinanceConfig() {
           riskPct: Number.isFinite(+c.riskPct) && +c.riskPct > 0 ? +c.riskPct : 1.0,
           leverage: Number.isFinite(+c.leverage) && +c.leverage > 0 ? +c.leverage : 50,
           maxPositions: Number.isFinite(+c.maxPositions) && +c.maxPositions > 0 ? +c.maxPositions : 2,
+          manualMarginEnabled: Boolean(c.manualMarginEnabled),
+          manualMarginUsd: Number.isFinite(+c.manualMarginUsd) ? Math.max(0, Math.min(100, +c.manualMarginUsd)) : 10,
           autoTrade: Boolean(c.autoTrade)
         };
       }
@@ -336,10 +338,23 @@ async function executeSignalTrade(rec, snap) {
   const slDist = Math.abs(rec.entryPrice - rec.stopLoss);
   if (slDist <= 0) return { executed: false, reason: "Jarak Stop Loss tidak valid" };
 
-  const riskUsd = snap.totalMargin * (creds.riskPct / 100);
-  let qty = roundStep(riskUsd / slDist, filters.stepSize);
-  if (qty * rec.entryPrice < filters.minNotional) {
-    qty = roundStep((filters.minNotional * 1.05) / rec.entryPrice, filters.stepSize);
+  const lev = creds.leverage || 50;
+  let qty;
+  if (creds.manualMarginEnabled) {
+    const manualUsd = Number(creds.manualMarginUsd) || 0;
+    if (manualUsd <= 0) {
+      return { executed: false, reason: "Margin Manual ON tetapi nominal disetel 0 USDT" };
+    }
+    qty = roundStep((manualUsd * lev) / rec.entryPrice, filters.stepSize);
+    if (qty * rec.entryPrice < filters.minNotional) {
+      return { executed: false, reason: `Margin Manual ${manualUsd} (Notional ${(qty * rec.entryPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
+    }
+  } else {
+    const riskUsd = snap.totalMargin * (creds.riskPct / 100);
+    qty = roundStep(riskUsd / slDist, filters.stepSize);
+    if (qty * rec.entryPrice < filters.minNotional) {
+      qty = roundStep((filters.minNotional * 1.05) / rec.entryPrice, filters.stepSize);
+    }
   }
   if (qty < filters.minQty || qty <= 0) {
     return { executed: false, reason: `Qty (${qty}) di bawah batas minimum Binance` };

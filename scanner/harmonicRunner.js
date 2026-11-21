@@ -474,10 +474,23 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   if (!filters) return { executed: false, reason: `${symbol} tidak tersedia di Futures` };
 
   const slDist = Math.abs(sig.entry - sig.sl);
-  const riskUsd = snap.totalMargin * ((cfg.riskPerTradePct || 1.0) / 100);
-  let qty = roundStep(riskUsd / slDist, filters.stepSize);
-  if (qty * sig.entry < filters.minNotional) {
-    qty = roundStep((filters.minNotional * 1.05) / sig.entry, filters.stepSize);
+  const lev = creds.leverage || 50;
+  let qty;
+  if (creds.manualMarginEnabled) {
+    const manualUsd = Number(creds.manualMarginUsd) || 0;
+    if (manualUsd <= 0) {
+      return { executed: false, reason: "Margin Manual ON tetapi nominal disetel 0 USDT" };
+    }
+    qty = roundStep((manualUsd * lev) / sig.entry, filters.stepSize);
+    if (qty * sig.entry < filters.minNotional) {
+      return { executed: false, reason: `Margin Manual ${manualUsd} (Notional ${(qty * sig.entry).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
+    }
+  } else {
+    const riskUsd = snap.totalMargin * ((cfg.riskPerTradePct || 1.0) / 100);
+    qty = roundStep(riskUsd / slDist, filters.stepSize);
+    if (qty * sig.entry < filters.minNotional) {
+      qty = roundStep((filters.minNotional * 1.05) / sig.entry, filters.stepSize);
+    }
   }
   if (qty < filters.minQty || qty <= 0) {
     return { executed: false, reason: `Qty (${qty}) di bawah batas minimum` };
