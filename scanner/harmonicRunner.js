@@ -527,6 +527,28 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   ).catch(() => {});
 
   paper.liveSymbols.push(symbol);
+  try {
+    const freshSnap = await getFuturesSnapshot();
+    if (freshSnap && freshSnap.ok) {
+      const fPayload = {
+        totalMargin: freshSnap.totalMargin,
+        available: freshSnap.available,
+        availableBalance: freshSnap.available,
+        unrealizedPnl: freshSnap.unrealizedPnl,
+        leverage: freshSnap.leverage || 50,
+        riskPct: freshSnap.riskPct || 1.0,
+        openPositions: freshSnap.openPositions || [],
+        updatedAt: Date.now()
+      };
+      if (__sharedAdminDb) {
+        await Promise.all([
+          __sharedAdminDb.ref("futuresPortfolio").set(fPayload),
+          __sharedAdminDb.ref("scannerStatus/futures").set(fPayload),
+          __sharedAdminDb.ref("emaSignals/_futuresPortfolio").set(fPayload)
+        ]).catch(() => {});
+      }
+    }
+  } catch (_) {}
   return { executed: true, mode: "LIVE", reason: `Live Order Independen ${sig.patternName} terkirim (${groqAudit.reason})` };
 }
 

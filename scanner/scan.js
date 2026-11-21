@@ -290,6 +290,7 @@ async function main() {
       const fPayload = {
         totalMargin: futuresSnap.totalMargin,
         available: futuresSnap.available,
+        availableBalance: futuresSnap.available,
         unrealizedPnl: futuresSnap.unrealizedPnl,
         leverage: futuresSnap.leverage || 50,
         riskPct: futuresSnap.riskPct || 1.0,
