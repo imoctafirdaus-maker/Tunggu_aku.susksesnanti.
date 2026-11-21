@@ -353,9 +353,9 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   const liveAutoReady = Boolean(credsCheck && credsCheck.autoTrade && credsCheck.apiKey && credsCheck.apiSecret);
   const isPaper = liveAutoReady ? Boolean(sig.forcePaperOnly) : true;
 
-  // Guard 0: Dilarang keras eksekusi langsung di 4H atau 1H (Wajib 15M PRZ setelah konfirmasi 4H + 1H)
-  if (sig.timeframe !== "15m") {
-    return { executed: false, reason: `Diblokir: Timeframe ${sig.timeframe} hanya untuk analisis/konfirmasi (eksekusi wajib 15M PRZ)` };
+  // Guard 0: Dilarang keras eksekusi langsung di 4H (khusus struktur); 1H & 15M diizinkan
+  if (sig.timeframe !== "15m" && sig.timeframe !== "1h") {
+    return { executed: false, reason: `Diblokir: Timeframe ${sig.timeframe} hanya pembaca struktur (eksekusi hanya 1H / 15M)` };
   }
 
   // Guard 1: Satu simbol hanya boleh memiliki satu posisi aktif

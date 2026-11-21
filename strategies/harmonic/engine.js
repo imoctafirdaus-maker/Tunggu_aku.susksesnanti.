@@ -230,71 +230,79 @@
   function evaluateMultiTimeframe(candlesByTf, userSettings) {
     const cfg = ConfigMod.mergeSettings(userSettings);
     const allLogs = [];
+    const allSignals = [];
 
     const cs4h = candlesByTf["4h"];
     const cs1h = candlesByTf["1h"];
     const cs15m = candlesByTf["15m"];
 
-    if (!Array.isArray(cs4h) || cs4h.length < 50) {
-      return { signal: null, allSignals: [], logs: ["[4h] Data candle belum cukup"] };
-    }
-
-    // TAHAP 1: Cari Pola Harmonic di 4H (Hanya sebagai Bias Makro, tidak pernah dieksekusi)
-    const res4h = analyzeSingleTimeframe(cs4h, "4h", cfg);
+    // Analisis masing-masing timeframe (4H hanya struktur, 1H & 15M boleh mandiri atau MTF)
+    const res4h = (Array.isArray(cs4h) && cs4h.length >= 50)
+      ? analyzeSingleTimeframe(cs4h, "4h", cfg)
+      : { signal: null, logs: ["[4h] Data candle belum cukup"] };
     allLogs.push(...res4h.logs);
     const sig4h = res4h.signal;
+    if (sig4h) allSignals.push(sig4h);
 
-    if (!sig4h) {
-      return { signal: null, allSignals: [], logs: allLogs };
-    }
+    const res1h = (Array.isArray(cs1h) && cs1h.length >= 50)
+      ? analyzeSingleTimeframe(cs1h, "1h", cfg)
+      : { signal: null, logs: ["[1h] Data candle belum cukup"] };
+    allLogs.push(...res1h.logs);
+    const sig1h = res1h.signal;
+    if (sig1h) allSignals.push(sig1h);
 
-    const biasSide = sig4h.side; // BUY atau SELL dari 4H
+    const res15m = (Array.isArray(cs15m) && cs15m.length >= 50)
+      ? analyzeSingleTimeframe(cs15m, "15m", cfg)
+      : { signal: null, logs: ["[15m] Data candle belum cukup"] };
+    allLogs.push(...res15m.logs);
+    const sig15m = res15m.signal;
+    if (sig15m) allSignals.push(sig15m);
 
-    // TAHAP 2: Konfirmasi di 1H (Pola Harmonic searah ATAU Konfirmasi Struktur EMA21+RSI 1H)
-    let confirmed1h = false;
-    let confirm1hNote = "";
-    if (Array.isArray(cs1h) && cs1h.length >= 50) {
-      const res1h = analyzeSingleTimeframe(cs1h, "1h", cfg);
-      allLogs.push(...res1h.logs);
-      if (res1h.signal && res1h.signal.side === biasSide) {
+    // JALUR A (Prioritas Tertinggi): Top-Down MTF 4H Struktur -> 1H Validasi -> 15M Sniper Eksekusi
+    if (sig4h) {
+      const biasSide = sig4h.side;
+      let confirmed1h = false;
+      let confirm1hNote = "";
+      if (sig1h && sig1h.side === biasSide) {
         confirmed1h = true;
-        confirm1hNote = `1H Harmonic ${res1h.signal.patternName} Searah`;
-      } else {
+        confirm1hNote = `1H Harmonic ${sig1h.patternName} Searah`;
+      } else if (Array.isArray(cs1h) && cs1h.length >= 25) {
         const struct1h = check1hStructureConfirm(cs1h, biasSide);
         confirmed1h = struct1h.ok;
         confirm1hNote = struct1h.reason;
       }
+
+      if (confirmed1h && sig15m && sig15m.side === biasSide) {
+        sig15m.timeframe = "15m";
+        sig15m.mtfConfirmed = true;
+        sig15m.bias4hPattern = sig4h.patternName;
+        sig15m.bias4hDetail = `${sig4h.patternName} (${sig4h.side}) | AB/XA=${sig4h.ratios.bRatio.toFixed(3)}, BC/AB=${sig4h.ratios.cRatio.toFixed(3)}, AD/XA=${sig4h.ratios.dXaRatio.toFixed(3)} | PRZ ${sig4h.prz.low.toFixed(4)}-${sig4h.prz.high.toFixed(4)}`;
+        sig15m.confirm1hNote = confirm1hNote;
+        sig15m.reason = `[MTF 4H->1H->15M] Struktur 4H: ${sig4h.patternName} (${biasSide}) -> Validasi 1H (${confirm1hNote}) -> Eksekusi 15M ${sig15m.patternName} (RR 1:${sig15m.rr.toFixed(2)})`;
+        return { signal: sig15m, allSignals, logs: allLogs };
+      } else if (!confirmed1h) {
+        allLogs.push(`[MTF HOLD] Struktur 4H ${sig4h.patternName} (${biasSide}) menunggu validasi 1H (${confirm1hNote})`);
+      } else {
+        allLogs.push(`[MTF WATCH] Struktur 4H ${sig4h.patternName} (${biasSide}) + 1H Valid -> Menunggu PRZ 15M`);
+      }
     }
 
-    if (!confirmed1h) {
-      allLogs.push(`[MTF HOLD] Pola 4H ${sig4h.patternName} (${biasSide}) menunggu konfirmasi 1H (${confirm1hNote})`);
-      return { signal: null, allSignals: [sig4h], logs: allLogs };
+    // JALUR B: Eksekusi Mandiri 1H jika 1H membentuk pola Harmonic valid sesuai syarat & toleransi Scott Carney
+    if (sig1h) {
+      sig1h.timeframe = "1h";
+      sig1h.reason = `[MANDIRI 1H] ${sig1h.patternName} (${sig1h.side}) valid Scott Carney · PRZ ${sig1h.przScore}/100 · RR 1:${sig1h.rr.toFixed(2)}`;
+      return { signal: sig1h, allSignals, logs: allLogs };
     }
 
-    // TAHAP 3: Cari PRZ Entry presisi di 15M yang searah dengan Bias 4H
-    if (!Array.isArray(cs15m) || cs15m.length < 50) {
-      allLogs.push("[15m] Data candle belum tersedia untuk entry PRZ");
-      return { signal: null, allSignals: [sig4h], logs: allLogs };
+    // JALUR C: Eksekusi Mandiri 15M jika 15M membentuk pola Harmonic valid sesuai syarat & toleransi Scott Carney
+    if (sig15m) {
+      sig15m.timeframe = "15m";
+      sig15m.reason = `[MANDIRI 15M] ${sig15m.patternName} (${sig15m.side}) valid Scott Carney · PRZ ${sig15m.przScore}/100 · RR 1:${sig15m.rr.toFixed(2)}`;
+      return { signal: sig15m, allSignals, logs: allLogs };
     }
 
-    const res15m = analyzeSingleTimeframe(cs15m, "15m", cfg);
-    allLogs.push(...res15m.logs);
-    const sig15m = res15m.signal;
-
-    if (!sig15m || sig15m.side !== biasSide) {
-      allLogs.push(`[MTF WATCH] 4H ${sig4h.patternName} (${biasSide}) + 1H OK -> Menunggu PRZ Entry di 15M`);
-      return { signal: null, allSignals: [sig4h], logs: allLogs };
-    }
-
-    // Lengkap: 4H Pola + 1H Konfirmasi + 15M PRZ Entry!
-    sig15m.timeframe = "15m";
-    sig15m.mtfConfirmed = true;
-    sig15m.bias4hPattern = sig4h.patternName;
-    sig15m.bias4hDetail = `${sig4h.patternName} (${sig4h.side}) | AB/XA=${sig4h.ratios.bRatio.toFixed(3)}, BC/AB=${sig4h.ratios.cRatio.toFixed(3)}, AD/XA=${sig4h.ratios.dXaRatio.toFixed(3)} | PRZ ${sig4h.prz.low.toFixed(4)}-${sig4h.prz.high.toFixed(4)}`;
-    sig15m.confirm1hNote = confirm1hNote;
-    sig15m.reason = `[SNIPER 15M PRZ] Bias 4H: ${sig4h.patternName} (${biasSide}) -> Konfirmasi 1H (${confirm1hNote}) -> Entry 15M ${sig15m.patternName} (RR 1:${sig15m.rr.toFixed(2)})`;
-
-    return { signal: sig15m, allSignals: [sig15m, sig4h], logs: allLogs };
+    // 4H tidak pernah dieksekusi langsung
+    return { signal: null, allSignals, logs: allLogs };
   }
 
   return { analyzeSingleTimeframe, evaluateMultiTimeframe };

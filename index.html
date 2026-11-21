@@ -190,14 +190,31 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     const enabled = aiOn !== false;
     window.__botControlState.aiAuditEnabled = enabled;
     const aiBtn = document.getElementById("aiAuditToggleBtn");
-    if (!aiBtn) return;
-    aiBtn.disabled = false;
-    if (enabled) {
-      aiBtn.textContent = "🤖 Audit AI: ON";
-      aiBtn.style.background = "#2563eb";
-    } else {
-      aiBtn.textContent = "🚫 Audit AI: OFF";
-      aiBtn.style.background = "#475569";
+    if (aiBtn) {
+      aiBtn.disabled = false;
+      if (enabled) {
+        aiBtn.textContent = "🤖 Audit AI: ON";
+        aiBtn.style.background = "#2563eb";
+      } else {
+        aiBtn.textContent = "🚫 Audit AI: OFF";
+        aiBtn.style.background = "#475569";
+      }
+    }
+    const badge = document.getElementById("hmAiBadge");
+    const groqEl = document.getElementById("hmGroqVerdict");
+    const gemEl = document.getElementById("hmGeminiVerdict");
+    const sambaEl = document.getElementById("hmSambaVerdict");
+    const noteEl = document.getElementById("hmConsensusNote");
+    if (!enabled) {
+      if (badge) {
+        badge.style.background = "rgba(100,116,139,0.28)";
+        badge.style.color = "#cbd5e1";
+        badge.textContent = "AUDIT AI: OFF (SCOTT CARNEY MURNI)";
+      }
+      if (groqEl) groqEl.innerHTML = '⚡ Groq: <span style="color:#94a3b8;">Nonaktif (Saklar OFF)</span>';
+      if (sambaEl) sambaEl.innerHTML = '💎 CF Llama-70B: <span style="color:#94a3b8;">Nonaktif</span>';
+      if (gemEl) gemEl.innerHTML = '💎 Gemini: <span style="color:#94a3b8;">Nonaktif (Saklar OFF)</span>';
+      if (noteEl) noteEl.textContent = "Audit AI dimatikan via saklar UI — sistem berjalan murni menggunakan validasi rasio & toleransi Scott Carney.";
     }
   }
 
