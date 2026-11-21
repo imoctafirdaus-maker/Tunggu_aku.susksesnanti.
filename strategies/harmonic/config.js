@@ -97,7 +97,7 @@
       dXc: null
     },
     RECIPROCAL_ABCD: {
-      enabled: true,
+      enabled: false,
       label: "Reciprocal AB=CD",
       beyondX: true,
       bRange: [0.382, 0.886],
@@ -107,7 +107,7 @@
       dXc: null
     },
     ALTERNATE_ABCD: {
-      enabled: true,
+      enabled: false,
       label: "Alternate AB=CD",
       beyondX: true,
       bRange: [0.382, 0.786],
@@ -123,8 +123,8 @@
     paperTrading: true,
     timeframes: ["4h", "1h", "15m", "5m"], // urutan wajib: 4h -> 1h -> 15m
     ratioTolerance: 0.035,            // ±3% standar Scott Carney
-    swingDepth: 2,
-    minDeviationPct: 0.15,
+    swingDepth: 3,
+    minDeviationPct: 0.4,
     atrPeriod: 14,
     minLegAtrMult: 0.35,
     minPrzConfluence: 3,
@@ -135,12 +135,12 @@
     rsiOversold: 42,
     rsiOverbought: 58,
     rsiMode: "both",                 // "level" | "divergence" | "both"
-    requireReversalCandle: false,
+    requireReversalCandle: true,
     slAtrBufferMult: 0.35,
     tp1Fib: 0.382,
     tp2Fib: 0.618,
     tp1CloseRatio: 0.5,
-    minRR: 1.2,
+    minRR: 1.5,
     riskPerTradePct: 1.0,
     maxOpenPositions: 3,
     maxDailyDrawdownPct: 5.0,

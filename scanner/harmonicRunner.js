@@ -519,23 +519,41 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   } catch (ordErr) {
     return { executed: false, reason: `Order MARKET ditolak Binance (${appliedLev}x): ${ordErr.message}` };
   }
+  let slStatus = "$" + slPrice;
   try {
     await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "STOP_MARKET", stopPrice: slPrice, closePosition: "true", workingType: "MARK_PRICE" }, creds, true);
-  } catch (_) {}
+  } catch (slErr1) {
+    try {
+      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "STOP_MARKET", stopPrice: slPrice, quantity: qty, reduceOnly: "true", workingType: "MARK_PRICE" }, creds, true);
+      slStatus = "$" + slPrice + " (reduceOnly)";
+    } catch (slErr2) {
+      slStatus = "GAGAL (" + slErr2.message + ")";
+      console.error("[HARMONIC SL ERROR] " + symbol + ":", slErr1.message, "|", slErr2.message);
+    }
+  }
   if (qtyTp1 >= filters.minQty) {
     try {
       await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", stopPrice: tp1Price, quantity: qtyTp1, reduceOnly: "true", workingType: "MARK_PRICE" }, creds, true);
-    } catch (_) {}
+    } catch (tp1Err) {
+      console.error("[HARMONIC TP1 ERROR] " + symbol + ":", tp1Err.message);
+    }
   }
   try {
     await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", stopPrice: tp2Price, closePosition: "true", workingType: "MARK_PRICE" }, creds, true);
-  } catch (_) {}
+  } catch (tp2Err) {
+    try {
+      const remQty = roundStep(Math.max(filters.minQty, qty - qtyTp1), filters.stepSize);
+      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", stopPrice: tp2Price, quantity: remQty, reduceOnly: "true", workingType: "MARK_PRICE" }, creds, true);
+    } catch (_) {
+      console.error("[HARMONIC TP2 ERROR] " + symbol + ":", tp2Err.message);
+    }
+  }
 
   await sendTelegramAlert(
-    `🚀 <b>[HARMONIC LIVE ORDER]</b> ${symbol} (${sig.timeframe})\n` +
-    `Pola: <b>${sig.patternName} ${side}</b> | Qty: ${qty}\n` +
-    `SL: $${slPrice} | TP1: $${tp1Price} | TP2: $${tp2Price}\n` +
-    `Audit: ${groqAudit.reason}`
+    "🚀 <b>[HARMONIC LIVE ORDER]</b> " + symbol + " (" + sig.timeframe + ")\n" +
+    "Pola: <b>" + sig.patternName + " " + side + "</b> | Qty: " + qty + "\n" +
+    "SL: " + slStatus + " | TP1: $" + tp1Price + " | TP2: $" + tp2Price + "\n" +
+    "Audit: " + groqAudit.reason
   ).catch(() => {});
 
   paper.liveSymbols.push(symbol);

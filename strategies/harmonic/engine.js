@@ -60,6 +60,10 @@
       const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";
       if (!isBullish && !isBearish) continue;
 
+      // Validasi struktur geometris X-A-B-C sejati
+      if (isBullish && !(A.price > X.price && B.price < A.price && C.price > B.price)) continue;
+      if (isBearish && !(A.price < X.price && B.price > A.price && C.price < B.price)) continue;
+
       const XA = Math.abs(A.price - X.price);
       const AB = Math.abs(B.price - A.price);
       const BC = Math.abs(C.price - B.price);
@@ -68,6 +72,11 @@
 
       const dIdx = D_swing ? D_swing.idx : lastIdx;
       const D_price = D_swing ? D_swing.price : (isBullish ? lastCandle.low : lastCandle.high);
+
+      // Validasi arah titik D wajib bergerak berlawanan dari kaki BC (mencegah false breakout)
+      if (isBullish && !(D_price < C.price)) continue;
+      if (isBearish && !(D_price > C.price)) continue;
+
       const AD = Math.abs(A.price - D_price);
       const CD = Math.abs(D_price - C.price);
 
@@ -113,8 +122,21 @@
           continue;
         }
 
-        // 5. Validasi Murni Scott Carney: PRZ terkonfirmasi langsung valid tanpa filter maupun catatan RSI
-        logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence)`);
+        // 5. Validasi posisi D terhadap B (kecuali pola 5-0) + konfirmasi candle pembalikan di PRZ
+      if (pKey !== "FIVE_O") {
+        if (isBullish && !(D_price < B.price)) continue;
+        if (isBearish && !(D_price > B.price)) continue;
+      }
+      if (cfg.requireReversalCandle !== false) {
+        const revOk = isBullish
+          ? (lastCandle.close > lastCandle.open && lastCandle.close >= D_price)
+          : (lastCandle.close < lastCandle.open && lastCandle.close <= D_price);
+        if (!revOk) {
+          logs.push("[" + timeframe + "] " + pCfg.label + " ditahan: menunggu candle konfirmasi reversal di PRZ");
+          continue;
+        }
+      }
+      logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence)`);
 
         // 6. Kalkulasi Entry, Stop Loss (di luar X atau luar PRZ + buffer ATR), TP1 (0.382 AD), TP2 (0.618 AD), & RR >= 1:2
         const entry = lastCandle.close;
@@ -262,24 +284,26 @@
       }
     }
 
-    // JALUR B: Eksekusi Mandiri 1H (dilarang melawan arah struktur 4H jika 4H sedang aktif)
+    // JALUR B: Eksekusi Mandiri 1H (wajib searah struktur 4H)
     if (sig1h) {
-      if (sig4h && sig1h.side !== sig4h.side) {
-        allLogs.push(`[BLOCKED 4H BIAS] Mandiri 1H ${sig1h.patternName} (${sig1h.side}) ditahan karena berlawanan dengan 4H ${sig4h.patternName} (${sig4h.side})`);
+      const trend4h = (Array.isArray(cs4h) && cs4h.length >= 25) ? check1hStructureConfirm(cs4h, sig1h.side) : { ok: true, reason: "4H N/A" };
+      if ((sig4h && sig1h.side !== sig4h.side) || !trend4h.ok) {
+        allLogs.push("[BLOCKED 4H BIAS] Mandiri 1H " + sig1h.patternName + " (" + sig1h.side + ") ditahan (" + trend4h.reason + ")");
       } else {
         sig1h.timeframe = "1h";
-        sig1h.reason = `[MANDIRI 1H] ${sig1h.patternName} (${sig1h.side}) valid Scott Carney · PRZ ${sig1h.przScore}/100 · RR 1:${sig1h.rr.toFixed(2)}`;
+        sig1h.reason = "[MANDIRI 1H] " + sig1h.patternName + " (" + sig1h.side + ") valid Scott Carney + Tren 4H · PRZ " + sig1h.przScore + "/100 · RR 1:" + sig1h.rr.toFixed(2);
         return { signal: sig1h, allSignals, logs: allLogs };
       }
     }
 
-    // JALUR C: Eksekusi Mandiri 15M (dilarang melawan arah struktur 4H jika 4H sedang aktif)
+    // JALUR C: Eksekusi Mandiri 15M (wajib searah struktur 4H & konfirmasi EMA21 1H)
     if (sig15m) {
-      if (sig4h && sig15m.side !== sig4h.side) {
-        allLogs.push(`[BLOCKED 4H BIAS] Mandiri 15M ${sig15m.patternName} (${sig15m.side}) ditahan karena berlawanan dengan 4H ${sig4h.patternName} (${sig4h.side})`);
+      const trend1h = (Array.isArray(cs1h) && cs1h.length >= 25) ? check1hStructureConfirm(cs1h, sig15m.side) : { ok: false, reason: "Data 1H kurang" };
+      if ((sig4h && sig15m.side !== sig4h.side) || !trend1h.ok) {
+        allLogs.push("[BLOCKED TREND] Mandiri 15M " + sig15m.patternName + " (" + sig15m.side + ") ditahan (" + trend1h.reason + ")");
       } else {
         sig15m.timeframe = "15m";
-        sig15m.reason = `[MANDIRI 15M] ${sig15m.patternName} (${sig15m.side}) valid Scott Carney · PRZ ${sig15m.przScore}/100 · RR 1:${sig15m.rr.toFixed(2)}`;
+        sig15m.reason = "[MANDIRI 15M] " + sig15m.patternName + " (" + sig15m.side + ") valid Scott Carney + Konfirmasi 1H · PRZ " + sig15m.przScore + "/100 · RR 1:" + sig15m.rr.toFixed(2);
         return { signal: sig15m, allSignals, logs: allLogs };
       }
     }
