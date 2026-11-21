@@ -35,6 +35,7 @@
     const lastCandle = candles[lastIdx];
     const closes = candles.map(c => c.close);
     const atrArr = SwingMod.computeATR(candles, cfg.atrPeriod);
+    const rsiArr = RsiMod.computeRsiSeries(closes, cfg.rsiPeriod || 14);
     const swings = SwingMod.detectSwings(candles, cfg);
 
     if (swings.length < 4) {
@@ -127,16 +128,12 @@
         if (isBullish && !(D_price < B.price)) continue;
         if (isBearish && !(D_price > B.price)) continue;
       }
-      if (cfg.requireReversalCandle !== false) {
-        const revOk = isBullish
-          ? (lastCandle.close > lastCandle.open && lastCandle.close >= D_price)
-          : (lastCandle.close < lastCandle.open && lastCandle.close <= D_price);
-        if (!revOk) {
-          logs.push("[" + timeframe + "] " + pCfg.label + " ditahan: menunggu candle konfirmasi reversal di PRZ");
-          continue;
-        }
+      const rsiCheck = RsiMod.evaluateRsiAndCandle({ candles, rsiArr, isBullish, refPivot: C, dIdx, lastIdx, cfg });
+      if (!rsiCheck.valid) {
+        logs.push("[" + timeframe + "] " + pCfg.label + " ditahan: " + rsiCheck.reason);
+        continue;
       }
-      logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence)`);
+      logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence · ${rsiCheck.reason})`);
 
         // 6. Kalkulasi Entry, Stop Loss (di luar X atau luar PRZ + buffer ATR), TP1 (0.382 AD), TP2 (0.618 AD), & RR >= 1:2
         const entry = lastCandle.close;
