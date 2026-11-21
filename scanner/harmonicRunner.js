@@ -570,20 +570,6 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           reason: execRes.reason
         };
         paper.logs.push(logEntry);
-      } else if (res.logs && res.logs.length) {
-        const interesting = res.logs.find(l => l.includes("PRZ OK") || l.includes("ditolak: RR"));
-        if (interesting) {
-          paper.logs.push({
-            time: Date.now(),
-            symbol: sym,
-            timeframe: "MTF",
-            pattern: "SCAN",
-            side: "-",
-            status: "WATCH",
-            reason: interesting
-          });
-        }
-
         upFirebase[`${sym}_${sig.timeframe}`] = {
           symbol: sym,
           timeframe: sig.timeframe,
@@ -604,6 +590,19 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           points: sig.points,
           updatedAt: admin ? admin.database.ServerValue.TIMESTAMP : Date.now()
         };
+      } else if (res.logs && res.logs.length) {
+        const interesting = res.logs.find(l => l.includes("[MTF ") || l.includes("PRZ Valid") || l.includes("ditolak: RR"));
+        if (interesting) {
+          paper.logs.push({
+            time: Date.now(),
+            symbol: sym,
+            timeframe: "MTF",
+            pattern: "SCAN",
+            side: "-",
+            status: "WATCH",
+            reason: interesting
+          });
+        }
       }
     } catch (_) {}
   }

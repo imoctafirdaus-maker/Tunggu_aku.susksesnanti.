@@ -94,7 +94,7 @@
     }
 
     // Harga harus masuk atau menyentuh zona PRZ (toleransi 0.25 ATR untuk sumbu wick)
-    const buffer = atr > 0 ? atr * 0.35 : bestCluster.mid * 0.003;
+    const buffer = atr > 0 ? atr * 0.85 : bestCluster.mid * 0.006;
     const inPrz = currentPrice >= (bestCluster.low - buffer) && currentPrice <= (bestCluster.high + buffer);
     if (!inPrz) {
       return { valid: false, reason: "Harga belum masuk zona PRZ", prz: bestCluster };
