@@ -11,7 +11,7 @@ function loadAiConfig() {
     if (fs.existsSync(CONFIG_PATH)) {
       const raw = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8"));
       return {
-        enabled: raw.enabled !== false && raw.aiAuditEnabled !== false,
+        enabled: raw.enabled !== false,
         groqModel: raw.groqModel || "llama-3.3-70b-versatile",
         geminiModel: raw.geminiModel || "gemini-3.8-flash",
         minGroqScore: Number(raw.minGroqScore) || 65,
