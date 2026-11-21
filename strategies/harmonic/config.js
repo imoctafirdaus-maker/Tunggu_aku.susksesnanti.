@@ -82,7 +82,7 @@
       beyondX: true,
       bRange: [0.382, 0.618],
       cRange: [1.13, 1.618],
-      dXa: [0.886, 1.13],
+      dXa: null,
       dXc: [0.886, 1.13],
       dBc: [1.618, 2.24]
     },
@@ -92,7 +92,7 @@
       beyondX: false,
       bRange: [1.13, 1.618],
       cRange: [1.618, 2.24],
-      dXa: [0.50, 0.50],
+      dXa: null,
       dBc: [0.50, 0.50],
       dXc: null
     },

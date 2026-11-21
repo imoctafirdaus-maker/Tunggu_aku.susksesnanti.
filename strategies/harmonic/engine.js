@@ -114,16 +114,16 @@
           continue;
         }
 
-        // 5. Konfirmasi RSI (Level / Divergence) + Candle Reversal Close
+        // 5. Konfirmasi RSI (Level / Divergence antara trough B/X -> D untuk Bullish, atau peak B/X -> D untuk Bearish)
         const refPivot = isBullish
-          ? (C.price < A.price ? C : A)
-          : (C.price > A.price ? C : A);
+          ? (D_price < X.price ? X : B)
+          : (D_price > X.price ? X : B);
         const rsiCheck = RsiMod.evaluateRsiAndCandle({
           candles,
           rsiArr,
           isBullish,
           refPivot,
-          dIdx: lastIdx,
+          dIdx,
           cfg
         });
 
@@ -147,9 +147,9 @@
           ? D_price + actualAD * (cfg.tp2Fib || 0.618)
           : D_price - actualAD * (cfg.tp2Fib || 0.618);
 
-        const riskDist = Math.abs(entry - rawSl);
-        const rewardDist = Math.abs(tp2 - entry);
-        const rr = riskDist > 0 ? rewardDist / riskDist : 0;
+        const riskDist = isBullish ? (entry - rawSl) : (rawSl - entry);
+        const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);
+        const rr = (riskDist > 0 && rewardDist > 0) ? (rewardDist / riskDist) : 0;
 
         if (rr < (cfg.minRR || 2.0)) {
           logs.push(`[${timeframe}] ${pCfg.label} ditolak: RR 1:${rr.toFixed(2)} di bawah minimum 1:${cfg.minRR}`);
@@ -165,7 +165,7 @@
           patternName: pCfg.label,
           points: {
             X, A, B, C,
-            D: { idx: lastIdx, time: lastCandle.time, price: D_price }
+            D: { idx: dIdx, time: candles[dIdx].time, price: D_price }
           },
           ratios: { bRatio, cRatio, cXcRatio, dXaRatio, dBcRatio, dXcRatio },
           prz: przCheck.prz,

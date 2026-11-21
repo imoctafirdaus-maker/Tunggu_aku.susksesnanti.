@@ -49,8 +49,8 @@
 
       for (let j = i - depth; j <= i + depth; j++) {
         if (j === i) continue;
-        if (closedCandles[j].high >= hi) isHigh = false;
-        if (closedCandles[j].low <= lo) isLow = false;
+        if (j < i ? closedCandles[j].high > hi : closedCandles[j].high >= hi) isHigh = false;
+        if (j < i ? closedCandles[j].low < lo : closedCandles[j].low <= lo) isLow = false;
       }
 
       if (isHigh) {
