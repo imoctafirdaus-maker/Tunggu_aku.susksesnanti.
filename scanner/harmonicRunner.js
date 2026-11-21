@@ -51,7 +51,10 @@ function loadPaperState() {
 function savePaperState(st) {
   try {
     st.history = (st.history || []).slice(-50);
-    st.logs = (st.logs || []).slice(-80);
+    const allLogs = Array.isArray(st.logs) ? st.logs : [];
+    const execLogs = allLogs.filter(l => l && l.status !== "WATCH").slice(-40);
+    const watchLogs = allLogs.filter(l => !l || l.status === "WATCH").slice(-50);
+    st.logs = [...execLogs, ...watchLogs].sort((a, b) => (a.time || 0) - (b.time || 0));
     fs.writeFileSync(PAPER_FILE, JSON.stringify(st, null, 2));
   } catch (_) {}
 }
@@ -489,9 +492,21 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   const qtyTp1 = roundStep(qty * (cfg.tp1CloseRatio || 0.5), filters.stepSize);
 
   try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
-  await fapiRequest("POST", "/fapi/v1/leverage", { symbol, leverage: creds.leverage || 20 }, creds, true);
+  const levCandidates = [...new Set([creds.leverage || 50, 25, 20, 10])];
+  let appliedLev = levCandidates[0];
+  for (const lv of levCandidates) {
+    try {
+      await fapiRequest("POST", "/fapi/v1/leverage", { symbol, leverage: lv }, creds, true);
+      appliedLev = lv;
+      break;
+    } catch (_) {}
+  }
 
-  await fapiRequest("POST", "/fapi/v1/order", { symbol, side, type: "MARKET", quantity: qty }, creds, true);
+  try {
+    await fapiRequest("POST", "/fapi/v1/order", { symbol, side, type: "MARKET", quantity: qty }, creds, true);
+  } catch (ordErr) {
+    return { executed: false, reason: `Order MARKET ditolak Binance (${appliedLev}x): ${ordErr.message}` };
+  }
   try {
     await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "STOP_MARKET", stopPrice: slPrice, closePosition: "true", workingType: "MARK_PRICE" }, creds, true);
   } catch (_) {}
@@ -572,7 +587,9 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           updatedAt: Date.now()
         });
 
-        const execRes = dryRun ? { executed: false, reason: 'DRY-RUN' } : await executeHarmonicOrder(sym, sig, cfg, paper);
+        const execRes = dryRun
+          ? { executed: false, reason: 'DRY-RUN' }
+          : await executeHarmonicOrder(sym, sig, cfg, paper).catch(err => ({ executed: false, reason: `Error eksekusi: ${err.message}` }));
         const logEntry = {
           time: Date.now(),
           symbol: sym,

@@ -159,7 +159,7 @@ async function getFuturesSnapshot() {
       ok: true,
       isDemo: creds.isDemo,
       riskPct: creds.riskPct,
-      leverage: creds.leverage,
+      leverage: appliedLev,
       maxPositions: creds.maxPositions,
       autoTrade: creds.autoTrade,
       totalMargin: +acc.totalMarginBalance || 0,
@@ -351,7 +351,15 @@ async function executeSignalTrade(rec, snap) {
   }
 
   try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol: rec.symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
-  await fapiRequest("POST", "/fapi/v1/leverage", { symbol: rec.symbol, leverage: creds.leverage }, creds, true);
+  const levCandidates = [...new Set([creds.leverage || 50, 25, 20, 10])];
+  let appliedLev = creds.leverage || 50;
+  for (const lv of levCandidates) {
+    try {
+      await fapiRequest("POST", "/fapi/v1/leverage", { symbol: rec.symbol, leverage: lv }, creds, true);
+      appliedLev = lv;
+      break;
+    } catch (_) {}
+  }
 
   try {
       const livePayload = { phase: "RESULT", candidate: rec.symbol, signal: rec.signal, groqStatus: "PASS", geminiStatus: "PASS", tradeResult: "SUCCESS", tradeReason: "Order MARKET berhasil dikirim ke Binance!", updatedAt: Date.now() };
@@ -363,12 +371,17 @@ async function executeSignalTrade(rec, snap) {
   const slPrice = roundStep(rec.stopLoss, filters.tickSize);
   const tpPrice = roundStep(rec.takeProfit, filters.tickSize);
 
-  const entryOrder = await fapiRequest("POST", "/fapi/v1/order", {
-    symbol: rec.symbol,
-    side,
-    type: "MARKET",
-    quantity: qty
-  }, creds, true);
+  let entryOrder;
+  try {
+    entryOrder = await fapiRequest("POST", "/fapi/v1/order", {
+      symbol: rec.symbol,
+      side,
+      type: "MARKET",
+      quantity: qty
+    }, creds, true);
+  } catch (ordErr) {
+    return { executed: false, reason: `Order MARKET ditolak Binance (${appliedLev}x): ${ordErr.message}` };
+  }
 
   let slStatus = "Gagal", tpStatus = "Gagal";
   try {
