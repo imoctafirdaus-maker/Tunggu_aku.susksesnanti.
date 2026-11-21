@@ -287,18 +287,26 @@
       }
     }
 
-    // JALUR B: Eksekusi Mandiri 1H jika 1H membentuk pola Harmonic valid sesuai syarat & toleransi Scott Carney
+    // JALUR B: Eksekusi Mandiri 1H (dilarang melawan arah struktur 4H jika 4H sedang aktif)
     if (sig1h) {
-      sig1h.timeframe = "1h";
-      sig1h.reason = `[MANDIRI 1H] ${sig1h.patternName} (${sig1h.side}) valid Scott Carney · PRZ ${sig1h.przScore}/100 · RR 1:${sig1h.rr.toFixed(2)}`;
-      return { signal: sig1h, allSignals, logs: allLogs };
+      if (sig4h && sig1h.side !== sig4h.side) {
+        allLogs.push(`[BLOCKED 4H BIAS] Mandiri 1H ${sig1h.patternName} (${sig1h.side}) ditahan karena berlawanan dengan 4H ${sig4h.patternName} (${sig4h.side})`);
+      } else {
+        sig1h.timeframe = "1h";
+        sig1h.reason = `[MANDIRI 1H] ${sig1h.patternName} (${sig1h.side}) valid Scott Carney · PRZ ${sig1h.przScore}/100 · RR 1:${sig1h.rr.toFixed(2)}`;
+        return { signal: sig1h, allSignals, logs: allLogs };
+      }
     }
 
-    // JALUR C: Eksekusi Mandiri 15M jika 15M membentuk pola Harmonic valid sesuai syarat & toleransi Scott Carney
+    // JALUR C: Eksekusi Mandiri 15M (dilarang melawan arah struktur 4H jika 4H sedang aktif)
     if (sig15m) {
-      sig15m.timeframe = "15m";
-      sig15m.reason = `[MANDIRI 15M] ${sig15m.patternName} (${sig15m.side}) valid Scott Carney · PRZ ${sig15m.przScore}/100 · RR 1:${sig15m.rr.toFixed(2)}`;
-      return { signal: sig15m, allSignals, logs: allLogs };
+      if (sig4h && sig15m.side !== sig4h.side) {
+        allLogs.push(`[BLOCKED 4H BIAS] Mandiri 15M ${sig15m.patternName} (${sig15m.side}) ditahan karena berlawanan dengan 4H ${sig4h.patternName} (${sig4h.side})`);
+      } else {
+        sig15m.timeframe = "15m";
+        sig15m.reason = `[MANDIRI 15M] ${sig15m.patternName} (${sig15m.side}) valid Scott Carney · PRZ ${sig15m.przScore}/100 · RR 1:${sig15m.rr.toFixed(2)}`;
+        return { signal: sig15m, allSignals, logs: allLogs };
+      }
     }
 
     // 4H tidak pernah dieksekusi langsung

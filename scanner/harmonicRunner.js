@@ -74,19 +74,27 @@ async function auditHarmonicDualAi(symbol, sig) {
     const cfAccountId = String(aiCfg.cfAccountId || "").trim();
     const cfApiToken = String(aiCfg.cfApiToken || "").trim();
 
-    const prompt = `Kamu adalah Auditor Kuantitatif Multi-Timeframe (MTF) Scott Carney Harmonic Trading.
-Sistem menggunakan hierarki Top-Down wajib 3 lapis:
-1) TIMEFRAME 4H (Pembaca Struktur Pola Makro - BUKAN eksekusi): ${sig.bias4hDetail || sig.bias4hPattern || "-"}
-2) TIMEFRAME 1H (Validasi Struktur & Momentum Searah): ${sig.confirm1hNote || "-"}
-3) TIMEFRAME 15M (Zona PRZ Sniper Eksekusi):
-   - Pair: ${symbol} | Arah: ${sig.side} | Pola 15M: ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
-   - Rasio 15M: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
-   - Zona PRZ 15M: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
-
-Tugas Audit:
-Validasi apakah (a) arah entry 15M selaras dengan struktur 4H & validasi 1H, (b) rasio Harmonic 15M memenuhi toleransi ±0.035 Scott Carney, dan (c) RR >= 1.2 aman untuk leverage 50x.
-Balas HANYA JSON valid tanpa markdown:
-{"valid": true atau false, "confidence": 0-100, "reason": "ringkas keselarasan 4H-1H-15M & deviasi rasio maks 18 kata bahasa Indonesia"}`;
+    const tfUpper = String(sig.timeframe || "15m").toUpperCase();
+    const isMtf = Boolean(sig.mtfConfirmed);
+    const prompt = isMtf
+      ? `Kamu adalah Auditor Kuantitatif Multi-Timeframe (MTF) Scott Carney Harmonic Trading.
+Hierarki Top-Down 3 lapis terdeteksi:
+1) TIMEFRAME 4H (Struktur Makro): ${sig.bias4hDetail || sig.bias4hPattern}
+2) TIMEFRAME 1H (Validasi Searah): ${sig.confirm1hNote}
+3) TIMEFRAME 15M (Eksekusi PRZ):
+   - Pair: ${symbol} | Arah: ${sig.side} | Pola: ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
+   - Rasio: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
+   - PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
+Validasi keselarasan 4H-1H-15M, toleransi rasio ±0.035 Scott Carney, & kelayakan RR >= 1.2 untuk leverage 50x.
+Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 0-100, "reason": "maks 18 kata bahasa Indonesia"}`
+      : `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading untuk sinyal MANDIRI timeframe ${tfUpper}.
+Detail Kandidat Eksekusi (${tfUpper}):
+- Pair: ${symbol} | Timeframe: ${tfUpper} | Arah: ${sig.side} | Pola: ${sig.patternName}
+- Kualitas PRZ: ${sig.przScore}/100 | RR: 1:${Number(sig.rr || 0).toFixed(2)} | RSI: ${Number(sig.rsi || 50).toFixed(1)}
+- Rasio Fibonacci: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
+- Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
+Validasi apakah rasio Fibonacci pola ${sig.patternName} di ${tfUpper} memenuhi toleransi ±0.035 Scott Carney dan RR >= 1.2 aman untuk leverage 50x.
+Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 0-100, "reason": "maks 18 kata bahasa Indonesia"}`;
 
     const votes = [];
     const errors = [];

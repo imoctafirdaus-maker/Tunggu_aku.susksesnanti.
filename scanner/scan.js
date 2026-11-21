@@ -54,9 +54,16 @@ async function apiGet(apiPath) {
 
 async function loadCandidates() {
   try {
-    const [ex, ticks] = await Promise.all([apiGet("/api/v3/exchangeInfo"), apiGet("/api/v3/ticker/24hr")]);
+    const [ex, ticks, fapiEx] = await Promise.all([
+      apiGet("/api/v3/exchangeInfo"),
+      apiGet("/api/v3/ticker/24hr"),
+      fetchJson("https://fapi.binance.com/fapi/v1/exchangeInfo", 10000).catch(() => null)
+    ]);
+    const futuresSet = (fapiEx && Array.isArray(fapiEx.symbols))
+      ? new Set(fapiEx.symbols.filter(s => s.status === "TRADING" && s.contractType === "PERPETUAL" && s.quoteAsset === "USDT").map(s => s.symbol))
+      : null;
     const valid = new Set(ex.symbols.filter(s => s.status === "TRADING" && s.isSpotTradingAllowed &&
-      s.quoteAsset === "USDT" && s.baseAsset !== "USDT").map(s => s.symbol));
+      s.quoteAsset === "USDT" && s.baseAsset !== "USDT" && (!futuresSet || futuresSet.has(s.symbol))).map(s => s.symbol));
     const pool = ticks
       .filter(t => valid.has(t.symbol) && !EXCLUDED.test(t.symbol) && !STABLE.test(t.symbol) &&
         Number.isFinite(+t.quoteVolume) && +t.lastPrice > 0)
@@ -212,7 +219,7 @@ async function main() {
           if (cs.length < SIG.minCandles) { st.errors++; continue; }
           candleMap[tf] = cs;
       if (!sharedCandles[c.symbol]) sharedCandles[c.symbol] = {};
-      sharedCandles[c.symbol][tf] = cs.slice(0, -1).map(k => ({ time: Math.floor(k.time / 1000), open: k.open, high: k.high, low: k.low, close: k.close, volume: k.volume, closed: true }));
+      sharedCandles[c.symbol][tf] = cs.map(k => ({ time: Math.floor(k.time / 1000), open: k.open, high: k.high, low: k.low, close: k.close, volume: k.volume, closed: true }));
           st.scanned++;
 
           // 1) Mesin Algoritma Lama
@@ -381,8 +388,8 @@ async function main() {
       const expTotal = (emaSt && (emaSt.buy + emaSt.sell)) || 0;
       const hmTotal = (hmRes && hmRes.found) || 0;
 
-      if (true) {
-        const topHm = hmRes && hmRes.top ? hmRes.top : null;
+      if (!(hmRes && hmRes.top)) {
+        const topHm = null;
         const candLabel = topHm ? `${topHm.symbol} (${topHm.sig.patternName})` : "NONE";
         const sigLabel = topHm ? `${topHm.sig.side} [HARMONIC ${topHm.sig.timeframe}]` : "-";
         const reasonText = topHm
