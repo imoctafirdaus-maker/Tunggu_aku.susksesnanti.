@@ -35,7 +35,6 @@
     const lastCandle = candles[lastIdx];
     const closes = candles.map(c => c.close);
     const atrArr = SwingMod.computeATR(candles, cfg.atrPeriod);
-    const rsiArr = RsiMod.computeRsiSeries(closes, cfg.rsiPeriod);
     const swings = SwingMod.detectSwings(candles, cfg);
 
     if (swings.length < 4) {
@@ -114,23 +113,8 @@
           continue;
         }
 
-        // 5. Konfirmasi RSI (Level / Divergence antara trough B/X -> D untuk Bullish, atau peak B/X -> D untuk Bearish)
-        const refPivot = isBullish
-          ? (D_price < X.price ? X : B)
-          : (D_price > X.price ? X : B);
-        const rsiCheck = RsiMod.evaluateRsiAndCandle({
-          candles,
-          rsiArr,
-          isBullish,
-          refPivot,
-          dIdx,
-          cfg
-        });
-
-        // Mode Pure Scott Carney: PRZ terkonfirmasi tetap valid tanpa wajib RSI oversold/overbought
-        if (!rsiCheck.valid) {
-          logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney) · Catatan RSI: ${rsiCheck.reason}`);
-        }
+        // 5. Validasi Murni Scott Carney: PRZ terkonfirmasi langsung valid tanpa filter maupun catatan RSI
+        logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence)`);
 
         // 6. Kalkulasi Entry, Stop Loss (di luar X atau luar PRZ + buffer ATR), TP1 (0.382 AD), TP2 (0.618 AD), & RR >= 1:2
         const entry = lastCandle.close;
@@ -156,7 +140,7 @@
           continue;
         }
 
-        const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10) + (rsiCheck.divergenceOk ? 10 : 0);
+        const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10);
         const candidate = {
           strategy: "HARMONIC_CARNEY",
           timeframe,
@@ -171,8 +155,6 @@
           prz: przCheck.prz,
           przScore: przCheck.score,
           totalScore,
-          rsi: rsiCheck.curRsi,
-          rsiDivergence: rsiCheck.divergenceOk,
           entry,
           sl: rawSl,
           tp1,
@@ -180,7 +162,7 @@
           rr,
           atr: curAtr,
           timestamp: lastCandle.time,
-          reason: `${pCfg.label} ${isBullish ? "Bullish" : "Bearish"} [${timeframe}] · PRZ ${przCheck.score}/100 · RSI ${rsiCheck.curRsi.toFixed(1)} · RR 1:${rr.toFixed(2)}`
+          reason: `${pCfg.label} ${isBullish ? "Bullish" : "Bearish"} [${timeframe}] · PRZ ${przCheck.score}/100 · RR 1:${rr.toFixed(2)}`
         };
 
         if (!bestCandidate || candidate.totalScore > bestCandidate.totalScore) {
@@ -202,22 +184,15 @@
     let ema21 = closes.slice(0, 21).reduce((a, b) => a + b, 0) / 21;
     for (let i = 21; i < closes.length; i++) ema21 = (closes[i] - ema21) * mult + ema21;
 
-    let gains = 0, losses = 0;
-    for (let i = closes.length - 14; i < closes.length; i++) {
-      const diff = closes[i] - closes[i - 1];
-      if (diff >= 0) gains += diff; else losses -= diff;
-    }
-    const rs = losses === 0 ? 100 : gains / losses;
-    const rsi14 = 100 - (100 / (1 + rs));
     const lastClose = closes[closes.length - 1];
     const prevClose = closes[closes.length - 2];
 
     if (side === "BUY") {
-      const ok = (lastClose >= ema21 || lastClose > prevClose) && rsi14 >= 42 && rsi14 <= 72;
-      return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}, RSI=${rsi14.toFixed(1)}` };
+      const ok = (lastClose >= ema21 || lastClose > prevClose);
+      return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}` };
     } else {
-      const ok = (lastClose <= ema21 || lastClose < prevClose) && rsi14 <= 58 && rsi14 >= 28;
-      return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}, RSI=${rsi14.toFixed(1)}` };
+      const ok = (lastClose <= ema21 || lastClose < prevClose);
+      return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}` };
     }
   }
 

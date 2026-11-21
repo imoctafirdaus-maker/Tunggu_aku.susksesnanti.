@@ -93,7 +93,7 @@ Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 
       : `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading untuk sinyal MANDIRI timeframe ${tfUpper}.
 Detail Kandidat Eksekusi (${tfUpper}):
 - Pair: ${symbol} | Timeframe: ${tfUpper} | Arah: ${sig.side} | Pola: ${sig.patternName}
-- Kualitas PRZ: ${sig.przScore}/100 | RR: 1:${Number(sig.rr || 0).toFixed(2)} | RSI: ${Number(sig.rsi || 50).toFixed(1)}
+- Kualitas PRZ: ${sig.przScore}/100 | RR: 1:${Number(sig.rr || 0).toFixed(2)}
 - Rasio Fibonacci: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
 - Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
 Validasi apakah rasio Fibonacci pola ${sig.patternName} di ${tfUpper} memenuhi toleransi ±0.035 Scott Carney dan RR >= 1.2 aman untuk leverage 50x.
@@ -245,7 +245,6 @@ async function _unusedOldAudit(symbol, sig) {
 Pola: ${sig.patternName} (${sig.side})
 Rasio: B=${sig.ratios.bRatio.toFixed(3)}, C=${sig.ratios.cRatio.toFixed(3)}, D_XA=${sig.ratios.dXaRatio.toFixed(3)}
 PRZ: ${sig.prz.low.toFixed(4)} - ${sig.prz.high.toFixed(4)} (Skor ${sig.przScore}/100, ${sig.prz.count} confluence)
-RSI(14): ${sig.rsi.toFixed(1)} (Divergence: ${sig.rsiDivergence ? "YA" : "TIDAK"})
 Entry: ${sig.entry}, SL: ${sig.sl}, TP1: ${sig.tp1}, TP2: ${sig.tp2}, RR: 1:${sig.rr.toFixed(2)}.
 Jawab HANYA JSON singkat: {"approve":true/false,"confidence":0-100,"reason":"alasan 1 kalimat"}`;
 
@@ -638,7 +637,6 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           przLow: sig.prz.low,
           przHigh: sig.prz.high,
           przScore: sig.przScore,
-          rsi: Number(sig.rsi.toFixed(1)),
           status: logEntry.status,
           reason: execRes.reason,
           points: sig.points,
