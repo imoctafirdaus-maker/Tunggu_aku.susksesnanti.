@@ -271,6 +271,8 @@ async function main() {
       await db.ref("emaScannerStatus").update({ state: "standby", updatedAt: admin.database.ServerValue.TIMESTAMP }).catch(() => {});
       process.exit(0);
     }
+    const { processManualCloseQueue } = require("./manualCloseExecutor");
+    await processManualCloseQueue().catch(() => {});
     let futuresSnap = await getFuturesSnapshot();
     const tpClosed = await manageOpenPositions(futuresSnap);
     if (tpClosed && tpClosed.length) {

@@ -1015,20 +1015,58 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     }
     const posEl = document.getElementById("bf-positions");
     const list = Array.isArray(d.openPositions) ? d.openPositions : [];
+    if (!window.__manualCloseState) window.__manualCloseState = {};
     if (!list.length) {
-      posEl.innerHTML = '<span style="color:#64748b;">Tidak ada posisi Futures yang sedang dibuka.</span>';
+      posEl.innerHTML = '<div style="padding:10px 0;color:#64748b;font-size:12px;">Tidak ada posisi Futures yang sedang dibuka.</div>';
     } else {
-      posEl.innerHTML = list.map(p => {
-        const isLong = p.side === "LONG";
-        const badge = isLong
-          ? '<span style="background:#14532d;color:#4ade80;padding:1px 6px;border-radius:4px;font-weight:700;">LONG</span>'
-          : '<span style="background:#7f1d1d;color:#fca5a5;padding:1px 6px;border-radius:4px;font-weight:700;">SHORT</span>';
-        const pColor = p.pnl >= 0 ? "#4ade80" : "#f87171";
-        return `<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #1e293b;">
-          <div>${badge} <strong>${p.symbol}</strong> · Qty: <code>${Math.abs(p.amt)}</code> @ $${p.entryPrice} (${p.leverage}x)</div>
-          <div style="font-weight:700;color:${pColor};">${p.pnl >= 0 ? "+" : ""}$${Number(p.pnl).toFixed(2)}</div>
+      posEl.innerHTML = `
+        <div id="bf-close-notice" style="display:none;margin-bottom:8px;padding:7px 10px;border-radius:6px;font-size:11.5px;border:1px solid #334155;background:#0f172a;color:#cbd5e1;"></div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          ${list.map(p => {
+            const sym = String(p.symbol || "");
+            const isLong = p.side === "LONG";
+            const sideBadge = isLong
+              ? '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:rgba(16,185,129,0.14);color:#34d399;border:1px solid rgba(16,185,129,0.32);">LONG</span>'
+              : '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:rgba(239,68,68,0.14);color:#f87171;border:1px solid rgba(239,68,68,0.32);">SHORT</span>';
+            const pnlNum = Number(p.pnl || 0);
+            const pColor = pnlNum >= 0 ? "#34d399" : "#f87171";
+            const st = window.__manualCloseState[sym] || "IDLE";
+
+            let actionHtml = "";
+            if (st === "ARMED") {
+              actionHtml = `
+                <div style="display:inline-flex;align-items:center;gap:4px;">
+                  <button type="button" onclick="window.__execManualClose('${sym}')" style="cursor:pointer;padding:4px 9px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.02em;background:#dc2626;color:#ffffff;border:1px solid #ef4444;transition:background .15s;">Confirm</button>
+                  <button type="button" onclick="window.__cancelManualClose('${sym}')" style="cursor:pointer;padding:4px 7px;border-radius:4px;font-size:11px;font-weight:500;background:#1e293b;color:#94a3b8;border:1px solid #334155;">Batal</button>
+                </div>`;
+            } else if (st === "CLOSING") {
+              actionHtml = `<button type="button" disabled style="padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;background:#1e293b;color:#fbbf24;border:1px solid rgba(251,191,36,0.35);cursor:wait;">Closing...</button>`;
+            } else {
+              actionHtml = `<button type="button" onclick="window.__armManualClose('${sym}')" style="cursor:pointer;padding:4px 10px;border-radius:4px;font-size:11px;font-weight:600;letter-spacing:0.02em;background:rgba(239,68,68,0.08);color:#fca5a5;border:1px solid rgba(239,68,68,0.35);transition:all .15s;" onmouseover="this.style.background='rgba(239,68,68,0.18)';this.style.borderColor='rgba(239,68,68,0.65)';this.style.color='#ffffff';" onmouseout="this.style.background='rgba(239,68,68,0.08)';this.style.borderColor='rgba(239,68,68,0.35)';this.style.color='#fca5a5';">Market Close</button>`;
+            }
+
+            return `
+              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:#0b1220;border:1px solid #1e293b;">
+                <div style="min-width:0;">
+                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                    ${sideBadge}
+                    <span style="font-weight:700;font-size:12.5px;color:#f1f5f9;letter-spacing:0.02em;">${sym}</span>
+                    <span style="font-size:10.5px;font-family:monospace;padding:1px 5px;border-radius:3px;background:#1e293b;color:#94a3b8;">${p.leverage}x</span>
+                  </div>
+                  <div style="margin-top:3px;font-size:11px;color:#94a3b8;font-variant-numeric:tabular-nums;">
+                    Size <span style="color:#cbd5e1;font-family:monospace;">${Math.abs(p.amt)}</span> · Entry <span style="color:#cbd5e1;font-family:monospace;">${p.entryPrice}</span>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                  <div style="text-align:right;font-variant-numeric:tabular-nums;">
+                    <div style="font-size:12.5px;font-weight:700;font-family:monospace;color:${pColor};">${pnlNum >= 0 ? "+" : ""}${pnlNum.toFixed(2)}</div>
+                    <div style="font-size:10px;color:#64748b;">uPnL</div>
+                  </div>
+                  ${actionHtml}
+                </div>
+              </div>`;
+          }).join("")}
         </div>`;
-      }).join("");
     }
     return true;
   }
@@ -1044,6 +1082,101 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     }
     const updEl = document.getElementById("bf-updated"); if (updEl) updEl.textContent = lastErr ? ("Status DB: " + lastErr) : "Menunggu sinkronisasi...";
   }
+  window.__lastFuturesData = null;
+  const _origRender = renderFuturesData;
+  renderFuturesData = function(d) {
+    if (d && typeof d.totalMargin === "number") window.__lastFuturesData = d;
+    return _origRender(d);
+  };
+
+  function showCloseNotice(msg, tone) {
+    const el = document.getElementById("bf-close-notice");
+    if (!el) return;
+    el.style.display = "block";
+    el.textContent = msg;
+    if (tone === "ok") {
+      el.style.background = "rgba(16,185,129,0.12)";
+      el.style.borderColor = "rgba(16,185,129,0.38)";
+      el.style.color = "#6ee7b7";
+    } else if (tone === "err") {
+      el.style.background = "rgba(239,68,68,0.12)";
+      el.style.borderColor = "rgba(239,68,68,0.38)";
+      el.style.color = "#fca5a5";
+    } else {
+      el.style.background = "#0f172a";
+      el.style.borderColor = "#334155";
+      el.style.color = "#cbd5e1";
+    }
+  }
+
+  window.__armManualClose = function(sym) {
+    if (!window.__manualCloseState) window.__manualCloseState = {};
+    window.__manualCloseState[sym] = "ARMED";
+    if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
+    clearTimeout(window["__armTimer_" + sym]);
+    window["__armTimer_" + sym] = setTimeout(() => {
+      if (window.__manualCloseState[sym] === "ARMED") {
+        window.__manualCloseState[sym] = "IDLE";
+        if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
+      }
+    }, 4500);
+  };
+
+  window.__cancelManualClose = function(sym) {
+    clearTimeout(window["__armTimer_" + sym]);
+    if (!window.__manualCloseState) window.__manualCloseState = {};
+    window.__manualCloseState[sym] = "IDLE";
+    if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
+  };
+
+  window.__execManualClose = async function(sym) {
+    clearTimeout(window["__armTimer_" + sym]);
+    if (!window.__manualCloseState) window.__manualCloseState = {};
+    window.__manualCloseState[sym] = "CLOSING";
+    if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
+    showCloseNotice("Mengirim perintah Market Close " + sym + " ke eksekutor Termux...", "info");
+
+    const cmdUrl = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_manualCloseCmd/" + encodeURIComponent(sym) + ".json";
+    try {
+      const putRes = await fetch(cmdUrl, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: sym,
+          status: "PENDING",
+          requestedAt: Date.now()
+        })
+      });
+      if (!putRes.ok) throw new Error("HTTP " + putRes.status);
+
+      for (let i = 0; i < 15; i++) {
+        await new Promise(r => setTimeout(r, 1500));
+        const chk = await fetch(cmdUrl + "?t=" + Date.now());
+        if (!chk.ok) continue;
+        const stObj = await chk.json();
+        if (stObj && stObj.status === "DONE") {
+          window.__manualCloseState[sym] = "IDLE";
+          await refreshFuturesWidget();
+          showCloseNotice(stObj.message || ("Posisi " + sym + " berhasil ditutup (Market)."), "ok");
+          return;
+        }
+        if (stObj && stObj.status === "ERROR") {
+          window.__manualCloseState[sym] = "IDLE";
+          if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
+          showCloseNotice("Gagal menutup " + sym + ": " + (stObj.message || "Error eksekusi"), "err");
+          return;
+        }
+      }
+      window.__manualCloseState[sym] = "IDLE";
+      await refreshFuturesWidget();
+      showCloseNotice("Perintah terkirim untuk " + sym + ". Memeriksa sinkronisasi saldo...", "info");
+    } catch (e) {
+      window.__manualCloseState[sym] = "IDLE";
+      if (window.__lastFuturesData) renderFuturesData(window.__lastFuturesData);
+      showCloseNotice("Gagal mengirim perintah tutup " + sym + ": " + e.message, "err");
+    }
+  };
+
   refreshFuturesWidget();
   setInterval(refreshFuturesWidget, 15000);
 })();

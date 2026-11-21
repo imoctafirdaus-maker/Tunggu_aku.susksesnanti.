@@ -168,6 +168,9 @@ const server = http.createServer(async (req, res) => {
   res.end();
 });
 
+const { processManualCloseQueue } = require("./manualCloseExecutor");
+setInterval(() => { processManualCloseQueue().catch(() => {}); }, 2500);
+
 server.listen(PORT, "127.0.0.1", () => {
   console.log(`🚀 Local AI Router (Gemini + Groq + SambaNova Fallback) aktif di http://127.0.0.1:${PORT}`);
 });
