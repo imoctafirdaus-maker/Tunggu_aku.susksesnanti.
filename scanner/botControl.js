@@ -42,7 +42,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const state = Boolean(forceState);
     setLocalAutoTrade(state);
     await ref.update({
-      autoTrade: state, aiAuditEnabled: aiEnabled,
+      autoTrade: state,
       newsGuardActive: false,
       source: "termux",
       updatedAt: admin.database.ServerValue.TIMESTAMP

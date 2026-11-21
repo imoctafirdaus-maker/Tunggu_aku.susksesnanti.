@@ -114,9 +114,11 @@ async function fapiRequest(method, endpoint, params = {}, creds, signed = true) 
     reqPath = `${endpoint}?${new URLSearchParams(params).toString()}`;
   }
 
-  const hosts = (creds && creds.isDemo) ? DEMO_FAPI_HOSTS : LIVE_FAPI_HOSTS;
+  const baseHosts = (creds && creds.isDemo) ? DEMO_FAPI_HOSTS : LIVE_FAPI_HOSTS;
+  const hosts = baseHosts.length === 1 ? [baseHosts[0], baseHosts[0], baseHosts[0]] : baseHosts;
   let lastErr;
-  for (const host of hosts) {
+  for (let i = 0; i < hosts.length; i++) {
+    const host = hosts[i];
     const ip = await resolveWithPublicDns(host);
     try {
       const res = await httpsJsonRequest({ hostname: host, path: reqPath, method, headers, ipOverride: ip });
@@ -130,7 +132,9 @@ async function fapiRequest(method, endpoint, params = {}, creds, signed = true) 
       return res.data;
     } catch (e) {
       lastErr = e;
+      resolvedHostCache.delete(host);
       if (e.message && (e.message.includes("(-2015)") || e.message.includes("(-1021)"))) throw e;
+      if (i < hosts.length - 1) await new Promise(r => setTimeout(r, 400));
     }
   }
   throw lastErr || new Error("Semua endpoint Futures gagal dihubungi");

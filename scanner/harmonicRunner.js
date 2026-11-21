@@ -66,7 +66,7 @@ async function auditHarmonicDualAi(symbol, sig) {
     if (aiCfg.aiAuditEnabled === false) {
       return {
         approved: true,
-        reason: "Audit AI dinonaktifkan via saklar UI — lolos filter MTF 4H->1H->15M"
+        reason: `Audit AI OFF — lolos langsung filter Scott Carney (${String(sig.timeframe || "15m").toUpperCase()})`
       };
     }
     const groqKeys = (aiCfg.groqKeys || []).map(k => String(k).trim()).filter(Boolean);
@@ -447,9 +447,16 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
 
   // Mode Live / Testnet Futures
   const creds = loadBinanceConfig();
-  const snap = await getFuturesSnapshot();
-  if (!creds || !creds.autoTrade || !snap || !snap.ok) {
-    return { executed: false, reason: "Auto-Trade Live nonaktif atau koneksi Futures gagal" };
+  let snap = await getFuturesSnapshot();
+  if (!snap || !snap.ok) {
+    await new Promise(r => setTimeout(r, 800));
+    snap = await getFuturesSnapshot();
+  }
+  if (!creds || !creds.autoTrade) {
+    return { executed: false, reason: "Auto-Trade Live nonaktif di binanceConfig.json" };
+  }
+  if (!snap || !snap.ok) {
+    return { executed: false, reason: `Koneksi Futures gagal: ${snap?.error || "no response"}` };
   }
   if (snap.openPositions.some(p => p.symbol === symbol)) {
     return { executed: false, reason: `Sudah ada posisi Futures aktif di ${symbol}` };
