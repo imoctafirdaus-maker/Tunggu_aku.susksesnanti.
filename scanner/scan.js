@@ -57,7 +57,7 @@ async function loadCandidates() {
     const [ex, ticks, fapiEx] = await Promise.all([
       apiGet("/api/v3/exchangeInfo"),
       apiGet("/api/v3/ticker/24hr"),
-      fetchJson("https://fapi1.binance.com/fapi/v1/exchangeInfo", 10000).catch(() => fetchJson("https://fapi2.binance.com/fapi/v1/exchangeInfo", 10000)).catch(() => null)
+      require("./autoTrader").fapiRequest("GET", "/fapi/v1/exchangeInfo", {}, { isDemo: false }, false).catch(() => null)
     ]);
     const futuresSet = (fapiEx && Array.isArray(fapiEx.symbols))
       ? new Set(fapiEx.symbols.filter(s => s.status === "TRADING" && s.contractType === "PERPETUAL" && s.quoteAsset === "USDT").map(s => s.symbol))
