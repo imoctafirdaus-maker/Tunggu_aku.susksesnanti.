@@ -21,8 +21,8 @@ const SCANNER_SOURCE = process.env.SCANNER_SOURCE || "github-actions";
 const CG_API_KEY = process.env.CG_API_KEY || "CG-eHK3WLfwgdQzLf5pVqCgoGWy";
 
 const TIMEFRAMES = ["5m", "15m", "1h"];
-const N_VOLUME = 80;
-const N_GAINERS = 40;
+const N_VOLUME = 180;
+const N_GAINERS = 70;
 const POOL = 500;
 const CANDLES = 300;
 const CONCURRENCY = 6;

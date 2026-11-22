@@ -55,7 +55,7 @@
       const D_swing = swings[s + 4];
 
       // Jangan pakai pola basi jika D terbentuk lebih dari 2 candle closed lalu
-      if (D_swing && (lastIdx - D_swing.idx) > 4) continue;
+      if (D_swing && (lastIdx - D_swing.idx) > 8) continue;
 
       const isBullish = X.type === "L" && A.type === "H" && B.type === "L" && C.type === "H";
       const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";
@@ -74,7 +74,7 @@
       let dIdx = D_swing ? D_swing.idx : lastIdx;
       let D_price = D_swing ? D_swing.price : (isBullish ? lastCandle.low : lastCandle.high);
       if (!D_swing) {
-        const scanStart = Math.max(C.idx + 1, lastIdx - 4);
+        const scanStart = C.idx + 1;
         for (let k = scanStart; k <= lastIdx; k++) {
           if (isBullish && candles[k].low <= D_price) {
             D_price = candles[k].low;
@@ -90,6 +90,7 @@
       if (isBullish && !(D_price < C.price)) continue;
       if (isBearish && !(D_price > C.price)) continue;
 
+      if (!D_swing && (lastIdx - dIdx) > 6) continue;
       const AD = Math.abs(A.price - D_price);
       const CD = Math.abs(D_price - C.price);
 

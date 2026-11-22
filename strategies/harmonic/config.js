@@ -41,7 +41,7 @@
       beyondX: true,
       bRange: [0.786, 0.786],
       cRange: [0.382, 0.886],
-      dXa: [1.272, 1.272],
+      dXa: [1.272, 1.414],
       dBc: [1.618, 2.618],
       dXc: null
     },
@@ -122,7 +122,7 @@
     enabled: true,
     paperTrading: true,
     timeframes: ["4h", "1h", "15m", "5m"], // urutan wajib: 4h -> 1h -> 15m
-    ratioTolerance: 0.03,            // ±3% standar Scott Carney
+    ratioTolerance: 0.05,            // ±3% standar Scott Carney
     swingDepth: 3,
     minDeviationPct: 0.4,
     atrPeriod: 14,
