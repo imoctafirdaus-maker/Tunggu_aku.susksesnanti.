@@ -93,11 +93,19 @@
       }
     }
 
-    // Harga harus masuk atau menyentuh zona PRZ (toleransi 0.25 ATR untuk sumbu wick)
-    const buffer = atr > 0 ? atr * 0.45 : bestCluster.mid * 0.004;
-    const inPrz = currentPrice >= (bestCluster.low - buffer) && currentPrice <= (bestCluster.high + buffer);
-    if (!inPrz) {
-      return { valid: false, reason: "Harga belum masuk zona PRZ", prz: bestCluster };
+    // Titik D harus masuk/menyentuh PRZ, dan harga penutupan belum memantul terlalu jauh meninggalkan PRZ
+    const buffer = atr > 0 ? atr * 0.55 : bestCluster.mid * 0.005;
+    const dInPrz = D_price >= (bestCluster.low - buffer) && D_price <= (bestCluster.high + buffer);
+    const maxChase = atr > 0 ? atr * 1.35 : bestCluster.mid * 0.012;
+    const notChased = isBullish
+      ? (currentPrice >= bestCluster.low - buffer && currentPrice <= bestCluster.high + maxChase)
+      : (currentPrice <= bestCluster.high + buffer && currentPrice >= bestCluster.low - maxChase);
+    if (!dInPrz || !notChased) {
+      return {
+        valid: false,
+        reason: !dInPrz ? "Titik D belum masuk zona PRZ" : "Harga sudah memantul jauh dari PRZ",
+        prz: bestCluster
+      };
     }
 
     // Skor kualitas PRZ (0-100)

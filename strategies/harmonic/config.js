@@ -89,7 +89,7 @@
     FIVE_O: {
       enabled: true,
       label: "5-0",
-      beyondX: false,
+      beyondX: true,
       bRange: [1.13, 1.618],
       cRange: [1.618, 2.24],
       dXa: null,
@@ -132,8 +132,8 @@
     maxPrzWidthPct: 3.5,
     minPrzScore: 45,
     rsiPeriod: 14,
-    rsiOversold: 35,
-    rsiOverbought: 65,
+    rsiOversold: 40,
+    rsiOverbought: 60,
     rsiMode: "both",                 // "level" | "divergence" | "both"
     requireReversalCandle: true,
     slAtrBufferMult: 0.35,

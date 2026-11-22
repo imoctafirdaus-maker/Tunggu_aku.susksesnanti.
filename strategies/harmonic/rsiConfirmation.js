@@ -56,10 +56,12 @@
    * - Divergence: Harga LL tapi RSI HL (Bullish), atau Harga HH tapi RSI LH (Bearish) antara C/A dan D
    */
   function evaluateRsiAndCandle({ candles, rsiArr, isBullish, refPivot, dIdx, lastIdx, cfg }) {
-    const curRsi = rsiArr[dIdx];
-    if (!Number.isFinite(curRsi)) {
+    const endIdx = Number.isInteger(lastIdx) ? lastIdx : dIdx;
+    const windowRsis = [rsiArr[dIdx - 1], rsiArr[dIdx], rsiArr[endIdx]].filter(Number.isFinite);
+    if (!windowRsis.length) {
       return { valid: false, reason: "Data RSI belum mencukupi" };
     }
+    const curRsi = isBullish ? Math.min(...windowRsis) : Math.max(...windowRsis);
 
     const levelOk = isBullish ? curRsi <= (cfg.rsiOversold || 35) : curRsi >= (cfg.rsiOverbought || 65);
 
