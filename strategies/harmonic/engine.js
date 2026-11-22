@@ -17,7 +17,7 @@
 })(typeof self !== "undefined" ? self : this, function (ConfigMod, SwingMod, PrzMod, RsiMod) {
   "use strict";
 
-  const TF_WEIGHT = { "4h": 30, "1h": 20, "15m": 10 };
+  const TF_WEIGHT = { "4h": 30, "1h": 20, "15m": 10, "5m": 8 };
 
   /**
    * Analisis satu timeframe pada closed candles (tanpa repaint / tanpa look-ahead bias)
@@ -117,7 +117,7 @@
         // 3. Cek Rasio D (XA / XC & BC)
         if (pCfg.dXa && !PrzMod.inTolRange(dXaRatio, pCfg.dXa, tol)) continue;
         if (pCfg.dXc && !PrzMod.inTolRange(dXcRatio, pCfg.dXc, tol)) continue;
-        if (pCfg.dBc && !PrzMod.inTolRange(dBcRatio, pCfg.dBc, tol * 1.6)) continue;
+        // dBc dievaluasi dalam klaster konfluensi validatePRZ agar proyeksi XA + AB=CD tetap tertangkap
 
         // 4. Validasi PRZ Confluence (>=3 proyeksi, skor 0-100, guard beyond-X)
         const przCheck = PrzMod.validatePRZ({
@@ -266,6 +266,14 @@
     const sig15m = res15m.signal;
     if (sig15m) allSignals.push(sig15m);
 
+    const cs5m = candlesByTf["5m"];
+    const res5m = (Array.isArray(cs5m) && cs5m.length >= 50)
+      ? analyzeSingleTimeframe(cs5m, "5m", cfg)
+      : { signal: null, logs: ["[5m] Data candle belum cukup"] };
+    allLogs.push(...res5m.logs);
+    const sig5m = res5m.signal;
+    if (sig5m) allSignals.push(sig5m);
+
     // JALUR A (Prioritas Tertinggi): Top-Down MTF 4H Struktur -> 1H Validasi -> 15M Sniper Eksekusi
     if (sig4h) {
       const biasSide = sig4h.side;
@@ -304,6 +312,17 @@
         sig1h.timeframe = "1h";
         sig1h.reason = "[MANDIRI 1H] " + sig1h.patternName + " (" + sig1h.side + ") valid Scott Carney + Tren 4H · PRZ " + sig1h.przScore + "/100 · RR 1:" + sig1h.rr.toFixed(2);
         return { signal: sig1h, allSignals, logs: allLogs };
+      }
+    }
+
+    // JALUR D: Eksekusi Sniper 5M (wajib tidak berlawanan struktur aktif 4H)
+    if (!sig15m && sig5m) {
+      if (sig4h && sig5m.side !== sig4h.side) {
+        allLogs.push("[BLOCKED 4H BIAS] Sniper 5M " + sig5m.patternName + " (" + sig5m.side + ") berlawanan pola aktif 4H (" + sig4h.patternName + " " + sig4h.side + ")");
+      } else {
+        sig5m.timeframe = "5m";
+        sig5m.reason = "[SNIPER 5M] " + sig5m.patternName + " (" + sig5m.side + ") valid Scott Carney (±3.5% + RSI BAMM) · PRZ " + sig5m.przScore + "/100 · RR 1:" + sig5m.rr.toFixed(2);
+        return { signal: sig5m, allSignals, logs: allLogs };
       }
     }
 

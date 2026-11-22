@@ -364,7 +364,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   const isPaper = liveAutoReady ? Boolean(sig.forcePaperOnly) : true;
 
   // Guard 0: Dilarang keras eksekusi langsung di 4H (khusus struktur); 1H & 15M diizinkan
-  if (sig.timeframe !== "15m" && sig.timeframe !== "1h") {
+  if (!["1h", "15m", "5m"].includes(sig.timeframe)) {
     return { executed: false, reason: `Diblokir: Timeframe ${sig.timeframe} hanya pembaca struktur (eksekusi hanya 1H / 15M)` };
   }
 
