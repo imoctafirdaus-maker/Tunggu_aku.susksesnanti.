@@ -167,10 +167,11 @@
         const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);
         const rr = (riskDist > 0 && rewardDist > 0) ? (rewardDist / riskDist) : 0;
 
-        if (rr < (cfg.minRR || 2.0)) {
-          logs.push(`[${timeframe}] ${pCfg.label} ditolak: RR 1:${rr.toFixed(2)} di bawah minimum 1:${cfg.minRR}`);
-          continue;
-        }
+        const effectiveMinRr = przCheck.score >= 65 ? Math.min(cfg.minRR || 1.5, 1.15) : (cfg.minRR || 1.5);
+      if (rr < effectiveMinRr) {
+        logs.push(`[${timeframe}] ${pCfg.label} ditolak: RR 1:${rr.toFixed(2)} di bawah minimum 1:${effectiveMinRr}`);
+        continue;
+      }
 
         const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10);
         const candidate = {
@@ -306,17 +307,16 @@
       }
     }
 
-    // JALUR C: Eksekusi Mandiri 15M (wajib searah struktur 4H & konfirmasi EMA21 1H)
-    if (sig15m) {
-      const trend1h = (Array.isArray(cs1h) && cs1h.length >= 25) ? check1hStructureConfirm(cs1h, sig15m.side) : { ok: false, reason: "Data 1H kurang" };
-      if ((sig4h && sig15m.side !== sig4h.side) || !trend1h.ok) {
-        allLogs.push("[BLOCKED TREND] Mandiri 15M " + sig15m.patternName + " (" + sig15m.side + ") ditahan (" + trend1h.reason + ")");
-      } else {
-        sig15m.timeframe = "15m";
-        sig15m.reason = "[MANDIRI 15M] " + sig15m.patternName + " (" + sig15m.side + ") valid Scott Carney + Konfirmasi 1H · PRZ " + sig15m.przScore + "/100 · RR 1:" + sig15m.rr.toFixed(2);
-        return { signal: sig15m, allSignals, logs: allLogs };
-      }
+    // JALUR C: Eksekusi Mandiri 15M (pola reversal PRZ Scott Carney murni tanpa diblokir tren lambat EMA21 1H)
+  if (sig15m) {
+    if (sig4h && sig15m.side !== sig4h.side) {
+      allLogs.push("[BLOCKED 4H BIAS] Mandiri 15M " + sig15m.patternName + " (" + sig15m.side + ") berlawanan pola aktif 4H (" + sig4h.patternName + " " + sig4h.side + ")");
+    } else {
+      sig15m.timeframe = "15m";
+      sig15m.reason = "[MANDIRI 15M] " + sig15m.patternName + " (" + sig15m.side + ") valid Scott Carney (±3.5% + RSI BAMM) · PRZ " + sig15m.przScore + "/100 · RR 1:" + sig15m.rr.toFixed(2);
+      return { signal: sig15m, allSignals, logs: allLogs };
     }
+  }
 
     // 4H tidak pernah dieksekusi langsung
     return { signal: null, allSignals, logs: allLogs };
