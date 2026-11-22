@@ -25,7 +25,7 @@ const N_VOLUME = 500;
 const N_GAINERS = 100;
 const POOL = 500;
 const CANDLES = 300;
-const CONCURRENCY = 6;
+const CONCURRENCY = 10;
 
 const ENDPOINTS = [
   "https://data-api.binance.vision", "https://api.binance.com",
