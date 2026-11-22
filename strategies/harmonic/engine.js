@@ -178,7 +178,7 @@
         const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);
         const rr = (riskDist > 0 && rewardDist > 0) ? (rewardDist / riskDist) : 0;
 
-        const effectiveMinRr = przCheck.score >= 65 ? Math.min(cfg.minRR || 1.5, 1.15) : (cfg.minRR || 1.5);
+        const effectiveMinRr = przCheck.score >= 65 ? Math.min(cfg.minRR || 1.5, 1.0) : (cfg.minRR || 1.5);
       if (rr < effectiveMinRr) {
         logs.push(`[${timeframe}] ${pCfg.label} ditolak: RR 1:${rr.toFixed(2)} di bawah minimum 1:${effectiveMinRr}`);
         continue;
