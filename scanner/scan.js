@@ -77,8 +77,19 @@ async function loadCandidates() {
     const gainers = [...pool].sort((a, b) => b.chg - a.chg).slice(0, N_GAINERS);
     const map = new Map();
     for (const c of [...topVol, ...gainers]) map.set(c.symbol, c);
-    return [...map.values()];
+    const list = [...map.values()];
+    if (list.length >= 100) {
+      try { fs.writeFileSync(path.join(__dirname, ".candidatesCache.json"), JSON.stringify(list)); } catch (_) {}
+    }
+    return list;
   } catch (e) {
+    try {
+      const cached = JSON.parse(fs.readFileSync(path.join(__dirname, ".candidatesCache.json"), "utf8"));
+      if (Array.isArray(cached) && cached.length >= 100) {
+        console.warn("Memakai cache 500 kandidat karena API sempat tersendat:", e.message);
+        return cached;
+      }
+    } catch (_) {}
     console.warn("Fallback ke daftar kandidat default karena:", e.message);
     return ["BTCUSDT", "ETHUSDT", "SOLUSDT", "BNBUSDT", "XRPUSDT", "DOGEUSDT", "ADAUSDT", "AVAXUSDT"]
       .map(symbol => ({ symbol, chg: NaN }));
