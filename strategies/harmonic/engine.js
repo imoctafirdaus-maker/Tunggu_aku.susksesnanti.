@@ -71,8 +71,20 @@
       const XC = Math.abs(C.price - X.price);
       if (XA <= 0 || AB <= 0 || BC <= 0) continue;
 
-      const dIdx = D_swing ? D_swing.idx : lastIdx;
-      const D_price = D_swing ? D_swing.price : (isBullish ? lastCandle.low : lastCandle.high);
+      let dIdx = D_swing ? D_swing.idx : lastIdx;
+      let D_price = D_swing ? D_swing.price : (isBullish ? lastCandle.low : lastCandle.high);
+      if (!D_swing) {
+        const scanStart = Math.max(C.idx + 1, lastIdx - 4);
+        for (let k = scanStart; k <= lastIdx; k++) {
+          if (isBullish && candles[k].low <= D_price) {
+            D_price = candles[k].low;
+            dIdx = k;
+          } else if (isBearish && candles[k].high >= D_price) {
+            D_price = candles[k].high;
+            dIdx = k;
+          }
+        }
+      }
 
       // Validasi arah titik D wajib bergerak berlawanan dari kaki BC (mencegah false breakout)
       if (isBullish && !(D_price < C.price)) continue;
@@ -104,7 +116,7 @@
         // 3. Cek Rasio D (XA / XC & BC)
         if (pCfg.dXa && !PrzMod.inTolRange(dXaRatio, pCfg.dXa, tol)) continue;
         if (pCfg.dXc && !PrzMod.inTolRange(dXcRatio, pCfg.dXc, tol)) continue;
-        if (pCfg.dBc && !PrzMod.inTolRange(dBcRatio, pCfg.dBc, tol)) continue;
+        if (pCfg.dBc && !PrzMod.inTolRange(dBcRatio, pCfg.dBc, tol * 1.6)) continue;
 
         // 4. Validasi PRZ Confluence (>=3 proyeksi, skor 0-100, guard beyond-X)
         const przCheck = PrzMod.validatePRZ({
@@ -128,7 +140,7 @@
         if (isBullish && !(D_price < B.price)) continue;
         if (isBearish && !(D_price > B.price)) continue;
       }
-      const rsiCheck = RsiMod.evaluateRsiAndCandle({ candles, rsiArr, isBullish, refPivot: C, dIdx, lastIdx, cfg });
+      const rsiCheck = RsiMod.evaluateRsiAndCandle({ candles, rsiArr, isBullish, refPivot: B, dIdx, lastIdx, cfg });
       if (!rsiCheck.valid) {
         logs.push("[" + timeframe + "] " + pCfg.label + " ditahan: " + rsiCheck.reason);
         continue;

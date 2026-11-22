@@ -593,7 +593,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
 
   if (!dryRun) await managePaperPositions(paper, apiGetFn, cfg);
 
-  const pool = (candidates || []).slice(0, 120);
+  const pool = (candidates || []).slice(0, 300);
   const detectedList = [];
   const upFirebase = {};
   let idx = 0;
