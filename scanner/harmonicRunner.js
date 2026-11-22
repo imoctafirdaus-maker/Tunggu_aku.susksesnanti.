@@ -590,7 +590,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
   const upFirebase = {};
   let idx = 0;
 
-  await Promise.all(Array.from({ length: 10 }, async () => {
+  await Promise.all(Array.from({ length: 7 }, async () => {
     while (idx < pool.length) {
       const item = pool[idx++];
       const sym = typeof item === "string" ? item : item.symbol;
