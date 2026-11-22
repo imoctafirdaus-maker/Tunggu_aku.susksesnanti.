@@ -117,7 +117,10 @@
         // 3. Cek Rasio D (XA / XC & BC)
         if (pCfg.dXa && !PrzMod.inTolRange(dXaRatio, pCfg.dXa, tol)) continue;
         if (pCfg.dXc && !PrzMod.inTolRange(dXcRatio, pCfg.dXc, tol)) continue;
-        // dBc dievaluasi dalam klaster konfluensi validatePRZ agar proyeksi XA + AB=CD tetap tertangkap
+        if (pCfg.dBc) {
+        const bcTol = (!pCfg.dXa && !pCfg.dXc) ? tol : tol * 1.35;
+        if (!PrzMod.inTolRange(dBcRatio, pCfg.dBc, bcTol)) continue;
+      }
 
         // 4. Validasi PRZ Confluence (>=3 proyeksi, skor 0-100, guard beyond-X)
         const przCheck = PrzMod.validatePRZ({

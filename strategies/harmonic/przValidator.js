@@ -96,7 +96,7 @@
     // Titik D harus masuk/menyentuh PRZ, dan harga penutupan belum memantul terlalu jauh meninggalkan PRZ
     const buffer = atr > 0 ? atr * 0.55 : bestCluster.mid * 0.005;
     const dInPrz = D_price >= (bestCluster.low - buffer) && D_price <= (bestCluster.high + buffer);
-    const maxChase = atr > 0 ? atr * 1.35 : bestCluster.mid * 0.012;
+    const maxChase = atr > 0 ? atr * 2.2 : bestCluster.mid * 0.018;
     const notChased = isBullish
       ? (currentPrice >= bestCluster.low - buffer && currentPrice <= bestCluster.high + maxChase)
       : (currentPrice <= bestCluster.high + buffer && currentPrice >= bestCluster.low - maxChase);

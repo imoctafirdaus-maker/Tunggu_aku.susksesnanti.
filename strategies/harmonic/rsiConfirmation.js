@@ -57,7 +57,11 @@
    */
   function evaluateRsiAndCandle({ candles, rsiArr, isBullish, refPivot, dIdx, lastIdx, cfg }) {
     const endIdx = Number.isInteger(lastIdx) ? lastIdx : dIdx;
-    const windowRsis = [rsiArr[dIdx - 1], rsiArr[dIdx], rsiArr[endIdx]].filter(Number.isFinite);
+    const startScan = Math.max(0, dIdx - 4);
+    const windowRsis = [];
+    for (let k = startScan; k <= endIdx; k++) {
+      if (Number.isFinite(rsiArr[k])) windowRsis.push(rsiArr[k]);
+    }
     if (!windowRsis.length) {
       return { valid: false, reason: "Data RSI belum mencukupi" };
     }
