@@ -262,7 +262,7 @@ function calcEmaSeries(values, period) {
 async function checkBtcMacroRegime(rec) {
   try {
     if (!rec || rec.symbol === "BTCUSDT") return { pass: true };
-    const res = await fetch("https://fapi.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=220");
+    const res = await fetch("https://fapi1.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=220").catch(() => fetch("https://fapi2.binance.com/fapi/v1/klines?symbol=BTCUSDT&interval=1h&limit=220"));
     if (!res.ok) return { pass: true };
     const klines = await res.json();
     const closes = (Array.isArray(klines) ? klines : []).map(k => Number(k[4])).filter(n => n > 0);
