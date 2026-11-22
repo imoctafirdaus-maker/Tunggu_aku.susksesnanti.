@@ -314,39 +314,47 @@
       }
     }
 
-    // JALUR B: Eksekusi Mandiri 1H (wajib searah struktur 4H)
+    // JALUR B: Eksekusi Mandiri 1H (boleh mandiri tanpa struktur 4H di atasnya, selama tidak berlawanan pola aktif 4H)
     if (sig1h) {
-      const trend4h = (Array.isArray(cs4h) && cs4h.length >= 25) ? check1hStructureConfirm(cs4h, sig1h.side) : { ok: true, reason: "4H N/A" };
       if (sig4h && sig1h.side !== sig4h.side) {
-        allLogs.push("[BLOCKED 4H BIAS] Mandiri 1H " + sig1h.patternName + " (" + sig1h.side + ") ditahan (" + trend4h.reason + ")");
+        allLogs.push("[BLOCKED 4H BIAS] Mandiri 1H " + sig1h.patternName + " (" + sig1h.side + ") berlawanan pola aktif 4H (" + sig4h.patternName + " " + sig4h.side + ")");
       } else {
         sig1h.timeframe = "1h";
-        sig1h.reason = "[MANDIRI 1H] " + sig1h.patternName + " (" + sig1h.side + ") valid Scott Carney + Tren 4H · PRZ " + sig1h.przScore + "/100 · RR 1:" + sig1h.rr.toFixed(2);
+        sig1h.reason = "[MANDIRI 1H] " + sig1h.patternName + " (" + sig1h.side + ") valid Scott Carney (±3.5% + RSI BAMM) · PRZ " + sig1h.przScore + "/100 · RR 1:" + sig1h.rr.toFixed(2);
         return { signal: sig1h, allSignals, logs: allLogs };
       }
     }
 
-    // JALUR D: Eksekusi Sniper 5M (wajib tidak berlawanan struktur aktif 4H)
-    if (!sig15m && sig5m) {
-      if (sig4h && sig5m.side !== sig4h.side) {
-        allLogs.push("[BLOCKED 4H BIAS] Sniper 5M " + sig5m.patternName + " (" + sig5m.side + ") berlawanan pola aktif 4H (" + sig4h.patternName + " " + sig4h.side + ")");
+    // JALUR C: Eksekusi Mandiri 15M (boleh mandiri tanpa struktur 1H/4H di atasnya, selama tidak berlawanan pola aktif 4H)
+    if (sig15m) {
+      if (sig4h && sig15m.side !== sig4h.side) {
+        allLogs.push("[BLOCKED 4H BIAS] Mandiri 15M " + sig15m.patternName + " (" + sig15m.side + ") berlawanan pola aktif 4H (" + sig4h.patternName + " " + sig4h.side + ")");
       } else {
-        sig5m.timeframe = "5m";
-        sig5m.reason = "[SNIPER 5M] " + sig5m.patternName + " (" + sig5m.side + ") valid Scott Carney (±3.5% + RSI BAMM) · PRZ " + sig5m.przScore + "/100 · RR 1:" + sig5m.rr.toFixed(2);
-        return { signal: sig5m, allSignals, logs: allLogs };
+        sig15m.timeframe = "15m";
+        sig15m.reason = "[MANDIRI 15M] " + sig15m.patternName + " (" + sig15m.side + ") valid Scott Carney (±3.5% + RSI BAMM) · PRZ " + sig15m.przScore + "/100 · RR 1:" + sig15m.rr.toFixed(2);
+        return { signal: sig15m, allSignals, logs: allLogs };
       }
     }
 
-    // JALUR C: Eksekusi Mandiri 15M (pola reversal PRZ Scott Carney murni tanpa diblokir tren lambat EMA21 1H)
-  if (sig15m) {
-    if (sig4h && sig15m.side !== sig4h.side) {
-      allLogs.push("[BLOCKED 4H BIAS] Mandiri 15M " + sig15m.patternName + " (" + sig15m.side + ") berlawanan pola aktif 4H (" + sig4h.patternName + " " + sig4h.side + ")");
-    } else {
-      sig15m.timeframe = "15m";
-      sig15m.reason = "[MANDIRI 15M] " + sig15m.patternName + " (" + sig15m.side + ") valid Scott Carney (±3.5% + RSI BAMM) · PRZ " + sig15m.przScore + "/100 · RR 1:" + sig15m.rr.toFixed(2);
-      return { signal: sig15m, allSignals, logs: allLogs };
+    // JALUR D: 5M DILARANG eksekusi mandiri — wajib ditopang struktur Harmonic aktif 4H atau 1H searah
+    if (sig5m) {
+      const has4hSupport = Boolean(sig4h && sig4h.side === sig5m.side);
+      const has1hSupport = Boolean(sig1h && sig1h.side === sig5m.side);
+      const opposed4h = Boolean(sig4h && sig4h.side !== sig5m.side);
+      const opposed1h = Boolean(sig1h && sig1h.side !== sig5m.side);
+
+      if ((has4hSupport || has1hSupport) && !opposed4h && !opposed1h) {
+        const anchor = has4hSupport && has1hSupport
+          ? `4H ${sig4h.patternName} + 1H ${sig1h.patternName}`
+          : (has4hSupport ? `4H ${sig4h.patternName}` : `1H ${sig1h.patternName}`);
+        sig5m.timeframe = "5m";
+        sig5m.mtfConfirmed = true;
+        sig5m.reason = `[MTF SNIPER 5M] ${sig5m.patternName} (${sig5m.side}) ditopang struktur ${anchor} · PRZ ${sig5m.przScore}/100 · RR 1:${sig5m.rr.toFixed(2)}`;
+        return { signal: sig5m, allSignals, logs: allLogs };
+      } else {
+        allLogs.push(`[BLOCKED 5M MANDIRI] ${sig5m.patternName} (${sig5m.side}) ditahan: 5M wajib ditopang struktur Harmonic aktif 4H/1H searah`);
+      }
     }
-  }
 
     // 4H tidak pernah dieksekusi langsung
     return { signal: null, allSignals, logs: allLogs };
