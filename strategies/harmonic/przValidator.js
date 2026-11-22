@@ -66,7 +66,9 @@
       const anchor = projections[i].price;
       const members = projections.filter(p => Math.abs(p.price - anchor) <= maxWidth);
       const uniqueSources = new Set(members.map(m => m.source.split("_")[0]));
-      if (members.length >= (cfg.minPrzConfluence || 3) && uniqueSources.size >= 2) {
+      const minConf = patternKey === "FIVE_O" ? 1 : (cfg.minPrzConfluence || 3);
+      const minSrc = patternKey === "FIVE_O" ? 1 : 2;
+      if (members.length >= minConf && uniqueSources.size >= minSrc) {
         const prices = members.map(m => m.price);
         const low = Math.min(...prices);
         const high = Math.max(...prices);

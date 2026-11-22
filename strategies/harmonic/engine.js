@@ -155,15 +155,15 @@
         const entry = lastCandle.close;
         const atrBuf = curAtr * (cfg.slAtrBufferMult || 0.35);
         const rawSl = pCfg.beyondX
-          ? (isBullish ? D_price - atrBuf * 1.5 : D_price + atrBuf * 1.5)
+          ? (isBullish ? D_price - atrBuf : D_price + atrBuf)
           : (isBullish ? Math.min(X.price, D_price) - atrBuf : Math.max(X.price, D_price) + atrBuf);
 
-        // Shark & 5-0 memakai kaki CD sebagai acuan target Scott Carney; pola XA memakai kaki AD
+        // Shark & 5-0 memakai kaki CD sebagai acuan target Scott Carney; pola XA memakai kaki AD (TP1 0.382, TP2 1.0)
         const targetLeg = (pKey === "SHARK" || pKey === "FIVE_O")
           ? Math.abs(C.price - D_price)
           : Math.abs(A.price - D_price);
         const tp1Fib = cfg.tp1Fib || 0.382;
-        const tp2Fib = Math.max(cfg.tp2Fib || 0.618, 0.786);
+        const tp2Fib = 1.0;
         const tp1 = isBullish
           ? D_price + targetLeg * tp1Fib
           : D_price - targetLeg * tp1Fib;
@@ -314,7 +314,7 @@
     // JALUR B: Eksekusi Mandiri 1H (wajib searah struktur 4H)
     if (sig1h) {
       const trend4h = (Array.isArray(cs4h) && cs4h.length >= 25) ? check1hStructureConfirm(cs4h, sig1h.side) : { ok: true, reason: "4H N/A" };
-      if ((sig4h && sig1h.side !== sig4h.side) || !trend4h.ok) {
+      if (sig4h && sig1h.side !== sig4h.side) {
         allLogs.push("[BLOCKED 4H BIAS] Mandiri 1H " + sig1h.patternName + " (" + sig1h.side + ") ditahan (" + trend4h.reason + ")");
       } else {
         sig1h.timeframe = "1h";
