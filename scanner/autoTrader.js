@@ -401,27 +401,29 @@ async function executeSignalTrade(rec, snap) {
 
   let slStatus = "Gagal", tpStatus = "Gagal";
   try {
-    await fapiRequest("POST", "/fapi/v1/order", {
+    const slRes = await placeConditionalOrder({
       symbol: rec.symbol,
       side: closeSide,
       type: "STOP_MARKET",
-      stopPrice: slPrice,
-      closePosition: "true",
+      triggerPrice: slPrice,
+      closePosition: true,
+      fallbackQty: qty,
       workingType: "MARK_PRICE"
-    }, creds, true);
-    slStatus = `$${slPrice}`;
+    }, creds);
+    slStatus = slRes.mode === "reduceOnly" ? `${slPrice} (reduceOnly)` : `${slPrice}`;
   } catch (e) { slStatus = `Error: ${e.message}`; }
 
   try {
-    await fapiRequest("POST", "/fapi/v1/order", {
+    const tpRes = await placeConditionalOrder({
       symbol: rec.symbol,
       side: closeSide,
       type: "TAKE_PROFIT_MARKET",
-      stopPrice: tpPrice,
-      closePosition: "true",
+      triggerPrice: tpPrice,
+      closePosition: true,
+      fallbackQty: qty,
       workingType: "MARK_PRICE"
-    }, creds, true);
-    tpStatus = `$${tpPrice}`;
+    }, creds);
+    tpStatus = tpRes.mode === "reduceOnly" ? `${tpPrice} (reduceOnly)` : `${tpPrice}`;
   } catch (e) { tpStatus = `Error: ${e.message}`; }
 
   const modeBadge = creds.isDemo ? "[DEMO TESTNET]" : "[LIVE REAL]";
@@ -482,10 +484,15 @@ async function manageOpenPositions(snap) {
       // Cek apakah ada order TAKE_PROFIT aktif di Binance untuk simbol ini
       let hasTpOrder = false;
       try {
-        const openOrders = await fapiRequest("GET", "/fapi/v1/openOrders", { symbol: sym }, creds, true);
-        if (Array.isArray(openOrders)) {
-          hasTpOrder = openOrders.some(o => String(o.type || "").includes("TAKE_PROFIT"));
-        }
+        const [openOrders, openAlgos] = await Promise.all([
+          fapiRequest("GET", "/fapi/v1/openOrders", { symbol: sym }, creds, true).catch(() => []),
+          fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: sym }, creds, true).catch(() => [])
+        ]);
+        const allOrd = [
+          ...(Array.isArray(openOrders) ? openOrders : []),
+          ...(Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []))
+        ];
+        hasTpOrder = allOrd.some(o => String(o.type || "").includes("TAKE_PROFIT"));
       } catch (_) {}
 
       // Tutup otomatis jika ROI >= 45%, ATAU jika order TP ternyata tidak terpasang di Binance saat ROI >= 20%
@@ -502,6 +509,7 @@ async function manageOpenPositions(snap) {
 
         // Bersihkan sisa order SL/TP di simbol tersebut
         try { await fapiRequest("DELETE", "/fapi/v1/allOpenOrders", { symbol: sym }, creds, true); } catch (_) {}
+        try { await fapiRequest("DELETE", "/fapi/v1/algoOpenOrders", { symbol: sym }, creds, true); } catch (_) {}
 
         const reasonText = roiPct >= TARGET_ROI_PCT
           ? `Target ROI +${roiPct.toFixed(1)}% tercapai`
@@ -526,4 +534,32 @@ async function manageOpenPositions(snap) {
   return closedResults;
 }
 
-module.exports = { loadBinanceConfig, getFuturesSnapshot, executeSignalTrade, manageOpenPositions, fapiRequest, getSymbolFilters, roundStep };
+async function placeConditionalOrder({ symbol, side, type, triggerPrice, closePosition = false, quantity = null, fallbackQty = null, workingType = "MARK_PRICE" }, creds) {
+  const baseParams = {
+    algoType: "CONDITIONAL",
+    symbol,
+    side,
+    type,
+    triggerPrice,
+    workingType
+  };
+  if (closePosition) {
+    try {
+      const res = await fapiRequest("POST", "/fapi/v1/algoOrder", { ...baseParams, closePosition: "true" }, creds, true);
+      return { ok: true, mode: "closePosition", data: res };
+    } catch (err1) {
+      const qtyToUse = fallbackQty || quantity;
+      if (qtyToUse && Number(qtyToUse) > 0) {
+        const res2 = await fapiRequest("POST", "/fapi/v1/algoOrder", { ...baseParams, quantity: qtyToUse, reduceOnly: "true" }, creds, true);
+        return { ok: true, mode: "reduceOnly", data: res2 };
+      }
+      throw err1;
+    }
+  } else {
+    const res = await fapiRequest("POST", "/fapi/v1/algoOrder", { ...baseParams, quantity, reduceOnly: "true" }, creds, true);
+    return { ok: true, mode: "reduceOnly", data: res };
+  }
+}
+
+module.exports = {
+  placeConditionalOrder, loadBinanceConfig, getFuturesSnapshot, executeSignalTrade, manageOpenPositions, fapiRequest, getSymbolFilters, roundStep };

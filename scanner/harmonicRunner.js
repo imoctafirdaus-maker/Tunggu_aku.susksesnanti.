@@ -6,7 +6,7 @@ const HarmonicEngine = require("../strategies/harmonic/engine");
 const { checkNewsSafety } = require("./newsGuard");
 const { evaluateDualAiConsensus } = require("./dualAiGatekeeper");
 const { sendTelegramAlert } = require("./telegramNotifier");
-const { loadBinanceConfig, getFuturesSnapshot, fapiRequest, getSymbolFilters, roundStep } = require("./autoTrader");
+const { loadBinanceConfig, getFuturesSnapshot, fapiRequest, getSymbolFilters, roundStep, placeConditionalOrder } = require("./autoTrader");
 
 const SETTINGS_FILE = path.join(__dirname, ".harmonicSettings.json");
 const PAPER_FILE = path.join(__dirname, ".harmonicPaperState.json");
@@ -521,32 +521,24 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   }
   let slStatus = "$" + slPrice;
   try {
-    await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "STOP_MARKET", stopPrice: slPrice, closePosition: "true", workingType: "MARK_PRICE" }, creds, true);
-  } catch (slErr1) {
-    try {
-      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "STOP_MARKET", stopPrice: slPrice, quantity: qty, reduceOnly: "true", workingType: "MARK_PRICE" }, creds, true);
-      slStatus = "$" + slPrice + " (reduceOnly)";
-    } catch (slErr2) {
-      slStatus = "GAGAL (" + slErr2.message + ")";
-      console.error("[HARMONIC SL ERROR] " + symbol + ":", slErr1.message, "|", slErr2.message);
-    }
+    const slRes = await placeConditionalOrder({ symbol, side: closeSide, type: "STOP_MARKET", triggerPrice: slPrice, closePosition: true, fallbackQty: qty, workingType: "MARK_PRICE" }, creds);
+    if (slRes.mode === "reduceOnly") slStatus = "$" + slPrice + " (reduceOnly)";
+  } catch (slErr) {
+    slStatus = "GAGAL (" + slErr.message + ")";
+    console.error("[HARMONIC SL ERROR] " + symbol + ":", slErr.message);
   }
   if (qtyTp1 >= filters.minQty) {
     try {
-      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", stopPrice: tp1Price, quantity: qtyTp1, reduceOnly: "true", workingType: "MARK_PRICE" }, creds, true);
+      await placeConditionalOrder({ symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", triggerPrice: tp1Price, quantity: qtyTp1, workingType: "MARK_PRICE" }, creds);
     } catch (tp1Err) {
       console.error("[HARMONIC TP1 ERROR] " + symbol + ":", tp1Err.message);
     }
   }
   try {
-    await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", stopPrice: tp2Price, closePosition: "true", workingType: "MARK_PRICE" }, creds, true);
+    const remQty = roundStep(Math.max(filters.minQty, qty - qtyTp1), filters.stepSize);
+    await placeConditionalOrder({ symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", triggerPrice: tp2Price, closePosition: true, fallbackQty: remQty, workingType: "MARK_PRICE" }, creds);
   } catch (tp2Err) {
-    try {
-      const remQty = roundStep(Math.max(filters.minQty, qty - qtyTp1), filters.stepSize);
-      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", stopPrice: tp2Price, quantity: remQty, reduceOnly: "true", workingType: "MARK_PRICE" }, creds, true);
-    } catch (_) {
-      console.error("[HARMONIC TP2 ERROR] " + symbol + ":", tp2Err.message);
-    }
+    console.error("[HARMONIC TP2 ERROR] " + symbol + ":", tp2Err.message);
   }
 
   await sendTelegramAlert(
