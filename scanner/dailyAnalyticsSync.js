@@ -66,8 +66,9 @@ async function syncDailyAnalyticsToFirebase(db, admin, scanMeta = {}) {
         currentEquity = Number(snap.totalMargin || 0);
       }
       const incRes = await fapiRequest("GET", "/fapi/v1/income", { incomeType: "REALIZED_PNL", limit: 100 }, creds, true).catch(() => null);
-      if (incRes && incRes.ok && Array.isArray(incRes.data)) {
-        for (const item of incRes.data) {
+      const incList = Array.isArray(incRes) ? incRes : (incRes && Array.isArray(incRes.data) ? incRes.data : []);
+      if (incList.length > 0) {
+        for (const item of incList) {
           const dayKey = getTodayWibStr(Number(item.time || Date.now()));
           const pnlVal = Number(item.income || 0);
           dailyPnlMap[dayKey] = (dailyPnlMap[dayKey] || 0) + pnlVal;
@@ -75,7 +76,7 @@ async function syncDailyAnalyticsToFirebase(db, admin, scanMeta = {}) {
             todayRealizedPnl += pnlVal;
           }
         }
-        recentTrades = incRes.data.slice(-15).reverse().map(t => ({
+        recentTrades = incList.slice(-25).reverse().map(t => ({
           time: Number(t.time || Date.now()),
           symbol: t.symbol || "-",
           pnl: Number(t.income || 0),

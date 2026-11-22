@@ -115,6 +115,7 @@
     return {
       valid: true,
       score,
+      count: bestCluster.count,
       prz: bestCluster,
       reason: `PRZ valid (${bestCluster.count} confluence, skor ${score}/100)`
     };
