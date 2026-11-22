@@ -31,58 +31,61 @@
    * - Guard beyond-X sesuai aturan pola Scott Carney
    */
   function validatePRZ({ isBullish, patternKey, patternCfg, X, A, B, C, D_price, currentPrice, atr, cfg }) {
-    const dir = isBullish ? -1 : 1; // Bullish D berada di bawah A/C, Bearish D di atas A/C
+    const dir = isBullish ? -1 : 1;
     const XA = Math.abs(A.price - X.price);
     const AB = Math.abs(B.price - A.price);
     const BC = Math.abs(C.price - B.price);
     const XC = Math.abs(C.price - X.price);
 
-    const projections = [];
+    const zones = [];
+    const addZone = (source, base, leg, range) => {
+        if (!range || !Number.isFinite(leg) || leg <= 0) return;
+        const a = base + dir * leg * range[0];
+        const b = base + dir * leg * range[1];
+        zones.push({ source, lo: Math.min(a, b), hi: Math.max(a, b) });
+    };
 
-    // 1. Proyeksi XA (atau XC untuk Cypher)
-    if (patternCfg.dXa) {
-      expandLevels(A.price, dir, XA, patternCfg.dXa).forEach(lvl => projections.push({ source: "XA", price: lvl }));
-    }
-    if (patternCfg.dXc) {
-      expandLevels(C.price, dir, XC, patternCfg.dXc).forEach(lvl => projections.push({ source: "XC", price: lvl }));
-    }
+    addZone("XA", A.price, XA, patternCfg.dXa);
+    addZone("XC", C.price, XC, patternCfg.dXc);
+    addZone("BC", C.price, BC, patternCfg.dBc);
+    if (patternKey !== "FIVE_O") addZone("ABCD", C.price, AB, [1.0, 1.272]);
 
-    // 2. Proyeksi BC
-    if (patternCfg.dBc) {
-      expandLevels(C.price, dir, BC, patternCfg.dBc).forEach(lvl => projections.push({ source: "BC", price: lvl }));
-    }
+    const atrWidth = atr > 0 ? atr * (cfg.maxPrzWidthAtrMult || 1.5) : Infinity;
+    const pctWidth = D_price * ((cfg.maxPrzWidthPct || 1.0) / 100);
+    const maxWidth = Math.min(atrWidth, pctWidth);
 
-    // 3. Proyeksi AB=CD (1.0 AB dan 1.272 AB dari titik C)
-    projections.push({ source: "ABCD_1.0", price: C.price + dir * AB * 1.0 });
-    projections.push({ source: "ABCD_1.272", price: C.price + dir * AB * 1.272 });
-
-    // Cari klaster confluence terketat dengan minimal 3 proyeksi dari sumber berbeda
-    const atrWidth = atr > 0 ? atr * (cfg.maxPrzWidthAtrMult || 1.35) : 0;
-    const pctWidth = D_price * ((cfg.maxPrzWidthPct || 2.2) / 100);
-    const maxWidth = Math.max(atrWidth, pctWidth);
+    const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v));
 
     let bestCluster = null;
-    for (let i = 0; i < projections.length; i++) {
-      const anchor = projections[i].price;
-      const members = projections.filter(p => Math.abs(p.price - anchor) <= maxWidth);
-      const uniqueSources = new Set(members.map(m => m.source.split("_")[0]));
-      const minConf = patternKey === "FIVE_O" ? 1 : (cfg.minPrzConfluence || 3);
-      const minSrc = patternKey === "FIVE_O" ? 1 : 2;
-      if (members.length >= minConf && uniqueSources.size >= minSrc) {
-        const prices = members.map(m => m.price);
-        const low = Math.min(...prices);
-        const high = Math.max(...prices);
-        const width = high - low;
-        if (width <= maxWidth) {
-          if (!bestCluster || members.length > bestCluster.count || (members.length === bestCluster.count && width < bestCluster.width)) {
-            bestCluster = { low, high, mid: (low + high) / 2, width, count: members.length, sources: [...uniqueSources], members };
-          }
+    for (const z of zones) {
+        for (const p of [z.lo, (z.lo + z.hi) / 2, z.hi]) {
+            const members = [];
+            for (const zz of zones) {
+                const cp = clamp(p, zz.lo, zz.hi);
+                if (Math.abs(cp - p) <= maxWidth / 2) members.push({ source: zz.source, price: cp });
+            }
+            
+            // Wajib minimal 2 sumber Utama (XA/XC/BC), ABCD murni sebagai penambah skor
+            const primaryCount = members.filter(m => m.source !== "ABCD").length;
+            const minPrimaryNeeded = patternKey === "FIVE_O" ? 1 : 2;
+            if (primaryCount < minPrimaryNeeded) continue;
+
+            const prices = members.map(m => m.price);
+            const low = Math.min(...prices);
+            const high = Math.max(...prices);
+            const width = high - low;
+            if (width > maxWidth) continue;
+
+            if (!bestCluster || members.length > bestCluster.count ||
+                (members.length === bestCluster.count && width < bestCluster.width)) {
+                bestCluster = { low, high, mid: (low + high) / 2, width, count: members.length,
+                                sources: members.map(m => m.source), members };
+            }
         }
-      }
     }
 
     if (!bestCluster) {
-      return { valid: false, reason: "PRZ confluence < 3 proyeksi atau zona terlalu lebar" };
+        return { valid: false, reason: `PRZ confluence < 2 sumber utama atau zona > ${maxWidth.toFixed(4)}` };
     }
 
     // Aturan Beyond-X: jika pola tidak boleh tembus X, tolak bila D atau harga menembus X

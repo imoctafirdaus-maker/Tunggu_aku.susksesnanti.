@@ -19,7 +19,7 @@
       enabled: true,
       label: "Bat",
       beyondX: false,
-      bRange: [0.382, 0.53],
+      bRange: [0.382, 0.50],
       cRange: [0.382, 0.886],
       dXa: [0.886, 0.886],
       dBc: [1.618, 2.618],
@@ -41,8 +41,8 @@
       beyondX: true,
       bRange: [0.786, 0.786],
       cRange: [0.382, 0.886],
-      dXa: [1.272, 1.414],
-      dBc: [1.618, 2.618],
+      dXa: [1.272, 1.618],
+      dBc: [1.618, 2.24],
       dXc: null
     },
     CRAB: {
@@ -52,7 +52,7 @@
       bRange: [0.382, 0.618],
       cRange: [0.382, 0.886],
       dXa: [1.618, 1.618],
-      dBc: [2.24, 3.618],
+      dBc: [2.618, 3.618],
       dXc: null
     },
     DEEP_CRAB: {
@@ -77,7 +77,7 @@
       dBc: [1.272, 2.0]
     },
     SHARK: {
-      enabled: true,
+      enabled: false,
       label: "Shark",
       beyondX: true,
       bRange: [0.382, 0.618],
@@ -122,15 +122,15 @@
     enabled: true,
     paperTrading: true,
     timeframes: ["4h", "1h", "15m", "5m"], // urutan wajib: 4h -> 1h -> 15m
-    ratioTolerance: 0.035,            // ±3% standar Scott Carney
+    ratioTolerance: 0.035,            // ±3.5% standar Scott Carney
     swingDepth: 2,
     minDeviationPct: 0.4,
     atrPeriod: 14,
     minLegAtrMult: 0.35,
-    minPrzConfluence: 3,
-    maxPrzWidthAtrMult: 2.2,
-    maxPrzWidthPct: 3.5,
-    minPrzScore: 45,
+    minPrzConfluence: 2,
+    maxPrzWidthAtrMult: 1.5,
+    maxPrzWidthPct: 1.0,
+    minPrzScore: 55,
     rsiPeriod: 14,
     rsiOversold: 40,
     rsiOverbought: 60,

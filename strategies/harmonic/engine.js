@@ -163,16 +163,13 @@
           ? Math.abs(C.price - D_price)
           : Math.abs(A.price - D_price);
         const tp1Fib = cfg.tp1Fib || 0.382;
-        const tp2Fib = 1.0;
+        const tp2Fib = cfg.tp2Fib || 0.618;
         const tp1 = isBullish
           ? D_price + targetLeg * tp1Fib
           : D_price - targetLeg * tp1Fib;
         const tp2 = isBullish
           ? D_price + targetLeg * tp2Fib
           : D_price - targetLeg * tp2Fib;
-        const safeTp1 = isBullish
-          ? Math.max(tp1, entry + (tp2 - entry) * 0.45)
-          : Math.min(tp1, entry - (entry - tp2) * 0.45);
 
         const riskDist = isBullish ? (entry - rawSl) : (rawSl - entry);
         const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);
@@ -184,7 +181,11 @@
         continue;
       }
 
-        const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10);
+        if (isBullish ? tp1 <= entry : tp1 >= entry) {
+        logs.push(`[${timeframe}] ${pCfg.label} ditolak: TP1 sudah terlewati harga`);
+        continue;
+      }
+      const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10);
         const candidate = {
           strategy: "HARMONIC_CARNEY",
           timeframe,
@@ -201,7 +202,7 @@
           totalScore,
           entry,
           sl: rawSl,
-          tp1: safeTp1,
+          tp1,
           tp2,
           rr,
           atr: curAtr,
