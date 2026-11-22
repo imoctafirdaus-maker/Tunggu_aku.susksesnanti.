@@ -151,20 +151,25 @@
       }
       logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence · ${rsiCheck.reason})`);
 
-        // 6. Kalkulasi Entry, Stop Loss (di luar X atau luar PRZ + buffer ATR), TP1 (0.382 AD), TP2 (0.618 AD), & RR >= 1:2
+        // 6. Kalkulasi Entry, Stop Loss (di luar D untuk pola beyond-X, di luar X untuk Gartley/Bat/Cypher), & TP1/TP2 Scott Carney
         const entry = lastCandle.close;
         const atrBuf = curAtr * (cfg.slAtrBufferMult || 0.35);
-        const rawSl = isBullish
-          ? Math.min(X.price, przCheck.prz.low, D_price) - atrBuf
-          : Math.max(X.price, przCheck.prz.high, D_price) + atrBuf;
+        const rawSl = pCfg.beyondX
+          ? (isBullish ? D_price - atrBuf * 1.5 : D_price + atrBuf * 1.5)
+          : (isBullish ? Math.min(X.price, D_price) - atrBuf : Math.max(X.price, D_price) + atrBuf);
 
-        const actualAD = Math.abs(A.price - D_price);
+        // Shark & 5-0 memakai kaki CD sebagai acuan target Scott Carney; pola XA memakai kaki AD
+        const targetLeg = (pKey === "SHARK" || pKey === "FIVE_O")
+          ? Math.abs(C.price - D_price)
+          : Math.abs(A.price - D_price);
+        const tp1Fib = cfg.tp1Fib || 0.382;
+        const tp2Fib = Math.max(cfg.tp2Fib || 0.618, 0.786);
         const tp1 = isBullish
-          ? D_price + actualAD * (cfg.tp1Fib || 0.382)
-          : D_price - actualAD * (cfg.tp1Fib || 0.382);
+          ? D_price + targetLeg * tp1Fib
+          : D_price - targetLeg * tp1Fib;
         const tp2 = isBullish
-          ? D_price + actualAD * (cfg.tp2Fib || 0.618)
-          : D_price - actualAD * (cfg.tp2Fib || 0.618);
+          ? D_price + targetLeg * tp2Fib
+          : D_price - targetLeg * tp2Fib;
 
         const riskDist = isBullish ? (entry - rawSl) : (rawSl - entry);
         const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);

@@ -123,7 +123,7 @@
     paperTrading: true,
     timeframes: ["4h", "1h", "15m", "5m"], // urutan wajib: 4h -> 1h -> 15m
     ratioTolerance: 0.035,            // ±3% standar Scott Carney
-    swingDepth: 3,
+    swingDepth: 2,
     minDeviationPct: 0.4,
     atrPeriod: 14,
     minLegAtrMult: 0.35,
