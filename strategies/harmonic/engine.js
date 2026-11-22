@@ -170,6 +170,9 @@
         const tp2 = isBullish
           ? D_price + targetLeg * tp2Fib
           : D_price - targetLeg * tp2Fib;
+        const safeTp1 = isBullish
+          ? Math.max(tp1, entry + (tp2 - entry) * 0.45)
+          : Math.min(tp1, entry - (entry - tp2) * 0.45);
 
         const riskDist = isBullish ? (entry - rawSl) : (rawSl - entry);
         const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);
@@ -198,7 +201,7 @@
           totalScore,
           entry,
           sl: rawSl,
-          tp1,
+          tp1: safeTp1,
           tp2,
           rr,
           atr: curAtr,
