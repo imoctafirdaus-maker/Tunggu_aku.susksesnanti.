@@ -21,8 +21,8 @@ const SCANNER_SOURCE = process.env.SCANNER_SOURCE || "github-actions";
 const CG_API_KEY = process.env.CG_API_KEY || "CG-eHK3WLfwgdQzLf5pVqCgoGWy";
 
 const TIMEFRAMES = ["5m", "15m", "1h"];
-const N_VOLUME = 180;
-const N_GAINERS = 70;
+const N_VOLUME = 500;
+const N_GAINERS = 100;
 const POOL = 500;
 const CANDLES = 300;
 const CONCURRENCY = 6;
@@ -63,11 +63,15 @@ async function loadCandidates() {
       ? new Set(fapiEx.symbols.filter(s => s.status === "TRADING" && s.contractType === "PERPETUAL" && s.quoteAsset === "USDT").map(s => s.symbol))
       : null;
     const valid = new Set(ex.symbols.filter(s => s.status === "TRADING" && s.isSpotTradingAllowed &&
-      s.quoteAsset === "USDT" && s.baseAsset !== "USDT" && (!futuresSet || futuresSet.has(s.symbol))).map(s => s.symbol));
-    const pool = ticks
+      s.quoteAsset === "USDT" && s.baseAsset !== "USDT").map(s => s.symbol));
+    const allSorted = ticks
       .filter(t => valid.has(t.symbol) && !EXCLUDED.test(t.symbol) && !STABLE.test(t.symbol) &&
         Number.isFinite(+t.quoteVolume) && +t.lastPrice > 0)
-      .sort((a, b) => +b.quoteVolume - +a.quoteVolume).slice(0, POOL)
+      .sort((a, b) => +b.quoteVolume - +a.quoteVolume);
+    const futuresFirst = futuresSet ? allSorted.filter(t => futuresSet.has(t.symbol)) : allSorted;
+    const spotRest = futuresSet ? allSorted.filter(t => !futuresSet.has(t.symbol)) : [];
+    const pool = [...futuresFirst, ...spotRest]
+      .slice(0, POOL)
       .map(t => ({ symbol: t.symbol, chg: +t.priceChangePercent }));
     const topVol = pool.slice(0, N_VOLUME);
     const gainers = [...pool].sort((a, b) => b.chg - a.chg).slice(0, N_GAINERS);
