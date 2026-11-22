@@ -35,7 +35,7 @@ const ENDPOINTS = [
 const EXCLUDED = /(UPUSDT|DOWNUSDT|BULLUSDT|BEARUSDT|[235]LUSDT|[235]SUSDT)$/;
 const STABLE = /^(USDC|FDUSD|TUSD|USDP|DAI|BUSD|AEUR|EUR|USD1|RLUSD|USDE|UST|BFUSD)USDT$/;
 
-async function fetchJson(url, ms = 15000, headers = {}) {
+async function fetchJson(url, ms = 25000, headers = {}) {
   const c = new AbortController(), t = setTimeout(() => c.abort(), ms);
   try {
     const r = await fetch(url, { signal: c.signal, headers });
@@ -56,7 +56,7 @@ async function loadCandidates() {
   try {
     const [ex, ticks, fapiEx] = await Promise.all([
       apiGet("/api/v3/exchangeInfo"),
-      apiGet("/api/v3/ticker/24hr"),
+      apiGet("/api/v3/ticker/24hr").catch(() => apiGet("/api/v3/ticker/price")),
       require("./autoTrader").fapiRequest("GET", "/fapi/v1/exchangeInfo", {}, { isDemo: false }, false).catch(() => null)
     ]);
     const futuresSet = (fapiEx && Array.isArray(fapiEx.symbols))
@@ -66,13 +66,13 @@ async function loadCandidates() {
       s.quoteAsset === "USDT" && s.baseAsset !== "USDT").map(s => s.symbol));
     const allSorted = ticks
       .filter(t => valid.has(t.symbol) && !EXCLUDED.test(t.symbol) && !STABLE.test(t.symbol) &&
-        Number.isFinite(+t.quoteVolume) && +t.lastPrice > 0)
-      .sort((a, b) => +b.quoteVolume - +a.quoteVolume);
+        (Number.isFinite(+t.quoteVolume) ? +t.lastPrice > 0 : +t.price > 0))
+      .sort((a, b) => (+b.quoteVolume || 0) - (+a.quoteVolume || 0));
     const futuresFirst = futuresSet ? allSorted.filter(t => futuresSet.has(t.symbol)) : allSorted;
     const spotRest = futuresSet ? allSorted.filter(t => !futuresSet.has(t.symbol)) : [];
     const pool = [...futuresFirst, ...spotRest]
       .slice(0, POOL)
-      .map(t => ({ symbol: t.symbol, chg: +t.priceChangePercent }));
+      .map(t => ({ symbol: t.symbol, chg: Number.isFinite(+t.priceChangePercent) ? +t.priceChangePercent : NaN }));
     const topVol = pool.slice(0, N_VOLUME);
     const gainers = [...pool].sort((a, b) => b.chg - a.chg).slice(0, N_GAINERS);
     const map = new Map();
