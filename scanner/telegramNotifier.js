@@ -76,6 +76,7 @@ async function notifyNewSignalsToTelegram(upEma, upOld = {}) {
   // 1. Prioritas Utama: Semua sinyal baru dari EMA Expert (sudah lolos MTF + Monte Carlo + Dual-AI)
   for (const [id, rec] of Object.entries(upEma || {})) {
     if (!rec || !rec.symbol || !rec.signal) continue;
+    if (!rec.autoExecuted) continue;
     const dedupKey = `EMA_${rec.symbol}_${rec.timeframe || "5m"}_${rec.signal}_${rec.candleTime || ""}`;
     if (cache[dedupKey]) continue;
     cache[dedupKey] = Date.now();
@@ -132,4 +133,26 @@ if (require.main === module && process.argv.includes("--test")) {
   })();
 }
 
-module.exports = { sendTelegramAlert, notifyNewSignalsToTelegram };
+
+async function notifyAiRejection(rec, reason) {
+  if (!rec || !rec.symbol) return false;
+  const cache = loadSentCache();
+  const dedupKey = `AI_REJ_${rec.symbol}_${rec.timeframe || "5m"}_${rec.signal || ""}_${rec.candleTime || ""}`;
+  if (cache[dedupKey]) return false;
+  cache[dedupKey] = Date.now();
+  saveSentCache(cache);
+
+  const dirIcon = rec.signal === "BUY" ? "🟢 LONG (BUY)" : "🔴 SHORT (SELL)";
+  const cleanReason = String(reason || "Tidak memenuhi kriteria Dual-AI").replace(/[*_`\[\]]/g, "");
+  const msg =
+    `🛑 *SINYAL DITOLAK DUAL-AI*\n` +
+    `• *Koin:* \`${rec.symbol}\` (${rec.timeframe || "5m"})\n` +
+    `• *Arah:* ${dirIcon} | *Prob:* ${rec.probability || rec.score || "-"}%\n` +
+    `• *Entry:* \`${rec.entryPrice || rec.price || "-"}\` | *SL:* \`${rec.stopLoss || "-"}\`\n` +
+    `• *Alasan Penolakan:* ${cleanReason}`;
+
+  const r = await sendTelegramAlert(msg);
+  return r.ok;
+}
+
+module.exports = { sendTelegramAlert, notifyNewSignalsToTelegram, notifyAiRejection };

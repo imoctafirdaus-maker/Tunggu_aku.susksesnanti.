@@ -346,8 +346,10 @@ async function main() {
               }).catch(() => {});
             }
             const trRes = await executeSignalTrade(rec, futuresSnap);
+              rec.autoExecuted = Boolean(trRes && trRes.executed);
+              rec.aiSummary = (trRes && trRes.reason) || (rec.autoExecuted ? "Lolos Audit Dual-AI" : "SKIPPED");
             console.log(`   -> Hasil ${rec.symbol}:`, trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED"));
-            await db.ref(`emaSignals/${sigId}`).update({ aiAudited: true, aiAuditReason: trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED") }).catch(() => {});
+            await db.ref(`emaSignals/${sigId}`).update({ aiAudited: true, autoExecuted: rec.autoExecuted, aiAuditReason: trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED") }).catch(() => {});
             if (db) {
               await db.ref("emaSignals/_liveRadar").set({
                 phase: "COMPLETED",
