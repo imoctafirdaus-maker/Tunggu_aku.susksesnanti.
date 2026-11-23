@@ -96,6 +96,13 @@
       if (!isBullish && (D_price > X.price || currentPrice > X.price)) {
         return { valid: false, reason: `${patternCfg.label} invalid: titik D menembus X` };
       }
+    } else {
+      if (isBullish && !(D_price < X.price)) {
+        return { valid: false, reason: `${patternCfg.label} invalid: titik D wajib menembus X` };
+      }
+      if (!isBullish && !(D_price > X.price)) {
+        return { valid: false, reason: `${patternCfg.label} invalid: titik D wajib menembus X` };
+      }
     }
 
     // Titik D harus masuk/menyentuh PRZ, dan harga penutupan belum memantul terlalu jauh meninggalkan PRZ

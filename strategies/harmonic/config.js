@@ -9,7 +9,7 @@
       enabled: true,
       label: "Gartley",
       beyondX: false,
-      bRange: [0.58, 0.618],
+      bRange: [0.618, 0.618],
       cRange: [0.382, 0.886],
       dXa: [0.786, 0.786],
       dBc: [1.272, 1.618],

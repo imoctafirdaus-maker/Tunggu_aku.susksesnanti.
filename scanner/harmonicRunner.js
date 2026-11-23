@@ -1,4 +1,5 @@
 "use strict";
+const lastSkippedReasonBySig = new Map();
 const fs = require("fs");
 const path = require("path");
 const HarmonicConfig = require("../strategies/harmonic/config");
@@ -634,18 +635,27 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
         const execRes = dryRun
           ? { executed: false, reason: 'DRY-RUN' }
           : await executeHarmonicOrder(sym, sig, cfg, paper).catch(err => ({ executed: false, reason: `Error eksekusi: ${err.message}` }));
-        const logEntry = {
-          time: Date.now(),
-          symbol: sym,
-          timeframe: sig.timeframe,
-          pattern: sig.patternName,
-          side: sig.side,
-          przScore: sig.przScore,
-          rr: sig.rr,
-          status: execRes.executed ? "EXECUTED" : "SKIPPED",
-          reason: execRes.reason
-        };
-        paper.logs.push(logEntry);
+        const logStatus = execRes.executed ? "EXECUTED" : "SKIPPED";
+        const sigKey = `${sym}_${sig.timeframe}_${sig.patternName}_${sig.side}`;
+        const reasonStr = String(execRes.reason || "");
+        const shouldPushLog = execRes.executed
+          ? (lastSkippedReasonBySig.delete(sigKey), true)
+          : (lastSkippedReasonBySig.get(sigKey) !== reasonStr && (lastSkippedReasonBySig.set(sigKey, reasonStr), true));
+
+        if (shouldPushLog) {
+          const logEntry = {
+            time: Date.now(),
+            symbol: sym,
+            timeframe: sig.timeframe,
+            pattern: sig.patternName,
+            side: sig.side,
+            przScore: sig.przScore,
+            rr: sig.rr,
+            status: logStatus,
+            reason: execRes.reason
+          };
+          paper.logs.push(logEntry);
+        }
         upFirebase[`${sym}_${sig.timeframe}`] = {
           symbol: sym,
           timeframe: sig.timeframe,

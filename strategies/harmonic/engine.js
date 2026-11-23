@@ -104,6 +104,16 @@
       for (const [pKey, pCfg] of Object.entries(cfg.patterns)) {
         if (!pCfg.enabled) continue;
 
+        // Guard geometris titik C terhadap A sesuai jenis pola Scott Carney
+        const cMustExceedA = pKey === "CYPHER" || pKey === "FIVE_O";
+        if (cMustExceedA) {
+          if (isBullish && !(C.price > A.price)) continue;
+          if (isBearish && !(C.price < A.price)) continue;
+        } else {
+          if (isBullish && !(C.price <= A.price)) continue;
+          if (isBearish && !(C.price >= A.price)) continue;
+        }
+
         // 1. Cek Rasio B
         if (!PrzMod.inTolRange(bRatio, pCfg.bRange, tol)) continue;
 
