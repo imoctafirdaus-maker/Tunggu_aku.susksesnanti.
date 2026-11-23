@@ -12,6 +12,33 @@ const { loadBinanceConfig, getFuturesSnapshot, fapiRequest, getSymbolFilters, ro
 const SETTINGS_FILE = path.join(__dirname, ".harmonicSettings.json");
 const PAPER_FILE = path.join(__dirname, ".harmonicPaperState.json");
 const AI_CFG_PATH = path.join(__dirname, "aiConfig.json");
+let cachedFuturesSymbols = null;
+let cachedFuturesSymbolsAt = 0;
+
+async function resolveFuturesSymbols(passedSet, candidates) {
+  if (passedSet instanceof Set && passedSet.size > 0) return passedSet;
+  if (candidates && candidates.futuresSymbols instanceof Set && candidates.futuresSymbols.size > 0) {
+    return candidates.futuresSymbols;
+  }
+  if (cachedFuturesSymbols && (Date.now() - cachedFuturesSymbolsAt) < 15 * 60 * 1000) {
+    return cachedFuturesSymbols;
+  }
+  try {
+    const creds = loadBinanceConfig() || { isDemo: false };
+    const ex = await fapiRequest("GET", "/fapi/v1/exchangeInfo", {}, creds, false);
+    if (ex && Array.isArray(ex.symbols)) {
+      cachedFuturesSymbols = new Set(
+        ex.symbols
+          .filter(s => s.status === "TRADING" && s.contractType === "PERPETUAL" && s.quoteAsset === "USDT")
+          .map(s => s.symbol)
+      );
+      cachedFuturesSymbolsAt = Date.now();
+      return cachedFuturesSymbols;
+    }
+  } catch (_) {}
+  return cachedFuturesSymbols;
+}
+
 const LIVE_RADAR_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_liveRadar.json";
 
 async function loadHarmonicSettings() {
@@ -578,7 +605,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
 /**
  * Runner Utama Pemindaian Harmonic Pattern (Hierarki wajib: 4h -> 1h -> 15m)
  */
-async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, db, admin, dryRun = false }) {
+async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, db, admin, dryRun = false, futuresSymbols = null }) {
   if (db) __sharedAdminDb = db;
   const cfg = await loadHarmonicSettings();
   cfg.enabled = true; // Pastikan Harmonic selalu aktif memindai bersama EMA Expert
@@ -586,9 +613,15 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
 
   if (!dryRun) await managePaperPositions(paper, apiGetFn, cfg);
 
+  const activeFuturesSet = await resolveFuturesSymbols(futuresSymbols, candidates);
   const pool = (candidates || []).slice(0, 500);
   const detectedList = [];
   const upFirebase = {};
+  let patternFoundCount = 0;
+  let futuresEligibleCount = 0;
+  let watchCount = 0;
+  let skippedCount = 0;
+  let executedCount = 0;
   let idx = 0;
 
   await Promise.all(Array.from({ length: 7 }, async () => {
@@ -618,6 +651,50 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
         const res = HarmonicEngine.evaluateMultiTimeframe(candlesByTf, cfg);
       if (res.signal) {
         const sig = res.signal;
+        patternFoundCount++;
+
+        // Filter market lebih awal sebelum sinyal dijadikan kandidat final & masuk routing eksekusi
+        if (activeFuturesSet && !activeFuturesSet.has(sym)) {
+          skippedCount++;
+          const skipReason = `${sym} tidak tersedia di Futures`;
+          const sigKey = `${sym}_${sig.timeframe}_${sig.patternName}_${sig.side}`;
+          if (lastSkippedReasonBySig.get(sigKey) !== skipReason) {
+            lastSkippedReasonBySig.set(sigKey, skipReason);
+            paper.logs.push({
+              time: Date.now(),
+              symbol: sym,
+              timeframe: sig.timeframe,
+              pattern: sig.patternName,
+              side: sig.side,
+              przScore: sig.przScore,
+              rr: sig.rr,
+              status: "SKIPPED",
+              reason: skipReason
+            });
+          }
+          upFirebase[`${sym}_${sig.timeframe}`] = {
+            symbol: sym,
+            timeframe: sig.timeframe,
+            strategy: "HARMONIC_CARNEY",
+            patternName: sig.patternName,
+            signal: sig.side,
+            entryPrice: sig.entry,
+            stopLoss: sig.sl,
+            tp1: sig.tp1,
+            tp2: sig.tp2,
+            rr: Number(sig.rr.toFixed(2)),
+            przLow: sig.prz.low,
+            przHigh: sig.prz.high,
+            przScore: sig.przScore,
+            status: "SKIPPED",
+            reason: skipReason,
+            points: sig.points,
+            updatedAt: admin ? admin.database.ServerValue.TIMESTAMP : Date.now()
+          };
+          continue;
+        }
+
+        futuresEligibleCount++;
         detectedList.push({ symbol: sym, sig });
 
         await updateActiveCandidateUi({
@@ -636,6 +713,8 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           ? { executed: false, reason: 'DRY-RUN' }
           : await executeHarmonicOrder(sym, sig, cfg, paper).catch(err => ({ executed: false, reason: `Error eksekusi: ${err.message}` }));
         const logStatus = execRes.executed ? "EXECUTED" : "SKIPPED";
+        if (execRes.executed) executedCount++;
+        else skippedCount++;
         const sigKey = `${sym}_${sig.timeframe}_${sig.patternName}_${sig.side}`;
         const reasonStr = String(execRes.reason || "");
         const shouldPushLog = execRes.executed
@@ -670,30 +749,43 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           przLow: sig.prz.low,
           przHigh: sig.prz.high,
           przScore: sig.przScore,
-          status: logEntry.status,
+          status: logStatus,
           reason: execRes.reason,
           points: sig.points,
           updatedAt: admin ? admin.database.ServerValue.TIMESTAMP : Date.now()
         };
       } else if (res.logs && res.logs.length) {
-        const interesting = res.logs.find(l => l.includes("[MTF ") || l.includes("PRZ Valid") || l.includes("ditolak: RR"));
-        if (interesting) {
-          paper.logs.push({
-            time: Date.now(),
-            symbol: sym,
-            timeframe: "MTF",
-            pattern: "SCAN",
-            side: "-",
-            status: "WATCH",
-            reason: interesting
-          });
+        if (!activeFuturesSet || activeFuturesSet.has(sym)) {
+          const interesting = res.logs.find(l => l.includes("[MTF ") || l.includes("PRZ Valid") || l.includes("ditolak: RR"));
+          if (interesting) {
+            watchCount++;
+            paper.logs.push({
+              time: Date.now(),
+              symbol: sym,
+              timeframe: "MTF",
+              pattern: "SCAN",
+              side: "-",
+              status: "WATCH",
+              reason: interesting
+            });
+          }
         }
       }
     } catch (_) {}
   }
   }));
 
-  if (dryRun) return { scanned: pool.length, found: detectedList.length, top: detectedList[0] || null };
+  const cycleStats = {
+    scanned: pool.length,
+    found: futuresEligibleCount,
+    patternFound: patternFoundCount,
+    futuresEligible: futuresEligibleCount,
+    watch: watchCount,
+    skipped: skippedCount,
+    executed: executedCount,
+    top: detectedList[0] || null
+  };
+  if (dryRun) return cycleStats;
 
   savePaperState(paper);
 
@@ -706,7 +798,12 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
         enabled: cfg.enabled,
         paperTrading: cfg.paperTrading,
         scanned: pool.length,
-        found: detectedList.length,
+        found: futuresEligibleCount,
+        patternFound: patternFoundCount,
+        futuresEligible: futuresEligibleCount,
+        watch: watchCount,
+        skipped: skippedCount,
+        executed: executedCount,
         paperBalance: Number(paper.balance.toFixed(2)),
         openPaperCount: paper.openPositions.length,
         recentLogs: paper.logs.slice(-15),
@@ -715,7 +812,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
     } catch (_) {}
   }
 
-  return { scanned: pool.length, found: detectedList.length, top: detectedList[0] || null };
+  return cycleStats;
 }
 
 module.exports = { runHarmonicScanCycle, loadHarmonicSettings, loadPaperState, savePaperState, executeHarmonicOrder };

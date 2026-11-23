@@ -78,6 +78,7 @@ async function loadCandidates() {
     const map = new Map();
     for (const c of [...topVol, ...gainers]) map.set(c.symbol, c);
     const list = [...map.values()];
+    list.futuresSymbols = futuresSet;
     if (list.length >= 100) {
       try { fs.writeFileSync(path.join(__dirname, ".candidatesCache.json"), JSON.stringify(list)); } catch (_) {}
     }
@@ -396,7 +397,7 @@ async function main() {
     } catch (e) { console.error("Gagal menulis status:", e.message); st.ok = false; }
 
     
-    const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin }).catch(e => ({ scanned: 0, found: 0, err: e.message }));
+    const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin, futuresSymbols: cands && cands.futuresSymbols }).catch(e => ({ scanned: 0, patternFound: 0, futuresEligible: 0, watch: 0, skipped: 0, executed: 0, found: 0, err: e.message }));
     await syncDailyAnalyticsToFirebase(db, admin, { scanned: (hmRes && hmRes.scanned) || 0, found: (hmRes && hmRes.found) || 0 }).catch(() => {});
 
     try {
@@ -433,7 +434,7 @@ async function main() {
         }).catch(() => {});
       }
     } catch (_) {}
-    console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m->5m): scanned=${hmRes.scanned} found=${hmRes.found}`);
+    console.log(`[${SCANNER_SOURCE}] Lama: BUY=${st.buy} SELL=${st.sell} ditulis=${st.written} | EMA Expert: BUY=${emaSt.buy} SELL=${emaSt.sell} ditulis=${emaSt.written} | Harmonic (4h->1h->15m->5m): scanned=${hmRes.scanned ?? 0} patternFound=${hmRes.patternFound ?? hmRes.found ?? 0} futuresEligible=${hmRes.futuresEligible ?? hmRes.found ?? 0} watch=${hmRes.watch ?? 0} skipped=${hmRes.skipped ?? 0} executed=${hmRes.executed ?? 0}`);
     await admin.app().delete();
   }
   process.exitCode = st.ok ? 0 : 1;
