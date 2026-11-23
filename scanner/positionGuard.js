@@ -1,8 +1,10 @@
 "use strict";
 const { getFuturesSnapshot, manageOpenPositions } = require("./autoTrader");
+const { managePendingHarmonicLimits } = require("./harmonicRunner");
 
 (async () => {
   try {
+    try { await managePendingHarmonicLimits(); } catch (_) {}
     const snap = await getFuturesSnapshot();
     if (!snap || !snap.ok || !snap.autoTrade) process.exit(0);
     if (!Array.isArray(snap.openPositions) || snap.openPositions.length === 0) process.exit(0);

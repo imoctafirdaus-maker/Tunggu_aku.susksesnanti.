@@ -46,16 +46,17 @@
     const tol = Number(cfg.ratioTolerance) || 0.03;
     let bestCandidate = null;
 
-    // Evaluasi struktur X-A-B-C terakhir (D terbentuk di bar terakhir atau sedang diuji di bar closed terakhir)
-    for (let s = swings.length - 4; s >= Math.max(0, swings.length - 8); s--) {
+    // Evaluasi struktur X-A-B-C selesai yang sedang menuju proyeksi titik D (Anticipatory Limit Order)
+    for (let s = swings.length - 4; s >= Math.max(0, swings.length - 6); s--) {
       const X = swings[s];
       const A = swings[s + 1];
       const B = swings[s + 2];
       const C = swings[s + 3];
       const D_swing = swings[s + 4];
 
-      // Jangan pakai pola basi jika D terbentuk lebih dari 2 candle closed lalu
-      if (D_swing && (lastIdx - D_swing.idx) > 4) continue;
+      // Hanya ambil struktur X-A-B-C aktif yang titik D-nya BELUM terbentuk sebagai swing selesai
+      if (D_swing) continue;
+      if ((lastIdx - C.idx) > 24) continue;
 
       const isBullish = X.type === "L" && A.type === "H" && B.type === "L" && C.type === "H";
       const isBearish = X.type === "H" && A.type === "L" && B.type === "H" && C.type === "L";
@@ -71,35 +72,19 @@
       const XC = Math.abs(C.price - X.price);
       if (XA <= 0 || AB <= 0 || BC <= 0) continue;
 
-      let dIdx = D_swing ? D_swing.idx : lastIdx;
-      let D_price = D_swing ? D_swing.price : (isBullish ? lastCandle.low : lastCandle.high);
-      if (!D_swing) {
-        const scanStart = C.idx + 1;
-        for (let k = scanStart; k <= lastIdx; k++) {
-          if (isBullish && candles[k].low <= D_price) {
-            D_price = candles[k].low;
-            dIdx = k;
-          } else if (isBearish && candles[k].high >= D_price) {
-            D_price = candles[k].high;
-            dIdx = k;
-          }
-        }
-      }
-
-      // Validasi arah titik D wajib bergerak berlawanan dari kaki BC (mencegah false breakout)
-      if (isBullish && !(D_price < C.price)) continue;
-      if (isBearish && !(D_price > C.price)) continue;
-
-      if (!D_swing && (lastIdx - dIdx) > 3) continue;
-      const AD = Math.abs(A.price - D_price);
-      const CD = Math.abs(D_price - C.price);
-
       const bRatio = AB / XA;
       const cRatio = BC / AB;
       const cXcRatio = XC / XA;
-      const dXaRatio = AD / XA;
-      const dBcRatio = CD / BC;
-      const dXcRatio = XC > 0 ? Math.abs(C.price - D_price) / XC : 0;
+
+      // Cek ekstrem harga setelah pivot C untuk memastikan D belum pernah disentuh/ditembus
+      let minLowSinceC = Infinity;
+      let maxHighSinceC = -Infinity;
+      for (let k = C.idx + 1; k <= lastIdx; k++) {
+        if (candles[k].low < minLowSinceC) minLowSinceC = candles[k].low;
+        if (candles[k].high > maxHighSinceC) maxHighSinceC = candles[k].high;
+      }
+      if (isBullish && maxHighSinceC > C.price) continue;
+      if (isBearish && minLowSinceC < C.price) continue;
 
       for (const [pKey, pCfg] of Object.entries(cfg.patterns)) {
         if (!pCfg.enabled) continue;
@@ -117,28 +102,19 @@
         // 1. Cek Rasio B
         if (!PrzMod.inTolRange(bRatio, pCfg.bRange, tol)) continue;
 
-        // 2. Cek Rasio C (AB retracement atau XA extension untuk Cypher)
+        // 2. Cek Rasio C
         if (pCfg.cIsXcExtension) {
           if (!PrzMod.inTolRange(cXcRatio, pCfg.cRange, tol)) continue;
         } else {
           if (!PrzMod.inTolRange(cRatio, pCfg.cRange, tol)) continue;
         }
 
-        // 3. Cek Rasio D (XA / XC & BC)
-        if (pCfg.dXa && !PrzMod.inTolRange(dXaRatio, pCfg.dXa, tol)) continue;
-        if (pCfg.dXc && !PrzMod.inTolRange(dXcRatio, pCfg.dXc, tol)) continue;
-        if (pCfg.dBc) {
-        const bcTol = (!pCfg.dXa && !pCfg.dXc) ? tol : tol * 1.35;
-        if (!PrzMod.inTolRange(dBcRatio, pCfg.dBc, bcTol)) continue;
-      }
-
-        // 4. Validasi PRZ Confluence (>=3 proyeksi, skor 0-100, guard beyond-X)
-        const przCheck = PrzMod.validatePRZ({
+        // 3. Proyeksi Zona PRZ Titik D
+        const przCheck = PrzMod.projectPRZ({
           isBullish,
           patternKey: pKey,
           patternCfg: pCfg,
           X, A, B, C,
-          D_price,
           currentPrice: lastCandle.close,
           atr: curAtr,
           cfg
@@ -149,26 +125,33 @@
           continue;
         }
 
-        // 5. Validasi posisi D terhadap B (kecuali pola 5-0) + konfirmasi candle pembalikan di PRZ
-      if (pKey !== "FIVE_O") {
-        if (isBullish && !(D_price < B.price)) continue;
-        if (isBearish && !(D_price > B.price)) continue;
-      }
-      const rsiCheck = RsiMod.evaluateRsiAndCandle({ candles, rsiArr, isBullish, refPivot: B, dIdx, lastIdx, cfg });
-      if (!rsiCheck.valid) {
-        logs.push("[" + timeframe + "] " + pCfg.label + " ditahan: " + rsiCheck.reason);
-        continue;
-      }
-      logs.push(`[${timeframe}] ${pCfg.label} PRZ Valid (Scott Carney · ${przCheck.count} confluence · ${rsiCheck.reason})`);
+        const D_price = przCheck.targetD;
+        const minPassiveGap = Math.max(D_price * 0.0005, curAtr * 0.1);
 
-        // 6. Kalkulasi Entry, Stop Loss (di luar D untuk pola beyond-X, di luar X untuk Gartley/Bat/Cypher), & TP1/TP2 Scott Carney
-        const entry = lastCandle.close;
+        // 4. Pastikan proyeksi D BELUM terjemput & harga saat ini masih menuju D
+        if (isBullish) {
+          if (minLowSinceC <= D_price) continue;
+          if (lastCandle.close <= D_price + minPassiveGap || lastCandle.close >= C.price) continue;
+        } else {
+          if (maxHighSinceC >= D_price) continue;
+          if (lastCandle.close >= D_price - minPassiveGap || lastCandle.close <= C.price) continue;
+        }
+
+        const AD = Math.abs(A.price - D_price);
+        const CD = Math.abs(D_price - C.price);
+        const dXaRatio = AD / XA;
+        const dBcRatio = CD / BC;
+        const dXcRatio = XC > 0 ? Math.abs(C.price - D_price) / XC : 0;
+
+        logs.push(`[${timeframe}] ${pCfg.label} PRZ Limit Siap (Scott Carney · ${przCheck.count} confluence · Limit D @ ${D_price.toFixed(5)})`);
+
+        // 5. Kalkulasi Limit Entry tepat di PRZ D, Stop Loss, & TP1/TP2 Scott Carney
+        const entry = D_price;
         const atrBuf = curAtr * (cfg.slAtrBufferMult || 0.35);
         const rawSl = pCfg.beyondX
           ? (isBullish ? D_price - atrBuf : D_price + atrBuf)
           : (isBullish ? Math.min(X.price, D_price) - atrBuf : Math.max(X.price, D_price) + atrBuf);
 
-        // Shark & 5-0 memakai kaki CD sebagai acuan target Scott Carney; pola XA memakai kaki AD (TP1 0.382, TP2 1.0)
         const targetLeg = (pKey === "SHARK" || pKey === "FIVE_O")
           ? Math.abs(C.price - D_price)
           : Math.abs(A.price - D_price);
@@ -186,25 +169,27 @@
         const rr = (riskDist > 0 && rewardDist > 0) ? (rewardDist / riskDist) : 0;
 
         const effectiveMinRr = przCheck.score >= 65 ? Math.min(cfg.minRR || 1.5, 1.0) : (cfg.minRR || 1.5);
-      if (rr < effectiveMinRr) {
-        logs.push(`[${timeframe}] ${pCfg.label} ditolak: RR 1:${rr.toFixed(2)} di bawah minimum 1:${effectiveMinRr}`);
-        continue;
-      }
+        if (rr < effectiveMinRr) {
+          logs.push(`[${timeframe}] ${pCfg.label} ditolak: RR 1:${rr.toFixed(2)} di bawah minimum 1:${effectiveMinRr}`);
+          continue;
+        }
 
         if (isBullish ? tp1 <= entry : tp1 >= entry) {
-        logs.push(`[${timeframe}] ${pCfg.label} ditolak: TP1 sudah terlewati harga`);
-        continue;
-      }
-      const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10);
+          logs.push(`[${timeframe}] ${pCfg.label} ditolak: TP1 tidak valid terhadap Limit D`);
+          continue;
+        }
+
+        const totalScore = przCheck.score + (TF_WEIGHT[timeframe] || 10);
         const candidate = {
           strategy: "HARMONIC_CARNEY",
+          entryType: "LIMIT",
           timeframe,
           side: isBullish ? "BUY" : "SELL",
           patternKey: pKey,
           patternName: pCfg.label,
           points: {
             X, A, B, C,
-            D: { idx: dIdx, time: candles[dIdx].time, price: D_price }
+            D: { idx: lastIdx, time: lastCandle.time, price: D_price, projected: true }
           },
           ratios: { bRatio, cRatio, cXcRatio, dXaRatio, dBcRatio, dXcRatio },
           prz: przCheck.prz,
@@ -217,7 +202,7 @@
           rr,
           atr: curAtr,
           timestamp: lastCandle.time,
-          reason: `${pCfg.label} ${isBullish ? "Bullish" : "Bearish"} [${timeframe}] · PRZ ${przCheck.score}/100 · RR 1:${rr.toFixed(2)}`
+          reason: `${pCfg.label} ${isBullish ? "Bullish" : "Bearish"} [${timeframe}] · Limit PRZ D (${przCheck.score}/100) · RR 1:${rr.toFixed(2)}`
         };
 
         if (!bestCandidate || candidate.totalScore > bestCandidate.totalScore) {

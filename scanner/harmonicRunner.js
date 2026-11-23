@@ -142,7 +142,7 @@ Hierarki Top-Down 3 lapis terdeteksi:
    - Pair: ${symbol} | Arah: ${sig.side} | Pola: ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
    - Rasio: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
    - PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
-Validasi keselarasan 4H-1H-15M, toleransi rasio ±0.035 Scott Carney, & kelayakan RR >= 1.0 untuk leverage 50x.
+Validasi keselarasan 4H-1H-15M, proyeksi Limit Order di PRZ titik D (±0.035 Scott Carney), & kelayakan RR >= 1.0.
 Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 0-100, "reason": "maks 18 kata bahasa Indonesia"}`
       : `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading untuk sinyal MANDIRI timeframe ${tfUpper}.
 Detail Kandidat Eksekusi (${tfUpper}):
@@ -150,7 +150,7 @@ Detail Kandidat Eksekusi (${tfUpper}):
 - Kualitas PRZ: ${sig.przScore}/100 | RR: 1:${Number(sig.rr || 0).toFixed(2)}
 - Rasio Fibonacci: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
 - Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
-Validasi apakah rasio Fibonacci pola ${sig.patternName} di ${tfUpper} memenuhi toleransi ±0.035 Scott Carney dan RR >= 1.0 aman untuk leverage 50x.
+Validasi apakah proyeksi Limit Order PRZ titik D pola ${sig.patternName} di ${tfUpper} memenuhi rasio Scott Carney dan RR >= 1.0.
 Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 0-100, "reason": "maks 18 kata bahasa Indonesia"}`;
 
     const votes = [];
@@ -412,6 +412,196 @@ async function managePaperPositions(paper, apiGetFn, cfg) {
 /**
  * Eksekusi Order Harmonic (Live/Testnet atau Paper Trading)
  */
+function getTfDurationMs(tf) {
+  const map = { "5m": 5 * 60000, "15m": 15 * 60000, "1h": 60 * 60000, "4h": 240 * 60000 };
+  return map[String(tf || "15m").toLowerCase()] || (15 * 60000);
+}
+
+/**
+ * Pantau semua Limit Order Harmonic PRZ D:
+ * - Jika FILLED -> langsung pasang SL & TP1/TP2 (fail-safe close jika SL gagal)
+ * - Jika harga memantul ke TP1 duluan / tembus SL / kedaluwarsa -> batalkan LIMIT order (DELETE)
+ */
+async function managePendingHarmonicLimits(externalPaper = null) {
+  const paper = externalPaper || loadPaperState();
+  if (!Array.isArray(paper.pendingLimits) || paper.pendingLimits.length === 0) return { checked: 0, filled: 0, canceled: 0 };
+
+  const creds = loadBinanceConfig();
+  if (!creds || !creds.autoTrade) return { checked: 0, filled: 0, canceled: 0 };
+
+  let changed = false;
+  let filledCount = 0;
+  let canceledCount = 0;
+  const remaining = [];
+
+  for (const item of paper.pendingLimits) {
+    try {
+      const ord = await fapiRequest("GET", "/fapi/v1/order", { symbol: item.symbol, orderId: item.orderId }, creds, true);
+      const status = String((ord && ord.status) || "");
+      const execQty = Number((ord && ord.executedQty) || 0);
+
+      // 1. Order Limit terjemput (FILLED / terisi)
+      if (status === "FILLED" || (execQty > 0 && status !== "NEW")) {
+        if (status === "PARTIALLY_FILLED") {
+          try { await fapiRequest("DELETE", "/fapi/v1/order", { symbol: item.symbol, orderId: item.orderId }, creds, true); } catch (_) {}
+        }
+        const closeSide = item.side === "BUY" ? "SELL" : "BUY";
+        const filledQty = execQty > 0 ? execQty : item.qty;
+        let slAttached = false;
+        try {
+          await placeConditionalOrder({
+            symbol: item.symbol,
+            side: closeSide,
+            type: "STOP_MARKET",
+            triggerPrice: item.slPrice,
+            closePosition: true,
+            fallbackQty: filledQty,
+            workingType: "MARK_PRICE"
+          }, creds);
+          slAttached = true;
+        } catch (slErr) {
+          console.error("[HARMONIC LIMIT SL ERROR] " + item.symbol + ":", slErr.message);
+          let emergencyNote = "posisi ditutup darurat";
+          try {
+            await fapiRequest("POST", "/fapi/v1/order", { symbol: item.symbol, side: closeSide, type: "MARKET", quantity: filledQty, reduceOnly: true }, creds, true);
+          } catch (closeErr) {
+            emergencyNote = "GAGAL tutup darurat: " + closeErr.message;
+          }
+          pushUniquePaperLog(paper, {
+            time: Date.now(),
+            symbol: item.symbol,
+            timeframe: item.timeframe,
+            pattern: item.patternName,
+            side: item.side,
+            status: "SKIPPED",
+            reason: `Limit PRZ terisi tapi SL gagal (${slErr.message}) — ${emergencyNote}`
+          });
+          changed = true;
+          continue;
+        }
+
+        if (slAttached) {
+          const qtyTp1 = roundStep(filledQty * 0.5, item.stepSize || 0.001);
+          if (qtyTp1 >= (item.minQty || 0)) {
+            try {
+              await placeConditionalOrder({
+                symbol: item.symbol,
+                side: closeSide,
+                type: "TAKE_PROFIT_MARKET",
+                triggerPrice: item.tp1Price,
+                quantity: qtyTp1,
+                workingType: "MARK_PRICE"
+              }, creds);
+            } catch (_) {}
+          }
+          try {
+            const remQty = roundStep(Math.max(item.minQty || 0, filledQty - qtyTp1), item.stepSize || 0.001);
+            await placeConditionalOrder({
+              symbol: item.symbol,
+              side: closeSide,
+              type: "TAKE_PROFIT_MARKET",
+              triggerPrice: item.tp2Price,
+              closePosition: true,
+              fallbackQty: remQty,
+              workingType: "MARK_PRICE"
+            }, creds);
+          } catch (_) {}
+
+          paper.liveSymbols = Array.isArray(paper.liveSymbols) ? paper.liveSymbols : [];
+          if (!paper.liveSymbols.includes(item.symbol)) paper.liveSymbols.push(item.symbol);
+          filledCount++;
+          changed = true;
+
+          pushUniquePaperLog(paper, {
+            time: Date.now(),
+            symbol: item.symbol,
+            timeframe: item.timeframe,
+            pattern: item.patternName,
+            side: item.side,
+            przScore: item.przScore,
+            rr: item.rr,
+            status: "EXECUTED",
+            reason: `Limit PRZ D terjemput @ ${item.limitPrice} (SL & TP1/TP2 aktif)`
+          });
+
+          await sendTelegramAlert(
+            "✅ <b>[HARMONIC LIMIT FILLED]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
+            "Pola: <b>" + item.patternName + " " + item.side + "</b> @ $" + item.limitPrice + " | Qty: " + filledQty + "\n" +
+            "SL: $" + item.slPrice + " | TP1: $" + item.tp1Price + " | TP2: $" + item.tp2Price
+          ).catch(() => {});
+        }
+        continue;
+      }
+
+      // 2. Sudah dibatalkan / kedaluwarsa di sisi exchange
+      if (["CANCELED", "EXPIRED", "REJECTED"].includes(status)) {
+        changed = true;
+        continue;
+      }
+
+      // 3. Masih NEW -> Cek apakah PRZ gagal / terlewat / kedaluwarsa
+      let cancelReason = null;
+      if (Date.now() > (item.expiresAt || 0)) {
+        cancelReason = "Limit PRZ kedaluwarsa tidak terjemput";
+      } else {
+        try {
+          const tick = await fapiRequest("GET", "/fapi/v1/ticker/price", { symbol: item.symbol }, creds, false);
+          const livePx = Number(tick && tick.price);
+          if (Number.isFinite(livePx) && livePx > 0) {
+            const isBuy = item.side === "BUY";
+            if (isBuy ? livePx >= item.tp1Price : livePx <= item.tp1Price) {
+              cancelReason = `PRZ terlewat: harga (${livePx}) memantul ke TP1 (${item.tp1Price}) sebelum menjemput D`;
+            } else if (isBuy ? livePx <= item.slPrice : livePx >= item.slPrice) {
+              cancelReason = `PRZ batal: harga (${livePx}) menembus batas SL (${item.slPrice})`;
+            }
+          }
+        } catch (_) {}
+      }
+
+      if (cancelReason) {
+        try {
+          await fapiRequest("DELETE", "/fapi/v1/order", { symbol: item.symbol, orderId: item.orderId }, creds, true);
+        } catch (_) {}
+        canceledCount++;
+        changed = true;
+        pushUniquePaperLog(paper, {
+          time: Date.now(),
+          symbol: item.symbol,
+          timeframe: item.timeframe,
+          pattern: item.patternName,
+          side: item.side,
+          przScore: item.przScore,
+          rr: item.rr,
+          status: "SKIPPED",
+          reason: `Limit PRZ dibatalkan: ${cancelReason}`
+        });
+        await sendTelegramAlert(
+          "🚫 <b>[HARMONIC LIMIT CANCELED]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
+          "Alasan: " + cancelReason
+        ).catch(() => {});
+        continue;
+      }
+
+      remaining.push(item);
+    } catch (_) {
+      remaining.push(item);
+    }
+  }
+
+  if (changed) {
+    if (!externalPaper) {
+      const latest = loadPaperState();
+      latest.pendingLimits = remaining;
+      latest.liveSymbols = paper.liveSymbols || latest.liveSymbols;
+      latest.logs = [...(latest.logs || []), ...(paper.logs || []).slice(-10)];
+      savePaperState(latest);
+    } else {
+      paper.pendingLimits = remaining;
+    }
+  }
+  return { checked: remaining.length, filled: filledCount, canceled: canceledCount };
+}
+
 async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   const credsCheck = loadBinanceConfig();
   const liveAutoReady = Boolean(credsCheck && credsCheck.autoTrade && credsCheck.apiKey && credsCheck.apiSecret);
@@ -517,17 +707,45 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   if (snap.openPositions.some(p => p.symbol === symbol)) {
     return { executed: false, reason: `Sudah ada posisi Futures aktif di ${symbol}` };
   }
+  paper.pendingLimits = Array.isArray(paper.pendingLimits) ? paper.pendingLimits : [];
+  if (paper.pendingLimits.some(o => o.symbol === symbol)) {
+    return { executed: false, reason: `Sudah ada Limit Order PRZ D aktif di ${symbol}` };
+  }
   paper.liveSymbols = Array.isArray(paper.liveSymbols)
     ? paper.liveSymbols.filter(s => snap.openPositions.some(p => p.symbol === s))
     : [];
-  if (paper.liveSymbols.length >= (cfg.maxOpenPositions || 3)) {
-    return { executed: false, reason: `Maksimal ${cfg.maxOpenPositions || 3} slot independen Harmonic tercapai` };
+  if ((paper.liveSymbols.length + paper.pendingLimits.length) >= (cfg.maxOpenPositions || 3)) {
+    return { executed: false, reason: `Maksimal ${cfg.maxOpenPositions || 3} slot aktif/limit Harmonic tercapai` };
   }
 
   const filters = await getSymbolFilters(symbol, creds);
   if (!filters) return { executed: false, reason: `${symbol} tidak tersedia di Futures` };
 
-  const slDist = Math.abs(sig.entry - sig.sl);
+  const side = sig.side;
+  const isBuy = side === "BUY";
+  const limitPrice = roundStep(sig.entry, filters.tickSize);
+  const slPrice = roundStep(sig.sl, filters.tickSize);
+  const tp1Price = roundStep(sig.tp1, filters.tickSize);
+  const tp2Price = roundStep(sig.tp2, filters.tickSize);
+
+  // Pastikan harga live masih berada di sisi pasif Limit D dan belum menyentuh TP1
+  try {
+    const tick = await fapiRequest("GET", "/fapi/v1/ticker/price", { symbol }, creds, false);
+    const livePx = Number(tick && tick.price);
+    if (Number.isFinite(livePx) && livePx > 0) {
+      if (isBuy && livePx <= limitPrice) {
+        return { executed: false, reason: `Harga live ($${livePx}) sudah menyentuh/menembus titik D ($${limitPrice})` };
+      }
+      if (!isBuy && livePx >= limitPrice) {
+        return { executed: false, reason: `Harga live ($${livePx}) sudah menyentuh/menembus titik D ($${limitPrice})` };
+      }
+      if (isBuy ? livePx >= tp1Price : livePx <= tp1Price) {
+        return { executed: false, reason: `PRZ terlewat: harga live ($${livePx}) sudah menyentuh TP1 ($${tp1Price})` };
+      }
+    }
+  } catch (_) {}
+
+  const slDist = Math.abs(limitPrice - slPrice);
   const lev = creds.leverage || 50;
   let qty;
   if (creds.manualMarginEnabled) {
@@ -535,26 +753,21 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     if (manualUsd <= 0) {
       return { executed: false, reason: "Margin Manual ON tetapi nominal disetel 0 USDT" };
     }
-    qty = roundStep((manualUsd * lev) / sig.entry, filters.stepSize);
-    if (qty * sig.entry < filters.minNotional) {
-      return { executed: false, reason: `Margin Manual ${manualUsd} (Notional ${(qty * sig.entry).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
+    qty = roundStep((manualUsd * lev) / limitPrice, filters.stepSize);
+    if (qty * limitPrice < filters.minNotional) {
+      return { executed: false, reason: `Margin Manual ${manualUsd} (Notional ${(qty * limitPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
     }
   } else {
     const riskUsd = snap.totalMargin * ((cfg.riskPerTradePct || 1.0) / 100);
     qty = roundStep(riskUsd / slDist, filters.stepSize);
-    if (qty * sig.entry < filters.minNotional) {
-      qty = roundStep((filters.minNotional * 1.05) / sig.entry, filters.stepSize);
+    if (qty * limitPrice < filters.minNotional) {
+      qty = roundStep((filters.minNotional * 1.05) / limitPrice, filters.stepSize);
     }
   }
   if (qty < filters.minQty || qty <= 0) {
     return { executed: false, reason: `Qty (${qty}) di bawah batas minimum` };
   }
 
-  const side = sig.side;
-  const closeSide = side === "BUY" ? "SELL" : "BUY";
-  const slPrice = roundStep(sig.sl, filters.tickSize);
-  const tp1Price = roundStep(sig.tp1, filters.tickSize);
-  const tp2Price = roundStep(sig.tp2, filters.tickSize);
   const qtyTp1 = roundStep(qty * (cfg.tp1CloseRatio || 0.5), filters.stepSize);
 
   try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
@@ -568,48 +781,49 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     } catch (_) {}
   }
 
+  let placedOrder;
   try {
-    await fapiRequest("POST", "/fapi/v1/order", { symbol, side, type: "MARKET", quantity: qty }, creds, true);
+    placedOrder = await fapiRequest("POST", "/fapi/v1/order", {
+      symbol,
+      side,
+      type: "LIMIT",
+      timeInForce: "GTC",
+      quantity: qty,
+      price: limitPrice
+    }, creds, true);
   } catch (ordErr) {
-    return { executed: false, reason: `Order MARKET ditolak Binance (${appliedLev}x): ${ordErr.message}` };
+    return { executed: false, reason: `Limit Order ditolak Binance (${appliedLev}x): ${ordErr.message}` };
   }
-  let slStatus = "$" + slPrice;
-  try {
-    const slRes = await placeConditionalOrder({ symbol, side: closeSide, type: "STOP_MARKET", triggerPrice: slPrice, closePosition: true, fallbackQty: qty, workingType: "MARK_PRICE" }, creds);
-    if (slRes.mode === "reduceOnly") slStatus = "$" + slPrice + " (reduceOnly)";
-  } catch (slErr) {
-    console.error("[HARMONIC SL ERROR] " + symbol + ":", slErr.message);
-    let emergencyNote = "posisi ditutup darurat";
-    try {
-      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "MARKET", quantity: qty, reduceOnly: true }, creds, true);
-    } catch (closeErr) {
-      emergencyNote = "GAGAL tutup darurat: " + closeErr.message;
-      console.error("[HARMONIC EMERGENCY CLOSE ERROR] " + symbol + ":", closeErr.message);
-    }
-    return { executed: false, reason: `SL gagal dipasang (${slErr.message}) — ${emergencyNote}` };
-  }
-  if (qtyTp1 >= filters.minQty) {
-    try {
-      await placeConditionalOrder({ symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", triggerPrice: tp1Price, quantity: qtyTp1, workingType: "MARK_PRICE" }, creds);
-    } catch (tp1Err) {
-      console.error("[HARMONIC TP1 ERROR] " + symbol + ":", tp1Err.message);
-    }
-  }
-  try {
-    const remQty = roundStep(Math.max(filters.minQty, qty - qtyTp1), filters.stepSize);
-    await placeConditionalOrder({ symbol, side: closeSide, type: "TAKE_PROFIT_MARKET", triggerPrice: tp2Price, closePosition: true, fallbackQty: remQty, workingType: "MARK_PRICE" }, creds);
-  } catch (tp2Err) {
-    console.error("[HARMONIC TP2 ERROR] " + symbol + ":", tp2Err.message);
-  }
+
+  const ttlMs = getTfDurationMs(sig.timeframe) * 8;
+  paper.pendingLimits.push({
+    orderId: placedOrder.orderId,
+    symbol,
+    timeframe: sig.timeframe,
+    patternName: sig.patternName,
+    side,
+    limitPrice,
+    slPrice,
+    tp1Price,
+    tp2Price,
+    qty,
+    qtyTp1,
+    stepSize: filters.stepSize,
+    minQty: filters.minQty,
+    appliedLev,
+    przScore: sig.przScore,
+    rr: sig.rr,
+    placedAt: Date.now(),
+    expiresAt: Date.now() + ttlMs
+  });
 
   await sendTelegramAlert(
-    "🚀 <b>[HARMONIC LIVE ORDER]</b> " + symbol + " (" + sig.timeframe + ")\n" +
-    "Pola: <b>" + sig.patternName + " " + side + "</b> | Qty: " + qty + "\n" +
-    "SL: " + slStatus + " | TP1: $" + tp1Price + " | TP2: $" + tp2Price + "\n" +
+    "🎯 <b>[HARMONIC LIMIT PRZ D]</b> " + symbol + " (" + sig.timeframe + ")\n" +
+    "Pola: <b>" + sig.patternName + " " + side + "</b> (" + appliedLev + "x) | Qty: " + qty + "\n" +
+    "Limit Entry (D): <b>$" + limitPrice + "</b>\n" +
+    "SL: $" + slPrice + " | TP1: $" + tp1Price + " | TP2: $" + tp2Price + "\n" +
     "Audit: " + groqAudit.reason
   ).catch(() => {});
-
-  paper.liveSymbols.push(symbol);
   try {
     const freshSnap = await getFuturesSnapshot();
     if (freshSnap && freshSnap.ok) {
@@ -632,7 +846,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
       }
     }
   } catch (_) {}
-  return { executed: true, mode: "LIVE", reason: `Live Order Independen ${sig.patternName} terkirim (${groqAudit.reason})` };
+  return { executed: true, mode: "LIVE_LIMIT", reason: `Limit Order PRZ D ${sig.patternName} dipasang @ ${limitPrice} (${groqAudit.reason})` };
 }
 
 /**
@@ -644,7 +858,10 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
   cfg.enabled = true; // Pastikan Harmonic selalu aktif memindai bersama EMA Expert
   const paper = loadPaperState();
 
-  if (!dryRun) await managePaperPositions(paper, apiGetFn, cfg);
+  if (!dryRun) {
+    await managePendingHarmonicLimits(paper);
+    await managePaperPositions(paper, apiGetFn, cfg);
+  }
 
   const activeFuturesSet = await resolveFuturesSymbols(futuresSymbols, candidates);
   const pool = (candidates || []).slice(0, 500);
@@ -845,4 +1062,4 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
   return cycleStats;
 }
 
-module.exports = { runHarmonicScanCycle, loadHarmonicSettings, loadPaperState, savePaperState, executeHarmonicOrder };
+module.exports = { runHarmonicScanCycle, loadHarmonicSettings, loadPaperState, savePaperState, executeHarmonicOrder, managePendingHarmonicLimits };
