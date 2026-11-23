@@ -76,13 +76,39 @@ function loadPaperState() {
   };
 }
 
+function pushUniquePaperLog(st, entry) {
+  if (!Array.isArray(st.logs)) st.logs = [];
+  if (entry.status === "EXECUTED") {
+    st.logs.push(entry);
+    return;
+  }
+  for (let i = st.logs.length - 1; i >= 0; i--) {
+    const prev = st.logs[i];
+    if (!prev) continue;
+    if (
+      prev.symbol === entry.symbol &&
+      prev.timeframe === entry.timeframe &&
+      prev.pattern === entry.pattern &&
+      prev.side === entry.side
+    ) {
+      if (prev.status === entry.status && String(prev.reason || "") === String(entry.reason || "")) {
+        prev.time = entry.time;
+        return;
+      }
+      break;
+    }
+  }
+  st.logs.push(entry);
+}
+
 function savePaperState(st) {
   try {
     st.history = (st.history || []).slice(-50);
     const allLogs = Array.isArray(st.logs) ? st.logs : [];
-    const execLogs = allLogs.filter(l => l && l.status !== "WATCH").slice(-40);
-    const watchLogs = allLogs.filter(l => !l || l.status === "WATCH").slice(-50);
-    st.logs = [...execLogs, ...watchLogs].sort((a, b) => (a.time || 0) - (b.time || 0));
+    const executedLogs = allLogs.filter(l => l && l.status === "EXECUTED").slice(-30);
+    const skippedLogs = allLogs.filter(l => l && l.status === "SKIPPED").slice(-30);
+    const watchLogs = allLogs.filter(l => !l || l.status === "WATCH").slice(-30);
+    st.logs = [...executedLogs, ...skippedLogs, ...watchLogs].sort((a, b) => (a.time || 0) - (b.time || 0));
     fs.writeFileSync(PAPER_FILE, JSON.stringify(st, null, 2));
   } catch (_) {}
 }
@@ -658,20 +684,18 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           skippedCount++;
           const skipReason = `${sym} tidak tersedia di Futures`;
           const sigKey = `${sym}_${sig.timeframe}_${sig.patternName}_${sig.side}`;
-          if (lastSkippedReasonBySig.get(sigKey) !== skipReason) {
-            lastSkippedReasonBySig.set(sigKey, skipReason);
-            paper.logs.push({
-              time: Date.now(),
-              symbol: sym,
-              timeframe: sig.timeframe,
-              pattern: sig.patternName,
-              side: sig.side,
-              przScore: sig.przScore,
-              rr: sig.rr,
-              status: "SKIPPED",
-              reason: skipReason
-            });
-          }
+          lastSkippedReasonBySig.set(sigKey, skipReason);
+          pushUniquePaperLog(paper, {
+            time: Date.now(),
+            symbol: sym,
+            timeframe: sig.timeframe,
+            pattern: sig.patternName,
+            side: sig.side,
+            przScore: sig.przScore,
+            rr: sig.rr,
+            status: "SKIPPED",
+            reason: skipReason
+          });
           upFirebase[`${sym}_${sig.timeframe}`] = {
             symbol: sym,
             timeframe: sig.timeframe,
@@ -722,7 +746,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           : (lastSkippedReasonBySig.get(sigKey) !== reasonStr && (lastSkippedReasonBySig.set(sigKey, reasonStr), true));
 
         if (shouldPushLog) {
-          const logEntry = {
+          pushUniquePaperLog(paper, {
             time: Date.now(),
             symbol: sym,
             timeframe: sig.timeframe,
@@ -732,8 +756,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
             rr: sig.rr,
             status: logStatus,
             reason: execRes.reason
-          };
-          paper.logs.push(logEntry);
+          });
         }
         upFirebase[`${sym}_${sig.timeframe}`] = {
           symbol: sym,
@@ -759,7 +782,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           const interesting = res.logs.find(l => l.includes("[MTF ") || l.includes("PRZ Valid") || l.includes("ditolak: RR"));
           if (interesting) {
             watchCount++;
-            paper.logs.push({
+            pushUniquePaperLog(paper, {
               time: Date.now(),
               symbol: sym,
               timeframe: "MTF",
