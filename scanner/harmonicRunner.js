@@ -429,6 +429,16 @@ async function managePendingHarmonicLimits(externalPaper = null) {
   const creds = loadBinanceConfig();
   if (!creds || !creds.autoTrade) return { checked: 0, filled: 0, canceled: 0 };
 
+  const lockFile = path.join(__dirname, ".harmonicLimit.lock");
+  try {
+    if (fs.existsSync(lockFile)) {
+      const lockAge = Date.now() - fs.statSync(lockFile).mtimeMs;
+      if (lockAge < 15000) return { checked: paper.pendingLimits.length, filled: 0, canceled: 0, locked: true };
+    }
+    fs.writeFileSync(lockFile, String(process.pid));
+  } catch (_) {}
+  try {
+
   let changed = false;
   let filledCount = 0;
   let canceledCount = 0;
@@ -486,7 +496,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
         }
 
         if (slAttached) {
-          const qtyTp1 = roundStep(filledQty * 0.5, item.stepSize || 0.001);
+          const qtyTp1 = roundStep(filledQty * (item.tp1CloseRatio || 0.5), item.stepSize || 0.001);
           if (qtyTp1 >= (item.minQty || 0)) {
             try {
               await placeConditionalOrder({
@@ -594,21 +604,24 @@ async function managePendingHarmonicLimits(externalPaper = null) {
   }
 
   if (changed) {
-    if (!externalPaper) {
-      const latest = loadPaperState();
-      latest.pendingLimits = remaining;
-      if (Array.isArray(paper.liveSymbols)) {
-        latest.liveSymbols = [...new Set([...(latest.liveSymbols || []), ...paper.liveSymbols])];
-      }
-      for (const ev of eventLogs) {
-        pushUniquePaperLog(latest, ev);
-      }
-      savePaperState(latest);
-    } else {
+    const latest = loadPaperState();
+    latest.pendingLimits = remaining;
+    if (Array.isArray(paper.liveSymbols)) {
+      latest.liveSymbols = [...new Set([...(latest.liveSymbols || []), ...paper.liveSymbols])];
+    }
+    for (const ev of eventLogs) {
+      pushUniquePaperLog(latest, ev);
+    }
+    savePaperState(latest);
+    if (externalPaper) {
       paper.pendingLimits = remaining;
+      paper.liveSymbols = latest.liveSymbols;
     }
   }
   return { checked: remaining.length, filled: filledCount, canceled: canceledCount };
+  } finally {
+    try { if (fs.existsSync(lockFile)) fs.unlinkSync(lockFile); } catch (_) {}
+  }
 }
 
 async function executeHarmonicOrder(symbol, sig, cfg, paper) {
@@ -821,6 +834,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     tp2Price,
     qty,
     qtyTp1,
+    tp1CloseRatio: cfg.tp1CloseRatio || 0.5,
     stepSize: filters.stepSize,
     minQty: filters.minQty,
     appliedLev,
@@ -875,6 +889,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
     await managePendingHarmonicLimits(paper);
     await managePaperPositions(paper, apiGetFn, cfg);
   }
+  const initialPendingIds = new Set((paper.pendingLimits || []).map(x => String(x.orderId)));
 
   const activeFuturesSet = await resolveFuturesSymbols(futuresSymbols, candidates);
   const pool = (candidates || []).slice(0, 500);
@@ -1046,6 +1061,14 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
     top: detectedList[0] || null
   };
   if (dryRun) return cycleStats;
+
+  const diskLatest = loadPaperState();
+  const diskPendingIds = new Set((diskLatest.pendingLimits || []).map(x => String(x.orderId)));
+  paper.pendingLimits = (paper.pendingLimits || []).filter(item => {
+    const idStr = String(item.orderId);
+    return !initialPendingIds.has(idStr) || diskPendingIds.has(idStr);
+  });
+  paper.liveSymbols = [...new Set([...(diskLatest.liveSymbols || []), ...(paper.liveSymbols || [])])];
 
   savePaperState(paper);
 

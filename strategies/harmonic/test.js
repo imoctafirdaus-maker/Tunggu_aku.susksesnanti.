@@ -96,4 +96,41 @@ console.log("✅ [PASS] Test 4: Non-Repaint Swing & Walk-Forward Backtester:", J
   profitFactor: bt.profitFactor,
   maxDrawdownPct: bt.maxDrawdownPct + "%"
 }));
+// 5. Test Proyeksi PRZ Titik D (Anticipatory Limit Order) & Guard Beyond-X
+const projGartley = PrzMod.projectPRZ({
+  isBullish: true,
+  patternKey: "GARTLEY",
+  patternCfg: cfg.patterns.GARTLEY,
+  X: { price: 100 },
+  A: { price: 200 },
+  B: { price: 138.2 }, // 0.618 XA
+  C: { price: 186.8 }, // 0.786 AB
+  currentPrice: 130.0,
+  atr: 3.0,
+  cfg
+});
+assert.strictEqual(projGartley.valid, true, "Proyeksi PRZ Gartley Bullish harus valid: " + projGartley.reason);
+assert.ok(projGartley.targetD > 100 && projGartley.targetD < 138.2, "Target Limit D Gartley harus berada di antara X dan B");
+
+const projInvalidBeyondX = PrzMod.projectPRZ({
+  isBullish: true,
+  patternKey: "BAT",
+  patternCfg: cfg.patterns.BAT,
+  X: { price: 100 },
+  A: { price: 200 },
+  B: { price: 150 },   // 0.50 XA
+  C: { price: 194.3 }, // 0.886 AB -> proyeksi 2.618 BC tembus di bawah X=100
+  currentPrice: 120.0,
+  atr: 3.0,
+  cfg: ConfigMod.mergeSettings({ minPrzScore: 40, maxPrzWidthAtrMult: 5.0, maxPrzWidthPct: 5.0 })
+});
+if (projInvalidBeyondX.valid) {
+  assert.ok(projInvalidBeyondX.targetD > 100, "Target D Bat tidak boleh menembus X");
+}
+console.log("✅ [PASS] Test 5: Proyeksi Limit Order PRZ D & Guard Beyond-X:", JSON.stringify({
+  targetD: Number(projGartley.targetD.toFixed(2)),
+  score: projGartley.score,
+  confluence: projGartley.count
+}));
+
 console.log("=== SEMUA UNIT TEST BERHASIL ===");
