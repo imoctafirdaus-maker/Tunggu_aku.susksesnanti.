@@ -1067,7 +1067,15 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
     const idStr = String(item.orderId);
     return !initialPendingIds.has(idStr) || diskPendingIds.has(idStr);
   });
-  paper.liveSymbols = [...new Set([...(diskLatest.liveSymbols || []), ...(paper.liveSymbols || [])])];
+  let mergedLive = [...new Set([...(diskLatest.liveSymbols || []), ...(paper.liveSymbols || [])])];
+  try {
+    const endSnap = await getFuturesSnapshot();
+    if (endSnap && endSnap.ok && Array.isArray(endSnap.openPositions)) {
+      const activeSet = new Set(endSnap.openPositions.map(p => p.symbol));
+      mergedLive = mergedLive.filter(s => activeSet.has(s));
+    }
+  } catch (_) {}
+  paper.liveSymbols = mergedLive;
 
   savePaperState(paper);
 
