@@ -1066,6 +1066,23 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
         executed: executedCount,
         paperBalance: Number(paper.balance.toFixed(2)),
         openPaperCount: paper.openPositions.length,
+        pendingLimitsCount: Array.isArray(paper.pendingLimits) ? paper.pendingLimits.length : 0,
+        pendingLimits: Array.isArray(paper.pendingLimits) ? paper.pendingLimits.map(x => ({
+          orderId: x.orderId,
+          symbol: x.symbol,
+          timeframe: x.timeframe,
+          patternName: x.patternName,
+          side: x.side,
+          limitPrice: x.limitPrice,
+          slPrice: x.slPrice,
+          tp1Price: x.tp1Price,
+          tp2Price: x.tp2Price,
+          appliedLev: x.appliedLev,
+          przScore: x.przScore,
+          rr: x.rr,
+          placedAt: x.placedAt,
+          expiresAt: x.expiresAt
+        })) : [],
         recentLogs: paper.logs.slice(-15),
         updatedAt: admin ? admin.database.ServerValue.TIMESTAMP : Date.now()
       });
