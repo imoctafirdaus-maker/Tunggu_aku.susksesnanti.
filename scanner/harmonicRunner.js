@@ -433,6 +433,11 @@ async function managePendingHarmonicLimits(externalPaper = null) {
   let filledCount = 0;
   let canceledCount = 0;
   const remaining = [];
+  const eventLogs = [];
+  const recordEvent = (entry) => {
+    recordEvent( entry);
+    eventLogs.push(entry);
+  };
 
   for (const item of paper.pendingLimits) {
     try {
@@ -467,7 +472,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
           } catch (closeErr) {
             emergencyNote = "GAGAL tutup darurat: " + closeErr.message;
           }
-          pushUniquePaperLog(paper, {
+          recordEvent( {
             time: Date.now(),
             symbol: item.symbol,
             timeframe: item.timeframe,
@@ -512,7 +517,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
           filledCount++;
           changed = true;
 
-          pushUniquePaperLog(paper, {
+          recordEvent( {
             time: Date.now(),
             symbol: item.symbol,
             timeframe: item.timeframe,
@@ -564,7 +569,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
         } catch (_) {}
         canceledCount++;
         changed = true;
-        pushUniquePaperLog(paper, {
+        recordEvent( {
           time: Date.now(),
           symbol: item.symbol,
           timeframe: item.timeframe,
@@ -592,8 +597,12 @@ async function managePendingHarmonicLimits(externalPaper = null) {
     if (!externalPaper) {
       const latest = loadPaperState();
       latest.pendingLimits = remaining;
-      latest.liveSymbols = paper.liveSymbols || latest.liveSymbols;
-      latest.logs = [...(latest.logs || []), ...(paper.logs || []).slice(-10)];
+      if (Array.isArray(paper.liveSymbols)) {
+        latest.liveSymbols = [...new Set([...(latest.liveSymbols || []), ...paper.liveSymbols])];
+      }
+      for (const ev of eventLogs) {
+        pushUniquePaperLog(latest, ev);
+      }
       savePaperState(latest);
     } else {
       paper.pendingLimits = remaining;
@@ -703,6 +712,10 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   }
   if (!snap || !snap.ok) {
     return { executed: false, reason: `Koneksi Futures gagal: ${snap?.error || "no response"}` };
+  }
+  const minLimitPrzScore = Math.max(Number(cfg.minLimitPrzScore) || 75, Number(cfg.minPrzScore) || 60);
+  if ((Number(sig.przScore) || 0) < minLimitPrzScore) {
+    return { executed: false, reason: `Skor PRZ (${sig.przScore || 0}/100) di bawah batas Limit Order (${minLimitPrzScore}/100)` };
   }
   if (snap.openPositions.some(p => p.symbol === symbol)) {
     return { executed: false, reason: `Sudah ada posisi Futures aktif di ${symbol}` };
