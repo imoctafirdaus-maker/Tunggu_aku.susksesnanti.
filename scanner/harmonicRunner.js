@@ -771,17 +771,27 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     }
   } catch (_) {}
 
+  try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
+  const levCandidates = [...new Set([creds.leverage || 50, 25, 20, 10])];
+  let appliedLev = levCandidates[0];
+  for (const lv of levCandidates) {
+    try {
+      await fapiRequest("POST", "/fapi/v1/leverage", { symbol, leverage: lv }, creds, true);
+      appliedLev = lv;
+      break;
+    } catch (_) {}
+  }
+
   const slDist = Math.abs(limitPrice - slPrice);
-  const lev = creds.leverage || 50;
   let qty;
   if (creds.manualMarginEnabled) {
     const manualUsd = Number(creds.manualMarginUsd) || 0;
     if (manualUsd <= 0) {
       return { executed: false, reason: "Margin Manual ON tetapi nominal disetel 0 USDT" };
     }
-    qty = roundStep((manualUsd * lev) / limitPrice, filters.stepSize);
+    qty = roundStep((manualUsd * appliedLev) / limitPrice, filters.stepSize);
     if (qty * limitPrice < filters.minNotional) {
-      return { executed: false, reason: `Margin Manual ${manualUsd} (Notional ${(qty * limitPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
+      return { executed: false, reason: `Margin Manual ${manualUsd} @ ${appliedLev}x (Notional ${(qty * limitPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
     }
   } else {
     const riskUsd = snap.totalMargin * ((cfg.riskPerTradePct || 1.0) / 100);
@@ -795,17 +805,6 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   }
 
   const qtyTp1 = roundStep(qty * (cfg.tp1CloseRatio || 0.5), filters.stepSize);
-
-  try { await fapiRequest("POST", "/fapi/v1/marginType", { symbol, marginType: "CROSSED" }, creds, true); } catch (_) {}
-  const levCandidates = [...new Set([creds.leverage || 50, 25, 20, 10])];
-  let appliedLev = levCandidates[0];
-  for (const lv of levCandidates) {
-    try {
-      await fapiRequest("POST", "/fapi/v1/leverage", { symbol, leverage: lv }, creds, true);
-      appliedLev = lv;
-      break;
-    } catch (_) {}
-  }
 
   let placedOrder;
   try {
