@@ -65,15 +65,7 @@
         radial-gradient(120% 45% at 50% 0%, rgba(234, 88, 12, 0.08) 0%, rgba(250, 246, 240, 0) 70%),
         var(--ag-cream) !important;
     }
-    #swc-top-switcher {
-      position: fixed !important; top: 0 !important; left: 0 !important; right: 0 !important; height: 54px !important;
-      z-index: 999999 !important;
-      background: linear-gradient(135deg, #EA580C 0%, #C2410C 100%) !important;
-      border-bottom: 1px solid rgba(154, 52, 18, 0.45) !important;
-      box-shadow: 0 4px 14px -4px rgba(194, 65, 12, 0.35) !important;
-      display: flex !important; align-items: center !important; justify-content: space-between !important;
-      padding: 0 14px !important; font-family: var(--ag-sans) !important; box-sizing: border-box;
-    }
+    #swc-top-switcher { position: sticky; top: 0; z-index: 9999; display: flex; justify-content: space-between; align-items: center; padding: 8px 14px; background: #090e1a; border-bottom: 1px solid #1e293b; font-family: "JetBrains Mono", ui-monospace, monospace; transition: background 0.2s ease, border-color 0.2s ease; }
     .ag-seg {
       display: inline-flex; gap: 3px; padding: 3px; border-radius: 10px;
       background: rgba(124, 45, 18, 0.35); border: 1px solid rgba(255, 255, 255, 0.18);
@@ -295,14 +287,27 @@
   function initSwcUI() {
     if (document.getElementById("swc-top-switcher")) return;
 
+    // Header minimalis gelap dengan tombol menu garis tiga (☰) di pojok kanan atas tanpa swipe
     const switcher = document.createElement("div");
     switcher.id = "swc-top-switcher";
+    switcher.style.cssText = "position:sticky;top:0;z-index:9999;display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:#0a0f1d;border-bottom:1px solid #1e293b;font-family:'JetBrains Mono',ui-monospace,monospace;";
     switcher.innerHTML = `
-      <div class="ag-seg">
-        <button class="swc-tab-btn" data-tab="crypto">${SVG.radar}<span>Radar Sinyal</span></button>
-        <button class="swc-tab-btn" data-tab="wifi"><span class="ag-led" id="swc-router-dot"></span>${SVG.gateway}<span>Gateway Wi-Fi</span></button>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="width:8px;height:8px;border-radius:50%;background:#38bdf8;box-shadow:0 0 8px #38bdf8;display:inline-block;"></span>
+        <span id="swc-active-title" style="color:#f8fafc;font-weight:800;font-size:12px;letter-spacing:0.06em;">RADAR SINYAL</span>
+        <span class="ag-badge-env" style="font-size:10px;padding:2px 6px;border-radius:4px;background:#1e293b;color:#94a3b8;">${window.location.protocol === "https:" ? "HTTPS:8766" : "HTTP:8765"}</span>
       </div>
-      <span class="ag-badge-env">${window.location.protocol === "https:" ? "HTTPS:8766" : "HTTP:8765"}</span>
+      <div style="position:relative;">
+        <button id="swc-hamburger-btn" type="button" aria-label="Menu Pengaturan" style="display:inline-flex;align-items:center;justify-content:center;width:36px;height:34px;border-radius:8px;border:1px solid #334155;background:#111827;color:#f8fafc;font-size:18px;font-weight:700;cursor:pointer;">☰</button>
+        <div id="swc-menu-dropdown" style="display:none;position:absolute;right:0;top:42px;min-width:210px;background:#0f172a;border:1px solid #334155;border-radius:10px;padding:6px;box-shadow:0 16px 36px rgba(0,0,0,0.7);z-index:10000;">
+          <button class="swc-tab-btn" data-tab="crypto" type="button" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;border-radius:7px;background:transparent;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;text-align:left;">
+            ${SVG.radar}<span>Radar Sinyal</span>
+          </button>
+          <button class="swc-tab-btn" data-tab="wifi" type="button" style="width:100%;display:flex;align-items:center;gap:10px;padding:10px 12px;border:none;border-radius:7px;background:transparent;color:#e2e8f0;font-size:12px;font-weight:700;cursor:pointer;text-align:left;margin-top:2px;">
+            <span class="ag-led" id="swc-router-dot"></span>${SVG.gateway}<span>Gateway Wi-Fi</span>
+          </button>
+        </div>
+      </div>
     `;
     document.body.prepend(switcher);
 
@@ -319,43 +324,93 @@
     swcPanel.id = "swc-panel";
     document.body.appendChild(swcPanel);
 
-    switcher.querySelectorAll(".swc-tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => switchTab(btn.dataset.tab));
+    const menuBtn = document.getElementById("swc-hamburger-btn");
+    const dropdown = document.getElementById("swc-menu-dropdown");
+
+    menuBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      dropdown.style.display = dropdown.style.display === "block" ? "none" : "block";
     });
 
-    let touchStartX = 0, touchStartY = 0;
-    document.addEventListener("touchstart", e => {
-      if (e.touches.length === 1) {
-        touchStartX = e.touches[0].clientX;
-        touchStartY = e.touches[0].clientY;
-      }
-    }, { passive: true });
-    document.addEventListener("touchend", e => {
-      if (!touchStartX) return;
-      const dx = e.changedTouches[0].clientX - touchStartX;
-      const dy = e.changedTouches[0].clientY - touchStartY;
-      touchStartX = 0;
-      if (Math.abs(dx) > 75 && Math.abs(dx) > Math.abs(dy) * 1.6) {
-        if (dx < 0 && currentTab === "crypto") switchTab("wifi");
-        if (dx > 0 && currentTab === "wifi") switchTab("crypto");
-      }
-    }, { passive: true });
+    document.addEventListener("click", (e) => {
+      if (!switcher.contains(e.target)) dropdown.style.display = "none";
+    });
 
+    switcher.querySelectorAll(".swc-tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        dropdown.style.display = "none";
+        switchTab(btn.dataset.tab);
+      });
+    });
+
+    // Tidak ada lagi listener touchstart/touchend swipe agar zoom & scroll chart 100% stabil
     switchTab(currentTab);
   }
 
   function switchTab(tab) {
     currentTab = tab === "wifi" ? "wifi" : "crypto";
     localStorage.setItem("swc_active_tab", currentTab);
+
+    const switcher = document.getElementById("swc-top-switcher");
+    const titleEl = document.getElementById("swc-active-title");
+    const badgeEl = switcher ? switcher.querySelector(".ag-badge-env") : null;
+    const menuBtn = document.getElementById("swc-hamburger-btn");
+    const dropdown = document.getElementById("swc-menu-dropdown");
+    const isWifi = currentTab === "wifi";
+
+    if (switcher) {
+      if (isWifi) {
+        switcher.style.setProperty("background", "linear-gradient(135deg, #ea580c 0%, #c2410c 100%)", "important");
+        switcher.style.setProperty("border-bottom", "1px solid #fdba74", "important");
+        switcher.style.setProperty("box-shadow", "0 4px 16px rgba(234, 88, 12, 0.25)", "important");
+      } else {
+        switcher.style.setProperty("background", "#090e1a", "important");
+        switcher.style.setProperty("border-bottom", "1px solid #1e293b", "important");
+        switcher.style.setProperty("box-shadow", "0 4px 16px rgba(2, 6, 23, 0.75)", "important");
+      }
+    }
+
+    if (titleEl) {
+      titleEl.textContent = isWifi ? "GATEWAY WI-FI" : "RADAR SINYAL";
+      titleEl.style.setProperty("color", isWifi ? "#fffbeb" : "#f8fafc", "important");
+    }
+
+    if (badgeEl) {
+      badgeEl.style.setProperty("background", isWifi ? "#fef3c7" : "#111827", "important");
+      badgeEl.style.setProperty("color", isWifi ? "#9a3412" : "#38bdf8", "important");
+      badgeEl.style.setProperty("border", isWifi ? "1px solid #fcd34d" : "1px solid #1e293b", "important");
+    }
+
+    if (menuBtn) {
+      menuBtn.style.setProperty("background", isWifi ? "#fffbeb" : "#111827", "important");
+      menuBtn.style.setProperty("color", isWifi ? "#c2410c" : "#38bdf8", "important");
+      menuBtn.style.setProperty("border", isWifi ? "1px solid #fde68a" : "1px solid #334155", "important");
+      menuBtn.style.setProperty("z-index", "10001", "important");
+    }
+
+    if (dropdown) {
+      dropdown.style.setProperty("background", isWifi ? "#fffbeb" : "#0f172a", "important");
+      dropdown.style.setProperty("border", isWifi ? "1px solid #fdba74" : "1px solid #334155", "important");
+    }
+
     document.querySelectorAll(".swc-tab-btn").forEach(b => {
-      b.classList.toggle("active", b.dataset.tab === currentTab);
+      const isAct = b.dataset.tab === currentTab;
+      b.classList.toggle("active", isAct);
+      if (isWifi) {
+        b.style.setProperty("background", isAct ? "#ffedd5" : "transparent", "important");
+        b.style.setProperty("color", isAct ? "#c2410c" : "#7c2d12", "important");
+      } else {
+        b.style.setProperty("background", isAct ? "rgba(56, 189, 248, 0.15)" : "transparent", "important");
+        b.style.setProperty("color", isAct ? "#38bdf8" : "#cbd5e1", "important");
+      }
     });
+
     const cryptoHost = document.getElementById("swc-crypto-host");
     const swcPanel = document.getElementById("swc-panel");
-    if (cryptoHost) cryptoHost.style.display = currentTab === "crypto" ? "" : "none";
+    if (cryptoHost) cryptoHost.style.display = isWifi ? "none" : "";
     if (swcPanel) {
-      swcPanel.style.display = currentTab === "wifi" ? "block" : "none";
-      if (currentTab === "wifi") renderSwc();
+      swcPanel.style.display = isWifi ? "block" : "none";
+      if (isWifi) renderSwc();
     }
   }
 
@@ -757,7 +812,7 @@
     });
   
     document.getElementById("swc-btn-scan")?.addEventListener("click", async () => {
-      if (isMutating) return;
+      if (isMutating || speedState.running || diagState.scanning) return;
       const btn = document.getElementById("swc-btn-scan");
       if (btn) { btn.disabled = true; btn.innerHTML = `${SVG.spin}<span>Memindai...</span>`; }
       try { await apiPost("/api/scan"); } catch (e) { alert(e.message); renderSwc(); }

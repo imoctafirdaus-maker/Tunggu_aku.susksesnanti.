@@ -281,6 +281,19 @@ const server = http.createServer(async (req, res) => {
       });
       return;
     }
+    if ((req.url || "").startsWith("/api/net-diag")) {
+      const devs = (typeof db !== "undefined" && db.prepare)
+        ? db.prepare("SELECT * FROM devices").all()
+        : (typeof getLatestDevices === "function" ? getLatestDevices() : []);
+      runNetDiag(devs).then(data => {
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(data));
+      }).catch(e => {
+        res.writeHead(500, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      });
+      return;
+    }
     if (req.method === "GET" && url.pathname === "/api/state") {
       return sendJson(200, getSnapshot());
     }
@@ -329,6 +342,149 @@ const server = http.createServer(async (req, res) => {
       logEvent(normMac, "UPDATE", `Memperbarui profil perangkat ${normMac}`);
       broadcast();
       return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/ai-audit") {
+      const { provider, prompt } = await readJsonBody(req);
+      if (!prompt) return sendJson(400, { error: "Prompt kosong" });
+      const targetModel = provider === "sambanova" ? "auditor-sambanova" : (provider === "groq" ? "analis-groq" : "auditor-gemini");
+
+      // Jalur 1: Local AI Router (Port 4000)
+      try {
+        const r = await fetch("http://127.0.0.1:4000/v1/chat/completions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ model: targetModel, temperature: 0.1, messages: [{ role: "user", content: prompt }] })
+        });
+        if (r.ok) {
+          const jd = await r.json();
+          const txt = jd?.choices?.[0]?.message?.content || "";
+          const m = txt.match(/\{[\s\S]*\}/);
+          if (m) return sendJson(200, { ok: true, result: JSON.parse(m[0]) });
+        }
+      } catch (_) {}
+
+      // Jalur 2: Rotasi seluruh key & model dari scanner/aiConfig.json
+      const cfgPath = path.join(__dirname, "..", "scanner", "aiConfig.json");
+      if (fs.existsSync(cfgPath)) {
+        const cfg = JSON.parse(fs.readFileSync(cfgPath, "utf8"));
+        
+        if (provider === "sambanova" && cfg.cloudflareAccountId && cfg.cloudflareApiToken) {
+          const cfUrl = `https://api.cloudflare.com/client/v4/accounts/${cfg.cloudflareAccountId}/ai/v1/chat/completions`;
+          const cfModels = cfg.cloudflareModels || ["@cf/meta/llama-3.3-70b-instruct-fp8-fast"];
+          for (const model of cfModels) {
+            try {
+              const ctrl = new AbortController();
+              const t = setTimeout(() => ctrl.abort(), 10000);
+              const r = await fetch(cfUrl, {
+                method: "POST",
+                signal: ctrl.signal,
+                headers: {
+                  "Content-Type": "application/json",
+                  "Authorization": "Bearer " + cfg.cloudflareApiToken.trim()
+                },
+                body: JSON.stringify({
+                  model,
+                  messages: [{ role: "user", content: prompt }],
+                  temperature: 0.1
+                })
+              });
+              clearTimeout(t);
+              if (r.ok) {
+                const jd = await r.json();
+                const rawTxt = jd?.choices?.[0]?.message?.content || "";
+                const cleanTxt = rawTxt.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+                const m = cleanTxt.match(/\{[\s\S]*\}/);
+                if (m) {
+                  const parsed = JSON.parse(m[0]);
+                  parsed.reason = parsed.reason || parsed.alasan || parsed.explanation || (parsed.valid ? "Struktur rasio Fibonacci & PRZ valid (Cloudflare Llama-70B)." : "Rasio gelombang atau zona PRZ belum memenuhi standar.");
+                  return sendJson(200, { ok: true, result: parsed, via: "cloudflare-llama70b" });
+                }
+              }
+            } catch (_) {}
+          }
+        }
+
+        if (provider === "sambanova" && Array.isArray(cfg.groqKeys)) {
+          const fallbackKeys = [...cfg.groqKeys.filter(Boolean)].reverse();
+          const fbModels = ["llama-3.3-70b-versatile", "qwen/qwen3-32b", "openai/gpt-oss-120b"];
+          for (const key of fallbackKeys) {
+            for (const model of fbModels) {
+              try {
+                const ctrl = new AbortController();
+                const t = setTimeout(() => ctrl.abort(), 8000);
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                  method: "POST",
+                  signal: ctrl.signal,
+                  headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key.trim() },
+                  body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], temperature: 0.1 })
+                });
+                clearTimeout(t);
+                if (r.ok) {
+                  const jd = await r.json();
+                  const rawTxt = jd?.choices?.[0]?.message?.content || "";
+                  const cleanTxt = rawTxt.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
+                  const m = cleanTxt.match(/\{[\s\S]*\}/);
+                  if (m) {
+                    const parsed = JSON.parse(m[0]);
+                    parsed.reason = parsed.reason || parsed.alasan || parsed.explanation || (parsed.valid ? "Struktur rasio Fibonacci & PRZ terkonfirmasi." : "Rasio gelombang atau zona PRZ belum memenuhi standar.");
+                    return sendJson(200, { ok: true, result: parsed, via: "llama70b-fallback" });
+                  }
+                }
+              } catch (_) {}
+            }
+          }
+        }
+
+        if (provider === "groq" && Array.isArray(cfg.groqKeys)) {
+          const gModels = [...new Set([cfg.groqModel, "openai/gpt-oss-120b", "llama-3.1-8b-instant"].filter(Boolean))];
+          for (const key of cfg.groqKeys.filter(Boolean)) {
+            for (const model of gModels) {
+              try {
+                const r = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                  method: "POST",
+                  headers: { "Content-Type": "application/json", "Authorization": "Bearer " + key.trim() },
+                  body: JSON.stringify({ model, temperature: 0.1, messages: [{ role: "user", content: prompt }] })
+                });
+                if (r.ok) {
+                  const jd = await r.json();
+                  const txt = jd?.choices?.[0]?.message?.content || "";
+                  const m = txt.match(/\{[\s\S]*\}/);
+                  if (m) return sendJson(200, { ok: true, result: JSON.parse(m[0]) });
+                }
+              } catch (_) {}
+            }
+          }
+        }
+        if (provider === "gemini" && Array.isArray(cfg.geminiKeys)) {
+          const mModels = [...new Set([cfg.geminiModel, "gemini-3.8-flash", "gemini-3.5-flash", "gemini-2.5-flash", "gemini-2.0-flash", "gemini-flash-latest"].filter(Boolean))];
+          for (const rawKey of cfg.geminiKeys.filter(Boolean)) {
+            const key = rawKey.trim();
+            const isStd = key.startsWith("AIza");
+            for (const model of mModels) {
+              try {
+                const u = isStd
+                  ? `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(key)}`
+                  : `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+                const hdrs = { "Content-Type": "application/json" };
+                if (!isStd) hdrs["x-goog-api-key"] = key;
+                const r = await fetch(u, {
+                  method: "POST",
+                  headers: hdrs,
+                  body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: prompt }] }], generationConfig: { temperature: 0.1 } })
+                });
+                if (r.ok) {
+                  const jd = await r.json();
+                  const txt = jd?.candidates?.[0]?.content?.parts?.[0]?.text || "";
+                  const m = txt.match(/\{[\s\S]*\}/);
+                  if (m) return sendJson(200, { ok: true, result: JSON.parse(m[0]) });
+                }
+              } catch (_) {}
+            }
+          }
+        }
+      }
+      return sendJson(502, { ok: false, error: "Semua key & model AI gagal merespons" });
     }
 
     if (req.method === "POST" && url.pathname === "/api/schedule") {
@@ -393,3 +549,30 @@ setInterval(async () => {
     // Silent catch, auto-relogin akan menangani jika cookie expired
   }
 }, 45000);
+
+
+// Worker Antrean Order Harmonic dari Browser via Firebase (Anti-Blokir SSL/PNA Chrome Android)
+const FB_HARMONIC_QUEUE = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_harmonicOrderQueue.json";
+const FB_HARMONIC_RESULT = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_harmonicOrderResult.json";
+let __lastProcessedQueueId = "";
+setInterval(async () => {
+  try {
+    const r = await fetch(FB_HARMONIC_QUEUE + "?t=" + Date.now());
+    if (!r.ok) return;
+    const job = await r.json();
+    if (!job || !job.id || job.id === __lastProcessedQueueId || job.status !== "PENDING") return;
+    __lastProcessedQueueId = job.id;
+    console.log("[SWC-HARMONIC] Menerima antrean order dari browser:", job.symbol, job.sig?.patternName, job.sig?.side);
+    const { loadHarmonicSettings, loadPaperState, executeHarmonicOrder, savePaperState } = require("../scanner/harmonicRunner");
+    const cfg = await loadHarmonicSettings();
+    const paper = loadPaperState();
+    const resExec = await executeHarmonicOrder(job.symbol, job.sig, cfg, paper);
+    savePaperState(paper);
+    console.log("[SWC-HARMONIC] Hasil eksekusi:", resExec);
+    const donePayload = { ...job, status: resExec.executed ? "EXECUTED" : "REJECTED", result: resExec, processedAt: Date.now() };
+    await fetch(FB_HARMONIC_QUEUE, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donePayload) }).catch(() => {});
+    await fetch(FB_HARMONIC_RESULT, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify(donePayload) }).catch(() => {});
+  } catch (e) {
+    console.error("[SWC-HARMONIC] Error worker:", e.message);
+  }
+}, 2500);
