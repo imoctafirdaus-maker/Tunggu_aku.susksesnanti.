@@ -435,7 +435,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
   const remaining = [];
   const eventLogs = [];
   const recordEvent = (entry) => {
-    recordEvent( entry);
+    pushUniquePaperLog(paper, entry);
     eventLogs.push(entry);
   };
 
