@@ -843,6 +843,39 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     expiresAt: Date.now() + ttlMs
   });
 
+  try {
+    const latestDisk = loadPaperState();
+    const mergedMap = new Map();
+    for (const x of [...(latestDisk.pendingLimits || []), ...(paper.pendingLimits || [])]) {
+      if (x && x.orderId != null) mergedMap.set(String(x.orderId), x);
+    }
+    latestDisk.pendingLimits = Array.from(mergedMap.values());
+    savePaperState(latestDisk);
+    if (__sharedAdminDb) {
+      const serializedLimits = latestDisk.pendingLimits.map(x => ({
+        orderId: x.orderId,
+        symbol: x.symbol,
+        timeframe: x.timeframe,
+        patternName: x.patternName,
+        side: x.side,
+        limitPrice: x.limitPrice,
+        slPrice: x.slPrice,
+        tp1Price: x.tp1Price,
+        tp2Price: x.tp2Price,
+        appliedLev: x.appliedLev,
+        przScore: x.przScore,
+        rr: x.rr,
+        placedAt: x.placedAt,
+        expiresAt: x.expiresAt
+      }));
+      await __sharedAdminDb.ref("harmonicStatus").update({
+        pendingLimitsCount: serializedLimits.length,
+        pendingLimits: serializedLimits,
+        updatedAt: Date.now()
+      }).catch(() => {});
+    }
+  } catch (_) {}
+
   await sendTelegramAlert(
     "🎯 <b>[HARMONIC LIMIT PRZ D]</b> " + symbol + " (" + sig.timeframe + ")\n" +
     "Pola: <b>" + sig.patternName + " " + side + "</b> (" + appliedLev + "x) | Qty: " + qty + "\n" +
