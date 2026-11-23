@@ -142,7 +142,7 @@ Hierarki Top-Down 3 lapis terdeteksi:
    - Pair: ${symbol} | Arah: ${sig.side} | Pola: ${sig.patternName} (PRZ Score: ${sig.przScore}/100, RR: 1:${Number(sig.rr || 0).toFixed(2)})
    - Rasio: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
    - PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
-Validasi keselarasan 4H-1H-15M, toleransi rasio ±0.035 Scott Carney, & kelayakan RR >= 1.2 untuk leverage 50x.
+Validasi keselarasan 4H-1H-15M, toleransi rasio ±0.035 Scott Carney, & kelayakan RR >= 1.0 untuk leverage 50x.
 Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 0-100, "reason": "maks 18 kata bahasa Indonesia"}`
       : `Kamu adalah Auditor Kuantitatif Scott Carney Harmonic Trading untuk sinyal MANDIRI timeframe ${tfUpper}.
 Detail Kandidat Eksekusi (${tfUpper}):
@@ -150,7 +150,7 @@ Detail Kandidat Eksekusi (${tfUpper}):
 - Kualitas PRZ: ${sig.przScore}/100 | RR: 1:${Number(sig.rr || 0).toFixed(2)}
 - Rasio Fibonacci: AB/XA=${sig.ratios.bRatio.toFixed(3)}, BC/AB=${sig.ratios.cRatio.toFixed(3)}, AD/XA=${sig.ratios.dXaRatio.toFixed(3)}
 - Zona PRZ: ${sig.prz.low} - ${sig.prz.high} | Entry: ${sig.entry} | SL: ${sig.sl} | TP2: ${sig.tp2}
-Validasi apakah rasio Fibonacci pola ${sig.patternName} di ${tfUpper} memenuhi toleransi ±0.035 Scott Carney dan RR >= 1.2 aman untuk leverage 50x.
+Validasi apakah rasio Fibonacci pola ${sig.patternName} di ${tfUpper} memenuhi toleransi ±0.035 Scott Carney dan RR >= 1.0 aman untuk leverage 50x.
 Balas HANYA JSON valid tanpa markdown: {"valid": true atau false, "confidence": 0-100, "reason": "maks 18 kata bahasa Indonesia"}`;
 
     const votes = [];
@@ -578,8 +578,15 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     const slRes = await placeConditionalOrder({ symbol, side: closeSide, type: "STOP_MARKET", triggerPrice: slPrice, closePosition: true, fallbackQty: qty, workingType: "MARK_PRICE" }, creds);
     if (slRes.mode === "reduceOnly") slStatus = "$" + slPrice + " (reduceOnly)";
   } catch (slErr) {
-    slStatus = "GAGAL (" + slErr.message + ")";
     console.error("[HARMONIC SL ERROR] " + symbol + ":", slErr.message);
+    let emergencyNote = "posisi ditutup darurat";
+    try {
+      await fapiRequest("POST", "/fapi/v1/order", { symbol, side: closeSide, type: "MARKET", quantity: qty, reduceOnly: true }, creds, true);
+    } catch (closeErr) {
+      emergencyNote = "GAGAL tutup darurat: " + closeErr.message;
+      console.error("[HARMONIC EMERGENCY CLOSE ERROR] " + symbol + ":", closeErr.message);
+    }
+    return { executed: false, reason: `SL gagal dipasang (${slErr.message}) — ${emergencyNote}` };
   }
   if (qtyTp1 >= filters.minQty) {
     try {

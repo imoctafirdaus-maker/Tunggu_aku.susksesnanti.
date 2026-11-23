@@ -96,7 +96,7 @@
       if (!isBullish && (D_price > X.price || currentPrice > X.price)) {
         return { valid: false, reason: `${patternCfg.label} invalid: titik D menembus X` };
       }
-    } else {
+    } else if (patternKey !== "FIVE_O") {
       if (isBullish && !(D_price < X.price)) {
         return { valid: false, reason: `${patternCfg.label} invalid: titik D wajib menembus X` };
       }

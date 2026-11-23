@@ -243,10 +243,10 @@
     const prevClose = closes[closes.length - 2];
 
     if (side === "BUY") {
-      const ok = (lastClose >= ema21 || lastClose > prevClose);
+      const ok = (lastClose >= ema21 && lastClose > prevClose);
       return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}` };
     } else {
-      const ok = (lastClose <= ema21 || lastClose < prevClose);
+      const ok = (lastClose <= ema21 && lastClose < prevClose);
       return { ok, reason: `1H Close=${lastClose.toFixed(4)} vs EMA21=${ema21.toFixed(4)}` };
     }
   }
