@@ -294,6 +294,19 @@ const server = http.createServer(async (req, res) => {
       });
       return;
     }
+    if ((req.url || "").startsWith("/api/net-diag")) {
+      const devs = (typeof db !== "undefined" && db.prepare)
+        ? db.prepare("SELECT * FROM devices").all()
+        : (typeof getLatestDevices === "function" ? getLatestDevices() : []);
+      runNetDiag(devs).then(data => {
+        res.writeHead(200, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify(data));
+      }).catch(e => {
+        res.writeHead(500, { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" });
+        res.end(JSON.stringify({ ok: false, error: e.message }));
+      });
+      return;
+    }
     if (req.method === "GET" && url.pathname === "/api/state") {
       return sendJson(200, getSnapshot());
     }

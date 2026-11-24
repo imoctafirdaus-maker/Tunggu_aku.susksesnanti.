@@ -829,7 +829,7 @@
 
     swcPanel.querySelectorAll("[data-act]").forEach(btn => {
       btn.addEventListener("click", async () => {
-        if (isMutating) return;
+        if (isMutating || speedState.running || diagState.scanning) return;
         const act = btn.dataset.act, mac = btn.dataset.mac;
         try {
           if (act === "block") {
