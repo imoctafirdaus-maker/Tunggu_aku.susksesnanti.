@@ -492,7 +492,7 @@ async function manageOpenPositions(snap) {
           ...(Array.isArray(openOrders) ? openOrders : []),
           ...(Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []))
         ];
-        hasTpOrder = allOrd.some(o => String(o.type || "").includes("TAKE_PROFIT"));
+        hasTpOrder = allOrd.some(o => String(o.orderType || o.type || "").includes("TAKE_PROFIT"));
       } catch (_) {}
 
       // Tutup otomatis jika ROI >= 45%, ATAU jika order TP ternyata tidak terpasang di Binance saat ROI >= 20%
@@ -501,7 +501,7 @@ async function manageOpenPositions(snap) {
         const pRaw = JSON.parse(fs.readFileSync(path.join(__dirname, ".harmonicPaperState.json"), "utf8"));
         isVdExtendedHarmonic = Array.isArray(pRaw.activePositions) && pRaw.activePositions.some(p => p && p.symbol === sym && p.vdExtended);
       } catch (_) {}
-      if (isVdExtendedHarmonic && hasTpOrder) continue;
+      if (isVdExtendedHarmonic) continue;
       if (roiPct >= TARGET_ROI_PCT || (!hasTpOrder && roiPct >= 20)) {
         const closeSide = amt > 0 ? "SELL" : "BUY";
         const closeQty = Math.abs(amt);

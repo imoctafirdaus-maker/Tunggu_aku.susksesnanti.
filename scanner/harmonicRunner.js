@@ -1281,28 +1281,40 @@ async function manageHarmonicVdPositions(snap) {
         exhaustionMult: 2.2
       });
 
-      const inProfit = isBuy ? (markPx > entry * 1.0005) : (markPx < entry * 0.9995);
+      const safeForBe = isBuy ? (markPx >= entry * 1.0015) : (markPx <= entry * 0.9985);
 
-      if (!item.vdExtended && vdNow.valid && vdNow.isStrong && vdNow.direction === item.side && inProfit && item.extTp1Price && item.extTp2Price) {
+      if (!item.vdExtended && vdNow.valid && vdNow.isStrong && vdNow.direction === item.side && item.extTp1Price && item.extTp2Price) {
         const bePrice = roundStep(entry, tickSize);
         const newTp1 = roundStep(item.extTp1Price, tickSize);
         const newTp2 = roundStep(item.extTp2Price, tickSize);
 
-        await placeConditionalOrder({
-          symbol: item.symbol,
-          side: closeSide,
-          type: "STOP_MARKET",
-          triggerPrice: bePrice,
-          closePosition: true,
-          fallbackQty: absQty,
-          workingType: "MARK_PRICE"
-        }, creds);
+        // Jika harga sudah aman melewati entry, geser SL ke Breakeven; jika masih dekat titik D, pertahankan SL Beyond-X
+        let movedBeNow = false;
+        if (safeForBe) {
+          try {
+            await placeConditionalOrder({
+              symbol: item.symbol,
+              side: closeSide,
+              type: "STOP_MARKET",
+              triggerPrice: bePrice,
+              closePosition: true,
+              fallbackQty: absQty,
+              workingType: "MARK_PRICE"
+            }, creds);
+            movedBeNow = true;
+          } catch (_) {}
+        }
 
+        // Hapus order TP lama (dan SL lama hanya jika SL Breakeven baru sudah terpasang)
         try {
           const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
           const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
           for (const ao of list) {
-            if (ao && ao.algoId && Number(ao.triggerPrice) !== bePrice) {
+            if (!ao || !ao.algoId) continue;
+            const oType = String(ao.orderType || ao.type || "");
+            const isTp = oType.includes("TAKE_PROFIT");
+            const isOldSl = oType.includes("STOP") && Number(ao.triggerPrice) !== bePrice;
+            if (isTp || (movedBeNow && isOldSl)) {
               await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
             }
           }
@@ -1331,17 +1343,19 @@ async function manageHarmonicVdPositions(snap) {
         }, creds).catch(() => {});
 
         item.vdExtended = true;
-        item.beMoved = true;
-        item.slPrice = bePrice;
+        if (movedBeNow) {
+          item.beMoved = true;
+          item.slPrice = bePrice;
+        }
         item.activeTp1Price = newTp1;
         item.activeTp2Price = newTp2;
         changed = true;
-        actions.push(`${item.symbol} -> FibExt ${newTp1}/${newTp2}`);
+        actions.push(`${item.symbol} -> FibExt ${newTp1}/${newTp2}${movedBeNow ? " + BE" : ""}`);
 
         await sendTelegramAlert(
           "⚡ <b>[HARMONIC VD SURGE -> FIB EXT]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
           "Lonjakan VD <b>" + vdNow.vdRatio + "x</b> searah <b>" + item.side + "</b> terdeteksi!\n" +
-          "SL digeser ke Breakeven: <b>$" + bePrice + "</b>\n" +
+          (movedBeNow ? ("SL digeser ke Breakeven: <b>$" + bePrice + "</b>\n") : ("SL tetap terlindungi di <b>$" + item.slPrice + "</b> (menunggu jarak BE)\n")) +
           "TP diperpanjang (Fib Ext 1.272 / 1.618): <b>$" + newTp1 + "</b> / <b>$" + newTp2 + "</b>"
         ).catch(() => {});
 
@@ -1366,7 +1380,7 @@ async function manageHarmonicVdPositions(snap) {
             const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
             const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
             for (const ao of list) {
-              if (ao && ao.algoId && String(ao.type || "").includes("STOP") && Number(ao.triggerPrice) !== bePrice) {
+              if (ao && ao.algoId && String(ao.orderType || ao.type || "").includes("STOP") && Number(ao.triggerPrice) !== bePrice) {
                 await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
               }
             }

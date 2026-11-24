@@ -60,6 +60,7 @@ async function syncPendingLimitsToFirebase() {
       body: JSON.stringify({
         pendingLimitsCount: serializedLimits.length,
         pendingLimits: serializedLimits,
+        activePositions: Array.isArray(st.activePositions) ? st.activePositions : [],
         updatedAt: Date.now()
       })
     }).catch(() => {});
@@ -87,6 +88,7 @@ async function syncPendingLimitsToFirebase() {
     const vdActions = await manageHarmonicVdPositions(snap).catch(() => []);
     if (vdActions && vdActions.length) {
       console.log(`📊 [VD-GUARD 20s] Aksi penjaga Volume Delta:`, vdActions.join(", "));
+      await syncPendingLimitsToFirebase();
     }
     const closed = await manageOpenPositions(snap);
     if (closed && closed.length) {
