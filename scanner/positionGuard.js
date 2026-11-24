@@ -1,6 +1,6 @@
 "use strict";
 const { getFuturesSnapshot, manageOpenPositions } = require("./autoTrader");
-const { managePendingHarmonicLimits, loadPaperState } = require("./harmonicRunner");
+const { managePendingHarmonicLimits, manageHarmonicVdPositions, loadPaperState } = require("./harmonicRunner");
 
 const DB_BASE = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app";
 
@@ -84,6 +84,10 @@ async function syncPendingLimitsToFirebase() {
     if (!snap || !snap.ok || !snap.autoTrade) process.exit(0);
     if (!Array.isArray(snap.openPositions) || snap.openPositions.length === 0) process.exit(0);
 
+    const vdActions = await manageHarmonicVdPositions(snap).catch(() => []);
+    if (vdActions && vdActions.length) {
+      console.log(`📊 [VD-GUARD 20s] Aksi penjaga Volume Delta:`, vdActions.join(", "));
+    }
     const closed = await manageOpenPositions(snap);
     if (closed && closed.length) {
       console.log(

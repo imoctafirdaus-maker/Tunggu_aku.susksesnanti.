@@ -4,17 +4,19 @@
       require("./config"),
       require("./swingDetector"),
       require("./przValidator"),
-      require("./rsiConfirmation")
+      require("./rsiConfirmation"),
+        require("./volumeDelta")
     );
   } else {
     root.HarmonicEngine = factory(
       root.HarmonicConfig,
       root.HarmonicSwingDetector,
       root.HarmonicPrzValidator,
-      root.HarmonicRsiConfirmation
+      root.HarmonicRsiConfirmation,
+        root.HarmonicVolumeDelta
     );
   }
-})(typeof self !== "undefined" ? self : this, function (ConfigMod, SwingMod, PrzMod, RsiMod) {
+})(typeof self !== "undefined" ? self : this, function (ConfigMod, SwingMod, PrzMod, RsiMod, VdMod) {
   "use strict";
 
   const TF_WEIGHT = { "4h": 30, "1h": 20, "15m": 10, "5m": 8 };
@@ -157,12 +159,33 @@
           : Math.abs(A.price - D_price);
         const tp1Fib = cfg.tp1Fib || 0.382;
         const tp2Fib = cfg.tp2Fib || 0.618;
-        const tp1 = isBullish
-          ? D_price + targetLeg * tp1Fib
-          : D_price - targetLeg * tp1Fib;
-        const tp2 = isBullish
-          ? D_price + targetLeg * tp2Fib
-          : D_price - targetLeg * tp2Fib;
+        const stdTp1 = isBullish ? D_price + targetLeg * tp1Fib : D_price - targetLeg * tp1Fib;
+          const stdTp2 = isBullish ? D_price + targetLeg * tp2Fib : D_price - targetLeg * tp2Fib;
+          const sideStr = isBullish ? "BUY" : "SELL";
+          const vdInfo = (VdMod && cfg.vdEnabled !== false)
+            ? VdMod.analyzeSeriesVD(candles, {
+                lookback: cfg.vdLookback || 20,
+                recentBars: 2,
+                strongMult: cfg.vdStrongMult || 2.0,
+                exhaustionMult: cfg.vdExhaustionMult || 2.2
+              })
+            : { valid: false, isStrong: false, direction: "NEUTRAL", vd: 0, vdRatio: 0, buyPct: 50, reason: "VD nonaktif" };
+          const extCalc = VdMod
+            ? VdMod.computeTrendFibExtensions({
+                isBullish,
+                entry,
+                X,
+                A,
+                C,
+                stdTp1,
+                stdTp2,
+                extTp1Fib: cfg.extTp1Fib || 1.272,
+                extTp2Fib: cfg.extTp2Fib || 1.618
+              })
+            : { trendLeg: targetLeg, extTp1Fib: 1.272, extTp2Fib: 1.618, extTp1: stdTp1, extTp2: stdTp2 };
+          const vdExtended = Boolean(vdInfo.valid && vdInfo.isStrong && vdInfo.direction === sideStr);
+          const tp1 = vdExtended ? extCalc.extTp1 : stdTp1;
+          const tp2 = vdExtended ? extCalc.extTp2 : stdTp2;
 
         const riskDist = isBullish ? (entry - rawSl) : (rawSl - entry);
         const rewardDist = isBullish ? (tp2 - entry) : (entry - tp2);
@@ -198,11 +221,17 @@
           entry,
           sl: rawSl,
           tp1,
-          tp2,
+            tp2,
+            stdTp1,
+            stdTp2,
+            extTp1: extCalc.extTp1,
+            extTp2: extCalc.extTp2,
+            vdExtended,
+            vdInfo,
           rr,
           atr: curAtr,
           timestamp: lastCandle.time,
-          reason: `${pCfg.label} ${isBullish ? "Bullish" : "Bearish"} [${timeframe}] · Limit PRZ D (${przCheck.score}/100) · RR 1:${rr.toFixed(2)}`
+          reason: `${pCfg.label} ${isBullish ? "Bullish" : "Bearish"} [${timeframe}] · Limit PRZ D (${przCheck.score}/100) · RR 1:${rr.toFixed(2)}${vdExtended ? ` · VD FibExt ${extCalc.extTp1Fib}-${extCalc.extTp2Fib} (${vdInfo.vdRatio}x)` : ""}`
         };
 
         if (!bestCandidate || candidate.totalScore > bestCandidate.totalScore) {

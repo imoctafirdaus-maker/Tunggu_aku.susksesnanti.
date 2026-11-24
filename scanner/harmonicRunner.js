@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const HarmonicConfig = require("../strategies/harmonic/config");
 const HarmonicEngine = require("../strategies/harmonic/engine");
+const HarmonicVolumeDelta = require("../strategies/harmonic/volumeDelta");
 const { checkNewsSafety } = require("./newsGuard");
 const { evaluateDualAiConsensus } = require("./dualAiGatekeeper");
 const { sendTelegramAlert } = require("./telegramNotifier");
@@ -496,6 +497,33 @@ async function managePendingHarmonicLimits(externalPaper = null) {
         }
 
         if (slAttached) {
+          let fillVd = { valid: false, isStrong: false, direction: "NEUTRAL", vdRatio: 0, buyPct: 50 };
+          try {
+            const kRaw = await fapiRequest("GET", "/fapi/v1/klines", {
+              symbol: item.symbol,
+              interval: item.timeframe || "15m",
+              limit: 26
+            }, creds, false);
+            if (Array.isArray(kRaw) && kRaw.length >= 22) {
+              const parsedK = kRaw.map(k => ({
+                time: Math.floor(k[0] / 1000),
+                open: +k[1], high: +k[2], low: +k[3], close: +k[4],
+                volume: +k[5], takerBuyBase: +k[9]
+              }));
+              fillVd = HarmonicVolumeDelta.analyzeSeriesVD(parsedK, { lookback: 20, recentBars: 2, strongMult: 2.0 });
+            }
+          } catch (_) {}
+
+          const useFibExtension = Boolean(
+            item.vdExtended ||
+            (fillVd.valid && fillVd.isStrong && fillVd.direction === item.side)
+          );
+          const activeTp1 = (useFibExtension && item.extTp1Price) ? item.extTp1Price : item.tp1Price;
+          const activeTp2 = (useFibExtension && item.extTp2Price) ? item.extTp2Price : item.tp2Price;
+          const modeLabel = useFibExtension
+            ? `VD FibExt 1.272/1.618 (${fillVd.vdRatio || item.vdInfo?.vdRatio || "≥2.0"}x)`
+            : "Standard 0.382/0.618";
+
           const qtyTp1 = roundStep(filledQty * (item.tp1CloseRatio || 0.5), item.stepSize || 0.001);
           if (qtyTp1 >= (item.minQty || 0)) {
             try {
@@ -503,7 +531,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
                 symbol: item.symbol,
                 side: closeSide,
                 type: "TAKE_PROFIT_MARKET",
-                triggerPrice: item.tp1Price,
+                triggerPrice: activeTp1,
                 quantity: qtyTp1,
                 workingType: "MARK_PRICE"
               }, creds);
@@ -515,7 +543,7 @@ async function managePendingHarmonicLimits(externalPaper = null) {
               symbol: item.symbol,
               side: closeSide,
               type: "TAKE_PROFIT_MARKET",
-              triggerPrice: item.tp2Price,
+              triggerPrice: activeTp2,
               closePosition: true,
               fallbackQty: remQty,
               workingType: "MARK_PRICE"
@@ -524,10 +552,32 @@ async function managePendingHarmonicLimits(externalPaper = null) {
 
           paper.liveSymbols = Array.isArray(paper.liveSymbols) ? paper.liveSymbols : [];
           if (!paper.liveSymbols.includes(item.symbol)) paper.liveSymbols.push(item.symbol);
+          paper.activePositions = Array.isArray(paper.activePositions) ? paper.activePositions.filter(p => p.symbol !== item.symbol) : [];
+          paper.activePositions.push({
+            symbol: item.symbol,
+            timeframe: item.timeframe || "15m",
+            patternName: item.patternName,
+            side: item.side,
+            entryPrice: item.limitPrice,
+            slPrice: item.slPrice,
+            stdTp1Price: item.stdTp1Price || item.tp1Price,
+            stdTp2Price: item.stdTp2Price || item.tp2Price,
+            extTp1Price: item.extTp1Price || item.tp1Price,
+            extTp2Price: item.extTp2Price || item.tp2Price,
+            activeTp1Price: activeTp1,
+            activeTp2Price: activeTp2,
+            qty: filledQty,
+            qtyTp1,
+            stepSize: item.stepSize || 0.001,
+            minQty: item.minQty || 0,
+            vdExtended: useFibExtension,
+            beMoved: false,
+            filledAt: Date.now()
+          });
           filledCount++;
           changed = true;
 
-          recordEvent( {
+          recordEvent({
             time: Date.now(),
             symbol: item.symbol,
             timeframe: item.timeframe,
@@ -536,13 +586,14 @@ async function managePendingHarmonicLimits(externalPaper = null) {
             przScore: item.przScore,
             rr: item.rr,
             status: "EXECUTED",
-            reason: `Limit PRZ D terjemput @ ${item.limitPrice} (SL & TP1/TP2 aktif)`
+            reason: `Limit PRZ D terjemput @ ${item.limitPrice} · Mode: ${modeLabel}`
           });
 
           await sendTelegramAlert(
             "✅ <b>[HARMONIC LIMIT FILLED]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
             "Pola: <b>" + item.patternName + " " + item.side + "</b> @ $" + item.limitPrice + " | Qty: " + filledQty + "\n" +
-            "SL: $" + item.slPrice + " | TP1: $" + item.tp1Price + " | TP2: $" + item.tp2Price
+            "Mode Target: <b>" + modeLabel + "</b>\n" +
+            "SL: $" + item.slPrice + " | TP1: $" + activeTp1 + " | TP2: $" + activeTp2
           ).catch(() => {});
         }
         continue;
@@ -607,8 +658,15 @@ async function managePendingHarmonicLimits(externalPaper = null) {
     const latest = loadPaperState();
     latest.pendingLimits = remaining;
     if (Array.isArray(paper.liveSymbols)) {
-      latest.liveSymbols = [...new Set([...(latest.liveSymbols || []), ...paper.liveSymbols])];
-    }
+        latest.liveSymbols = [...new Set([...(latest.liveSymbols || []), ...paper.liveSymbols])];
+      }
+      if (Array.isArray(paper.activePositions)) {
+        const posMap = new Map();
+        for (const p of [...(latest.activePositions || []), ...paper.activePositions]) {
+          if (p && p.symbol) posMap.set(p.symbol, p);
+        }
+        latest.activePositions = Array.from(posMap.values());
+      }
     for (const ev of eventLogs) {
       pushUniquePaperLog(latest, ev);
     }
@@ -831,6 +889,12 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     slPrice,
     tp1Price,
     tp2Price,
+      stdTp1Price: roundStep(sig.stdTp1 || sig.tp1, filters.tickSize),
+      stdTp2Price: roundStep(sig.stdTp2 || sig.tp2, filters.tickSize),
+      extTp1Price: roundStep(sig.extTp1 || sig.tp1, filters.tickSize),
+      extTp2Price: roundStep(sig.extTp2 || sig.tp2, filters.tickSize),
+      vdExtended: Boolean(sig.vdExtended),
+      vdInfo: sig.vdInfo || null,
     qty,
     qtyTp1,
     tp1CloseRatio: cfg.tp1CloseRatio || 0.5,
@@ -952,7 +1016,7 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
           if (Array.isArray(raw) && raw.length >= 50) {
             candlesByTf[tf] = raw.slice(0, -1).map(k => ({
               time: Math.floor(k[0] / 1000),
-              open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5],
+              open: +k[1], high: +k[2], low: +k[3], close: +k[4], volume: +k[5], takerBuyBase: +k[9],
               closed: true
             }));
           }
@@ -1155,4 +1219,201 @@ async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, 
   return cycleStats;
 }
 
-module.exports = { runHarmonicScanCycle, loadHarmonicSettings, loadPaperState, savePaperState, executeHarmonicOrder, managePendingHarmonicLimits };
+
+async function manageHarmonicVdPositions(snap) {
+  const creds = loadBinanceConfig();
+  if (!creds || !creds.autoTrade || !snap || !snap.ok || !Array.isArray(snap.openPositions)) {
+    return [];
+  }
+  const paper = loadPaperState();
+  const tracked = Array.isArray(paper.activePositions) ? paper.activePositions : [];
+  if (tracked.length === 0) return [];
+
+  const openMap = new Map();
+  for (const p of snap.openPositions) {
+    const amt = Number(p.positionAmt ?? p.amt ?? 0);
+    if (p && p.symbol && amt !== 0) openMap.set(p.symbol, p);
+  }
+
+  let changed = false;
+  const stillOpen = [];
+  const actions = [];
+
+  for (const item of tracked) {
+    const livePos = openMap.get(item.symbol);
+    if (!livePos) {
+      changed = true;
+      continue;
+    }
+
+    try {
+      const amt = Number(livePos.positionAmt ?? livePos.amt ?? 0);
+      const isBuy = amt > 0;
+      const absQty = Math.abs(amt);
+      const entry = Number(livePos.entryPrice || item.entryPrice || 0);
+      const markPx = Number(livePos.markPrice || entry);
+      const closeSide = isBuy ? "SELL" : "BUY";
+      const filters = await getSymbolFilters(item.symbol, creds);
+      const tickSize = (filters && filters.tickSize) || 0.0001;
+      const stepSize = (filters && filters.stepSize) || item.stepSize || 0.001;
+      const minQty = (filters && filters.minQty) || item.minQty || 0;
+
+      const kRaw = await fapiRequest("GET", "/fapi/v1/klines", {
+        symbol: item.symbol,
+        interval: item.timeframe || "15m",
+        limit: 26
+      }, creds, false);
+
+      if (!Array.isArray(kRaw) || kRaw.length < 22) {
+        stillOpen.push(item);
+        continue;
+      }
+
+      const parsedK = kRaw.map(k => ({
+        time: Math.floor(k[0] / 1000),
+        open: +k[1], high: +k[2], low: +k[3], close: +k[4],
+        volume: +k[5], takerBuyBase: +k[9]
+      }));
+      const vdNow = HarmonicVolumeDelta.analyzeSeriesVD(parsedK, {
+        lookback: 20,
+        recentBars: 2,
+        strongMult: 2.0,
+        exhaustionMult: 2.2
+      });
+
+      const inProfit = isBuy ? (markPx > entry * 1.0005) : (markPx < entry * 0.9995);
+
+      if (!item.vdExtended && vdNow.valid && vdNow.isStrong && vdNow.direction === item.side && inProfit && item.extTp1Price && item.extTp2Price) {
+        const bePrice = roundStep(entry, tickSize);
+        const newTp1 = roundStep(item.extTp1Price, tickSize);
+        const newTp2 = roundStep(item.extTp2Price, tickSize);
+
+        await placeConditionalOrder({
+          symbol: item.symbol,
+          side: closeSide,
+          type: "STOP_MARKET",
+          triggerPrice: bePrice,
+          closePosition: true,
+          fallbackQty: absQty,
+          workingType: "MARK_PRICE"
+        }, creds);
+
+        try {
+          const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
+          const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
+          for (const ao of list) {
+            if (ao && ao.algoId && Number(ao.triggerPrice) !== bePrice) {
+              await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
+            }
+          }
+        } catch (_) {}
+
+        const qtyTp1 = roundStep(absQty * 0.5, stepSize);
+        if (qtyTp1 >= minQty) {
+          await placeConditionalOrder({
+            symbol: item.symbol,
+            side: closeSide,
+            type: "TAKE_PROFIT_MARKET",
+            triggerPrice: newTp1,
+            quantity: qtyTp1,
+            workingType: "MARK_PRICE"
+          }, creds).catch(() => {});
+        }
+        const remQty = roundStep(Math.max(minQty, absQty - qtyTp1), stepSize);
+        await placeConditionalOrder({
+          symbol: item.symbol,
+          side: closeSide,
+          type: "TAKE_PROFIT_MARKET",
+          triggerPrice: newTp2,
+          closePosition: true,
+          fallbackQty: remQty,
+          workingType: "MARK_PRICE"
+        }, creds).catch(() => {});
+
+        item.vdExtended = true;
+        item.beMoved = true;
+        item.slPrice = bePrice;
+        item.activeTp1Price = newTp1;
+        item.activeTp2Price = newTp2;
+        changed = true;
+        actions.push(`${item.symbol} -> FibExt ${newTp1}/${newTp2}`);
+
+        await sendTelegramAlert(
+          "⚡ <b>[HARMONIC VD SURGE -> FIB EXT]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
+          "Lonjakan VD <b>" + vdNow.vdRatio + "x</b> searah <b>" + item.side + "</b> terdeteksi!\n" +
+          "SL digeser ke Breakeven: <b>$" + bePrice + "</b>\n" +
+          "TP diperpanjang (Fib Ext 1.272 / 1.618): <b>$" + newTp1 + "</b> / <b>$" + newTp2 + "</b>"
+        ).catch(() => {});
+
+        stillOpen.push(item);
+        continue;
+      }
+
+      if (item.vdExtended && !item.beMoved && item.stdTp2Price) {
+        const passedStdTp2 = isBuy ? (markPx >= item.stdTp2Price) : (markPx <= item.stdTp2Price);
+        if (passedStdTp2) {
+          const bePrice = roundStep(entry, tickSize);
+          await placeConditionalOrder({
+            symbol: item.symbol,
+            side: closeSide,
+            type: "STOP_MARKET",
+            triggerPrice: bePrice,
+            closePosition: true,
+            fallbackQty: absQty,
+            workingType: "MARK_PRICE"
+          }, creds);
+          try {
+            const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
+            const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
+            for (const ao of list) {
+              if (ao && ao.algoId && String(ao.type || "").includes("STOP") && Number(ao.triggerPrice) !== bePrice) {
+                await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
+              }
+            }
+          } catch (_) {}
+          item.beMoved = true;
+          item.slPrice = bePrice;
+          changed = true;
+          actions.push(`${item.symbol} -> BE ${bePrice}`);
+        }
+      }
+
+      if (item.vdExtended && item.extTp1Price && vdNow.valid && vdNow.isCounterExhaustion && vdNow.direction !== item.side) {
+        const inExtZone = isBuy ? (markPx >= item.extTp1Price) : (markPx <= item.extTp1Price);
+        if (inExtZone) {
+          await fapiRequest("POST", "/fapi/v1/order", {
+            symbol: item.symbol,
+            side: closeSide,
+            type: "MARKET",
+            quantity: absQty,
+            reduceOnly: "true"
+          }, creds, true);
+          try { await fapiRequest("DELETE", "/fapi/v1/algoOpenOrders", { symbol: item.symbol }, creds, true); } catch (_) {}
+          changed = true;
+          actions.push(`${item.symbol} -> Counter-VD Lock`);
+          await sendTelegramAlert(
+            "🛡️ <b>[HARMONIC VD EXHAUSTION LOCK]</b> " + item.symbol + "\n" +
+            "Harga mencapai zona Fib Extension & muncul VD berlawanan <b>" + vdNow.vdRatio + "x</b>.\n" +
+            "Posisi ditutup otomatis untuk mengunci profit!"
+          ).catch(() => {});
+          continue;
+        }
+      }
+
+      stillOpen.push(item);
+    } catch (_) {
+      stillOpen.push(item);
+    }
+  }
+
+  if (changed) {
+    const latest = loadPaperState();
+    latest.activePositions = stillOpen;
+    latest.liveSymbols = stillOpen.map(x => x.symbol);
+    savePaperState(latest);
+  }
+  return actions;
+}
+
+module.exports = {
+  manageHarmonicVdPositions, runHarmonicScanCycle, loadHarmonicSettings, loadPaperState, savePaperState, executeHarmonicOrder, managePendingHarmonicLimits };
