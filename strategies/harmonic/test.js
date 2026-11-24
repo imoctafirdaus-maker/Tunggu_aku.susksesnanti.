@@ -6,6 +6,7 @@ const PrzMod = require("./przValidator");
 const RsiMod = require("./rsiConfirmation");
 const EngineMod = require("./engine");
 const BacktesterMod = require("./backtester");
+const VdMod = require("./volumeDelta");
 
 console.log("=== MENJALANKAN UNIT TEST MODUL HARMONIC PATTERN ===");
 
@@ -131,6 +132,49 @@ console.log("✅ [PASS] Test 5: Proyeksi Limit Order PRZ D & Guard Beyond-X:", J
   targetD: Number(projGartley.targetD.toFixed(2)),
   score: projGartley.score,
   confluence: projGartley.count
+}));
+
+
+// 6. Test Unit Nyata Volume Delta (VD Normal vs VD Kuat vs Counter-VD Exhaustion)
+const baseCandles = Array.from({ length: 22 }, (_, i) => ({
+  time: 1700000000 + i * 900,
+  open: 100,
+  high: 101,
+  low: 99,
+  close: 100.2,
+  volume: 1000,
+  takerBuyBase: i % 2 === 0 ? 540 : 460
+}));
+const vdNormal = VdMod.analyzeSeriesVD(baseCandles, { lookback: 20, recentBars: 2, strongMult: 2.0 });
+assert.strictEqual(vdNormal.valid, true, "VD normal harus valid");
+assert.strictEqual(vdNormal.isStrong, false, "VD seimbang harus terdeteksi normal");
+
+const surgeCandles = [
+  ...baseCandles.slice(0, 20),
+  { time: 1700020000, open: 100, high: 101, low: 99.5, close: 100.1, volume: 1000, takerBuyBase: 510 },
+  { time: 1700020900, open: 100.1, high: 103.5, low: 100.0, close: 103.2, volume: 4000, takerBuyBase: 3600 }
+];
+const vdSurge = VdMod.analyzeSeriesVD(surgeCandles, { lookback: 20, recentBars: 2, strongMult: 2.0 });
+assert.strictEqual(vdSurge.isStrong, true, "Lonjakan taker buy 90% dengan volume 4x harus terdeteksi VD kuat");
+assert.strictEqual(vdSurge.direction, "BUY", "Arah VD kuat harus BUY");
+
+const fibExtBull = VdMod.computeTrendFibExtensions({
+  isBullish: true,
+  entry: 121.4,
+  X: { price: 100 },
+  A: { price: 200 },
+  C: { price: 186.8 },
+  stdTp1: 151.4,
+  stdTp2: 170.0,
+  extTp1Fib: 1.272,
+  extTp2Fib: 1.618
+});
+assert.ok(fibExtBull.extTp1 > 170.0 && fibExtBull.extTp2 > fibExtBull.extTp1, "Target Trend-Based Fib Extension harus melampaui target Harmonic standar");
+console.log("✅ [PASS] Test 6: Deteksi Volume Delta & Trend-Based Fib Extension:", JSON.stringify({
+  vdNormalRatio: vdNormal.vdRatio,
+  vdSurgeRatio: vdSurge.vdRatio,
+  extTp1: Number(fibExtBull.extTp1.toFixed(2)),
+  extTp2: Number(fibExtBull.extTp2.toFixed(2))
 }));
 
 console.log("=== SEMUA UNIT TEST BERHASIL ===");

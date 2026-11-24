@@ -90,7 +90,16 @@ async function syncPendingLimitsToFirebase() {
       console.log(`📊 [VD-GUARD 20s] Aksi penjaga Volume Delta:`, vdActions.join(", "));
       await syncPendingLimitsToFirebase();
     }
-    const closed = await manageOpenPositions(snap);
+    const stAfterVd = loadPaperState();
+    const vdExtSymbols = new Set(
+      (Array.isArray(stAfterVd.activePositions) ? stAfterVd.activePositions : [])
+        .filter(p => p && p.symbol && p.vdExtended)
+        .map(p => p.symbol)
+    );
+    const snapForEma = vdExtSymbols.size > 0
+      ? { ...snap, openPositions: snap.openPositions.filter(p => !vdExtSymbols.has(p.symbol)) }
+      : snap;
+    const closed = await manageOpenPositions(snapForEma);
     if (closed && closed.length) {
       console.log(
         `⚡ [FAST-GUARD 20s] Auto TP menutup ${closed.length} posisi:`,

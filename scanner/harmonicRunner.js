@@ -1281,66 +1281,84 @@ async function manageHarmonicVdPositions(snap) {
         exhaustionMult: 2.2
       });
 
-      const safeForBe = isBuy ? (markPx >= entry * 1.0015) : (markPx <= entry * 0.9985);
+      const inProfit = isBuy ? (markPx > entry) : (markPx < entry);
+      const safeForBe = isBuy ? (markPx >= entry * 1.0025) : (markPx <= entry * 0.9975);
+      const rawBe = isBuy ? (entry * 1.0012) : (entry * 0.9988);
+      const bePrice = roundStep(rawBe, tickSize);
 
-      if (!item.vdExtended && vdNow.valid && vdNow.isStrong && vdNow.direction === item.side && item.extTp1Price && item.extTp2Price) {
-        const bePrice = roundStep(entry, tickSize);
+      // A. Lonjakan VD kuat muncul saat posisi aktif & bergerak searah -> pasang TP FibExt dulu, baru hapus TP lama
+      if (!item.vdExtended && vdNow.valid && vdNow.isStrong && vdNow.direction === item.side && inProfit && item.extTp1Price && item.extTp2Price) {
         const newTp1 = roundStep(item.extTp1Price, tickSize);
         const newTp2 = roundStep(item.extTp2Price, tickSize);
 
-        // Jika harga sudah aman melewati entry, geser SL ke Breakeven; jika masih dekat titik D, pertahankan SL Beyond-X
-        let movedBeNow = false;
-        if (safeForBe) {
-          try {
-            await placeConditionalOrder({
-              symbol: item.symbol,
-              side: closeSide,
-              type: "STOP_MARKET",
-              triggerPrice: bePrice,
-              closePosition: true,
-              fallbackQty: absQty,
-              workingType: "MARK_PRICE"
-            }, creds);
-            movedBeNow = true;
-          } catch (_) {}
-        }
-
-        // Hapus order TP lama (dan SL lama hanya jika SL Breakeven baru sudah terpasang)
+        // Catat daftar algo order lama SEBELUM memasang order baru
+        let oldAlgos = [];
         try {
           const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
-          const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
-          for (const ao of list) {
-            if (!ao || !ao.algoId) continue;
-            const oType = String(ao.orderType || ao.type || "");
-            const isTp = oType.includes("TAKE_PROFIT");
-            const isOldSl = oType.includes("STOP") && Number(ao.triggerPrice) !== bePrice;
-            if (isTp || (movedBeNow && isOldSl)) {
-              await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
-            }
-          }
+          oldAlgos = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
         } catch (_) {}
 
+        // 1. Pasang TP2 FibExt baru terlebih dahulu (wajib sukses sebelum menghapus TP lama)
         const qtyTp1 = roundStep(absQty * 0.5, stepSize);
+        const remQty = roundStep(Math.max(minQty, absQty - qtyTp1), stepSize);
+        let tp2Placed = false;
+        try {
+          const tp2Res = await placeConditionalOrder({
+            symbol: item.symbol,
+            side: closeSide,
+            type: "TAKE_PROFIT_MARKET",
+            triggerPrice: newTp2,
+            closePosition: false,
+            quantity: remQty,
+            workingType: "MARK_PRICE"
+          }, creds);
+          tp2Placed = Boolean(tp2Res && tp2Res.ok);
+        } catch (_) {}
+
+        if (!tp2Placed) {
+          stillOpen.push(item);
+          continue;
+        }
+
         if (qtyTp1 >= minQty) {
           await placeConditionalOrder({
             symbol: item.symbol,
             side: closeSide,
             type: "TAKE_PROFIT_MARKET",
             triggerPrice: newTp1,
+            closePosition: false,
             quantity: qtyTp1,
             workingType: "MARK_PRICE"
           }, creds).catch(() => {});
         }
-        const remQty = roundStep(Math.max(minQty, absQty - qtyTp1), stepSize);
-        await placeConditionalOrder({
-          symbol: item.symbol,
-          side: closeSide,
-          type: "TAKE_PROFIT_MARKET",
-          triggerPrice: newTp2,
-          closePosition: true,
-          fallbackQty: remQty,
-          workingType: "MARK_PRICE"
-        }, creds).catch(() => {});
+
+        // 2. Pasang SL Breakeven (+fee buffer) jika harga sudah cukup jauh dari entry
+        let movedBeNow = false;
+        if (safeForBe) {
+          try {
+            const slRes = await placeConditionalOrder({
+              symbol: item.symbol,
+              side: closeSide,
+              type: "STOP_MARKET",
+              triggerPrice: bePrice,
+              closePosition: false,
+              quantity: absQty,
+              workingType: "MARK_PRICE"
+            }, creds);
+            movedBeNow = Boolean(slRes && slRes.ok);
+          } catch (_) {}
+        }
+
+        // 3. Hapus hanya order TP lama (dan SL lama jika SL Breakeven baru sudah terpasang)
+        for (const ao of oldAlgos) {
+          if (!ao || !ao.algoId) continue;
+          const oType = String(ao.orderType || ao.type || "");
+          const isOldTp = oType.includes("TAKE_PROFIT");
+          const isOldSl = oType.includes("STOP");
+          if (isOldTp || (movedBeNow && isOldSl)) {
+            await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
+          }
+        }
 
         item.vdExtended = true;
         if (movedBeNow) {
@@ -1355,7 +1373,7 @@ async function manageHarmonicVdPositions(snap) {
         await sendTelegramAlert(
           "⚡ <b>[HARMONIC VD SURGE -> FIB EXT]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
           "Lonjakan VD <b>" + vdNow.vdRatio + "x</b> searah <b>" + item.side + "</b> terdeteksi!\n" +
-          (movedBeNow ? ("SL digeser ke Breakeven: <b>$" + bePrice + "</b>\n") : ("SL tetap terlindungi di <b>$" + item.slPrice + "</b> (menunggu jarak BE)\n")) +
+          (movedBeNow ? ("SL digeser ke BE+Fee: <b>$" + bePrice + "</b>\n") : ("SL tetap terlindungi di <b>$" + item.slPrice + "</b> (menunggu jarak BE)\n")) +
           "TP diperpanjang (Fib Ext 1.272 / 1.618): <b>$" + newTp1 + "</b> / <b>$" + newTp2 + "</b>"
         ).catch(() => {});
 
@@ -1363,35 +1381,47 @@ async function manageHarmonicVdPositions(snap) {
         continue;
       }
 
-      if (item.vdExtended && !item.beMoved && item.stdTp2Price) {
+      // B. Mode Fib Extension aktif: geser SL ke BE+Fee saat harga melewati target standar 0.618 AD & aman dari entry
+      if (item.vdExtended && !item.beMoved && item.stdTp2Price && safeForBe) {
         const passedStdTp2 = isBuy ? (markPx >= item.stdTp2Price) : (markPx <= item.stdTp2Price);
         if (passedStdTp2) {
-          const bePrice = roundStep(entry, tickSize);
-          await placeConditionalOrder({
-            symbol: item.symbol,
-            side: closeSide,
-            type: "STOP_MARKET",
-            triggerPrice: bePrice,
-            closePosition: true,
-            fallbackQty: absQty,
-            workingType: "MARK_PRICE"
-          }, creds);
+          let oldAlgos = [];
           try {
             const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
-            const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
-            for (const ao of list) {
-              if (ao && ao.algoId && String(ao.orderType || ao.type || "").includes("STOP") && Number(ao.triggerPrice) !== bePrice) {
+            oldAlgos = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
+          } catch (_) {}
+
+          let movedBe = false;
+          try {
+            const slRes = await placeConditionalOrder({
+              symbol: item.symbol,
+              side: closeSide,
+              type: "STOP_MARKET",
+              triggerPrice: bePrice,
+              closePosition: false,
+              quantity: absQty,
+              workingType: "MARK_PRICE"
+            }, creds);
+            movedBe = Boolean(slRes && slRes.ok);
+          } catch (_) {}
+
+          if (movedBe) {
+            for (const ao of oldAlgos) {
+              if (!ao || !ao.algoId) continue;
+              const oType = String(ao.orderType || ao.type || "");
+              if (oType.includes("STOP")) {
                 await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
               }
             }
-          } catch (_) {}
-          item.beMoved = true;
-          item.slPrice = bePrice;
-          changed = true;
-          actions.push(`${item.symbol} -> BE ${bePrice}`);
+            item.beMoved = true;
+            item.slPrice = bePrice;
+            changed = true;
+            actions.push(`${item.symbol} -> BE+Fee $${bePrice}`);
+          }
         }
       }
 
+      // C. Proteksi Profit di Zona Fib Extension (1.272 - 1.618) jika muncul counter-VD exhaustion ekstrem
       if (item.vdExtended && item.extTp1Price && vdNow.valid && vdNow.isCounterExhaustion && vdNow.direction !== item.side) {
         const inExtZone = isBuy ? (markPx >= item.extTp1Price) : (markPx <= item.extTp1Price);
         if (inExtZone) {
@@ -1402,7 +1432,15 @@ async function manageHarmonicVdPositions(snap) {
             quantity: absQty,
             reduceOnly: "true"
           }, creds, true);
-          try { await fapiRequest("DELETE", "/fapi/v1/algoOpenOrders", { symbol: item.symbol }, creds, true); } catch (_) {}
+          try {
+            const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
+            const list = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
+            for (const ao of list) {
+              if (ao && ao.algoId) {
+                await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
+              }
+            }
+          } catch (_) {}
           changed = true;
           actions.push(`${item.symbol} -> Counter-VD Lock`);
           await sendTelegramAlert(
