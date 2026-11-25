@@ -495,8 +495,8 @@ async function manageOpenPositions(snap) {
         hasTpOrder = allOrd.some(o => String(o.type || "").includes("TAKE_PROFIT"));
       } catch (_) {}
 
-      // Tutup otomatis jika ROI >= 45%, ATAU jika order TP ternyata tidak terpasang di Binance saat ROI >= 20%
-      if (roiPct >= TARGET_ROI_PCT || (!hasTpOrder && roiPct >= 20)) {
+      // Tutup otomatis jika ROI >= 45% (~$2.00 bersih pada margin $5 @ 50x)
+      if (roiPct >= TARGET_ROI_PCT || (!hasTpOrder && roiPct >= 45)) {
         const closeSide = amt > 0 ? "SELL" : "BUY";
         const closeQty = Math.abs(amt);
         const orderRes = await fapiRequest("POST", "/fapi/v1/order", {
