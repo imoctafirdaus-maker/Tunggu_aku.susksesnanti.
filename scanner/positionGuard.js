@@ -91,11 +91,12 @@ async function syncPendingLimitsToFirebase() {
       await syncPendingLimitsToFirebase();
     }
     const stAfterVd = loadPaperState();
-    const vdExtSymbols = new Set(
-      (Array.isArray(stAfterVd.activePositions) ? stAfterVd.activePositions : [])
-        .filter(p => p && p.symbol && p.vdExtended)
-        .map(p => p.symbol)
-    );
+    const vdExtSymbols = new Set([
+      ...(Array.isArray(stAfterVd.activePositions) ? stAfterVd.activePositions : [])
+        .filter(p => p && p.symbol)
+        .map(p => p.symbol),
+      ...(Array.isArray(stAfterVd.liveSymbols) ? stAfterVd.liveSymbols : [])
+    ]);
     const snapForEma = vdExtSymbols.size > 0
       ? { ...snap, openPositions: snap.openPositions.filter(p => !vdExtSymbols.has(p.symbol)) }
       : snap;
