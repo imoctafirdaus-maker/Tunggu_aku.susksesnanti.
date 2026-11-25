@@ -841,24 +841,52 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   }
 
   const slDist = Math.abs(limitPrice - slPrice);
-  let qty;
-  if (creds.manualMarginEnabled) {
-    const manualUsd = Number(creds.manualMarginUsd) || 0;
-    if (manualUsd <= 0) {
-      return { executed: false, reason: "Margin Manual ON tetapi nominal disetel 0 USDT" };
+    const tp1Ratio = (Number(cfg.tp1CloseRatio) > 0 && Number(cfg.tp1CloseRatio) < 1) ? Number(cfg.tp1CloseRatio) : 0.5;
+    const tp1MovePct = Math.abs(tp1Price - limitPrice) / limitPrice;
+    const tp2MovePct = Math.abs(tp2Price - limitPrice) / limitPrice;
+    const netFullRate = (tp1Ratio * tp1MovePct) + ((1 - tp1Ratio) * tp2MovePct) - 0.001;
+
+    if (netFullRate <= 0) {
+      return { executed: false, reason: "Ditolak: Jarak TP Harmonic tidak menutup biaya transaksi" };
     }
-    qty = roundStep((manualUsd * appliedLev) / limitPrice, filters.stepSize);
-    if (qty * limitPrice < filters.minNotional) {
-      return { executed: false, reason: `Margin Manual ${manualUsd} @ ${appliedLev}x (Notional ${(qty * limitPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
+
+    const MIN_HARMONIC_NET_USD = 2.0;
+    const TARGET_HARMONIC_NET_USD = 2.15;
+    const MAX_HARMONIC_NOTIONAL = 750; // Plafon aman maksimal ($15 margin @ 50x)
+    const requiredNotional = TARGET_HARMONIC_NET_USD / netFullRate;
+
+    let qty;
+    if (creds.manualMarginEnabled) {
+      const manualUsd = Number(creds.manualMarginUsd) || 0;
+      if (manualUsd <= 0) {
+        return { executed: false, reason: "Margin Manual ON tetapi nominal disetel 0 USDT" };
+      }
+      let targetNotional = manualUsd * appliedLev;
+      if (targetNotional < requiredNotional && manualUsd <= 15) {
+        targetNotional = Math.min(MAX_HARMONIC_NOTIONAL, requiredNotional);
+      }
+      qty = roundStep(targetNotional / limitPrice, filters.stepSize);
+      if (qty * limitPrice < filters.minNotional) {
+        return { executed: false, reason: `Margin Manual ${manualUsd} @ ${appliedLev}x (Notional ${(qty * limitPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
+      }
+    } else {
+      const riskUsd = Math.min(12, snap.totalMargin * ((cfg.riskPerTradePct || 1.0) / 100));
+      let targetNotional = slDist > 0 ? (riskUsd / slDist) * limitPrice : filters.minNotional;
+      targetNotional = Math.max(targetNotional, filters.minNotional * 1.05, requiredNotional);
+      targetNotional = Math.min(targetNotional, MAX_HARMONIC_NOTIONAL);
+      qty = roundStep(targetNotional / limitPrice, filters.stepSize);
     }
-  } else {
-    const riskUsd = snap.totalMargin * ((cfg.riskPerTradePct || 1.0) / 100);
-    qty = roundStep(riskUsd / slDist, filters.stepSize);
-    if (qty * limitPrice < filters.minNotional) {
-      qty = roundStep((filters.minNotional * 1.05) / limitPrice, filters.stepSize);
+
+    const finalNotional = qty * limitPrice;
+    const projectedNetUsd = finalNotional * netFullRate;
+    if (projectedNetUsd < MIN_HARMONIC_NET_USD) {
+      return {
+        executed: false,
+        reason: `Ditolak: Proyeksi net profit Harmonic (${projectedNetUsd.toFixed(2)}) di bawah minimal $2.00`
+      };
     }
-  }
-  if (qty < filters.minQty || qty <= 0) {
+
+    if (qty < filters.minQty || qty <= 0) {
     return { executed: false, reason: `Qty (${qty}) di bawah batas minimum` };
   }
 
@@ -944,7 +972,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
     "🎯 <b>[HARMONIC LIMIT PRZ D]</b> " + symbol + " (" + sig.timeframe + ")\n" +
     "Pola: <b>" + sig.patternName + " " + side + "</b> (" + appliedLev + "x) | Qty: " + qty + "\n" +
     "Limit Entry (D): <b>$" + limitPrice + "</b>\n" +
-    "SL: $" + slPrice + " | TP1: $" + tp1Price + " | TP2: $" + tp2Price + "\n" +
+    "SL: $" + slPrice + " | TP1: $" + tp1Price + " | TP2: $" + tp2Price + " (Est. Net: +$" + projectedNetUsd.toFixed(2) + ")" + "\n" +
     "Audit: " + groqAudit.reason
   ).catch(() => {});
   try {
@@ -1420,6 +1448,51 @@ async function manageHarmonicVdPositions(snap) {
           }
         }
       }
+      // B2. Harmonic Standard: geser SL sisa posisi ke BE+Fee saat harga melewati TP1
+      const safeBeAfterTp1 = isBuy ? (markPx >= entry * 1.0018) : (markPx <= entry * 0.9982);
+      if (!item.vdExtended && !item.beMoved && item.activeTp1Price && safeBeAfterTp1) {
+        const passedStdTp1 = isBuy ? (markPx >= item.activeTp1Price) : (markPx <= item.activeTp1Price);
+        if (passedStdTp1) {
+          let oldAlgos = [];
+          try {
+            const openAlgos = await fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: item.symbol }, creds, true);
+            oldAlgos = Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []);
+          } catch (_) {}
+
+          let movedBeStd = false;
+          try {
+            const slRes = await placeConditionalOrder({
+              symbol: item.symbol,
+              side: closeSide,
+              type: "STOP_MARKET",
+              triggerPrice: bePrice,
+              closePosition: false,
+              quantity: absQty,
+              workingType: "MARK_PRICE"
+            }, creds);
+            movedBeStd = Boolean(slRes && slRes.ok);
+          } catch (_) {}
+
+          if (movedBeStd) {
+            for (const ao of oldAlgos) {
+              if (!ao || !ao.algoId) continue;
+              const oType = String(ao.orderType || ao.type || "");
+              if (oType.includes("STOP")) {
+                await fapiRequest("DELETE", "/fapi/v1/algoOrder", { symbol: item.symbol, algoId: ao.algoId }, creds, true).catch(() => {});
+              }
+            }
+            item.beMoved = true;
+            item.slPrice = bePrice;
+            changed = true;
+            actions.push(`${item.symbol} -> Std TP1 BE+Fee ${bePrice}`);
+            await sendTelegramAlert(
+              "🔒 <b>[HARMONIC TP1 HIT -> SL BE+FEE]</b> " + item.symbol + " (" + item.timeframe + ")\n" +
+              "TP1 tercapai! SL sisa posisi digeser ke BE+Fee: <b>$" + bePrice + "</b> menuju TP2 ($" + item.activeTp2Price + ")"
+            ).catch(() => {});
+          }
+        }
+      }
+
 
       // C. Proteksi Profit di Zona Fib Extension (1.272 - 1.618) jika muncul counter-VD exhaustion ekstrem
       if (item.vdExtended && item.extTp1Price && vdNow.valid && vdNow.isCounterExhaustion && vdNow.direction !== item.side) {
