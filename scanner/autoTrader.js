@@ -146,17 +146,90 @@ async function getFuturesSnapshot() {
   const creds = loadBinanceConfig();
   if (!creds) return null;
   try {
-    const acc = await fapiRequest("GET", "/fapi/v2/account", {}, creds, true);
-    const openPositions = (acc.positions || [])
-      .filter(p => Math.abs(+p.positionAmt) > 0)
-      .map(p => ({
-        symbol: p.symbol,
-        amt: +p.positionAmt,
-        side: +p.positionAmt > 0 ? "LONG" : "SHORT",
-        entryPrice: +p.entryPrice,
-        pnl: +p.unrealizedProfit,
-        leverage: +p.leverage
-      }));
+    const [acc, riskList] = await Promise.all([
+      fapiRequest("GET", "/fapi/v2/account", {}, creds, true),
+      fapiRequest("GET", "/fapi/v2/positionRisk", {}, creds, true).catch(() => [])
+    ]);
+    const riskMap = new Map();
+    if (Array.isArray(riskList)) {
+      for (const r of riskList) {
+        if (r && r.symbol && Math.abs(+r.positionAmt) > 0) riskMap.set(r.symbol, r);
+      }
+    }
+
+    const rawPositions = (acc.positions || []).filter(p => Math.abs(+p.positionAmt) > 0);
+    const openPositions = await Promise.all(rawPositions.map(async (p) => {
+      const sym = p.symbol;
+      const amt = +p.positionAmt;
+      const isLong = amt > 0;
+      const side = isLong ? "LONG" : "SHORT";
+      const entryPrice = +p.entryPrice;
+      const lev = +p.leverage || creds.leverage || 50;
+      const rInfo = riskMap.get(sym) || {};
+      const markPrice = +rInfo.markPrice || (amt !== 0 ? (entryPrice + (+p.unrealizedProfit / amt)) : entryPrice);
+      const liqPrice = +rInfo.liquidationPrice || 0;
+      const pnl = Number.isFinite(+rInfo.unRealizedProfit) ? +rInfo.unRealizedProfit : +p.unrealizedProfit;
+
+      let slPrice = null;
+      let tpPrice = null;
+      let slType = "AUTO_GUARD";
+      let tpType = "AUTO_TP";
+
+      try {
+        const [openOrders, openAlgos] = await Promise.all([
+          fapiRequest("GET", "/fapi/v1/openOrders", { symbol: sym }, creds, true).catch(() => []),
+          fapiRequest("GET", "/fapi/v1/openAlgoOrders", { symbol: sym }, creds, true).catch(() => [])
+        ]);
+        const allOrd = [
+          ...(Array.isArray(openOrders) ? openOrders : []),
+          ...(Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []))
+        ];
+        for (const o of allOrd) {
+          const oType = String(o.type || o.orderType || "").toUpperCase();
+          const trig = Number(o.stopPrice || o.triggerPrice || o.price || 0);
+          if (!(trig > 0)) continue;
+          if (oType.includes("TAKE_PROFIT")) {
+            tpPrice = trig;
+            tpType = "EXCHANGE";
+          } else if (oType.includes("STOP")) {
+            slPrice = trig;
+            slType = "EXCHANGE";
+          }
+        }
+      } catch (_) {}
+
+      const guardMovePct = 0.45 / Math.max(1, lev);
+      if (!(slPrice > 0) && entryPrice > 0) {
+        slPrice = Number((isLong ? entryPrice * (1 - guardMovePct) : entryPrice * (1 + guardMovePct)).toPrecision(6));
+      }
+      if (!(tpPrice > 0) && entryPrice > 0) {
+        tpPrice = Number((isLong ? entryPrice * (1 + guardMovePct) : entryPrice * (1 - guardMovePct)).toPrecision(6));
+      }
+
+      const slPct = entryPrice > 0 ? ((isLong ? (slPrice - entryPrice) : (entryPrice - slPrice)) / entryPrice) * 100 : 0;
+      const tpPct = entryPrice > 0 ? ((isLong ? (tpPrice - entryPrice) : (entryPrice - tpPrice)) / entryPrice) * 100 : 0;
+      const slUsd = (slPrice - entryPrice) * amt;
+      const tpUsd = (tpPrice - entryPrice) * amt;
+
+      return {
+        symbol: sym,
+        amt,
+        side,
+        entryPrice,
+        markPrice,
+        liqPrice,
+        pnl,
+        leverage: lev,
+        slPrice,
+        tpPrice,
+        slType,
+        tpType,
+        slPct: Number(slPct.toFixed(2)),
+        tpPct: Number(tpPct.toFixed(2)),
+        slUsd: Number(slUsd.toFixed(2)),
+        tpUsd: Number(tpUsd.toFixed(2))
+      };
+    }));
     return {
       ok: true,
       isDemo: creds.isDemo,

@@ -1498,6 +1498,173 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_futuresPortfolio.json",
     "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/futuresPortfolio.json"
   ];
+  window.__liveMarkPrices = window.__liveMarkPrices || {};
+  window.__liveStreamActive = false;
+
+  function fmtPriceSmart(v) {
+    const n = Number(v);
+    if (!Number.isFinite(n) || n <= 0) return "--";
+    if (n >= 1000) return n.toFixed(2);
+    if (n >= 1) return n.toFixed(4);
+    if (n >= 0.01) return n.toFixed(5);
+    return n.toFixed(6);
+  }
+
+  function calcRangeGauge(p, mark) {
+    const entry = Number(p.entryPrice || 0);
+    const isLong = p.side === "LONG";
+    const lev = Math.max(1, Number(p.leverage || 50));
+    const fallbackDist = entry * (0.45 / lev);
+    const sl = Number(p.slPrice) > 0 ? Number(p.slPrice) : (isLong ? entry - fallbackDist : entry + fallbackDist);
+    const tp = Number(p.tpPrice) > 0 ? Number(p.tpPrice) : (isLong ? entry + fallbackDist : entry - fallbackDist);
+    const cur = Number(mark) > 0 ? Number(mark) : entry;
+
+    let pctPos = 50;
+    if (isLong) {
+      if (cur <= entry) {
+        const span = Math.max(1e-12, entry - sl);
+        pctPos = 50 - Math.min(50, Math.max(0, ((entry - cur) / span) * 50));
+      } else {
+        const span = Math.max(1e-12, tp - entry);
+        pctPos = 50 + Math.min(50, Math.max(0, ((cur - entry) / span) * 50));
+      }
+    } else {
+      if (cur >= entry) {
+        const span = Math.max(1e-12, sl - entry);
+        pctPos = 50 - Math.min(50, Math.max(0, ((cur - entry) / span) * 50));
+      } else {
+        const span = Math.max(1e-12, entry - tp);
+        pctPos = 50 + Math.min(50, Math.max(0, ((entry - cur) / span) * 50));
+      }
+    }
+
+    const slPct = entry > 0 ? ((isLong ? (sl - entry) : (entry - sl)) / entry) * 100 : 0;
+    const tpPct = entry > 0 ? ((isLong ? (tp - entry) : (entry - tp)) / entry) * 100 : 0;
+    const amt = Number(p.amt || 0);
+    const slUsd = Number.isFinite(+p.slUsd) ? +p.slUsd : (sl - entry) * amt;
+    const tpUsd = Number.isFinite(+p.tpUsd) ? +p.tpUsd : (tp - entry) * amt;
+
+    return { sl, tp, pctPos, slPct, tpPct, slUsd, tpUsd };
+  }
+
+  function applyLiveTicksToDom() {
+    const d = window.__lastFuturesData;
+    if (!d || !Array.isArray(d.openPositions) || !d.openPositions.length) return;
+
+    let totalLiveUpnl = 0;
+    for (const p of d.openPositions) {
+      const sym = String(p.symbol || "");
+      const amt = Number(p.amt || 0);
+      const entry = Number(p.entryPrice || 0);
+      const lev = Math.max(1, Number(p.leverage || 50));
+      const mark = Number(window.__liveMarkPrices[sym]) > 0
+        ? Number(window.__liveMarkPrices[sym])
+        : (Number(p.markPrice) > 0 ? Number(p.markPrice) : entry);
+
+      const livePnl = (mark - entry) * amt;
+      totalLiveUpnl += livePnl;
+
+      const initMargin = (Math.abs(amt) * entry) / lev;
+      const roiPct = initMargin > 0 ? (livePnl / initMargin) * 100 : 0;
+      const g = calcRangeGauge(p, mark);
+      const isProfit = livePnl >= 0;
+      const pColor = isProfit ? "#34d399" : "#f87171";
+
+      const markEl = document.querySelector(`[data-live-mark="${sym}"]`);
+      if (markEl) markEl.textContent = "$" + fmtPriceSmart(mark);
+
+      const pnlEl = document.querySelector(`[data-live-upnl="${sym}"]`);
+      if (pnlEl) {
+        pnlEl.textContent = (livePnl >= 0 ? "+" : "") + "$" + livePnl.toFixed(2);
+        pnlEl.style.color = pColor;
+      }
+
+      const roiEl = document.querySelector(`[data-live-roi="${sym}"]`);
+      if (roiEl) {
+        roiEl.textContent = (roiPct >= 0 ? "+" : "") + roiPct.toFixed(1) + "% ROI";
+        roiEl.style.color = pColor;
+      }
+
+      const fillEl = document.querySelector(`[data-live-fill="${sym}"]`);
+      if (fillEl) {
+        if (g.pctPos >= 50) {
+          fillEl.style.left = "50%";
+          fillEl.style.width = (g.pctPos - 50).toFixed(1) + "%";
+          fillEl.style.background = "#10b981";
+        } else {
+          fillEl.style.left = g.pctPos.toFixed(1) + "%";
+          fillEl.style.width = (50 - g.pctPos).toFixed(1) + "%";
+          fillEl.style.background = "#ef4444";
+        }
+      }
+
+      const dotEl = document.querySelector(`[data-live-dot="${sym}"]`);
+      if (dotEl) {
+        dotEl.style.left = g.pctPos.toFixed(1) + "%";
+        dotEl.style.background = isProfit ? "#34d399" : "#f87171";
+        dotEl.style.boxShadow = isProfit ? "0 0 6px rgba(52,211,153,0.9)" : "0 0 6px rgba(248,113,113,0.9)";
+      }
+    }
+
+    const totalPnlEl = document.getElementById("bf-pnl");
+    if (totalPnlEl) {
+      totalPnlEl.textContent = (totalLiveUpnl >= 0 ? "+" : "") + "$" + totalLiveUpnl.toFixed(2) + " USDT";
+      totalPnlEl.style.color = totalLiveUpnl > 0 ? "#4ade80" : totalLiveUpnl < 0 ? "#f87171" : "#e2e8f0";
+    }
+  }
+
+  (function initRealtimeMarkStream() {
+    if (window.__markStreamStarted) return;
+    window.__markStreamStarted = true;
+
+    function connectWs() {
+      try {
+        const ws = new WebSocket("wss://fstream.binance.com/ws/!markPrice@arr@1s");
+        ws.onopen = () => { window.__liveStreamActive = true; };
+        ws.onmessage = (ev) => {
+          try {
+            const arr = JSON.parse(ev.data);
+            if (!Array.isArray(arr)) return;
+            const d = window.__lastFuturesData;
+            if (!d || !Array.isArray(d.openPositions) || !d.openPositions.length) return;
+            const activeSyms = new Set(d.openPositions.map(x => x.symbol));
+            let changed = false;
+            for (const item of arr) {
+              if (item && activeSyms.has(item.s) && +item.p > 0) {
+                window.__liveMarkPrices[item.s] = +item.p;
+                changed = true;
+              }
+            }
+            if (changed) applyLiveTicksToDom();
+          } catch (_) {}
+        };
+        ws.onclose = () => {
+          window.__liveStreamActive = false;
+          setTimeout(connectWs, 3000);
+        };
+        ws.onerror = () => { try { ws.close(); } catch (_) {} };
+      } catch (_) {}
+    }
+    connectWs();
+
+    // Fallback HTTP 2 detik jika jaringan seluler membatasi WebSocket
+    setInterval(async () => {
+      if (window.__liveStreamActive) return;
+      const d = window.__lastFuturesData;
+      if (!d || !Array.isArray(d.openPositions) || !d.openPositions.length) return;
+      for (const p of d.openPositions) {
+        try {
+          const r = await fetch("https://fapi.binance.com/fapi/v1/premiumIndex?symbol=" + encodeURIComponent(p.symbol));
+          if (r.ok) {
+            const j = await r.json();
+            if (j && +j.markPrice > 0) window.__liveMarkPrices[p.symbol] = +j.markPrice;
+          }
+        } catch (_) {}
+      }
+      applyLiveTicksToDom();
+    }, 2000);
+  })();
+
   function renderFuturesData(d) {
     if (!d || typeof d.totalMargin !== "number") return false;
     const levEl = document.getElementById("bf-lev-badge"); if (levEl) levEl.textContent = (d.leverage || 50) + "x";
@@ -1509,7 +1676,8 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     pnlEl.style.color = pnlVal > 0 ? "#4ade80" : pnlVal < 0 ? "#f87171" : "#e2e8f0";
     if (d.updatedAt) {
       const dt = new Date(d.updatedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" });
-      const updEl = document.getElementById("bf-updated"); if (updEl) updEl.textContent = "Update: " + dt + " WIB";
+      const updEl = document.getElementById("bf-updated");
+      if (updEl) updEl.innerHTML = '<span style="display:inline-flex;align-items:center;gap:5px;"><span style="width:6px;height:6px;border-radius:50%;background:#10b981;box-shadow:0 0 6px #10b981;"></span>LIVE 1S · Sync ' + dt + ' WIB</span>';
     }
     const posEl = document.getElementById("bf-positions");
     const list = Array.isArray(d.openPositions) ? d.openPositions : [];
@@ -1519,17 +1687,30 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     } else {
       posEl.innerHTML = `
         <div id="bf-close-notice" style="display:none;margin-bottom:8px;padding:7px 10px;border-radius:6px;font-size:11.5px;border:1px solid #334155;background:#0f172a;color:#cbd5e1;"></div>
-        <div style="display:flex;flex-direction:column;gap:6px;">
+        <div style="display:flex;flex-direction:column;gap:8px;">
           ${list.map(p => {
             const sym = String(p.symbol || "");
             const isLong = p.side === "LONG";
             const sideBadge = isLong
               ? '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:rgba(16,185,129,0.14);color:#34d399;border:1px solid rgba(16,185,129,0.32);">LONG</span>'
               : '<span style="display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:0.04em;background:rgba(239,68,68,0.14);color:#f87171;border:1px solid rgba(239,68,68,0.32);">SHORT</span>';
-            const pnlNum = Number(p.pnl || 0);
-            const pColor = pnlNum >= 0 ? "#34d399" : "#f87171";
-            const st = window.__manualCloseState[sym] || "IDLE";
 
+            const mark = Number(window.__liveMarkPrices[sym]) > 0
+              ? Number(window.__liveMarkPrices[sym])
+              : (Number(p.markPrice) > 0 ? Number(p.markPrice) : Number(p.entryPrice || 0));
+            const pnlNum = (mark - Number(p.entryPrice || 0)) * Number(p.amt || 0);
+            const initMargin = (Math.abs(Number(p.amt || 0)) * Number(p.entryPrice || 0)) / Math.max(1, Number(p.leverage || 50));
+            const roiPct = initMargin > 0 ? (pnlNum / initMargin) * 100 : 0;
+            const pColor = pnlNum >= 0 ? "#34d399" : "#f87171";
+
+            const g = calcRangeGauge(p, mark);
+            const fillLeft = g.pctPos >= 50 ? 50 : g.pctPos;
+            const fillWidth = Math.abs(g.pctPos - 50);
+            const fillColor = g.pctPos >= 50 ? "#10b981" : "#ef4444";
+            const slTag = p.slType === "EXCHANGE" ? "SL ORDER" : "SL GUARD";
+            const tpTag = p.tpType === "EXCHANGE" ? "TP ORDER" : "AUTO TP";
+
+            const st = window.__manualCloseState[sym] || "IDLE";
             let actionHtml = "";
             if (st === "ARMED") {
               actionHtml = `
@@ -1544,23 +1725,51 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
             }
 
             return `
-              <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;padding:8px 10px;border-radius:6px;background:#0b1220;border:1px solid #1e293b;">
-                <div style="min-width:0;">
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
-                    ${sideBadge}
-                    <span style="font-weight:700;font-size:12.5px;color:#f1f5f9;letter-spacing:0.02em;">${sym}</span>
-                    <span style="font-size:10.5px;font-family:monospace;padding:1px 5px;border-radius:3px;background:#1e293b;color:#94a3b8;">${p.leverage}x</span>
+              <div style="padding:10px 12px;border-radius:7px;background:#09101d;border:1px solid #1e293b;">
+                <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;">
+                  <div style="min-width:0;">
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                      ${sideBadge}
+                      <span style="font-weight:700;font-size:12.5px;color:#f1f5f9;letter-spacing:0.02em;">${sym}</span>
+                      <span style="font-size:10.5px;font-family:monospace;padding:1px 5px;border-radius:3px;background:#1e293b;color:#94a3b8;">${p.leverage}x</span>
+                    </div>
+                    <div style="margin-top:4px;font-size:11px;color:#94a3b8;font-variant-numeric:tabular-nums;">
+                      Size <span style="color:#cbd5e1;font-family:monospace;">${Math.abs(p.amt)}</span> · Entry <span style="color:#cbd5e1;font-family:monospace;">$${fmtPriceSmart(p.entryPrice)}</span> · Mark <span data-live-mark="${sym}" style="color:#38bdf8;font-family:monospace;font-weight:700;">$${fmtPriceSmart(mark)}</span>
+                    </div>
                   </div>
-                  <div style="margin-top:3px;font-size:11px;color:#94a3b8;font-variant-numeric:tabular-nums;">
-                    Size <span style="color:#cbd5e1;font-family:monospace;">${Math.abs(p.amt)}</span> · Entry <span style="color:#cbd5e1;font-family:monospace;">${p.entryPrice}</span>
+                  <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                    <div style="text-align:right;font-variant-numeric:tabular-nums;">
+                      <div data-live-upnl="${sym}" style="font-size:13px;font-weight:700;font-family:monospace;color:${pColor};">${pnlNum >= 0 ? "+" : ""}$${pnlNum.toFixed(2)}</div>
+                      <div data-live-roi="${sym}" style="font-size:10px;font-family:monospace;color:${pColor};">${roiPct >= 0 ? "+" : ""}${roiPct.toFixed(1)}% ROI</div>
+                    </div>
+                    ${actionHtml}
                   </div>
                 </div>
-                <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
-                  <div style="text-align:right;font-variant-numeric:tabular-nums;">
-                    <div style="font-size:12.5px;font-weight:700;font-family:monospace;color:${pColor};">${pnlNum >= 0 ? "+" : ""}${pnlNum.toFixed(2)}</div>
-                    <div style="font-size:10px;color:#64748b;">uPnL</div>
+
+                <!-- Visual Range Gauge: SL <-> ENTRY <-> MARK <-> TP -->
+                <div style="margin-top:9px;padding-top:8px;border-top:1px solid #162032;">
+                  <div style="position:relative;height:6px;border-radius:999px;background:#1e293b;margin:4px 0 7px 0;">
+                    <!-- Entry center marker -->
+                    <div title="Entry Price" style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:#94a3b8;transform:translateX(-50%);z-index:2;"></div>
+                    <!-- Live progress fill from Entry to Mark -->
+                    <div data-live-fill="${sym}" style="position:absolute;top:0;bottom:0;left:${fillLeft.toFixed(1)}%;width:${fillWidth.toFixed(1)}%;background:${fillColor};border-radius:999px;transition:left 0.25s ease,width 0.25s ease;"></div>
+                    <!-- Live Mark Price dot -->
+                    <div data-live-dot="${sym}" style="position:absolute;top:50%;left:${g.pctPos.toFixed(1)}%;width:10px;height:10px;border-radius:50%;background:${pColor};border:2px solid #09101d;transform:translate(-50%,-50%);box-shadow:0 0 6px ${pColor};z-index:3;transition:left 0.25s ease;"></div>
                   </div>
-                  ${actionHtml}
+
+                  <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;flex-wrap:wrap;font-size:10.5px;font-family:monospace;font-variant-numeric:tabular-nums;">
+                    <div style="color:#f87171;">
+                      <span style="padding:1px 4px;border-radius:3px;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.3);font-size:9.5px;font-weight:700;">${slTag}</span>
+                      $${fmtPriceSmart(g.sl)} <span style="opacity:0.85;">(${g.slPct.toFixed(2)}% | ${g.slUsd >= 0 ? "+" : ""}$${g.slUsd.toFixed(2)})</span>
+                    </div>
+                    <div style="color:#94a3b8;font-size:10px;">
+                      ENTRY $${fmtPriceSmart(p.entryPrice)}
+                    </div>
+                    <div style="color:#34d399;">
+                      <span style="padding:1px 4px;border-radius:3px;background:rgba(16,185,129,0.14);border:1px solid rgba(16,185,129,0.3);font-size:9.5px;font-weight:700;">${tpTag}</span>
+                      $${fmtPriceSmart(g.tp)} <span style="opacity:0.85;">(+${Math.abs(g.tpPct).toFixed(2)}% | +$${Math.abs(g.tpUsd).toFixed(2)})</span>
+                    </div>
+                  </div>
                 </div>
               </div>`;
           }).join("")}

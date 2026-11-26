@@ -78,7 +78,7 @@ async function syncPendingLimitsToFirebase() {
     } catch (_) {}
 
     const snap = await getFuturesSnapshot();
-    if (limitRes && (limitRes.filled > 0 || limitRes.canceled > 0)) {
+    if (snap && snap.ok) {
       await syncFuturesPortfolioToFirebase(snap);
     }
 
