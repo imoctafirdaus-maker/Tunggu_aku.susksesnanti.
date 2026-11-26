@@ -473,7 +473,7 @@ async function executeSignalTrade(rec, snap) {
     marginUsed: reqMargin,
     slStatus,
     tpStatus,
-    aiNote: `${modeBadge} ${aiCheck.summary}`
+    aiNote: `${modeBadge} ${rec._aiNote || "ICT + SMC + VD (7-Gate)"}`
   };
 }
 
@@ -501,7 +501,9 @@ async function manageOpenPositions(snap) {
     return [];
   }
   const closedResults = [];
-  const TARGET_ROI_PCT = 45; // Otomatis Take Profit saat ROI >= +45% (0.9% gerak harga di 50x)
+  const TARGET_ROI_PCT = 45;     // Otomatis Take Profit saat ROI >= +45%
+  const MAX_LOSS_ROI_PCT = -85;  // Hard Cut-Loss maksimal -85% margin awal (cegah loss Cross Margin melebar)
+  const NAKED_SL_ROI_PCT = -45;  // Cut-Loss cepat -45% margin jika order STOP_MARKET di bursa tidak terpasang
 
   for (const pos of snap.openPositions) {
     try {
@@ -516,8 +518,9 @@ async function manageOpenPositions(snap) {
       const initMargin = notional > 0 ? (notional / lev) : 0;
       const roiPct = initMargin > 0 ? (upnl / initMargin) * 100 : 0;
 
-      // Cek apakah ada order TAKE_PROFIT aktif di Binance untuk simbol ini
+      // Cek apakah order TAKE_PROFIT dan STOP_MARKET aktif di Binance untuk simbol ini
       let hasTpOrder = false;
+      let hasSlOrder = false;
       try {
         const [openOrders, openAlgos] = await Promise.all([
           fapiRequest("GET", "/fapi/v1/openOrders", { symbol: sym }, creds, true).catch(() => []),
@@ -528,9 +531,46 @@ async function manageOpenPositions(snap) {
           ...(Array.isArray(openAlgos) ? openAlgos : (Array.isArray(openAlgos?.orders) ? openAlgos.orders : []))
         ];
         hasTpOrder = allOrd.some(o => String(o.type || "").includes("TAKE_PROFIT"));
+        hasSlOrder = allOrd.some(o => String(o.type || "").includes("STOP"));
       } catch (_) {}
 
-      // Tutup otomatis jika ROI >= 45% (~$2.00 bersih pada margin $5 @ 50x)
+      // 1) Proteksi Hard Cut-Loss Darurat (mencegah kerugian Cross Margin melebihi 100% margin awal)
+      if (roiPct <= MAX_LOSS_ROI_PCT || (!hasSlOrder && roiPct <= NAKED_SL_ROI_PCT)) {
+        const closeSide = amt > 0 ? "SELL" : "BUY";
+        const closeQty = Math.abs(amt);
+        const slOrderRes = await fapiRequest("POST", "/fapi/v1/order", {
+          symbol: sym,
+          side: closeSide,
+          type: "MARKET",
+          quantity: closeQty,
+          reduceOnly: "true"
+        }, creds, true);
+
+        try { await fapiRequest("DELETE", "/fapi/v1/allOpenOrders", { symbol: sym }, creds, true); } catch (_) {}
+        try { await fapiRequest("DELETE", "/fapi/v1/algoOpenOrders", { symbol: sym }, creds, true); } catch (_) {}
+
+        const slReason = !hasSlOrder
+          ? `Emergency Cut-Loss (Order SL tidak aktif di bursa, ROI ${roiPct.toFixed(1)}%)`
+          : `Hard Cut-Loss batas maksimal -${Math.abs(MAX_LOSS_ROI_PCT)}% margin tercapai (ROI ${roiPct.toFixed(1)}%)`;
+
+        closedResults.push({ symbol: sym, side: amt > 0 ? "LONG" : "SHORT", qty: closeQty, pnl: upnl, roiPct, isStopLoss: true, reason: slReason, orderId: slOrderRes.orderId });
+
+        try {
+          const { sendTelegramAlert } = require("./telegramNotifier");
+          await sendTelegramAlert(
+            `🛑 *AUTO CUT-LOSS DARURAT*
+` +
+            `• *Koin:* \`${sym}\` (${amt > 0 ? "LONG" : "SHORT"} ${lev}x)
+` +
+            `• *Realisasi:* *${upnl.toFixed(2)} USDT* (${roiPct.toFixed(1)}% ROI)
+` +
+            `• *Alasan:* ${slReason}`
+          );
+        } catch (_) {}
+        continue;
+      }
+
+      // 2) Tutup otomatis jika ROI >= +45% (~$2.00 bersih pada margin $5 @ 50x)
       if (roiPct >= TARGET_ROI_PCT || (!hasTpOrder && roiPct >= 45)) {
         const closeSide = amt > 0 ? "SELL" : "BUY";
         const closeQty = Math.abs(amt);

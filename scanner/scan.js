@@ -224,6 +224,7 @@ async function main() {
   const foundEma = [];
   const sharedCandles = {};
   let cands = [];
+  let scannerFlags = { ictScannerEnabled: true, harmonicScannerEnabled: true };
 
   try {
     cands = await loadCandidates();
@@ -256,7 +257,7 @@ async function main() {
     }, CONCURRENCY);
 
     // Baca status saklar mesin scanner (ICT+VD & Harmonic)
-    let scannerFlags = { ictScannerEnabled: true, harmonicScannerEnabled: true };
+    scannerFlags = { ictScannerEnabled: true, harmonicScannerEnabled: true };
     try {
       const aiCfgFile = path.join(__dirname, "aiConfig.json");
       if (fs.existsSync(aiCfgFile)) {

@@ -103,8 +103,8 @@ async function syncPendingLimitsToFirebase() {
     const closed = await manageOpenPositions(snapForEma);
     if (closed && closed.length) {
       console.log(
-        `⚡ [FAST-GUARD 20s] Auto TP menutup ${closed.length} posisi:`,
-        closed.map(x => `${x.symbol} (+$${x.pnl.toFixed(2)} | +${x.roiPct.toFixed(1)}%)`).join(", ")
+        `⚡ [FAST-GUARD 20s] Menutup ${closed.length} posisi:`,
+        closed.map(x => `${x.symbol} (${x.pnl >= 0 ? "+" : ""}${x.pnl.toFixed(2)} | ${x.roiPct.toFixed(1)}%)`).join(", ")
       );
       const freshSnap = await getFuturesSnapshot();
       await syncFuturesPortfolioToFirebase(freshSnap);
