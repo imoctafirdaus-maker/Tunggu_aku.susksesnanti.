@@ -76,22 +76,26 @@ async function notifyNewSignalsToTelegram(upEma, upOld = {}) {
   // 1. Prioritas Utama: Semua sinyal baru dari EMA Expert (sudah lolos MTF + Monte Carlo + Dual-AI)
   for (const [id, rec] of Object.entries(upEma || {})) {
     if (!rec || !rec.symbol || !rec.signal) continue;
-    if (!rec.autoExecuted) continue;
-    const dedupKey = `ICT_${rec.symbol}_${rec.timeframe || "5m"}_${rec.signal}_${rec.candleTime || ""}`;
+    const sigScore = Number(rec.score ?? rec.probability ?? 0);
+    if (!rec.autoExecuted && sigScore < 75) continue;
+    const tfLabel = rec.timeframe || "1h/15m/5m";
+    const dedupKey = "ICT_" + rec.symbol + "_" + tfLabel + "_" + rec.signal + "_" + (rec.candleTime || "");
     if (cache[dedupKey]) continue;
     cache[dedupKey] = Date.now();
 
     const dirIcon = rec.signal === "BUY" ? "🟢 LONG (BUY)" : "🔴 SHORT (SELL)";
-    const aiNote = rec.aiSummary ? `\n🧠 *Dual-AI:* ${rec.aiSummary}` : "";
-    const tradeNote = rec.autoExecuted ? `\n⚡ *Eksekusi 50x:* ORDER TERKIRIM` : "";
+    const cleanNote = String(rec.aiSummary || rec.reason || "").replace(/[*_`\[\]]/g, "");
+    const statusLabel = rec.autoExecuted
+      ? "⚡ *Status:* ORDER 50x TERKIRIM KE BINANCE"
+      : "📡 *Status:* SINYAL VALID (Tidak Auto-Entry: " + (cleanNote || "Slot Penuh / Filter") + ")";
     alerts.push(
-      `⚡ *SINYAL ICT + VOLUME DELTA EXPERT*\n` +
-      `• *Koin:* \`${rec.symbol}\` (${rec.timeframe || "5m"})\n` +
-      `• *Arah:* ${dirIcon}\n` +
-      `• *Entry:* \`$${rec.entryPrice || rec.price}\`\n` +
-      `• *Stop Loss:* \`$${rec.stopLoss || "-"}\`\n` +
-      `• *Take Profit:* \`$${rec.takeProfit || "-"}\`` +
-      aiNote + tradeNote
+      "⚡ *SINYAL ICT + VOLUME DELTA EXPERT (" + sigScore + "/100)*\n" +
+      "• *Koin:* `" + rec.symbol + "` (" + tfLabel + ")\n" +
+      "• *Arah:* " + dirIcon + "\n" +
+      "• *Entry:* `$" + (rec.entryPrice || rec.price) + "`\n" +
+      "• *Stop Loss:* `$" + (rec.stopLoss || "-") + "`\n" +
+      "• *Take Profit:* `$" + (rec.takeProfit1 || rec.takeProfit || "-") + "`\n" +
+      statusLabel
     );
   }
 
