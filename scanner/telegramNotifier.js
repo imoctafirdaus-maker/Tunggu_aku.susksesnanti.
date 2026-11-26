@@ -86,7 +86,7 @@ async function notifyNewSignalsToTelegram(upEma, upOld = {}) {
     const dirIcon = rec.signal === "BUY" ? "🟢 LONG (BUY)" : "🔴 SHORT (SELL)";
     const cleanNote = String(rec.aiSummary || rec.reason || "").replace(/[*_`\[\]]/g, "");
     const statusLabel = rec.autoExecuted
-      ? "⚡ *Status:* ORDER 50x TERKIRIM KE BINANCE"
+      ? "⚡ *Status:* ORDER " + (rec.appliedLeverage ? rec.appliedLeverage + "x" : "FUTURES") + " TERKIRIM KE BINANCE"
       : "📡 *Status:* SINYAL VALID (Tidak Auto-Entry: " + (cleanNote || "Slot Penuh / Filter") + ")";
     alerts.push(
       "⚡ *SINYAL ICT + VOLUME DELTA EXPERT (" + sigScore + "/100)*\n" +

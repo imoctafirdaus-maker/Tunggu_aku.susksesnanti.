@@ -377,6 +377,7 @@ async function main() {
             }
             const trRes = await executeSignalTrade(rec, futuresSnap);
             rec.autoExecuted = Boolean(trRes && trRes.executed);
+            if (trRes && trRes.leverage) rec.appliedLeverage = trRes.leverage;
             rec.aiSummary = (trRes && trRes.reason) || (rec.autoExecuted ? (ictAiOn ? "Lolos Audit Dual-AI" : "Eksekusi Langsung Termux (AI OFF)") : "SKIPPED");
             console.log(`   -> Hasil ${rec.symbol}:`, trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED"));
             await db.ref(`emaSignals/${sigId}`).update({

@@ -122,7 +122,18 @@ function analyzeOrderFlow(vdCandles, opts = {}) {
     };
   }
 
-  const validBars = vdCandles.filter(c => Number.isFinite(c.buyVolume) && Number.isFinite(c.sellVolume) && c.volume > 0);
+  const normalizedBars = vdCandles.map(c => {
+    const vol = Number(c.volume);
+    let buyVol = Number(c.buyVolume ?? c.buyVol);
+    let sellVol = Number(c.sellVolume ?? c.sellVol);
+    const takerBuy = Number(c.takerBuyBase ?? c.takerBuyVolume);
+    if (!Number.isFinite(buyVol) && Number.isFinite(takerBuy) && Number.isFinite(vol)) {
+      buyVol = takerBuy;
+      sellVol = Math.max(0, vol - buyVol);
+    }
+    return { ...c, volume: vol, buyVolume: buyVol, sellVolume: sellVol };
+  });
+  const validBars = normalizedBars.filter(c => Number.isFinite(c.buyVolume) && Number.isFinite(c.sellVolume) && c.volume > 0);
   if (validBars.length < lookback + 2) {
     return {
       valid: false,
