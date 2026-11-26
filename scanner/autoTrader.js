@@ -278,16 +278,16 @@ async function checkBtcMacroRegime(rec) {
     const isBearRegime = price < ema200 && ema50 < ema200;
     const isBullRegime = price > ema200 && ema50 > ema200;
 
-    if (dir === "BUY" && isBearRegime && prob < 82) {
+    if (dir === "BUY" && isBearRegime && prob < 75) {
       return {
         pass: false,
-        reason: `Filter Makro BTC Bearish (BTC ${price.toFixed(0)} < EMA200 ${ema200.toFixed(0)}): BUY ditolak karena Prob ${prob}% < 82%`
+        reason: `Filter Makro BTC Bearish (BTC ${price.toFixed(0)} < EMA200 ${ema200.toFixed(0)}): BUY ditolak karena Prob ${prob}% < 75%`
       };
     }
-    if (dir === "SELL" && isBullRegime && prob < 82) {
+    if (dir === "SELL" && isBullRegime && prob < 75) {
       return {
         pass: false,
-        reason: `Filter Makro BTC Bullish (BTC ${price.toFixed(0)} > EMA200 ${ema200.toFixed(0)}): SELL ditolak karena Prob ${prob}% < 82%`
+        reason: `Filter Makro BTC Bullish (BTC ${price.toFixed(0)} > EMA200 ${ema200.toFixed(0)}): SELL ditolak karena Prob ${prob}% < 75%`
       };
     }
     return { pass: true };

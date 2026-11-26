@@ -784,7 +784,7 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
   if (!snap || !snap.ok) {
     return { executed: false, reason: `Koneksi Futures gagal: ${snap?.error || "no response"}` };
   }
-  const minLimitPrzScore = Math.max(Number(cfg.minLimitPrzScore) || 75, Number(cfg.minPrzScore) || 60);
+  const minLimitPrzScore = Math.max(75, Number(cfg.minLimitPrzScore) || 75, Number(cfg.minPrzScore) || 75);
   if ((Number(sig.przScore) || 0) < minLimitPrzScore) {
     return { executed: false, reason: `Skor PRZ (${sig.przScore || 0}/100) di bawah batas Limit Order (${minLimitPrzScore}/100)` };
   }

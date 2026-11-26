@@ -18,7 +18,7 @@ const DEFAULT_ICT_CONFIG = {
   },
   thresholds: {
     strongSetup: 85,
-    validSetup: 70,
+    validSetup: 75,
     watchlist: 55
   },
   swing: {
