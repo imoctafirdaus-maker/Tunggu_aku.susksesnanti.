@@ -493,6 +493,9 @@
     const devs = swcData.devices || [];
     const logs = swcData.logs || [];
     const schedules = swcData.schedules || [];
+    const dnsCfg = swcData.dnsConfig || { profile_id: "", api_key: "", enabled: 0, last_error: "" };
+    const actMap = {};
+    (swcData.deviceActivity || []).forEach(a => { actMap[a.mac] = a; });
     const onlineCount = devs.filter(d => d.status === "online").length;
     const blockedCount = devs.filter(d => d.block_mode === "blocked").length;
     const unknownCount = devs.filter(d => !d.is_known).length;
@@ -639,8 +642,11 @@
             const isBlk = d.block_mode === "blocked";
             const isOn = d.status === "online";
             const label = d.alias || d.hostname || "Unnamed Client";
+            const act = actMap[d.mac];
+            const isFreshAct = act && (Date.now() - (act.updated_at || 0) < 30 * 60 * 1000);
+            const isGamb = isFreshAct && act.risk === "gambling";
             return `
-              <div class="ag-node ${isBlk ? "blocked" : (isOn ? "online" : "")}">
+              <div class="ag-node ${isBlk ? "blocked" : (isGamb ? "blocked" : (isOn ? "online" : ""))}" ${isGamb ? 'style="border-color:#ef4444;box-shadow:0 0 14px rgba(239,68,68,0.22)"' : ""}>
                 <div class="ag-node-top">
                   <div style="min-width:0;flex:1">
                     <div class="ag-node-name-row">
@@ -656,6 +662,12 @@
                       <span>•</span>
                       <span>${esc(d.conn_type || "WLAN")}</span>
                     </div>
+                    ${isFreshAct ? `
+                      <div style="margin-top:6px;display:inline-flex;align-items:center;gap:6px;padding:3px 9px;border-radius:6px;font-size:11px;font-weight:600;background:${isGamb ? "rgba(239,68,68,0.18)" : "rgba(56,189,248,0.12)"};color:${isGamb ? "#fca5a5" : "#7dd3fc"};border:1px solid ${isGamb ? "rgba(239,68,68,0.45)" : "rgba(56,189,248,0.25)"}">
+                        <span>${isGamb ? "⚠️" : "●"}</span>
+                        <span>${esc(act.service_label)}</span>
+                      </div>
+                    ` : ""}
                   </div>
                   <button class="swc-btn ${isBlk ? "swc-btn-success" : "swc-btn-danger"}" data-act="block" data-mac="${esc(d.mac)}" data-next="${isBlk ? 0 : 1}">
                     ${isBlk ? `${SVG.allow}<span>Pulihkan</span>` : `${SVG.block}<span>Blokir</span>`}
@@ -670,6 +682,27 @@
               </div>
             `;
           }).join("")}
+        </div>
+
+        <div class="ag-glass">
+          <div class="ag-sec-title">${SVG.radar || SVG.clock}<span>Deteksi Layanan DNS &amp; Notifikasi Chrome</span></div>
+          <div style="font-size:12px;color:#94a3b8;margin-bottom:10px;line-height:1.45">
+            Pantau layanan yang dibuka tiap perangkat via NextDNS tanpa memutus Wi-Fi otomatis. Notifikasi Chrome muncul saat indikasi situs judi terdeteksi.
+          </div>
+          ${dnsCfg.last_error ? `<div style="margin-bottom:10px;padding:8px 10px;border-radius:8px;background:rgba(239,68,68,0.14);border:1px solid rgba(239,68,68,0.35);color:#fca5a5;font-size:11.5px">Error DNS: ${esc(dnsCfg.last_error)}</div>` : ""}
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">
+            <input id="swc-dns-profile" class="swc-input" placeholder="NextDNS Profile ID (mis. a1b2c3)" value="${esc(dnsCfg.profile_id || "")}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.65);color:#f8fafc;font-size:12px" />
+            <input id="swc-dns-key" type="password" class="swc-input" placeholder="NextDNS API Key" value="${esc(dnsCfg.api_key || "")}" style="width:100%;padding:8px 10px;border-radius:8px;border:1px solid rgba(148,163,184,0.2);background:rgba(15,23,42,0.65);color:#f8fafc;font-size:12px" />
+          </div>
+          <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px">
+            <label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#cbd5e1;cursor:pointer;margin-right:auto">
+              <input id="swc-dns-enabled" type="checkbox" ${dnsCfg.enabled ? "checked" : ""} />
+              <span>Aktifkan Deteksi DNS</span>
+            </label>
+            <button class="swc-btn swc-btn-primary" data-act="save-dns">Simpan</button>
+            <button class="swc-btn" data-act="poll-dns">Cek Sekarang</button>
+            <button class="swc-btn" data-act="test-notif">Tes Notif Chrome</button>
+          </div>
         </div>
 
         <div class="ag-glass">
@@ -874,4 +907,86 @@
     pollStateOnce();
   }
   setInterval(pollStateOnce, 7000);
+})();
+
+
+// === HOOK NOTIFIKASI CHROME & HANDLER KONFIGURASI DNS ===
+(function initDnsNotifHook() {
+  let lastSeenAlertId = Number(localStorage.getItem("swc_last_dns_alert_id") || 0);
+  let initializedAlerts = false;
+
+  function fireChromeAlert(title, body) {
+    if (!("Notification" in window)) return;
+    if (Notification.permission === "granted") {
+      try {
+        new Notification(title, { body, tag: "swc-dns-alert", renotify: true });
+      } catch (_) {}
+    }
+  }
+
+  function checkNewDnsAlerts() {
+    const alerts = (typeof swcData !== "undefined" && swcData.dnsAlerts) ? swcData.dnsAlerts : [];
+    if (!alerts.length) return;
+    const newest = alerts[0];
+    if (!initializedAlerts) {
+      initializedAlerts = true;
+      if (newest.id > lastSeenAlertId) {
+        lastSeenAlertId = newest.id;
+        localStorage.setItem("swc_last_dns_alert_id", String(lastSeenAlertId));
+      }
+      return;
+    }
+    if (newest.id > lastSeenAlertId) {
+      lastSeenAlertId = newest.id;
+      localStorage.setItem("swc_last_dns_alert_id", String(lastSeenAlertId));
+      fireChromeAlert(
+        `Peringatan Aktivitas: ${newest.device_name}`,
+        `${newest.service_label} (${newest.domain}) — Buka SWC jika ingin memblokir manual.`
+      );
+    }
+  }
+
+  if (typeof renderSwc === "function") {
+    const _origRenderSwc = renderSwc;
+    renderSwc = function() {
+      _origRenderSwc.apply(this, arguments);
+      checkNewDnsAlerts();
+    };
+  }
+
+  document.addEventListener("click", async (e) => {
+    const btn = e.target.closest("[data-act]");
+    if (!btn) return;
+    const act = btn.getAttribute("data-act");
+    if (act === "save-dns") {
+      const profile_id = document.getElementById("swc-dns-profile")?.value || "";
+      const api_key = document.getElementById("swc-dns-key")?.value || "";
+      const enabled = !!document.getElementById("swc-dns-enabled")?.checked;
+      if ("Notification" in window && Notification.permission === "default") {
+        Notification.requestPermission().catch(() => {});
+      }
+      const res = await (typeof apiPost === "function" ? apiPost("/api/dns/config", { profile_id, api_key, enabled }) : fetch("/api/dns/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ profile_id, api_key, enabled }) }).then(r => r.json())).catch(() => null);
+      if (res && res.ok) {
+        Object.assign(swcData, res);
+        renderSwc();
+      }
+    } else if (act === "poll-dns") {
+      const res = await (typeof apiPost === "function" ? apiPost("/api/dns/poll", {}) : fetch("/api/dns/poll", { method: "POST" }).then(r => r.json())).catch(() => null);
+      if (res && res.ok) {
+        Object.assign(swcData, res);
+        renderSwc();
+      }
+    } else if (act === "test-notif") {
+      if (!("Notification" in window)) {
+        alert("Browser ini tidak mendukung Web Notification.");
+        return;
+      }
+      const perm = await Notification.requestPermission();
+      if (perm === "granted") {
+        fireChromeAlert("Tes Notifikasi SWC Berhasil", "Chrome akan memberi tahu saat domain berisiko terdeteksi.");
+      } else {
+        alert("Izin notifikasi ditolak. Aktifkan izin Notifikasi di Setelan Situs Chrome.");
+      }
+    }
+  });
 })();

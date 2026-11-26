@@ -105,6 +105,154 @@ db.exec(`
   );
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS dns_config (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    profile_id TEXT DEFAULT "",
+    api_key TEXT DEFAULT "",
+    enabled INTEGER DEFAULT 0,
+    last_poll INTEGER DEFAULT 0,
+    last_error TEXT DEFAULT ""
+  );
+  INSERT OR IGNORE INTO dns_config (id, profile_id, api_key, enabled) VALUES (1, "", "", 0);
+  CREATE TABLE IF NOT EXISTS device_activity (
+    mac TEXT PRIMARY KEY,
+    service_label TEXT,
+    domain TEXT,
+    risk TEXT DEFAULT "none",
+    updated_at INTEGER
+  );
+  CREATE TABLE IF NOT EXISTS dns_alerts (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    mac TEXT,
+    device_name TEXT,
+    domain TEXT,
+    service_label TEXT,
+    created_at INTEGER
+  );
+`);
+
+const IGNORED_NOISE_RE = /(gstatic\.com|googleapis\.com|connectivitycheck|google-analytics|doubleclick|app-measurement|digicert|ocsp|ntp\.org|sentry\.io|crashlytics|icloud\.com|apple-dns\.net|msftconnecttest|windowsupdate)/i;
+const SAFE_DOMAINS_RE = /(youtube\.com|youtu\.be|googlevideo\.com|ytimg\.com|tiktok\.com|tiktokv\.com|tiktokcdn\.com|byteoversea\.com|instagram\.com|cdninstagram\.com|facebook\.com|fbcdn\.net|whatsapp\.com|whatsapp\.net|google\.com|google\.co\.id|github\.com|microsoft\.com|apple\.com|shopee\.co\.id|tokopedia\.com|lazada\.co\.id|gojek\.com|grab\.com|dana\.id|ovo\.id|bca\.co\.id|bri\.co\.id|bni\.co\.id|bankmandiri\.co\.id|detik\.com|kompas\.com|cnnindonesia\.com|mobilelegends\.com|moonton\.com|garena\.com|roblox\.com)/i;
+const GAMBLING_RE = /(slot|gacor|maxwin|zeus|pragmatic|pgsoft|judi|togel|sbobet|parlay|casino|poker|dominoqq|bandar|scatter|rtp|hoki|toto|777|888|999|betting|bola88|mpo|idnplay|spaceman|mahjongways)/i;
+
+function classifyDnsDomain(domain = "", root = "") {
+  const target = (root || domain || "").toLowerCase().trim();
+  const full = (domain || target).toLowerCase().trim();
+  if (!target || IGNORED_NOISE_RE.test(full)) return null;
+
+  if (!SAFE_DOMAINS_RE.test(target) && GAMBLING_RE.test(full)) {
+    return { label: "Indikasi Situs Judi", risk: "gambling", domain: target };
+  }
+  if (/(youtube\.com|youtu\.be|googlevideo\.com|ytimg\.com)/i.test(target)) {
+    return { label: "Menonton YouTube", risk: "none", domain: target };
+  }
+  if (/(tiktok\.com|tiktokv\.com|tiktokcdn\.com|byteoversea\.com|musical\.ly)/i.test(target)) {
+    return { label: "Membuka TikTok", risk: "none", domain: target };
+  }
+  if (/(instagram\.com|cdninstagram\.com)/i.test(target)) {
+    return { label: "Membuka Instagram", risk: "none", domain: target };
+  }
+  if (/(facebook\.com|fbcdn\.net|fbsbx\.com)/i.test(target)) {
+    return { label: "Membuka Facebook", risk: "none", domain: target };
+  }
+  if (/(whatsapp\.com|whatsapp\.net)/i.test(target)) {
+    return { label: "Aktivitas WhatsApp", risk: "none", domain: target };
+  }
+  if (/(mobilelegends\.com|youngjoygame\.com|moonton\.com|freefiremobile\.com|garena\.com|pubgmobile\.com|roblox\.com|steampowered\.com)/i.test(target)) {
+    return { label: "Bermain Game Online", risk: "none", domain: target };
+  }
+  if (/(shopee\.co\.id|shopeemobile\.com|tokopedia\.com|tokopedia\.net|lazada\.co\.id|blibli\.com)/i.test(target)) {
+    return { label: "Belanja Online", risk: "none", domain: target };
+  }
+  return { label: `Browsing (${target})`, risk: "none", domain: target };
+}
+
+const recentAlertCache = new Map();
+
+async function pollNextDns() {
+  try {
+    const cfg = db.prepare("SELECT * FROM dns_config WHERE id = 1").get();
+    if (!cfg || !cfg.enabled || !cfg.profile_id || !cfg.api_key) return;
+
+    const resp = await fetch(`https://api.nextdns.io/profiles/${encodeURIComponent(cfg.profile_id.trim())}/logs?limit=40`, {
+      headers: { "X-Api-Key": cfg.api_key.trim() },
+      signal: AbortSignal.timeout(8000)
+    });
+    if (!resp.ok) {
+      db.prepare("UPDATE dns_config SET last_poll = ?, last_error = ? WHERE id = 1")
+        .run(Date.now(), `HTTP ${resp.status}: Periksa Profile ID / API Key`);
+      broadcast();
+      return;
+    }
+
+    const json = await resp.json();
+    const entries = Array.isArray(json.data) ? json.data : [];
+    const devs = db.prepare("SELECT * FROM devices").all();
+    const latestPerMac = new Map();
+    let hasChange = false;
+
+    for (const item of entries) {
+      const info = classifyDnsDomain(item.domain, item.root);
+      if (!info) continue;
+
+      const cIp = (item.clientIp || "").trim();
+      const dName = ((item.device && item.device.name) || "").toLowerCase().replace(/--+/g, " ").trim();
+
+      const matched = devs.find(d => {
+        if (cIp && d.ip === cIp) return true;
+        if (dName) {
+          const alias = (d.alias || "").toLowerCase().trim();
+          const host = (d.hostname || "").toLowerCase().trim();
+          if (alias && (alias === dName || alias.includes(dName) || dName.includes(alias))) return true;
+          if (host && (host === dName || host.includes(dName) || dName.includes(host))) return true;
+        }
+        return false;
+      });
+
+      if (!matched) continue;
+      const ts = item.timestamp ? Date.parse(item.timestamp) : Date.now();
+      const prev = latestPerMac.get(matched.mac);
+      // Prioritaskan temuan judi atau log paling baru
+      if (!prev || (info.risk === "gambling" && prev.risk !== "gambling") || ts > prev.ts) {
+        latestPerMac.set(matched.mac, { ...info, ts, dev: matched });
+      }
+    }
+
+    for (const [mac, act] of latestPerMac.entries()) {
+      db.prepare(`
+        INSERT INTO device_activity (mac, service_label, domain, risk, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(mac) DO UPDATE SET
+          service_label = excluded.service_label,
+          domain = excluded.domain,
+          risk = excluded.risk,
+          updated_at = excluded.updated_at
+      `).run(mac, act.label, act.domain, act.risk, act.ts || Date.now());
+      hasChange = true;
+
+      if (act.risk === "gambling") {
+        const dedupKey = `${mac}:${act.domain}`;
+        const lastAlertAt = recentAlertCache.get(dedupKey) || 0;
+        if (Date.now() - lastAlertAt > 5 * 60 * 1000) {
+          recentAlertCache.set(dedupKey, Date.now());
+          const devName = act.dev.alias || act.dev.hostname || act.dev.ip || mac;
+          db.prepare("INSERT INTO dns_alerts (mac, device_name, domain, service_label, created_at) VALUES (?, ?, ?, ?, ?)")
+            .run(mac, devName, act.domain, act.label, Date.now());
+          db.prepare("DELETE FROM dns_alerts WHERE id NOT IN (SELECT id FROM dns_alerts ORDER BY id DESC LIMIT 30)").run();
+          logEvent(mac, "DNS_ALERT", `[${devName}] Terdeteksi akses ${act.domain} (${act.label})`);
+        }
+      }
+    }
+
+    db.prepare("UPDATE dns_config SET last_poll = ?, last_error = '' WHERE id = 1").run(Date.now());
+    if (hasChange) broadcast();
+  } catch (e) {
+    db.prepare("UPDATE dns_config SET last_poll = ?, last_error = ? WHERE id = 1")
+      .run(Date.now(), e.message);
+  }
+}
+
 async function sendTelegram(text) {
   try {
     if (!fs.existsSync(TG_CFG_PATH)) return;
@@ -135,7 +283,10 @@ function getSnapshot() {
   const devices = db.prepare("SELECT * FROM devices ORDER BY status DESC, last_seen DESC").all();
   const logs = db.prepare("SELECT * FROM event_logs ORDER BY id DESC LIMIT 30").all();
   const schedules = db.prepare("SELECT * FROM schedules ORDER BY id DESC").all();
-  return { state, devices, logs, schedules };
+  const dnsConfig = db.prepare("SELECT profile_id, api_key, enabled, last_poll, last_error FROM dns_config WHERE id = 1").get() || { enabled: 0 };
+  const deviceActivity = db.prepare("SELECT * FROM device_activity").all();
+  const dnsAlerts = db.prepare("SELECT * FROM dns_alerts ORDER BY id DESC LIMIT 15").all();
+  return { state, devices, logs, schedules, dnsConfig, deviceActivity, dnsAlerts };
 }
 
 function broadcast() {
@@ -518,6 +669,21 @@ const server = http.createServer(async (req, res) => {
       return sendJson(200, { ok: true, ...getSnapshot() });
     }
 
+    if (req.method === "POST" && url.pathname === "/api/dns/config") {
+      const { profile_id, api_key, enabled } = await readJsonBody(req);
+      db.prepare("UPDATE dns_config SET profile_id = ?, api_key = ?, enabled = ?, last_error = '' WHERE id = 1")
+        .run((profile_id || "").trim(), (api_key || "").trim(), enabled ? 1 : 0);
+      if (enabled) await pollNextDns();
+      broadcast();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
+    if (req.method === "POST" && url.pathname === "/api/dns/poll") {
+      await pollNextDns();
+      broadcast();
+      return sendJson(200, { ok: true, ...getSnapshot() });
+    }
+
     const relPath = url.pathname === "/" ? "/index.html" : (url.pathname === "/wifi" ? "/swc/public.html" : url.pathname);
     const filePath = path.normalize(path.join(PUBLIC_DIR, relPath));
     if (filePath.startsWith(PUBLIC_DIR) && fs.existsSync(filePath) && fs.statSync(filePath).isFile()) {
@@ -536,6 +702,7 @@ server.listen(PORT, "127.0.0.1", () => {
   pollDevices();
   setInterval(pollDevices, 15000);
   setInterval(checkSchedules, 30000);
+  setInterval(pollNextDns, 15000);
 });
 
 
