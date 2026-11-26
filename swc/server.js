@@ -108,13 +108,13 @@ db.exec(`
 db.exec(`
   CREATE TABLE IF NOT EXISTS dns_config (
     id INTEGER PRIMARY KEY CHECK (id = 1),
-    profile_id TEXT DEFAULT "",
-    api_key TEXT DEFAULT "",
+    profile_id TEXT DEFAULT '',
+    api_key TEXT DEFAULT '',
     enabled INTEGER DEFAULT 0,
     last_poll INTEGER DEFAULT 0,
-    last_error TEXT DEFAULT ""
+    last_error TEXT DEFAULT ''
   );
-  INSERT OR IGNORE INTO dns_config (id, profile_id, api_key, enabled) VALUES (1, "", "", 0);
+  INSERT OR IGNORE INTO dns_config (id, profile_id, api_key, enabled) VALUES (1, '', '', 0);
   CREATE TABLE IF NOT EXISTS device_activity (
     mac TEXT PRIMARY KEY,
     service_label TEXT,
