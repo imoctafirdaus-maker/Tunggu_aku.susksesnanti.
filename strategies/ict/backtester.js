@@ -69,25 +69,34 @@ function summarizeTrades(trades) {
   };
 }
 
+function resolveCloseTs(bar, barSec) {
+  if (Number.isFinite(bar.closeTime)) return bar.closeTime;
+  const t = Number(bar.time) || 0;
+  const mult = t > 1e11 ? 1000 : 1;
+  return t + barSec * mult;
+}
+
 /**
- * Strict Zero-Lookahead Walk-Forward Backtester for ICT + SMC + True Volume Delta
+ * Strict Zero-Lookahead Walk-Forward Backtester for ICT + SMC + True Volume Delta (1h -> 15m -> 5m)
  */
-function runIctBacktest({ symbol = "BTCUSDT", candles15m, candles5m, vdCandles1m, config = {} }) {
+function runIctBacktest({ symbol = "BTCUSDT", candles1h, candles15m, candles5m, vdCandles1m, config = {} }) {
   const cfg = mergeConfig(config);
-  if (!Array.isArray(candles15m) || !Array.isArray(candles5m) || !Array.isArray(vdCandles1m)) {
-    return { ok: false, reason: "Data multi-timeframe (15m, 5m, 1m VD) tidak lengkap" };
+  if (!Array.isArray(candles15m) || !Array.isArray(candles5m)) {
+    return { ok: false, reason: "Data multi-timeframe (1h, 15m, 5m) tidak lengkap" };
   }
-  if (candles15m.length < 40 || candles5m.length < 50 || vdCandles1m.length < 60) {
+  if (candles15m.length < 30 || candles5m.length < 50) {
     return { ok: false, reason: "Jumlah candle historis belum mencukupi untuk backtest walk-forward" };
   }
 
+  const hasSeries1h = Array.isArray(candles1h) && candles1h.length >= 25;
+  const hasSeries1m = Array.isArray(vdCandles1m) && vdCandles1m.length >= 25;
   const trades = [];
   let activeTrade = null;
   const usedSetupKeys = new Set();
 
   for (let i = 45; i < candles5m.length; i++) {
     const cur5m = candles5m[i];
-    const cutoffTime = cur5m.closeTime || cur5m.time;
+    const cutoffTime = resolveCloseTs(cur5m, 300);
 
     // 1. Evaluate open trade on closed 5m bar
     if (activeTrade) {
@@ -119,29 +128,51 @@ function runIctBacktest({ symbol = "BTCUSDT", candles15m, candles5m, vdCandles1m
 
     // 2. Strict causal slice (only closed candles up to cutoffTime — zero future bars)
     const slice5m = candles5m.slice(Math.max(0, i - 120), i + 1);
-    const slice15m = candles15m.filter(c => (c.closeTime || c.time) <= cutoffTime).slice(-120);
-    const slice1m = vdCandles1m.filter(c => (c.closeTime || c.time) <= cutoffTime).slice(-90);
+    const slice15m = candles15m.filter(c => resolveCloseTs(c, 900) <= cutoffTime).slice(-120);
+    const slice1h = hasSeries1h ? candles1h.filter(c => resolveCloseTs(c, 3600) <= cutoffTime).slice(-120) : [];
+    const slice1m = hasSeries1m ? vdCandles1m.filter(c => resolveCloseTs(c, 60) <= cutoffTime).slice(-90) : [];
 
-    if (slice15m.length < 25 || slice1m.length < 25) continue;
+    if (slice15m.length < 25) continue;
 
+    const use1h = slice1h.length >= 25;
+    const st1h = use1h ? analyzeMarketStructure(slice1h, cfg.swing) : analyzeMarketStructure(slice15m, cfg.swing);
     const st15 = analyzeMarketStructure(slice15m, cfg.swing);
     const st5 = analyzeMarketStructure(slice5m, cfg.swing);
+
+    const liq15 = analyzeLiquidity(slice15m, st15, cfg.liquidity);
+    const fvg15 = analyzeFVG(slice15m, cfg.fvg);
+    const ob15 = analyzeOrderBlocks(slice15m, st15, cfg.orderBlock);
+    const ctx15 = analyzePremiumDiscountAndContext(slice15m, st15, ob15, liq15, cfg);
+
     const liq5 = analyzeLiquidity(slice5m, st5, cfg.liquidity);
     const fvg5 = analyzeFVG(slice5m, cfg.fvg);
     const ob5 = analyzeOrderBlocks(slice5m, st5, cfg.orderBlock);
     const disp5 = analyzeDisplacement(slice5m, cfg.displacement);
     const ctx5 = analyzePremiumDiscountAndContext(slice5m, st5, ob5, liq5, cfg);
-    const of1 = analyzeOrderFlow(slice1m, cfg.volumeDelta);
+
+    const of1h = use1h ? analyzeOrderFlow(slice1h, cfg.volumeDelta) : null;
+    const of15 = analyzeOrderFlow(slice15m, cfg.volumeDelta);
+    const of5 = analyzeOrderFlow(slice5m, cfg.volumeDelta);
+    const ofLegacy1m = slice1m.length >= 22 ? analyzeOrderFlow(slice1m, cfg.volumeDelta) : null;
+    const activePrimaryOf = (of1h && of1h.valid) ? of1h : ((of15 && of15.valid) ? of15 : ofLegacy1m);
 
     const scored = evaluateSignalScore({
+      structure1h: st1h,
       structure15m: st15,
       structure5m: st5,
+      liquidity15m: liq15,
+      fvg15m: fvg15,
+      orderBlocks15m: ob15,
+      context15m: ctx15,
       liquidity5m: liq5,
       fvg5m: fvg5,
       orderBlocks5m: ob5,
       displacement5m: disp5,
       context5m: ctx5,
-      orderFlow1m: of1
+      orderFlow1h: of1h,
+      orderFlow15m: of15,
+      orderFlow5m: of5,
+      orderFlow1m: ofLegacy1m || activePrimaryOf
     }, cfg);
 
     if (scored.signal === "BUY" || scored.signal === "SELL") {
@@ -182,6 +213,7 @@ function runIctBacktest({ symbol = "BTCUSDT", candles15m, candles5m, vdCandles1m
   return {
     ok: true,
     symbol,
+    timeframe: hasSeries1h ? "1h/15m/5m" : "15m/5m",
     all: summarizeTrades(trades),
     long: summarizeTrades(trades.filter(t => t.side === "BUY")),
     short: summarizeTrades(trades.filter(t => t.side === "SELL")),
