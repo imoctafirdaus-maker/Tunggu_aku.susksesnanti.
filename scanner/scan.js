@@ -346,35 +346,53 @@ async function main() {
     if (Object.keys(upEma).length) {
       await db.ref("emaSignals").update(upEma);
       if (isAutoTradeEnabled && futuresSnap && futuresSnap.ok) {
+        let ictAiOn = !(exEma._botControl && exEma._botControl.ictAiAuditEnabled === false);
+        try {
+          const aiCfgFile = path.join(__dirname, "aiConfig.json");
+          if (fs.existsSync(aiCfgFile)) {
+            const aiCfg = JSON.parse(fs.readFileSync(aiCfgFile, "utf8"));
+            if (typeof aiCfg.ictAiAuditEnabled === "boolean") ictAiOn = aiCfg.ictAiAuditEnabled;
+          }
+        } catch (_) {}
+
         for (const [sigId, rec] of Object.entries(upEma)) {
           try {
-            console.log(`🤖 [ICT-SMC-VD] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`);
+            console.log(ictAiOn
+              ? `🤖 [ICT-SMC-VD] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`
+              : `⚡ [ICT-SMC-VD] Audit AI OFF — Termux mengambil alih eksekusi ${rec.symbol} (${rec.signal})...`);
             if (db) {
               await db.ref("emaSignals/_liveRadar").set({
-                phase: "AUDITING",
+                phase: ictAiOn ? "AUDITING" : "EXECUTING",
                 scanCoin: rec.symbol,
                 candidate: `${rec.symbol} (ICT + SMC + VD)`,
-                signal: `${rec.signal} [ICT 15m/5m/1m]`,
-                groqStatus: "AUDITING",
-                geminiStatus: "AUDITING",
+                signal: `${rec.signal} [ICT 1h/15m/5m]`,
+                groqStatus: ictAiOn ? "AUDITING" : "BYPASS (OFF)",
+                geminiStatus: ictAiOn ? "AUDITING" : "BYPASS (OFF)",
                 tradeResult: "PENDING",
-                tradeReason: `Mengaudit sinyal ${rec.signal} ${rec.symbol} (Prob ${rec.probability}%)...`,
+                tradeReason: ictAiOn
+                  ? `Mengaudit sinyal ${rec.signal} ${rec.symbol} (Skor ${rec.probability}%)...`
+                  : `Audit AI ICT+VD OFF — Mengevaluasi eksekusi langsung ${rec.signal} ${rec.symbol}...`,
                 updatedAt: Date.now()
               }).catch(() => {});
             }
             const trRes = await executeSignalTrade(rec, futuresSnap);
-              rec.autoExecuted = Boolean(trRes && trRes.executed);
-              rec.aiSummary = (trRes && trRes.reason) || (rec.autoExecuted ? "Lolos Audit Dual-AI" : "SKIPPED");
+            rec.autoExecuted = Boolean(trRes && trRes.executed);
+            rec.aiSummary = (trRes && trRes.reason) || (rec.autoExecuted ? (ictAiOn ? "Lolos Audit Dual-AI" : "Eksekusi Langsung Termux (AI OFF)") : "SKIPPED");
             console.log(`   -> Hasil ${rec.symbol}:`, trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED"));
-            await db.ref(`emaSignals/${sigId}`).update({ aiAudited: true, autoExecuted: rec.autoExecuted, aiAuditReason: trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED") }).catch(() => {});
+            await db.ref(`emaSignals/${sigId}`).update({
+              aiAudited: true,
+              aiBypassed: !ictAiOn,
+              autoExecuted: rec.autoExecuted,
+              aiAuditReason: trRes.reason || (trRes.executed ? "EXECUTED" : "SKIPPED")
+            }).catch(() => {});
             if (db) {
               await db.ref("emaSignals/_liveRadar").set({
                 phase: "COMPLETED",
                 scanCoin: rec.symbol,
                 candidate: `${rec.symbol} (ICT + SMC + VD)`,
-                signal: `${rec.signal} [ICT 15m/5m/1m]`,
-                groqStatus: trRes.executed ? "PASS" : "DONE",
-                geminiStatus: trRes.executed ? "PASS" : "DONE",
+                signal: `${rec.signal} [ICT 1h/15m/5m]`,
+                groqStatus: ictAiOn ? (trRes.executed ? "PASS" : "DONE") : "OFF",
+                geminiStatus: ictAiOn ? (trRes.executed ? "PASS" : "DONE") : "OFF",
                 tradeResult: trRes.executed ? "SUCCESS" : "SKIPPED",
                 tradeReason: trRes.reason || (trRes.executed ? "Order 50x berhasil dikirim ke Binance!" : "Ditahan filter risiko/AI"),
                 updatedAt: Date.now()

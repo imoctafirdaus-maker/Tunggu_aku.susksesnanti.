@@ -135,7 +135,10 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       ⏳ Memuat...
     </button>
     <button id="aiAuditToggleBtn" type="button" onclick="toggleAiAudit()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#2563eb;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-      🤖 Audit AI: ON
+      🤖 Audit AI Harmonic: ON
+    </button>
+    <button id="ictAiAuditToggleBtn" type="button" onclick="toggleIctAiAudit()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#0284c7;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
+      🧠 Audit AI ICT+VD: ON
     </button>
     <button id="manualMarginToggleBtn" type="button" onclick="toggleManualMargin()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#16a34a;color:#fff;box-shadow:0 4px 12px rgba(22,163,74,0.35);">
       🟢 Margin Manual: OFF
@@ -168,7 +171,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
 <script>
 (function() {
   const CTRL_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
-  window.__botControlState = { autoTrade: true, aiAuditEnabled: true, manualMarginEnabled: false, manualMarginUsd: 10, minProb: 75, updatedAt: 0 };
+  window.__botControlState = { autoTrade: true, aiAuditEnabled: true, ictAiAuditEnabled: true, manualMarginEnabled: false, manualMarginUsd: 10, minProb: 75, updatedAt: 0 };
   let __mmEditing = false;
   let __mmSaveTimer = null;
 
@@ -337,10 +340,10 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     if (aiBtn) {
       aiBtn.disabled = false;
       if (enabled) {
-        aiBtn.textContent = "🤖 Audit AI: ON";
+        aiBtn.textContent = "🤖 Audit AI Harmonic: ON";
         aiBtn.style.background = "#2563eb";
       } else {
-        aiBtn.textContent = "🚫 Audit AI: OFF";
+        aiBtn.textContent = "🚫 Audit AI Harmonic: OFF";
         aiBtn.style.background = "#475569";
       }
     }
@@ -383,6 +386,46 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     }
   };
 
+  function renderIctAiBtn(ictAiOn) {
+    const enabled = ictAiOn !== false;
+    window.__botControlState.ictAiAuditEnabled = enabled;
+    const btn = document.getElementById("ictAiAuditToggleBtn");
+    if (btn) {
+      btn.disabled = false;
+      if (enabled) {
+        btn.textContent = "🧠 Audit AI ICT+VD: ON";
+        btn.style.background = "#0284c7";
+        btn.style.outline = "none";
+      } else {
+        btn.textContent = "⚡ Audit AI ICT+VD: OFF (Termux)";
+        btn.style.background = "#475569";
+        btn.style.outline = "1px solid #94a3b8";
+      }
+    }
+    window.dispatchEvent(new CustomEvent("onBotControlChange", { detail: window.__botControlState }));
+  }
+
+  window.toggleIctAiAudit = async function() {
+    if (busy) return;
+    busy = true;
+    const btn = document.getElementById("ictAiAuditToggleBtn");
+    const nextIctAi = !window.__botControlState.ictAiAuditEnabled;
+    if (btn) { btn.disabled = true; btn.textContent = "⏳..."; }
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ictAiAuditEnabled: nextIctAi, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderIctAiBtn(nextIctAi);
+    } catch (err) {
+      if (btn) { btn.disabled = false; renderIctAiBtn(window.__botControlState.ictAiAuditEnabled); }
+    } finally {
+      busy = false;
+    }
+  };
+
     function renderMasterBtn(isOn, ctrlData = null) {
     const enabled = Boolean(isOn);
     window.__botControlState.autoTrade = enabled;
@@ -413,6 +456,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         if (d && typeof d.minProb === "number") window.__botControlState.minProb = d.minProb;
         renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
         renderAiBtn(d && typeof d.aiAuditEnabled === "boolean" ? d.aiAuditEnabled : true);
+        renderIctAiBtn(d && typeof d.ictAiAuditEnabled === "boolean" ? d.ictAiAuditEnabled : true);
         renderManualMarginUI(
           d && typeof d.manualMarginEnabled === "boolean" ? d.manualMarginEnabled : false,
           d && typeof d.manualMarginUsd === "number" ? d.manualMarginUsd : 10
@@ -433,7 +477,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       const res = await fetch(CTRL_URL, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoTrade: nextState, aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false, manualMarginEnabled: Boolean(window.__botControlState.manualMarginEnabled), manualMarginUsd: clampManualMargin(window.__botControlState.manualMarginUsd), minProb: 75, source: "pwa", updatedAt: Date.now() })
+        body: JSON.stringify({ autoTrade: nextState, aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false, ictAiAuditEnabled: window.__botControlState.ictAiAuditEnabled !== false, manualMarginEnabled: Boolean(window.__botControlState.manualMarginEnabled), manualMarginUsd: clampManualMargin(window.__botControlState.manualMarginUsd), minProb: 75, source: "pwa", updatedAt: Date.now() })
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderMasterBtn(nextState);

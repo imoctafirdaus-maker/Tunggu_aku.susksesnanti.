@@ -326,16 +326,31 @@ async function executeSignalTrade(rec, snap) {
     return { executed: false, reason: `Sudah ada posisi aktif pada ${rec.symbol}` };
   }
 
-  const tm = await runTimeMachineCheck(rec, 52.0);
-  if (!tm.pass) {
-    return { executed: false, reason: `TimeMachine Probabilitas rendah (${tm.winProb}% < 52%)` };
+  let skipIctAi = false;
+  if (rec.strategy === "ICT_SMC_VD") {
+    try {
+      const aiCfgFile = path.join(__dirname, "aiConfig.json");
+      if (fs.existsSync(aiCfgFile)) {
+        const aiCfg = JSON.parse(fs.readFileSync(aiCfgFile, "utf8"));
+        if (aiCfg.ictAiAuditEnabled === false) skipIctAi = true;
+      }
+    } catch (_) {}
   }
-  const aiCheck = await evaluateDualAiConsensus(rec, tm);
-  if (!aiCheck.approved) {
-    await recordAiRejection(rec, aiCheck.reason);
-    return { executed: false, reason: aiCheck.reason };
+
+  if (skipIctAi) {
+    rec._aiNote = "Audit AI ICT+VD OFF — Termux mengambil alih eksekusi langsung ICT + SMC + VD (1h->15m->5m)";
+  } else {
+    const tm = await runTimeMachineCheck(rec, 52.0);
+    if (!tm.pass) {
+      return { executed: false, reason: `TimeMachine Probabilitas rendah (${tm.winProb}% < 52%)` };
+    }
+    const aiCheck = await evaluateDualAiConsensus(rec, tm);
+    if (!aiCheck.approved) {
+      await recordAiRejection(rec, aiCheck.reason);
+      return { executed: false, reason: aiCheck.reason };
+    }
+    rec._aiNote = aiCheck.summary;
   }
-  rec._aiNote = aiCheck.summary;
 
   const filters = await getSymbolFilters(rec.symbol, creds);
   if (!filters) return { executed: false, reason: `${rec.symbol} tidak tersedia di USDⓈ-M Futures` };

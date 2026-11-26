@@ -13,6 +13,14 @@ function setLocalAiAudit(enabled) {
   } catch (_) {}
 }
 
+function setLocalIctAiAudit(enabled) {
+  try {
+    const cfg = fs.existsSync(AI_CFG_FILE) ? JSON.parse(fs.readFileSync(AI_CFG_FILE, "utf8")) : {};
+    cfg.ictAiAuditEnabled = enabled !== false;
+    fs.writeFileSync(AI_CFG_FILE, JSON.stringify(cfg, null, 2));
+  } catch (_) {}
+}
+
 function setLocalManualMargin(enabled, usd) {
   try {
     if (!fs.existsSync(CFG_PATH)) return;
@@ -65,6 +73,8 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
   const val = snap.val() || {};
   const aiEnabled = typeof val.aiAuditEnabled === "boolean" ? val.aiAuditEnabled : true;
   setLocalAiAudit(aiEnabled);
+  const ictAiEnabled = typeof val.ictAiAuditEnabled === "boolean" ? val.ictAiAuditEnabled : true;
+  setLocalIctAiAudit(ictAiEnabled);
   const manualEnabled = typeof val.manualMarginEnabled === "boolean" ? val.manualMarginEnabled : false;
   const manualUsd = Number.isFinite(+val.manualMarginUsd) ? Math.max(0, Math.min(100, +val.manualMarginUsd)) : 10;
   setLocalManualMargin(manualEnabled, manualUsd);
@@ -76,7 +86,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const resumeState = val.newsGuardActive ? (val.resumeAutoTrade !== false) : prevAuto;
     setLocalAutoTrade(false);
     await ref.update({
-      autoTrade: false, aiAuditEnabled: aiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
+      autoTrade: false, aiAuditEnabled: aiEnabled, ictAiAuditEnabled: ictAiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
       newsGuardActive: true,
       newsTitle: newsStatus.newsTitle || "Berita Makro High-Impact",
       unlockAt: newsStatus.unlockAt || (Date.now() + 30 * 60000),
@@ -92,7 +102,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     const restore = val.resumeAutoTrade !== false;
     setLocalAutoTrade(restore);
     await ref.update({
-      autoTrade: restore, aiAuditEnabled: aiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
+      autoTrade: restore, aiAuditEnabled: aiEnabled, ictAiAuditEnabled: ictAiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
       newsGuardActive: false,
       source: "news-guard-resume",
       updatedAt: admin.database.ServerValue.TIMESTAMP
@@ -107,7 +117,7 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
 
   const localState = getLocalAutoTrade();
   await ref.update({
-    autoTrade: localState, aiAuditEnabled: aiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
+    autoTrade: localState, aiAuditEnabled: aiEnabled, ictAiAuditEnabled: ictAiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
     newsGuardActive: false,
     source: "init",
     updatedAt: admin.database.ServerValue.TIMESTAMP
