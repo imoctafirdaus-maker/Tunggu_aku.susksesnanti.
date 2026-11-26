@@ -447,7 +447,7 @@ function setCachedAudit(key, res) {
 
 async function evaluateDualAiConsensus(rec, tmResult = null) {
   const stratTag = rec.strategy || "ICT_SMC_VD";
-  const cacheKey = `${stratTag}_${rec.symbol}_${rec.signal}_${rec.timeframe || "5m"}`;
+  const cacheKey = `${stratTag}_${rec.symbol}_${rec.signal}_${rec.timeframe || "1h/15m/5m"}`;
   const cachedDecision = getCachedAudit(cacheKey);
   if (cachedDecision) return cachedDecision;
   const cfg = loadAiConfig();
@@ -458,6 +458,11 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
   const tpPct = rec.entryPrice > 0 ? ((Math.abs(rec.takeProfit - rec.entryPrice) / rec.entryPrice) * 100).toFixed(2) : "0";
 
   const isHarmonic = rec.strategy === "HARMONIC_CARNEY";
+  const vd = rec.volumeDeltaEvidence || {};
+  const fmtVdTf = (obj, label) => obj
+    ? `${label}=${obj.direction} (Delta ${obj.deltaPct}%, Buy ${obj.buyPct}%, CVD ${obj.cvdDirection})`
+    : `${label}=N/A`;
+
   const marketBrief = isHarmonic ? [
     `Strategi Independen: HARMONIC_CARNEY (${rec.patternName || "Harmonic"}) | Timeframe: ${rec.timeframe || "1h"}`,
     `Koin: ${rec.symbol} | Arah Sinyal: ${rec.signal}`,
@@ -466,11 +471,11 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
     rec.reason ? `Detail Struktur Fibonacci: ${rec.reason}` : "",
     tmResult && tmResult.winProb ? `Skor Struktur Scott Carney: ${tmResult.winProb}/100` : ""
   ].filter(Boolean).join("\n") : [
-    `Strategi Independen: ICT + SMC + TRUE VOLUME DELTA EXPERT (15m Bias -> 5m Setup -> 1m OrderFlow)`,
+    `Strategi Independen: ICT + SMC + TRUE VOLUME DELTA EXPERT (1h Struktur & VD -> 15m Validasi -> 5m Eksekusi)`,
     `Koin: ${rec.symbol} | Sinyal: ${rec.category || rec.signal} (${rec.signal}) | Skor Konfluensi: ${rec.score || rec.probability || 0}/100`,
     `Entry: ${rec.entryPrice} | Stop Loss: ${rec.stopLoss} (${slPct}%) | TP1: ${rec.takeProfit1 || rec.takeProfit} | TP2: ${rec.takeProfit2 || "-"} | Net R:R: 1:${rec.riskReward || (Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(2)}`,
-    rec.ictEvidence ? `Struktur ICT/SMC: Bias 15m=${rec.ictEvidence.marketDirection15m}, 5m=${rec.ictEvidence.structureLabel5m}, BOS=${rec.ictEvidence.bos}, CHoCH=${rec.ictEvidence.choch}, Sweep=${rec.ictEvidence.liquidityStatus}, FVG=${rec.ictEvidence.fvg}, OB=${rec.ictEvidence.orderBlock}, Zona=${rec.ictEvidence.premiumDiscount}` : "",
-    rec.volumeDeltaEvidence ? `Order Flow 1m (aggTrade): Delta=${rec.volumeDeltaEvidence.delta} (${rec.volumeDeltaEvidence.deltaPct}%), CVD=${rec.volumeDeltaEvidence.cvd} (${rec.volumeDeltaEvidence.cvdDirection}), Divergence=${rec.volumeDeltaEvidence.divergence}, Absorption=${rec.volumeDeltaEvidence.absorption}` : "",
+    rec.ictEvidence ? `Struktur ICT/SMC MTF: 1h Bias=${rec.ictEvidence.marketDirection1h || rec.ictEvidence.marketDirection15m}, 15m Validasi=${rec.ictEvidence.marketDirection15m}, 5m Eksekusi=${rec.ictEvidence.structureLabel5m} (${rec.ictEvidence.marketStructure5m || "-"}), BOS=${rec.ictEvidence.bos}, CHoCH=${rec.ictEvidence.choch}, MSS=${rec.ictEvidence.mss || "NONE"}, Sweep=${rec.ictEvidence.liquidityStatus}, FVG=${rec.ictEvidence.fvg}, OB=${rec.ictEvidence.orderBlock}, Disp=${rec.ictEvidence.displacement || "NONE"}, Zona=${rec.ictEvidence.premiumDiscount}` : "",
+    rec.volumeDeltaEvidence ? `Volume Delta MTF (1h->15m->5m): ${fmtVdTf(vd.vd1h, "1h")} | ${fmtVdTf(vd.vd15m, "15m")} | ${fmtVdTf(vd.vd5m, "5m")} | CVD Slope=${vd.cvdSlope || "FLAT"}, Divergence=${vd.divergence || "NONE"}, Absorption=${vd.absorption || "NONE"}` : "",
     rec.reason ? `Alasan Konfluensi: ${rec.reason}` : "",
     tmResult && tmResult.winProb ? `Simulasi Monte Carlo (2000 skenario): Probabilitas TP ${tmResult.winProb}%` : ""
   ].filter(Boolean).join("\n");
