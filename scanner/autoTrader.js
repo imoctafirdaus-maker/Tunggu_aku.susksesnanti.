@@ -298,7 +298,10 @@ async function checkBtcMacroRegime(rec) {
 
 async function executeSignalTrade(rec, snap) {
   const MIN_EXEC_PROB = 75;
-  const sigProb = Number(rec.probability ?? rec.winrate ?? rec.score ?? 0);
+  if (rec.strategy === "ICT_SMC_VD" && rec.dataQuality && rec.dataQuality !== "VALID") {
+    return { executed: false, skipped: true, reason: `Data Order Flow tidak valid (${rec.dataQuality})` };
+  }
+  const sigProb = Number(rec.score ?? rec.probability ?? rec.winrate ?? 0);
   if (sigProb < MIN_EXEC_PROB) {
     return { executed: false, skipped: true, reason: `Probabilitas/Skor ${sigProb}% < ${MIN_EXEC_PROB}% (Mode Pantau)` };
   }
@@ -315,7 +318,8 @@ async function executeSignalTrade(rec, snap) {
   if (!newsCheck.safe) {
     return { executed: false, reason: newsCheck.reason };
   }
-  if (snap.openPositions.length >= creds.maxPositions) {
+  const effectiveMaxPos = rec.strategy === "ICT_SMC_VD" ? Math.min(Number(creds.maxPositions) || 2, 2) : (Number(creds.maxPositions) || 3);
+  if (snap.openPositions.length >= effectiveMaxPos) {
     return { executed: false, reason: `Batas maksimal ${creds.maxPositions} posisi aktif tercapai` };
   }
   if (snap.openPositions.some(p => p.symbol === rec.symbol)) {
@@ -351,7 +355,8 @@ async function executeSignalTrade(rec, snap) {
       return { executed: false, reason: `Margin Manual ${manualUsd} (Notional ${(qty * rec.entryPrice).toFixed(2)}) di bawah minNotional ${filters.minNotional}` };
     }
   } else {
-    const riskUsd = snap.totalMargin * (creds.riskPct / 100);
+    const effectiveRiskPct = rec.strategy === "ICT_SMC_VD" ? Math.min(Number(creds.riskPct) || 0.5, 0.5) : (Number(creds.riskPct) || 1.0);
+    const riskUsd = snap.totalMargin * (effectiveRiskPct / 100);
     qty = roundStep(riskUsd / slDist, filters.stepSize);
     if (qty * rec.entryPrice < filters.minNotional) {
       qty = roundStep((filters.minNotional * 1.05) / rec.entryPrice, filters.stepSize);

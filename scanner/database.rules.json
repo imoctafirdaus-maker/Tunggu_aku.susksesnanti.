@@ -15,6 +15,22 @@
     },
     "emaScannerStatus": {
       ".read": true
+    },
+    "marketData": {
+      ".read": true
+    },
+    "strategyPerformance": {
+      ".read": true
+    },
+    "backtest": {
+      ".read": true
+    },
+    "tradeHistory": {
+      ".read": true,
+      ".indexOn": ["updatedAt", "exitTime"]
+    },
+    "futuresPortfolio": {
+      ".read": true
     }
   }
 }

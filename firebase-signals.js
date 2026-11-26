@@ -1,6 +1,6 @@
 /* ===========================================================================
    firebase-signals.js — membaca sinyal scanner lama (signals/) &
-   EMA Expert Strategy (emaSignals/) dari Firebase Realtime Database.
+   ICT + SMC + Volume Delta Expert (emaSignals/ & marketData/) dari Firebase.
    =========================================================================== */
 import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import { getDatabase, ref, onValue, query, orderByChild, limitToLast }
@@ -25,12 +25,16 @@ if (!window.__octaFirebaseSignals) {
 }
 
 function esc(s) {
-  return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
 }
 const fin = Number.isFinite;
 function fmtP(n) {
   if (!fin(n)) return "--";
   const d = n >= 1000 ? 2 : n >= 1 ? 4 : n >= 0.01 ? 6 : 8;
+  return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
+}
+function fmtNum(n, d = 2) {
+  if (!fin(n)) return "--";
   return n.toLocaleString("en-US", { minimumFractionDigits: d, maximumFractionDigits: d });
 }
 function fmtTime(t) {
@@ -50,7 +54,7 @@ function buildPanels() {
     else (document.querySelector("main") || document.body).appendChild(el);
   };
 
-  // Panel 1: Algoritma Lama (Dipertahankan)
+  // Panel 1: Algoritma Lama (Dipertahankan Utuh)
   const sec = document.createElement("section");
   sec.className = "panel p-5 mb-6";
   sec.id = "fbSignalSection";
@@ -63,17 +67,17 @@ function buildPanels() {
     '<tbody id="fbBody"><tr><td colspan="12" class="muted text-center">Menunggu data...</td></tr></tbody></table></div>';
   mount(sec);
 
-  // Panel 2: EMA Expert Strategy (Baru & Terpisah)
-  const emaSec = document.createElement("section");
-  emaSec.className = "panel p-5 mb-6";
-  emaSec.id = "fbEmaSignalSection";
-  emaSec.innerHTML =
-    '<div class="flex flex-wrap justify-between gap-3 mb-2"><h2 class="text-lg font-bold">Sinyal Scanner · EMA Expert Strategy MTF (Realtime)</h2>' +
-    '<div class="flex flex-wrap gap-2"><span id="fbEmaBadge" class="badge unknown">EMA Expert: menunggu data</span></div></div>' +
-    '<div id="fbEmaInfo" class="muted text-xs mb-4">Menunggu hasil pemindaian EMA 8 / 21 / 125 (GitHub Actions & Termux Bot)...</div>' +
-    '<div class="overflow-x-auto"><table><thead><tr><th>Koin</th><th>MTF</th><th>Trend</th><th>Sinyal</th><th>Entry</th><th>Stop Loss</th><th>TP (1:1)</th><th>EMA 8 / 21 / 125</th><th>Winrate BT</th><th>Sumber</th><th>Diperbarui</th></tr></thead>' +
-    '<tbody id="fbEmaBody"><tr><td colspan="11" class="muted text-center">Menunggu sinyal EMA Expert...</td></tr></tbody></table></div>';
-  mount(emaSec);
+  // Panel 2: ICT + SMC + True Volume Delta Expert (Realtime)
+  const ictSec = document.createElement("section");
+  ictSec.className = "panel p-5 mb-6";
+  ictSec.id = "fbEmaSignalSection";
+  ictSec.innerHTML =
+    '<div class="flex flex-wrap justify-between gap-3 mb-2"><h2 class="text-lg font-bold">Sinyal Scanner · ICT + VOLUME DELTA EXPERT (Realtime)</h2>' +
+    '<div class="flex flex-wrap gap-2"><span id="fbEmaBadge" class="badge unknown">ICT + VD Expert: menunggu data</span></div></div>' +
+    '<div id="fbEmaInfo" class="muted text-xs mb-4">Menunggu hasil pemindaian Multi-Timeframe ICT + SMC + True Volume Delta (15m → 5m → 1m aggTrade)...</div>' +
+    '<div class="overflow-x-auto"><table><thead><tr><th>Koin</th><th>Bias 15m</th><th>Sinyal</th><th>Entry</th><th>Stop Loss</th><th>TP1 / TP2</th><th>Struktur ICT & SMC</th><th>Order Flow 1m (VD / CVD)</th><th>Skor</th><th>Alasan Konfluensi</th><th>Sumber</th><th>Diperbarui</th></tr></thead>' +
+    '<tbody id="fbEmaBody"><tr><td colspan="12" class="muted text-center">Menunggu sinyal ICT + Volume Delta Expert...</td></tr></tbody></table></div>';
+  mount(ictSec);
 }
 
 function setBadge(id, cls, text) {
@@ -141,30 +145,53 @@ function start() {
     }).join("") : '<tr><td colspan="12" class="muted text-center">Scanner belum menghasilkan sinyal.</td></tr>';
   });
 
-  // Listener 2: EMA Expert Strategy
+  // Listener 2: ICT + SMC + True Volume Delta Expert
   onValue(query(ref(db, "emaSignals"), orderByChild("updatedAt"), limitToLast(MAX_ROWS)), snap => {
     const rows = [];
     snap.forEach(ch => {
+      if (String(ch.key || "").startsWith("_")) return;
       const v = ch.val();
       if (v && (v.signal === "BUY" || v.signal === "SELL") && typeof v.symbol === "string" &&
         ["entryPrice", "stopLoss", "takeProfit"].every(k => fin(v[k]))) rows.push(v);
     });
     rows.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-    setBadge("fbEmaBadge", rows.length ? "pass" : "unknown", `EMA Expert: ${rows.length} sinyal`);
+    setBadge("fbEmaBadge", rows.length ? "pass" : "unknown", `ICT + VD Expert: ${rows.length} sinyal`);
     const body = document.getElementById("fbEmaBody");
     if (!body) return;
     body.innerHTML = rows.length ? rows.map(v => {
       const buy = v.signal === "BUY";
-      const trCls = v.trend === "BULLISH" ? "up" : v.trend === "BEARISH" ? "down" : "neutral";
-      return `<tr><td><b>${esc(v.symbol)}</b></td><td>${esc(v.mtfConfig || "1h>15m>5m")}</td>` +
-        `<td><span class="badge ${trCls}">${esc(v.trend || "--")}</span></td>` +
-        `<td><span class="badge ${buy ? "up" : "down"}">${buy ? "BUY" : "SELL"}</span></td>` +
-        `<td>${fmtP(v.entryPrice)}</td><td>${fmtP(v.stopLoss)}</td><td>${fmtP(v.takeProfit)}</td>` +
-        `<td>${fmtP(v.ema8)} / ${fmtP(v.ema21)} / ${fmtP(v.ema125)}</td>` +
-        `<td>${fin(v.winRate) ? v.winRate + "% (" + (v.totalTrades || 0) + ")" : "--"}</td>` +
+      const bias = v.ictEvidence?.marketDirection15m || v.trend || "--";
+      const trCls = bias === "BULLISH" ? "up" : bias === "BEARISH" ? "down" : "neutral";
+      const ict = v.ictEvidence || {};
+      const vd = v.volumeDeltaEvidence || {};
+      const ictText = [
+        ict.bos && ict.bos !== "NONE" ? ict.bos : null,
+        ict.choch && ict.choch !== "NONE" ? ict.choch : null,
+        ict.liquidityStatus && ict.liquidityStatus !== "NO_RECENT_SWEEP" ? ict.liquidityStatus : null,
+        ict.fvg && ict.fvg !== "NONE" ? ict.fvg : null,
+        ict.orderBlock && ict.orderBlock !== "NONE" ? ict.orderBlock : null,
+        ict.premiumDiscount || null
+      ].filter(Boolean).join(" · ") || (v.ema8 ? `EMA ${fmtP(v.ema8)}/${fmtP(v.ema21)}` : "--");
+
+      const vdText = fin(vd.delta)
+        ? `VD: ${fmtNum(vd.delta, 1)} (${fmtNum(vd.deltaPct, 1)}%) · CVD: ${vd.cvdDirection || "--"}${vd.divergence && vd.divergence !== "NONE" ? " · " + vd.divergence : ""}${vd.absorption && vd.absorption !== "NONE" ? " · " + vd.absorption : ""}`
+        : "--";
+
+      const scoreVal = fin(v.score) ? v.score : (fin(v.probability) ? v.probability : null);
+      const catLabel = v.category || (buy ? "BUY" : "SELL");
+      const tp2Str = fin(v.takeProfit2) ? ` / ${fmtP(v.takeProfit2)}` : "";
+
+      return `<tr><td><b>${esc(v.symbol)}</b></td>` +
+        `<td><span class="badge ${trCls}">${esc(bias)}</span></td>` +
+        `<td><span class="badge ${buy ? "up" : "down"}">${esc(catLabel)}</span></td>` +
+        `<td>${fmtP(v.entryPrice)}</td><td>${fmtP(v.stopLoss)}</td><td>${fmtP(v.takeProfit1 || v.takeProfit)}${tp2Str}</td>` +
+        `<td class="text-xs">${esc(ictText)}</td>` +
+        `<td class="text-xs">${esc(vdText)}</td>` +
+        `<td><b>${scoreVal !== null ? scoreVal + "/100" : "--"}</b></td>` +
+        `<td class="text-xs max-w-[260px]">${esc(v.reason || v.aiAuditReason || "--")}</td>` +
         `<td><span class="badge unknown">${esc(v.source || "--")}</span></td>` +
         `<td>${fmtTime(v.updatedAt)}</td></tr>`;
-    }).join("") : '<tr><td colspan="11" class="muted text-center">Belum ada sinyal EMA Expert terkonfirmasi.</td></tr>';
+    }).join("") : '<tr><td colspan="12" class="muted text-center">Belum ada sinyal ICT + Volume Delta Expert terkonfirmasi (ambang ≥ 75).</td></tr>';
   });
 
   setInterval(renderScanner, 30000);

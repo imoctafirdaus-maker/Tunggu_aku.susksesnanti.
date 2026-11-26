@@ -446,7 +446,7 @@ function setCachedAudit(key, res) {
 }
 
 async function evaluateDualAiConsensus(rec, tmResult = null) {
-  const stratTag = rec.strategy || "EMA_EXPERT";
+  const stratTag = rec.strategy || "ICT_SMC_VD";
   const cacheKey = `${stratTag}_${rec.symbol}_${rec.signal}_${rec.timeframe || "5m"}`;
   const cachedDecision = getCachedAudit(cacheKey);
   if (cachedDecision) return cachedDecision;
@@ -466,10 +466,12 @@ async function evaluateDualAiConsensus(rec, tmResult = null) {
     rec.reason ? `Detail Struktur Fibonacci: ${rec.reason}` : "",
     tmResult && tmResult.winProb ? `Skor Struktur Scott Carney: ${tmResult.winProb}/100` : ""
   ].filter(Boolean).join("\n") : [
-    `Strategi Independen: EMA_EXPERT MTF (1h > 15m > 5m) | Timeframe: ${rec.timeframe || "5m"}`,
-    `Koin: ${rec.symbol} | Arah Sinyal: ${rec.signal}`,
-    `Entry: ${rec.entryPrice} | Stop Loss: ${rec.stopLoss} (${slPct}%) | Take Profit: ${rec.takeProfit} (${tpPct}%) | Risk-Reward: 1:${(Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(1)}`,
-    `Volume Relatif (RVOL): ${rec.rvol || "≥1.15"}x | Backtest Winrate: ${rec.winrate || "-"}%`,
+    `Strategi Independen: ICT + SMC + TRUE VOLUME DELTA EXPERT (15m Bias -> 5m Setup -> 1m OrderFlow)`,
+    `Koin: ${rec.symbol} | Sinyal: ${rec.category || rec.signal} (${rec.signal}) | Skor Konfluensi: ${rec.score || rec.probability || 0}/100`,
+    `Entry: ${rec.entryPrice} | Stop Loss: ${rec.stopLoss} (${slPct}%) | TP1: ${rec.takeProfit1 || rec.takeProfit} | TP2: ${rec.takeProfit2 || "-"} | Net R:R: 1:${rec.riskReward || (Number(tpPct) / Math.max(0.01, Number(slPct))).toFixed(2)}`,
+    rec.ictEvidence ? `Struktur ICT/SMC: Bias 15m=${rec.ictEvidence.marketDirection15m}, 5m=${rec.ictEvidence.structureLabel5m}, BOS=${rec.ictEvidence.bos}, CHoCH=${rec.ictEvidence.choch}, Sweep=${rec.ictEvidence.liquidityStatus}, FVG=${rec.ictEvidence.fvg}, OB=${rec.ictEvidence.orderBlock}, Zona=${rec.ictEvidence.premiumDiscount}` : "",
+    rec.volumeDeltaEvidence ? `Order Flow 1m (aggTrade): Delta=${rec.volumeDeltaEvidence.delta} (${rec.volumeDeltaEvidence.deltaPct}%), CVD=${rec.volumeDeltaEvidence.cvd} (${rec.volumeDeltaEvidence.cvdDirection}), Divergence=${rec.volumeDeltaEvidence.divergence}, Absorption=${rec.volumeDeltaEvidence.absorption}` : "",
+    rec.reason ? `Alasan Konfluensi: ${rec.reason}` : "",
     tmResult && tmResult.winProb ? `Simulasi Monte Carlo (2000 skenario): Probabilitas TP ${tmResult.winProb}%` : ""
   ].filter(Boolean).join("\n");
 

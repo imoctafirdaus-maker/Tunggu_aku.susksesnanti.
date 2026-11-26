@@ -77,7 +77,7 @@ async function notifyNewSignalsToTelegram(upEma, upOld = {}) {
   for (const [id, rec] of Object.entries(upEma || {})) {
     if (!rec || !rec.symbol || !rec.signal) continue;
     if (!rec.autoExecuted) continue;
-    const dedupKey = `EMA_${rec.symbol}_${rec.timeframe || "5m"}_${rec.signal}_${rec.candleTime || ""}`;
+    const dedupKey = `ICT_${rec.symbol}_${rec.timeframe || "5m"}_${rec.signal}_${rec.candleTime || ""}`;
     if (cache[dedupKey]) continue;
     cache[dedupKey] = Date.now();
 
@@ -85,7 +85,7 @@ async function notifyNewSignalsToTelegram(upEma, upOld = {}) {
     const aiNote = rec.aiSummary ? `\n🧠 *Dual-AI:* ${rec.aiSummary}` : "";
     const tradeNote = rec.autoExecuted ? `\n⚡ *Eksekusi 50x:* ORDER TERKIRIM` : "";
     alerts.push(
-      `🚀 *SINYAL EMA EXPERT VALID*\n` +
+      `⚡ *SINYAL ICT + VOLUME DELTA EXPERT*\n` +
       `• *Koin:* \`${rec.symbol}\` (${rec.timeframe || "5m"})\n` +
       `• *Arah:* ${dirIcon}\n` +
       `• *Entry:* \`$${rec.entryPrice || rec.price}\`\n` +
@@ -126,7 +126,7 @@ if (require.main === module && process.argv.includes("--test")) {
     const res = await sendTelegramAlert(
       "🤖 *TERMUX BOT TERHUBUNG KE TELEGRAM*\n\n" +
       "✅ Pengiriman otomatis 24/7 aktif langsung dari Termux (tanpa perlu membuka browser PWA).\n" +
-      "📡 Anda akan menerima notifikasi setiap ada sinyal *EMA Expert* atau *Radar Probabilitas/Skor ≥ 75%* baru."
+      "📡 Anda akan menerima notifikasi setiap ada sinyal *ICT + Volume Delta Expert* atau *Radar Probabilitas/Skor ≥ 75%* baru."
     );
     console.log("Hasil Tes Telegram Termux:", res);
     process.exit(res.ok ? 0 : 1);

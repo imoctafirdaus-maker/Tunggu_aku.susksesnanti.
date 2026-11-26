@@ -8,7 +8,9 @@ const admin = require("firebase-admin");
 const crypto = require("crypto");
 const fs = require("fs");
 const path = require("path");
-const { computeSignal, SIG, computeEmaExpertMTF } = require("./engine");
+const { computeSignal, SIG, evaluateIctVolumeDeltaMTF } = require("./engine");
+const { IctOrderFlowCollector } = require("./ictWsCollector");
+const ictCollector = new IctOrderFlowCollector({ maxSymbols: 25, maxMinutesPerSymbol: 180 });
 const { getFuturesSnapshot, executeSignalTrade, manageOpenPositions } = require("./autoTrader");
 const { syncControlWithFirebase } = require("./botControl");
 const { notifyNewSignalsToTelegram } = require("./telegramNotifier");
@@ -125,50 +127,49 @@ function buildRecord(sym, tf, sig, chg24) {
   return rec;
 }
 
-// Record EMA Expert Strategy (STRUKTUR TERPISAH)
-function buildEmaExpertRecord(sym, emaRes, chg24) {
-  if (!emaRes || !emaRes.ready || (emaRes.signal !== "BUY" && emaRes.signal !== "SELL")) return null;
-  const btAll = emaRes.backtest ? emaRes.backtest.all : null;
-  const btOos = emaRes.backtest ? emaRes.backtest.outOfSample : null;
+// Record ICT + SMC + Volume Delta Expert Strategy (STRUKTUR TERPISAH)
+function buildIctExpertRecord(sym, ictRes, chg24) {
+  if (!ictRes || !ictRes.ready || (ictRes.signal !== "BUY" && ictRes.signal !== "SELL")) return null;
+  if (ictRes.dataQuality !== "VALID") return null;
   const rec = {
     symbol: sym,
-    timeframe: "5m",
-    mtfConfig: "1h>15m>5m",
-    strategy: "EMA_EXPERT",
-    probability: (() => {
-      const wr = Number(btOos?.winRate ?? btAll?.winRate ?? 0);
-      return wr >= 75 ? Math.round(wr) : 80;
-    })(),
-    winrate: Number(btOos?.winRate ?? btAll?.winRate ?? 80),
-    score: (() => {
-      const wr = Number(btOos?.winRate ?? btAll?.winRate ?? 0);
-      return wr >= 75 ? Math.round(wr) : 80;
-    })(),
-    trend: emaRes.trend,
-    ema8: emaRes.ema8,
-    ema21: emaRes.ema21,
-    ema125: emaRes.ema125,
-    pullbackStatus: emaRes.pullbackStatus,
-    confirmationStatus: emaRes.confirmationStatus,
-    signal: emaRes.signal,
-    entryPrice: emaRes.entryPrice,
-    stopLoss: emaRes.stopLoss,
-    takeProfit: emaRes.takeProfit,
-    riskReward: emaRes.riskReward,
-    volRatio: Number.isFinite(emaRes.volRatio) ? emaRes.volRatio : 0,
-    signalStatus: emaRes.signalStatus,
-    candleTime: emaRes.candleTime,
-    winRate: btAll ? btAll.winRate : 0,
-    profitFactor: btAll ? btAll.profitFactor : 0,
-    totalTrades: btAll ? btAll.totalTrades : 0,
-    oosWinRate: btOos ? btOos.winRate : 0,
+    timeframe: "15m/5m/1m",
+    mtfConfig: "15m>5m>1m",
+    strategy: "ICT_SMC_VD",
+    strategyLabel: ictRes.strategyLabel || "ICT + VOLUME DELTA EXPERT",
+    category: ictRes.category || ictRes.signal,
+    probability: Number(ictRes.score) || 0,
+    winrate: Number(ictRes.score) || 0,
+    score: Number(ictRes.score) || 0,
+    trend: ictRes.ictEvidence?.marketDirection15m || "NEUTRAL",
+    signal: ictRes.signal,
+    entryPrice: ictRes.entryPrice,
+    stopLoss: ictRes.stopLoss,
+    takeProfit: ictRes.takeProfit1,
+    takeProfit1: ictRes.takeProfit1,
+    takeProfit2: ictRes.takeProfit2,
+    riskReward: ictRes.riskReward,
+    grossRR: ictRes.grossRR,
+    invalidation: ictRes.invalidation || "",
+    reason: ictRes.reason || "",
+    reasons: Array.isArray(ictRes.reasons) ? ictRes.reasons : [],
+    breakdown: ictRes.breakdown || {},
+    ictEvidence: ictRes.ictEvidence || {},
+    volumeDeltaEvidence: ictRes.volumeDeltaEvidence || {},
+    dataQuality: ictRes.dataQuality,
+    candleTime: ictRes.candleTime,
     source: SCANNER_SOURCE
   };
-  for (const k of ["ema8", "ema21", "ema125", "entryPrice", "stopLoss", "takeProfit", "candleTime"]) {
+  for (const k of ["entryPrice", "stopLoss", "takeProfit", "candleTime"]) {
     if (!Number.isFinite(rec[k])) return null;
   }
   if (Number.isFinite(chg24)) rec.change24h = chg24;
   return rec;
+}
+
+function candleMapFallback(shared, sym, tf) {
+  const arr = shared && shared[sym] && shared[sym][tf];
+  return Array.isArray(arr) ? arr.map(k => ({ ...k, time: k.time * 1000 })) : null;
 }
 
 async function runPool(items, worker, n) {
@@ -251,26 +252,41 @@ async function main() {
         }
       }
 
-      // 2) Mesin EMA Expert MTF (memakai data 1h, 15m, 5m yang sudah diunduh)
-      if (candleMap["1h"] && candleMap["15m"] && candleMap["5m"]) {
-        emaSt.scanned++;
-        const emaRes = computeEmaExpertMTF(
-          { trend: candleMap["1h"], pullback: candleMap["15m"], entry: candleMap["5m"] },
-          { rrRatio: 1.0 }
-        );
-        const emaRec = buildEmaExpertRecord(c.symbol, emaRes, c.chg);
-        if (emaRec) {
-          foundEma.push({ id: `${c.symbol}_5m`, rec: emaRec });
-          emaRec.signal === "BUY" ? emaSt.buy++ : emaSt.sell++;
-        }
-      }
     }, CONCURRENCY);
+
+    // 2) Mesin ICT + SMC + True Volume Delta Expert MTF (15m -> 5m -> 1m aggTrade)
+    const ictCands = cands.slice(0, 35);
+    await runPool(ictCands, async (c) => {
+      try {
+        const [f15, f5, vd1m] = await Promise.all([
+          ictCollector.fetchFuturesKlines(c.symbol, "15m", 120),
+          ictCollector.fetchFuturesKlines(c.symbol, "5m", 120),
+          ictCollector.fetchRestAggTrades1m(c.symbol, 1000)
+        ]);
+        const candles15m = f15.length >= 25 ? f15 : (candleMapFallback(sharedCandles, c.symbol, "15m") || []);
+        const candles5m = f5.length >= 25 ? f5 : (candleMapFallback(sharedCandles, c.symbol, "5m") || []);
+        if (candles15m.length < 25 || candles5m.length < 25 || !vd1m.length) return;
+        emaSt.scanned++;
+        const ictRes = evaluateIctVolumeDeltaMTF({
+          symbol: c.symbol,
+          scannerId: SCANNER_SOURCE,
+          candles15m,
+          candles5m,
+          vdCandles1m: vd1m
+        });
+        const ictRec = buildIctExpertRecord(c.symbol, ictRes, c.chg);
+        if (ictRec) {
+          foundEma.push({ id: `${c.symbol}_MTF`, rec: ictRec });
+          ictRec.signal === "BUY" ? emaSt.buy++ : emaSt.sell++;
+        }
+      } catch (_) {}
+    }, 5);
 
     if (dryRun) {
       console.log(`[DRY-RUN] Selesai (${Date.now() - t0}ms):`);
       console.log(`  Algoritma Lama : dipindai=${st.scanned}, BUY=${st.buy}, SELL=${st.sell}`);
-      console.log(`  EMA Expert MTF : dipindai=${emaSt.scanned}, BUY=${emaSt.buy}, SELL=${emaSt.sell}`);
-      if (foundEma.length) console.log("  Contoh Sinyal EMA Expert:", foundEma[0].rec);
+      console.log(`  ICT+SMC+VD MTF : dipindai=${emaSt.scanned}, BUY=${emaSt.buy}, SELL=${emaSt.sell}`);
+      if (foundEma.length) console.log("  Contoh Sinyal ICT + Volume Delta Expert:", foundEma[0].rec);
       return;
     }
 
@@ -331,13 +347,13 @@ async function main() {
       if (isAutoTradeEnabled && futuresSnap && futuresSnap.ok) {
         for (const [sigId, rec] of Object.entries(upEma)) {
           try {
-            console.log(`🤖 [EMA-EXPERT] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`);
+            console.log(`🤖 [ICT-SMC-VD] Mengaudit & mengevaluasi eksekusi ${rec.symbol} (${rec.signal})...`);
             if (db) {
               await db.ref("emaSignals/_liveRadar").set({
                 phase: "AUDITING",
                 scanCoin: rec.symbol,
-                candidate: `${rec.symbol} (3 EMA MTF)`,
-                signal: `${rec.signal} [EMA 5m]`,
+                candidate: `${rec.symbol} (ICT + SMC + VD)`,
+                signal: `${rec.signal} [ICT 15m/5m/1m]`,
                 groqStatus: "AUDITING",
                 geminiStatus: "AUDITING",
                 tradeResult: "PENDING",
@@ -354,8 +370,8 @@ async function main() {
               await db.ref("emaSignals/_liveRadar").set({
                 phase: "COMPLETED",
                 scanCoin: rec.symbol,
-                candidate: `${rec.symbol} (3 EMA MTF)`,
-                signal: `${rec.signal} [EMA 5m]`,
+                candidate: `${rec.symbol} (ICT + SMC + VD)`,
+                signal: `${rec.signal} [ICT 15m/5m/1m]`,
                 groqStatus: trRes.executed ? "PASS" : "DONE",
                 geminiStatus: trRes.executed ? "PASS" : "DONE",
                 tradeResult: trRes.executed ? "SUCCESS" : "SKIPPED",
@@ -370,7 +386,7 @@ async function main() {
         }
       }
     }
-    const tgSent = await notifyNewSignalsToTelegram(upEma, typeof up !== "undefined" ? up : {});
+    const tgSent = await notifyNewSignalsToTelegram(upEma, typeof upOld !== "undefined" ? upOld : {});
     if (tgSent > 0) console.log(`📲 ${tgSent} notifikasi sinyal baru terkirim ke Telegram!`);
     emaSt.written = Object.keys(upEma).length;
 
@@ -414,7 +430,7 @@ async function main() {
         const sigLabel = topHm ? `${topHm.sig.side} [HARMONIC ${topHm.sig.timeframe}]` : "-";
         const reasonText = topHm
           ? `Siklus selesai (${timeWib}): Harmonic menemukan ${hmTotal} pola · Top: ${topHm.symbol} ${topHm.sig.patternName} ${topHm.sig.side} (PRZ ${topHm.sig.przScore}/100)`
-          : `Siklus selesai (${timeWib}): 0 EMA Expert & 0 Harmonic dari ${hmRes.scanned || st.coins} pair (${regTotal} reguler disaring)`;
+          : `Siklus selesai (${timeWib}): 0 ICT+VD Expert & 0 Harmonic dari ${hmRes.scanned || st.coins} pair (${regTotal} reguler disaring)`;
 
         const uiPayload = {
           phase: "COMPLETED",
@@ -443,4 +459,4 @@ async function main() {
 }
 
 if (require.main === module) main();
-module.exports = { buildRecord, buildEmaExpertRecord };
+module.exports = { buildRecord, buildIctExpertRecord, buildEmaExpertRecord: buildIctExpertRecord };
