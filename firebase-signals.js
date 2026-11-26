@@ -160,7 +160,7 @@ function start() {
     if (!body) return;
     body.innerHTML = rows.length ? rows.map(v => {
       const buy = v.signal === "BUY";
-      const bias = v.ictEvidence?.marketDirection15m || v.trend || "--";
+      const bias = v.ictEvidence?.marketDirection1h || v.ictEvidence?.marketDirection15m || v.trend || "--";
       const trCls = bias === "BULLISH" ? "up" : bias === "BEARISH" ? "down" : "neutral";
       const ict = v.ictEvidence || {};
       const vd = v.volumeDeltaEvidence || {};

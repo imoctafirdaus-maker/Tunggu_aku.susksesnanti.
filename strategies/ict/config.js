@@ -4,9 +4,9 @@ const DEFAULT_ICT_CONFIG = {
   strategyId: "ICT_SMC_VD_EXPERT",
   strategyLabel: "ICT + SMC + Volume Delta Expert",
   timeframes: {
-    bias: "15m",
-    setup: "5m",
-    entry: "1m"
+    bias: "1h",
+    setup: "15m",
+    entry: "5m"
   },
   weights: {
     marketStructure: 20,

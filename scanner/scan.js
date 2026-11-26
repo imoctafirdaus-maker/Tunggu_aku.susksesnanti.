@@ -133,15 +133,15 @@ function buildIctExpertRecord(sym, ictRes, chg24) {
   if (ictRes.dataQuality !== "VALID") return null;
   const rec = {
     symbol: sym,
-    timeframe: "15m/5m/1m",
-    mtfConfig: "15m>5m>1m",
+    timeframe: "1h/15m/5m",
+    mtfConfig: "1h>15m>5m",
     strategy: "ICT_SMC_VD",
     strategyLabel: ictRes.strategyLabel || "ICT + VOLUME DELTA EXPERT",
     category: ictRes.category || ictRes.signal,
     probability: Number(ictRes.score) || 0,
     winrate: Number(ictRes.score) || 0,
     score: Number(ictRes.score) || 0,
-    trend: ictRes.ictEvidence?.marketDirection15m || "NEUTRAL",
+    trend: ictRes.ictEvidence?.marketDirection1h || ictRes.ictEvidence?.marketDirection15m || "NEUTRAL",
     signal: ictRes.signal,
     entryPrice: ictRes.entryPrice,
     stopLoss: ictRes.stopLoss,
@@ -254,25 +254,26 @@ async function main() {
 
     }, CONCURRENCY);
 
-    // 2) Mesin ICT + SMC + True Volume Delta Expert MTF (15m -> 5m -> 1m aggTrade)
+    // 2) Mesin ICT + SMC + True Volume Delta Expert MTF (1h Struktur & VD -> 15m Validasi -> 5m Eksekusi)
     const ictCands = cands.slice(0, 35);
     await runPool(ictCands, async (c) => {
       try {
-        const [f15, f5, vd1m] = await Promise.all([
+        const [f1h, f15, f5] = await Promise.all([
+          ictCollector.fetchFuturesKlines(c.symbol, "1h", 120),
           ictCollector.fetchFuturesKlines(c.symbol, "15m", 120),
-          ictCollector.fetchFuturesKlines(c.symbol, "5m", 120),
-          ictCollector.fetchRestAggTrades1m(c.symbol, 1000)
+          ictCollector.fetchFuturesKlines(c.symbol, "5m", 120)
         ]);
+        const candles1h = f1h.length >= 25 ? f1h : (candleMapFallback(sharedCandles, c.symbol, "1h") || []);
         const candles15m = f15.length >= 25 ? f15 : (candleMapFallback(sharedCandles, c.symbol, "15m") || []);
         const candles5m = f5.length >= 25 ? f5 : (candleMapFallback(sharedCandles, c.symbol, "5m") || []);
-        if (candles15m.length < 25 || candles5m.length < 25 || !vd1m.length) return;
+        if (candles1h.length < 25 || candles15m.length < 25 || candles5m.length < 25) return;
         emaSt.scanned++;
         const ictRes = evaluateIctVolumeDeltaMTF({
           symbol: c.symbol,
           scannerId: SCANNER_SOURCE,
+          candles1h,
           candles15m,
-          candles5m,
-          vdCandles1m: vd1m
+          candles5m
         });
         const ictRec = buildIctExpertRecord(c.symbol, ictRes, c.chg);
         if (ictRec) {

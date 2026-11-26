@@ -1340,7 +1340,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   <div>
     <div class="text-sky-400 text-sm font-bold tracking-widest">QUANTITATIVE FUTURES DASHBOARD</div>
     <h1 class="text-2xl md:text-3xl font-extrabold mt-1">Binance Top 500 · Multi-Indicator & ICT + Volume Delta Expert</h1>
-    <p class="muted mt-1 text-sm">Monitoring sinyal 10 indikator teknikal, ICT + SMC + True Volume Delta (15m -> 5m -> 1m aggTrade), Dynamic R:R, dan Early Volume Radar.</p>
+    <p class="muted mt-1 text-sm">Monitoring sinyal 10 indikator teknikal, ICT + SMC + True Volume Delta (1h Struktur & VD -> 15m Validasi -> 5m Eksekusi), Dynamic R:R, dan Early Volume Radar.</p>
   </div>
   <div class="panel p-4 min-w-[240px]">
     <div class="muted text-sm">Status Market</div>
@@ -1568,16 +1568,16 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   </div>
 
   <div class="flex flex-wrap items-end gap-3 mb-4 border-b border-slate-700 pb-4">
-    <label class="text-sm">Bias HTF<br><select id="emaTrendTf"><option value="15m" selected>15 Menit (15m)</option><option value="1h">1 Jam (1h)</option><option value="4h">4 Jam (4h)</option></select></label>
-    <label class="text-sm">Setup & POI TF<br><select id="emaPullTf"><option value="5m" selected>5 Menit (5m)</option><option value="15m">15 Menit (15m)</option><option value="1h">1 Jam (1h)</option></select></label>
-    <label class="text-sm">Order Flow TF<br><select id="emaEntryTf"><option value="1m" selected>1 Menit (1m aggTrade)</option><option value="5m">5 Menit (5m)</option></select></label>
+    <label class="text-sm">1h Struktur & VD<br><select id="emaTrendTf"><option value="1h" selected>1 Jam (1h)</option><option value="4h">4 Jam (4h)</option><option value="15m">15 Menit (15m)</option></select></label>
+    <label class="text-sm">15m Validasi Setup<br><select id="emaPullTf"><option value="15m" selected>15 Menit (15m)</option><option value="5m">5 Menit (5m)</option><option value="1h">1 Jam (1h)</option></select></label>
+    <label class="text-sm">5m Eksekusi Entry<br><select id="emaEntryTf"><option value="5m" selected>5 Menit (5m)</option><option value="15m">15 Menit (15m)</option></select></label>
     <button id="emaRefreshBtn" class="btn text-sm bg-sky-600 hover:bg-sky-500">Refresh & Sinkronisasi ICT + VD</button>
   </div>
 
   <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
     <div class="indicator-card"><div class="muted text-xs mb-2">Struktur & Tahapan ICT</div><div id="emaState" class="indicator-value">--</div><div id="emaStateSub" class="indicator-status">--</div></div>
-    <div id="emaTrendCard" class="indicator-card"><div class="muted text-xs mb-2">Bias HTF & Zona (15m)</div><div id="emaTrend" class="indicator-value">--</div><div id="emaTrendSub" class="indicator-status">--</div></div>
-    <div id="emaPullCard" class="indicator-card"><div class="muted text-xs mb-2">SMC POI & True VD (1m)</div><div id="emaPull" class="indicator-value">--</div><div id="emaPullSub" class="indicator-status">--</div></div>
+    <div id="emaTrendCard" class="indicator-card"><div class="muted text-xs mb-2">1h Struktur & VD Utama</div><div id="emaTrend" class="indicator-value">--</div><div id="emaTrendSub" class="indicator-status">--</div></div>
+    <div id="emaPullCard" class="indicator-card"><div class="muted text-xs mb-2">15m Validasi & 5m Eksekusi</div><div id="emaPull" class="indicator-value">--</div><div id="emaPullSub" class="indicator-status">--</div></div>
     <div id="emaSigCard" class="indicator-card"><div class="muted text-xs mb-2">Sinyal & Skor Konfluensi</div><div id="emaSig" class="indicator-value">--</div><div id="emaSigSub" class="indicator-status">--</div></div>
   </div>
 
@@ -2924,7 +2924,7 @@ const EMA_EXP = {
       const ict = sync.ictEvidence || {}, vd = sync.volumeDeltaEvidence || {}, sc = Number(sync.score ?? sync.probability ?? 0);
       $("emaState").textContent = sync.category || sync.signal;
       $("emaStateSub").textContent = sync.aiAuditReason || sync.reason || "Terkonfirmasi Scanner Backend";
-      const b15 = ict.marketDirection15m || sync.trend || "NEUTRAL";
+      const b15 = ict.marketDirection1h || ict.marketDirection15m || sync.trend || "NEUTRAL";
       $("emaTrend").textContent = b15; $("emaTrendSub").textContent = ict.premiumDiscount || "Dealing Range 15m";
       setCard("emaTrendCard", b15 === "BULLISH" ? "card-bullish" : b15 === "BEARISH" ? "card-bearish" : "card-neutral");
       $("emaPull").textContent = `VD: ${fmt(vd.delta || 0, 1)} | CVD: ${vd.cvdDirection || "--"}`;
