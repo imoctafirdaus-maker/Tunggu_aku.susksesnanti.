@@ -5,18 +5,11 @@ const { checkNewsSafety } = require("./newsGuard");
 
 const CFG_PATH = path.join(__dirname, "binanceConfig.json");
 const AI_CFG_FILE = path.join(__dirname, "aiConfig.json");
-function setLocalAiAudit(enabled) {
-  try {
-    const cfg = fs.existsSync(AI_CFG_FILE) ? JSON.parse(fs.readFileSync(AI_CFG_FILE, "utf8")) : {};
-    cfg.aiAuditEnabled = enabled !== false;
-    fs.writeFileSync(AI_CFG_FILE, JSON.stringify(cfg, null, 2));
-  } catch (_) {}
-}
 
-function setLocalIctAiAudit(enabled) {
+function updateAiCfgFlags(patch) {
   try {
     const cfg = fs.existsSync(AI_CFG_FILE) ? JSON.parse(fs.readFileSync(AI_CFG_FILE, "utf8")) : {};
-    cfg.ictAiAuditEnabled = enabled !== false;
+    Object.assign(cfg, patch);
     fs.writeFileSync(AI_CFG_FILE, JSON.stringify(cfg, null, 2));
   } catch (_) {}
 }
@@ -31,7 +24,6 @@ function setLocalManualMargin(enabled, usd) {
     fs.writeFileSync(CFG_PATH, JSON.stringify(cfg, null, 2));
   } catch (_) {}
 }
-
 
 function setLocalAutoTrade(enabled) {
   try {
@@ -72,21 +64,34 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
   const snap = await ref.once("value");
   const val = snap.val() || {};
   const aiEnabled = typeof val.aiAuditEnabled === "boolean" ? val.aiAuditEnabled : true;
-  setLocalAiAudit(aiEnabled);
   const ictAiEnabled = typeof val.ictAiAuditEnabled === "boolean" ? val.ictAiAuditEnabled : true;
-  setLocalIctAiAudit(ictAiEnabled);
+  const ictScannerEnabled = typeof val.ictScannerEnabled === "boolean" ? val.ictScannerEnabled : true;
+  const harmonicScannerEnabled = typeof val.harmonicScannerEnabled === "boolean" ? val.harmonicScannerEnabled : true;
+
+  updateAiCfgFlags({
+    aiAuditEnabled: aiEnabled,
+    ictAiAuditEnabled: ictAiEnabled,
+    ictScannerEnabled,
+    harmonicScannerEnabled
+  });
+
   const manualEnabled = typeof val.manualMarginEnabled === "boolean" ? val.manualMarginEnabled : false;
   const manualUsd = Number.isFinite(+val.manualMarginUsd) ? Math.max(0, Math.min(100, +val.manualMarginUsd)) : 10;
   setLocalManualMargin(manualEnabled, manualUsd);
   const newsStatus = await checkNewsSafety(null, 30).catch(() => ({ safe: true }));
 
-  // Jika News Guard sedang aktif, otomatis matikan saklar sementara & simpan waktu buka (unlockAt)
   if (!newsStatus.safe && newsStatus.isMacroNews) {
     const prevAuto = typeof val.autoTrade === "boolean" ? val.autoTrade : getLocalAutoTrade();
     const resumeState = val.newsGuardActive ? (val.resumeAutoTrade !== false) : prevAuto;
     setLocalAutoTrade(false);
     await ref.update({
-      autoTrade: false, aiAuditEnabled: aiEnabled, ictAiAuditEnabled: ictAiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
+      autoTrade: false,
+      aiAuditEnabled: aiEnabled,
+      ictAiAuditEnabled: ictAiEnabled,
+      ictScannerEnabled,
+      harmonicScannerEnabled,
+      manualMarginEnabled: manualEnabled,
+      manualMarginUsd: manualUsd,
       newsGuardActive: true,
       newsTitle: newsStatus.newsTitle || "Berita Makro High-Impact",
       unlockAt: newsStatus.unlockAt || (Date.now() + 30 * 60000),
@@ -97,12 +102,17 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
     return false;
   }
 
-  // Jika baru selesai dari jeda News Guard, otomatis aktifkan kembali saklar seperti semula
   if (val.newsGuardActive) {
     const restore = val.resumeAutoTrade !== false;
     setLocalAutoTrade(restore);
     await ref.update({
-      autoTrade: restore, aiAuditEnabled: aiEnabled, ictAiAuditEnabled: ictAiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
+      autoTrade: restore,
+      aiAuditEnabled: aiEnabled,
+      ictAiAuditEnabled: ictAiEnabled,
+      ictScannerEnabled,
+      harmonicScannerEnabled,
+      manualMarginEnabled: manualEnabled,
+      manualMarginUsd: manualUsd,
       newsGuardActive: false,
       source: "news-guard-resume",
       updatedAt: admin.database.ServerValue.TIMESTAMP
@@ -117,7 +127,13 @@ async function syncControlWithFirebase(db, admin, forceState = null) {
 
   const localState = getLocalAutoTrade();
   await ref.update({
-    autoTrade: localState, aiAuditEnabled: aiEnabled, ictAiAuditEnabled: ictAiEnabled, manualMarginEnabled: manualEnabled, manualMarginUsd: manualUsd,
+    autoTrade: localState,
+    aiAuditEnabled: aiEnabled,
+    ictAiAuditEnabled: ictAiEnabled,
+    ictScannerEnabled,
+    harmonicScannerEnabled,
+    manualMarginEnabled: manualEnabled,
+    manualMarginUsd: manualUsd,
     newsGuardActive: false,
     source: "init",
     updatedAt: admin.database.ServerValue.TIMESTAMP

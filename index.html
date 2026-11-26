@@ -117,7 +117,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   </div>
   <div style="background:#0f172a;padding:10px 12px;border-radius:8px;border:1px solid #1e293b;">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
-  <div style="font-size:12px;font-weight:600;color:#cbd5e1;">📌 Posisi Terbuka Saat Ini <span id="bf-lev-badge" class="badge pass" style="margin-left:6px;">50x</span></div>
+  <div style="font-size:12px;font-weight:600;color:#cbd5e1;">Posisi Terbuka Saat Ini <span id="bf-lev-badge" class="badge pass" style="margin-left:6px;">50x</span></div>
   <div id="bf-updated" style="font-size:11px;color:#64748b;">Menunggu sinkronisasi...</div>
 </div>
     <div id="bf-positions" style="font-size:12px;color:#94a3b8;">Menunggu sinkronisasi...</div>
@@ -125,60 +125,325 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     </div>
 
 <!-- MASTER AUTO-TRADE CONTROL BAR -->
-<div id="masterTradeBar" style="max-width:1200px;margin:12px auto;padding:12px 16px;border-radius:12px;background:rgba(15,23,42,0.92);border:1px solid rgba(148,163,184,0.25);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;">
-  <div>
-    <div style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:#94a3b8;font-weight:700;">Kontrol Master Rangkaian Bot · Ambang Eksekusi ≥ 75%</div>
-    <div id="masterTradeStatusText" style="font-size:13px;font-weight:700;color:#94a3b8;margin-top:3px;">Memuat status bot...</div>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-    <button id="masterTradeToggleBtn" type="button" onclick="toggleMasterAutoTrade()" style="padding:10px 16px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#334155;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-      ⏳ Memuat...
-    </button>
-    <button id="aiAuditToggleBtn" type="button" onclick="toggleAiAudit()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#2563eb;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-      🤖 Audit AI Harmonic: ON
-    </button>
-    <button id="ictAiAuditToggleBtn" type="button" onclick="toggleIctAiAudit()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#0284c7;color:#fff;box-shadow:0 4px 12px rgba(0,0,0,0.25);">
-      🧠 Audit AI ICT+VD: ON
-    </button>
-    <button id="manualMarginToggleBtn" type="button" onclick="toggleManualMargin()" style="padding:10px 14px;border:none;border-radius:10px;font-weight:700;font-size:13px;cursor:pointer;background:#16a34a;color:#fff;box-shadow:0 4px 12px rgba(22,163,74,0.35);">
-      🟢 Margin Manual: OFF
-    </button>
-  </div>
-  <div id="manualMarginPanel" style="display:none;flex-basis:100%;width:100%;margin-top:4px;padding:12px 14px;border-radius:10px;background:rgba(2,6,23,0.75);border:1px solid rgba(34,197,94,0.4);">
-    <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-      <div style="font-size:12px;font-weight:700;color:#4ade80;">💵 NOMINAL MARGIN MANUAL (0 – 100 USDT / POSISI)</div>
-      <div id="manualMarginNotionalInfo" style="font-size:11px;font-weight:700;color:#38bdf8;background:rgba(56,189,248,0.12);padding:3px 8px;border-radius:6px;">Est. Posisi 50x: $500 USDT</div>
+<style>
+  .octa-console {
+    max-width: 1200px;
+    margin: 12px auto;
+    background: #080c14;
+    border: 1px solid #1e293b;
+    border-radius: 10px;
+    font-family: 'JetBrains Mono', 'Fira Code', ui-monospace, SFMono-Regular, Menlo, monospace;
+    color: #e2e8f0;
+    overflow: hidden;
+  }
+  .octa-console-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 9px 14px;
+    background: #0c121e;
+    border-bottom: 1px solid #1e293b;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .octa-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid #293548;
+    background: #0f172a;
+    color: #cbd5e1;
+    font-weight: 700;
+    font-size: 10px;
+  }
+  .octa-led {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #64748b;
+    display: inline-block;
+    flex-shrink: 0;
+  }
+  .octa-led.on { background: #10b981; box-shadow: 0 0 6px rgba(16, 185, 129, 0.75); }
+  .octa-led.warn { background: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, 0.75); }
+  .octa-master-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-bottom: 1px solid #1e293b;
+    background: #090e18;
+  }
+  .octa-switch-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+    gap: 1px;
+    background: #1e293b;
+    border-bottom: 1px solid #1e293b;
+  }
+  .octa-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+    padding: 11px 14px;
+    background: #080c14;
+  }
+  .octa-cell-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #f1f5f9;
+    letter-spacing: 0.04em;
+  }
+  .octa-cell-sub {
+    font-size: 10px;
+    color: #64748b;
+    margin-top: 2px;
+    letter-spacing: 0.02em;
+  }
+  .octa-rocker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    border-radius: 5px;
+    border: 1px solid #334155;
+    background: #0f172a;
+    color: #94a3b8;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+    min-width: 74px;
+    justify-content: space-between;
+  }
+  .octa-rocker:disabled { opacity: 0.55; cursor: wait; }
+  .octa-rocker[data-state="on"] {
+    border-color: rgba(16, 185, 129, 0.55);
+    background: rgba(16, 185, 129, 0.09);
+    color: #34d399;
+  }
+  .octa-rocker[data-state="warn"] {
+    border-color: rgba(245, 158, 11, 0.55);
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+  }
+  .octa-rocker-track {
+    width: 24px;
+    height: 12px;
+    border-radius: 999px;
+    background: #1e293b;
+    border: 1px solid #334155;
+    position: relative;
+    display: inline-block;
+  }
+  .octa-rocker[data-state="on"] .octa-rocker-track {
+    background: rgba(16, 185, 129, 0.25);
+    border-color: #10b981;
+  }
+  .octa-rocker-thumb {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #64748b;
+    position: absolute;
+    top: 1px;
+    left: 1px;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .octa-rocker[data-state="on"] .octa-rocker-thumb {
+    transform: translateX(12px);
+    background: #10b981;
+  }
+  .octa-margin-bar {
+    padding: 11px 14px;
+    background: #080c14;
+  }
+  .octa-preset-btn {
+    padding: 4px 10px;
+    border-radius: 4px;
+    border: 1px solid #1e293b;
+    background: #0f172a;
+    color: #cbd5e1;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .octa-preset-btn:hover { border-color: #38bdf8; color: #f8fafc; }
+</style>
+
+<div id="masterTradeBar" class="octa-console">
+  <div class="octa-console-head">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+      <span style="color:#f8fafc;font-weight:800;">EXECUTION &amp; SCANNER MATRIX</span>
+      <span class="octa-pill">
+        <span id="routingModeLed" class="octa-led on"></span>
+        <span id="routingModeBadge">DUAL ENGINE (ICT+VD + HARMONIC)</span>
+      </span>
     </div>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <input id="manualMarginSlider" type="range" min="0" max="100" step="1" value="10" oninput="onManualMarginSlide(this.value)" onchange="saveManualMarginToServer()" style="flex:1;min-width:160px;accent-color:#22c55e;cursor:pointer;height:6px;">
-      <div style="display:flex;align-items:center;gap:6px;">
-        <input id="manualMarginInput" type="number" min="0" max="100" step="any" value="10" oninput="onManualMarginType(this.value)" onchange="saveManualMarginToServer()" style="width:76px;padding:7px 10px;border-radius:8px;border:1px solid #22c55e;background:#0f172a;color:#fff;font-weight:700;font-size:14px;text-align:right;">
-        <span style="font-size:12px;font-weight:700;color:#94a3b8;">USDT</span>
-      </div>
+    <div style="color:#64748b;font-weight:700;">POLICY: 7-GATE CONFLUENCE LOCK · MIN 75%</div>
+  </div>
+
+  <div class="octa-master-row">
+    <div style="flex:1;min-width:220px;">
+      <div style="font-size:10px;color:#64748b;letter-spacing:0.06em;text-transform:uppercase;font-weight:700;">MASTER ORDER ROUTER</div>
+      <div id="masterTradeStatusText" style="font-size:12px;font-weight:700;color:#94a3b8;margin-top:3px;">Initializing control state...</div>
     </div>
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;">
-      <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button type="button" onclick="setManualMarginPreset(5)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$5</button>
-        <button type="button" onclick="setManualMarginPreset(10)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$10</button>
-        <button type="button" onclick="setManualMarginPreset(25)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$25</button>
-        <button type="button" onclick="setManualMarginPreset(50)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$50</button>
-        <button type="button" onclick="setManualMarginPreset(100)" style="padding:4px 9px;border-radius:6px;border:1px solid #334155;background:#1e293b;color:#cbd5e1;font-size:11px;font-weight:700;cursor:pointer;">$100</button>
+    <button id="masterTradeToggleBtn" type="button" class="octa-rocker" data-state="off" onclick="toggleMasterAutoTrade()" style="min-width:118px;padding:7px 12px;">
+      <span id="masterTradeBtnLabel">STANDBY</span>
+      <span class="octa-rocker-track"><span class="octa-rocker-thumb"></span></span>
+    </button>
+  </div>
+
+  <div class="octa-switch-grid">
+    <div class="octa-cell">
+      <div>
+        <div class="octa-cell-title">SCANNER: ICT + SMC + VD</div>
+        <div class="octa-cell-sub">MTF 1H &gt; 15M &gt; 5M · 7-Point Gate</div>
       </div>
-      <div id="manualMarginSaveStatus" style="font-size:11px;color:#94a3b8;">Menggantikan auto-risk 1% saat ON</div>
+      <button id="ictScannerToggleBtn" type="button" class="octa-rocker" data-state="on" onclick="toggleIctScanner()">
+        <span class="octa-state-txt">ON</span>
+        <span class="octa-rocker-track"><span class="octa-rocker-thumb"></span></span>
+      </button>
+    </div>
+
+    <div class="octa-cell">
+      <div>
+        <div class="octa-cell-title">SCANNER: HARMONIC CARNEY</div>
+        <div class="octa-cell-sub">MTF 4H &gt; 1H &gt; 15M &gt; 5M · PRZ Engine</div>
+      </div>
+      <button id="harmonicScannerToggleBtn" type="button" class="octa-rocker" data-state="on" onclick="toggleHarmonicScanner()">
+        <span class="octa-state-txt">ON</span>
+        <span class="octa-rocker-track"><span class="octa-rocker-thumb"></span></span>
+      </button>
+    </div>
+
+    <div class="octa-cell">
+      <div>
+        <div class="octa-cell-title">AI GATEKEEPER: ICT + VD</div>
+        <div class="octa-cell-sub">Dual-AI Audit / Direct Termux</div>
+      </div>
+      <button id="ictAiAuditToggleBtn" type="button" class="octa-rocker" data-state="on" onclick="toggleIctAiAudit()">
+        <span class="octa-state-txt">ON</span>
+        <span class="octa-rocker-track"><span class="octa-rocker-thumb"></span></span>
+      </button>
+    </div>
+
+    <div class="octa-cell">
+      <div>
+        <div class="octa-cell-title">AI GATEKEEPER: HARMONIC</div>
+        <div class="octa-cell-sub">Groq + Gemini / Pure Ratio</div>
+      </div>
+      <button id="aiAuditToggleBtn" type="button" class="octa-rocker" data-state="on" onclick="toggleAiAudit()">
+        <span class="octa-state-txt">ON</span>
+        <span class="octa-rocker-track"><span class="octa-rocker-thumb"></span></span>
+      </button>
+    </div>
+  </div>
+
+  <div class="octa-margin-bar">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;">
+      <div>
+        <div class="octa-cell-title">FIXED MARGIN ALLOCATION</div>
+        <div class="octa-cell-sub">Override dynamic risk sizing with fixed USDT per position</div>
+      </div>
+      <button id="manualMarginToggleBtn" type="button" class="octa-rocker" data-state="off" onclick="toggleManualMargin()" style="min-width:108px;">
+        <span id="manualMarginBtnLabel">OFF</span>
+        <span class="octa-rocker-track"><span class="octa-rocker-thumb"></span></span>
+      </button>
+    </div>
+
+    <div id="manualMarginPanel" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #1e293b;">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+        <div style="font-size:10px;font-weight:700;color:#94a3b8;letter-spacing:0.05em;">ALLOCATION AMOUNT (0 – 100 USDT)</div>
+        <div id="manualMarginNotionalInfo" style="font-size:10px;font-weight:700;color:#38bdf8;background:#0f172a;border:1px solid #1e293b;padding:3px 8px;border-radius:4px;">EST. NOTIONAL 50X: $500 USDT</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+        <input id="manualMarginSlider" type="range" min="0" max="100" step="1" value="10" oninput="onManualMarginSlide(this.value)" onchange="saveManualMarginToServer()" style="flex:1;min-width:150px;accent-color:#10b981;cursor:pointer;height:4px;">
+        <div style="display:flex;align-items:center;gap:6px;">
+          <input id="manualMarginInput" type="number" min="0" max="100" step="any" value="10" oninput="onManualMarginType(this.value)" onchange="saveManualMarginToServer()" style="width:74px;padding:6px 8px;border-radius:4px;border:1px solid #334155;background:#0f172a;color:#f8fafc;font-family:inherit;font-weight:700;font-size:12px;text-align:right;">
+          <span style="font-size:11px;font-weight:700;color:#64748b;">USDT</span>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;margin-top:8px;">
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <button type="button" class="octa-preset-btn" onclick="setManualMarginPreset(5)">$5</button>
+          <button type="button" class="octa-preset-btn" onclick="setManualMarginPreset(10)">$10</button>
+          <button type="button" class="octa-preset-btn" onclick="setManualMarginPreset(25)">$25</button>
+          <button type="button" class="octa-preset-btn" onclick="setManualMarginPreset(50)">$50</button>
+          <button type="button" class="octa-preset-btn" onclick="setManualMarginPreset(100)">$100</button>
+        </div>
+        <div id="manualMarginSaveStatus" style="font-size:10px;color:#64748b;">Replaces 1% equity risk when ON</div>
+      </div>
     </div>
   </div>
 </div>
+
 <script>
 (function() {
   const CTRL_URL = "https://cryptosignalradar-default-rtdb.asia-southeast1.firebasedatabase.app/emaSignals/_botControl.json";
-  window.__botControlState = { autoTrade: true, aiAuditEnabled: true, ictAiAuditEnabled: true, manualMarginEnabled: false, manualMarginUsd: 10, minProb: 75, updatedAt: 0 };
+  window.__botControlState = {
+    autoTrade: true,
+    ictScannerEnabled: true,
+    harmonicScannerEnabled: true,
+    aiAuditEnabled: true,
+    ictAiAuditEnabled: true,
+    manualMarginEnabled: false,
+    manualMarginUsd: 10,
+    minProb: 75,
+    updatedAt: 0
+  };
   let __mmEditing = false;
   let __mmSaveTimer = null;
+  let busy = false;
 
   function clampManualMargin(v) {
     const n = Number(v);
     if (!Number.isFinite(n)) return 0;
     return Math.max(0, Math.min(100, Math.round(n * 100) / 100));
+  }
+
+  function setRockerState(btnId, isOn, customLabel) {
+    const btn = document.getElementById(btnId);
+    if (!btn) return;
+    btn.disabled = false;
+    btn.setAttribute("data-state", isOn ? "on" : "off");
+    const lbl = btn.querySelector(".octa-state-txt") || btn.querySelector("span");
+    if (lbl) lbl.textContent = customLabel || (isOn ? "ON" : "OFF");
+  }
+
+  function updateRoutingHeader() {
+    const st = window.__botControlState;
+    const badge = document.getElementById("routingModeBadge");
+    const led = document.getElementById("routingModeLed");
+    if (!badge || !led) return;
+
+    if (!st.autoTrade) {
+      badge.textContent = "MASTER HALTED (STANDBY)";
+      led.className = "octa-led warn";
+    } else if (st.ictScannerEnabled && st.harmonicScannerEnabled) {
+      badge.textContent = "DUAL ENGINE (ICT+VD + HARMONIC)";
+      led.className = "octa-led on";
+    } else if (st.ictScannerEnabled && !st.harmonicScannerEnabled) {
+      badge.textContent = "SOLO ENGINE: ICT + SMC + VD";
+      led.className = "octa-led on";
+    } else if (!st.ictScannerEnabled && st.harmonicScannerEnabled) {
+      badge.textContent = "SOLO ENGINE: HARMONIC CARNEY";
+      led.className = "octa-led on";
+    } else {
+      badge.textContent = "ALL SCANNERS OFF";
+      led.className = "octa-led";
+    }
   }
 
   function renderManualMarginUI(enabled, usd) {
@@ -187,34 +452,22 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     window.__botControlState.manualMarginEnabled = isOn;
     window.__botControlState.manualMarginUsd = val;
 
-    const btn = document.getElementById("manualMarginToggleBtn");
+    setRockerState("manualMarginToggleBtn", isOn, isOn ? ("ON · $" + val) : "OFF");
     const panel = document.getElementById("manualMarginPanel");
     const slider = document.getElementById("manualMarginSlider");
     const input = document.getElementById("manualMarginInput");
     const info = document.getElementById("manualMarginNotionalInfo");
 
-    if (btn) {
-      btn.disabled = false;
-      if (isOn) {
-        btn.textContent = "✅ Margin Manual: ON ($" + val + ")";
-        btn.style.background = "#16a34a";
-        btn.style.outline = "2px solid #86efac";
-      } else {
-        btn.textContent = "🟢 Margin Manual: OFF";
-        btn.style.background = "#15803d";
-        btn.style.outline = "none";
-      }
-    }
     if (panel) panel.style.display = isOn ? "block" : "none";
     if (slider && !__mmEditing) slider.value = Math.round(val);
     if (input && !__mmEditing) input.value = val;
-    if (info) info.textContent = "Est. Posisi 50x: $" + (val * 50).toFixed(0) + " USDT";
+    if (info) info.textContent = "EST. NOTIONAL 50X: $" + (val * 50).toFixed(0) + " USDT";
   }
 
   window.saveManualMarginToServer = async function() {
     __mmEditing = false;
     const st = document.getElementById("manualMarginSaveStatus");
-    if (st) { st.textContent = "⏳ Menyimpan margin..."; st.style.color = "#fbbf24"; }
+    if (st) { st.textContent = "SYNCING ALLOCATION..."; st.style.color = "#fbbf24"; }
     try {
       const res = await fetch(CTRL_URL, {
         method: "PATCH",
@@ -228,9 +481,9 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderManualMarginUI(window.__botControlState.manualMarginEnabled, window.__botControlState.manualMarginUsd);
-      if (st) { st.textContent = "✓ Tersimpan ($" + window.__botControlState.manualMarginUsd + " USDT)"; st.style.color = "#4ade80"; }
+      if (st) { st.textContent = "SAVED · $" + window.__botControlState.manualMarginUsd + " USDT PER ORDER"; st.style.color = "#34d399"; }
     } catch (e) {
-      if (st) { st.textContent = "⚠️ Gagal simpan: " + e.message; st.style.color = "#f87171"; }
+      if (st) { st.textContent = "SYNC ERROR: " + e.message; st.style.color = "#f87171"; }
     }
   };
 
@@ -239,7 +492,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     busy = true;
     const btn = document.getElementById("manualMarginToggleBtn");
     const nextOn = !window.__botControlState.manualMarginEnabled;
-    if (btn) { btn.disabled = true; btn.textContent = "⏳..."; }
+    if (btn) btn.disabled = true;
     try {
       const val = clampManualMargin(window.__botControlState.manualMarginUsd || 10);
       const res = await fetch(CTRL_URL, {
@@ -262,10 +515,11 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     window.__botControlState.manualMarginUsd = val;
     const input = document.getElementById("manualMarginInput");
     const info = document.getElementById("manualMarginNotionalInfo");
-    const btn = document.getElementById("manualMarginToggleBtn");
     if (input) input.value = val;
-    if (info) info.textContent = "Est. Posisi 50x: $" + (val * 50).toFixed(0) + " USDT";
-    if (btn && window.__botControlState.manualMarginEnabled) btn.textContent = "✅ Margin Manual: ON ($" + val + ")";
+    if (info) info.textContent = "EST. NOTIONAL 50X: $" + (val * 50).toFixed(0) + " USDT";
+    if (window.__botControlState.manualMarginEnabled) {
+      setRockerState("manualMarginToggleBtn", true, "ON · $" + val);
+    }
     clearTimeout(__mmSaveTimer);
     __mmSaveTimer = setTimeout(() => window.saveManualMarginToServer(), 450);
   };
@@ -276,10 +530,11 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     window.__botControlState.manualMarginUsd = val;
     const slider = document.getElementById("manualMarginSlider");
     const info = document.getElementById("manualMarginNotionalInfo");
-    const btn = document.getElementById("manualMarginToggleBtn");
     if (slider) slider.value = Math.round(val);
-    if (info) info.textContent = "Est. Posisi 50x: $" + (val * 50).toFixed(0) + " USDT";
-    if (btn && window.__botControlState.manualMarginEnabled) btn.textContent = "✅ Margin Manual: ON ($" + val + ")";
+    if (info) info.textContent = "EST. NOTIONAL 50X: $" + (val * 50).toFixed(0) + " USDT";
+    if (window.__botControlState.manualMarginEnabled) {
+      setRockerState("manualMarginToggleBtn", true, "ON · $" + val);
+    }
     clearTimeout(__mmSaveTimer);
     __mmSaveTimer = setTimeout(() => window.saveManualMarginToServer(), 600);
   };
@@ -289,7 +544,6 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     renderManualMarginUI(true, preset);
     window.saveManualMarginToServer();
   };
-  let busy = false;
 
   let __ngCountdownTimer = null;
   function updateNewsGuardBanner(ctrl) {
@@ -299,7 +553,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     if (!banner && txt && txt.parentElement) {
       banner = document.createElement("div");
       banner.id = "newsGuardCountdownBanner";
-      banner.style.cssText = "display:none;margin-top:8px;padding:10px 12px;border-radius:10px;background:rgba(245,158,11,0.12);border:1px solid rgba(245,158,11,0.45);color:#fbbf24;font-size:12px;line-height:1.5;";
+      banner.style.cssText = "display:none;margin-top:8px;padding:8px 10px;border-radius:6px;background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.35);color:#fbbf24;font-size:11px;line-height:1.5;";
       txt.parentElement.appendChild(banner);
     }
     if (__ngCountdownTimer) { clearInterval(__ngCountdownTimer); __ngCountdownTimer = null; }
@@ -309,16 +563,17 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         const mins = String(Math.floor(remMs / 60000)).padStart(2, "0");
         const secs = String(Math.floor((remMs % 60000) / 1000)).padStart(2, "0");
         if (txt) {
-          txt.textContent = "🛡️ NEWS GUARD AKTIF — Saklar Dimatikan Otomatis (±30m)";
+          txt.textContent = "NEWS GUARD LOCK — Execution suspended around macro event";
           txt.style.color = "#f59e0b";
         }
         if (btn) {
-          btn.textContent = "⏳ Terkunci News Guard (" + mins + ":" + secs + ")";
-          btn.style.background = "#b45309";
+          btn.setAttribute("data-state", "warn");
+          const lbl = document.getElementById("masterTradeBtnLabel");
+          if (lbl) lbl.textContent = "LOCK " + mins + ":" + secs;
         }
         if (banner) {
           banner.style.display = "block";
-          banner.innerHTML = "⚠️ <b>PERINGATAN NEWS GUARD:</b> Jadwal <b>" + (ctrl.newsTitle || "USD High-Impact") + "</b> terdeteksi.<br>Saklar Auto-Trade dimatikan sementara untuk menghindari slippage &amp; akan terbuka otomatis dalam <b style='color:#fff;font-size:13px;background:#92400e;padding:2px 6px;border-radius:6px;'>" + mins + ":" + secs + "</b>";
+          banner.innerHTML = "<strong>MACRO NEWS GUARD:</strong> " + (ctrl.newsTitle || "USD High-Impact Event") + " — Auto-resume in <strong>" + mins + ":" + secs + "</strong>";
         }
         if (remMs <= 0 && __ngCountdownTimer) {
           clearInterval(__ngCountdownTimer);
@@ -333,20 +588,69 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     }
   }
 
+  function renderIctScannerBtn(isOn) {
+    const enabled = isOn !== false;
+    window.__botControlState.ictScannerEnabled = enabled;
+    setRockerState("ictScannerToggleBtn", enabled, enabled ? "ON" : "OFF");
+    updateRoutingHeader();
+    window.dispatchEvent(new CustomEvent("onBotControlChange", { detail: window.__botControlState }));
+  }
+
+  window.toggleIctScanner = async function() {
+    if (busy) return;
+    busy = true;
+    const btn = document.getElementById("ictScannerToggleBtn");
+    const nextVal = !window.__botControlState.ictScannerEnabled;
+    if (btn) btn.disabled = true;
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ictScannerEnabled: nextVal, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderIctScannerBtn(nextVal);
+    } catch (_) {
+      renderIctScannerBtn(window.__botControlState.ictScannerEnabled);
+    } finally {
+      busy = false;
+    }
+  };
+
+  function renderHarmonicScannerBtn(isOn) {
+    const enabled = isOn !== false;
+    window.__botControlState.harmonicScannerEnabled = enabled;
+    setRockerState("harmonicScannerToggleBtn", enabled, enabled ? "ON" : "OFF");
+    updateRoutingHeader();
+    window.dispatchEvent(new CustomEvent("onBotControlChange", { detail: window.__botControlState }));
+  }
+
+  window.toggleHarmonicScanner = async function() {
+    if (busy) return;
+    busy = true;
+    const btn = document.getElementById("harmonicScannerToggleBtn");
+    const nextVal = !window.__botControlState.harmonicScannerEnabled;
+    if (btn) btn.disabled = true;
+    try {
+      const res = await fetch(CTRL_URL, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ harmonicScannerEnabled: nextVal, source: "pwa", updatedAt: Date.now() })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      renderHarmonicScannerBtn(nextVal);
+    } catch (_) {
+      renderHarmonicScannerBtn(window.__botControlState.harmonicScannerEnabled);
+    } finally {
+      busy = false;
+    }
+  };
+
   function renderAiBtn(aiOn) {
     const enabled = aiOn !== false;
     window.__botControlState.aiAuditEnabled = enabled;
-    const aiBtn = document.getElementById("aiAuditToggleBtn");
-    if (aiBtn) {
-      aiBtn.disabled = false;
-      if (enabled) {
-        aiBtn.textContent = "🤖 Audit AI Harmonic: ON";
-        aiBtn.style.background = "#2563eb";
-      } else {
-        aiBtn.textContent = "🚫 Audit AI Harmonic: OFF";
-        aiBtn.style.background = "#475569";
-      }
-    }
+    setRockerState("aiAuditToggleBtn", enabled, enabled ? "ON" : "BYPASS");
+
     const badge = document.getElementById("hmAiBadge");
     const groqEl = document.getElementById("hmGroqVerdict");
     const gemEl = document.getElementById("hmGeminiVerdict");
@@ -358,10 +662,10 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
         badge.style.color = "#cbd5e1";
         badge.textContent = "AUDIT AI: OFF (SCOTT CARNEY MURNI)";
       }
-      if (groqEl) groqEl.innerHTML = '⚡ Groq: <span style="color:#94a3b8;">Nonaktif (Saklar OFF)</span>';
-      if (sambaEl) sambaEl.innerHTML = '💎 CF Llama-70B: <span style="color:#94a3b8;">Nonaktif</span>';
-      if (gemEl) gemEl.innerHTML = '💎 Gemini: <span style="color:#94a3b8;">Nonaktif (Saklar OFF)</span>';
-      if (noteEl) noteEl.textContent = "Audit AI dimatikan via saklar UI — sistem berjalan murni menggunakan validasi rasio & toleransi Scott Carney.";
+      if (groqEl) groqEl.innerHTML = 'Groq: <span style="color:#94a3b8;">Nonaktif (Saklar OFF)</span>';
+      if (sambaEl) sambaEl.innerHTML = 'CF Llama-70B: <span style="color:#94a3b8;">Nonaktif</span>';
+      if (gemEl) gemEl.innerHTML = 'Gemini: <span style="color:#94a3b8;">Nonaktif (Saklar OFF)</span>';
+      if (noteEl) noteEl.textContent = "Audit AI dimatikan via saklar UI — sistem berjalan menggunakan validasi rasio & toleransi Scott Carney.";
     }
   }
 
@@ -370,7 +674,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     busy = true;
     const aiBtn = document.getElementById("aiAuditToggleBtn");
     const nextAi = !window.__botControlState.aiAuditEnabled;
-    if (aiBtn) { aiBtn.disabled = true; aiBtn.textContent = "⏳..."; }
+    if (aiBtn) aiBtn.disabled = true;
     try {
       const res = await fetch(CTRL_URL, {
         method: "PATCH",
@@ -379,8 +683,8 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderAiBtn(nextAi);
-    } catch (err) {
-      if (aiBtn) { aiBtn.disabled = false; renderAiBtn(window.__botControlState.aiAuditEnabled); }
+    } catch (_) {
+      renderAiBtn(window.__botControlState.aiAuditEnabled);
     } finally {
       busy = false;
     }
@@ -389,19 +693,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
   function renderIctAiBtn(ictAiOn) {
     const enabled = ictAiOn !== false;
     window.__botControlState.ictAiAuditEnabled = enabled;
-    const btn = document.getElementById("ictAiAuditToggleBtn");
-    if (btn) {
-      btn.disabled = false;
-      if (enabled) {
-        btn.textContent = "🧠 Audit AI ICT+VD: ON";
-        btn.style.background = "#0284c7";
-        btn.style.outline = "none";
-      } else {
-        btn.textContent = "⚡ Audit AI ICT+VD: OFF (Termux)";
-        btn.style.background = "#475569";
-        btn.style.outline = "1px solid #94a3b8";
-      }
-    }
+    setRockerState("ictAiAuditToggleBtn", enabled, enabled ? "ON" : "DIRECT");
     window.dispatchEvent(new CustomEvent("onBotControlChange", { detail: window.__botControlState }));
   }
 
@@ -410,7 +702,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     busy = true;
     const btn = document.getElementById("ictAiAuditToggleBtn");
     const nextIctAi = !window.__botControlState.ictAiAuditEnabled;
-    if (btn) { btn.disabled = true; btn.textContent = "⏳..."; }
+    if (btn) btn.disabled = true;
     try {
       const res = await fetch(CTRL_URL, {
         method: "PATCH",
@@ -419,31 +711,31 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderIctAiBtn(nextIctAi);
-    } catch (err) {
-      if (btn) { btn.disabled = false; renderIctAiBtn(window.__botControlState.ictAiAuditEnabled); }
+    } catch (_) {
+      renderIctAiBtn(window.__botControlState.ictAiAuditEnabled);
     } finally {
       busy = false;
     }
   };
 
-    function renderMasterBtn(isOn, ctrlData = null) {
+  function renderMasterBtn(isOn) {
     const enabled = Boolean(isOn);
     window.__botControlState.autoTrade = enabled;
     const txt = document.getElementById("masterTradeStatusText");
     const btn = document.getElementById("masterTradeToggleBtn");
+    const lbl = document.getElementById("masterTradeBtnLabel");
     if (!txt || !btn) return;
     btn.disabled = false;
+    btn.setAttribute("data-state", enabled ? "on" : "off");
+    if (lbl) lbl.textContent = enabled ? "ACTIVE" : "STANDBY";
     if (enabled) {
-      txt.textContent = "🟢 AKTIF — Scanner + Dual-AI + Eksekusi 50x (Prob ≥ 75%) Berjalan";
-      txt.style.color = "#22c55e";
-      btn.textContent = "⏸ Matikan Auto-Trade (OFF)";
-      btn.style.background = "#ef4444";
+      txt.textContent = "ONLINE — Active scanners enforcing 7-point confluence gate (>= 75%)";
+      txt.style.color = "#34d399";
     } else {
-      txt.textContent = "⏸ NONAKTIF (STANDBY) — Pemindaian & Order Baru Dihentikan";
+      txt.textContent = "STANDBY — Scanning and automated order dispatch halted";
       txt.style.color = "#f59e0b";
-      btn.textContent = "▶️ Aktifkan Kembali (ON)";
-      btn.style.background = "#10b981";
     }
+    updateRoutingHeader();
     window.dispatchEvent(new CustomEvent("onBotControlChange", { detail: window.__botControlState }));
   }
 
@@ -454,6 +746,8 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
       if (res.ok) {
         const d = await res.json();
         if (d && typeof d.minProb === "number") window.__botControlState.minProb = d.minProb;
+        renderIctScannerBtn(d && typeof d.ictScannerEnabled === "boolean" ? d.ictScannerEnabled : true);
+        renderHarmonicScannerBtn(d && typeof d.harmonicScannerEnabled === "boolean" ? d.harmonicScannerEnabled : true);
         renderMasterBtn(d && typeof d.autoTrade === "boolean" ? d.autoTrade : true);
         renderAiBtn(d && typeof d.aiAuditEnabled === "boolean" ? d.aiAuditEnabled : true);
         renderIctAiBtn(d && typeof d.ictAiAuditEnabled === "boolean" ? d.ictAiAuditEnabled : true);
@@ -461,6 +755,7 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
           d && typeof d.manualMarginEnabled === "boolean" ? d.manualMarginEnabled : false,
           d && typeof d.manualMarginUsd === "number" ? d.manualMarginUsd : 10
         );
+        updateNewsGuardBanner(d);
       }
     } catch (_) {}
   }
@@ -471,19 +766,30 @@ input,select{background:#0b1220;border:1px solid var(--border);color:white;paddi
     const btn = document.getElementById("masterTradeToggleBtn");
     const txt = document.getElementById("masterTradeStatusText");
     const nextState = !window.__botControlState.autoTrade;
-    if (btn) { btn.disabled = true; btn.textContent = "⏳ Menyimpan..."; }
+    if (btn) btn.disabled = true;
 
     try {
       const res = await fetch(CTRL_URL, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ autoTrade: nextState, aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false, ictAiAuditEnabled: window.__botControlState.ictAiAuditEnabled !== false, manualMarginEnabled: Boolean(window.__botControlState.manualMarginEnabled), manualMarginUsd: clampManualMargin(window.__botControlState.manualMarginUsd), minProb: 75, source: "pwa", updatedAt: Date.now() })
+        body: JSON.stringify({
+          autoTrade: nextState,
+          ictScannerEnabled: window.__botControlState.ictScannerEnabled !== false,
+          harmonicScannerEnabled: window.__botControlState.harmonicScannerEnabled !== false,
+          aiAuditEnabled: window.__botControlState.aiAuditEnabled !== false,
+          ictAiAuditEnabled: window.__botControlState.ictAiAuditEnabled !== false,
+          manualMarginEnabled: Boolean(window.__botControlState.manualMarginEnabled),
+          manualMarginUsd: clampManualMargin(window.__botControlState.manualMarginUsd),
+          minProb: 75,
+          source: "pwa",
+          updatedAt: Date.now()
+        })
       });
       if (!res.ok) throw new Error("HTTP " + res.status);
       renderMasterBtn(nextState);
     } catch (err) {
-      if (txt) { txt.textContent = "⚠️ " + err.message; txt.style.color = "#f87171"; }
-      if (btn) { btn.disabled = false; btn.textContent = window.__botControlState.autoTrade ? "⏸ Matikan Auto-Trade (OFF)" : "▶️ Aktifkan Kembali (ON)"; }
+      if (txt) { txt.textContent = "ERROR: " + err.message; txt.style.color = "#f87171"; }
+      renderMasterBtn(window.__botControlState.autoTrade);
     } finally {
       busy = false;
     }

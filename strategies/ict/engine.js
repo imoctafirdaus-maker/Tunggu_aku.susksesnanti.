@@ -112,6 +112,7 @@ function evaluateIctVolumeDeltaMTF({ symbol = "UNKNOWN", scannerId = "termux-liv
     category: scored.category,
     score: scored.score,
     isCountertrend: scored.isCountertrend,
+    strict7Confluence: Boolean(scored.strict7Confluence),
     dataQuality: effectiveDataQuality,
     reason: scored.reason,
     reasons: scored.reasons,

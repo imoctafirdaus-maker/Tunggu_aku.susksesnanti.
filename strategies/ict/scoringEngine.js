@@ -22,7 +22,6 @@ function isVdOpposing(ofObj, isBuy) {
 function scoreDirectionalSide(side, ctx, cfg) {
   const isBuy = side === "BUY";
   const w = cfg.weights;
-  const reasons = [];
 
   const st1h = ctx.structure1h || ctx.structure15m;
   const st15 = ctx.structure15m;
@@ -41,7 +40,7 @@ function scoreDirectionalSide(side, ctx, cfg) {
   const of15 = ctx.orderFlow15m || ctx.orderFlow1m;
   const of5 = ctx.orderFlow5m || ctx.orderFlow1m;
 
-  // 1. Market Structure MTF: 1h Bias -> 15m Validasi -> 5m Eksekusi (max 20)
+  // 1. Struktur Mikro 5m & Konteks MTF (Syarat Wajib #1)
   let structurePts = 0;
   const bias1hAligned = isBuy ? st1h.direction === "BULLISH" : st1h.direction === "BEARISH";
   const val15Aligned = isBuy
@@ -51,36 +50,41 @@ function scoreDirectionalSide(side, ctx, cfg) {
     ? (st5.bos?.type === "BULLISH_BOS" || st5.choch?.type === "BULLISH_CHOCH" || st5.mss?.type === "BULLISH_MSS")
     : (st5.bos?.type === "BEARISH_BOS" || st5.choch?.type === "BEARISH_CHOCH" || st5.mss?.type === "BEARISH_MSS");
 
+  const trigger5mLabel = isBuy
+    ? (st5.mss?.type === "BULLISH_MSS" ? "BULLISH_MSS" : (st5.choch?.type === "BULLISH_CHOCH" ? "BULLISH_CHOCH" : (st5.bos?.type === "BULLISH_BOS" ? "BULLISH_BOS" : (st5.lastEvent?.type || "NONE"))))
+    : (st5.mss?.type === "BEARISH_MSS" ? "BEARISH_MSS" : (st5.choch?.type === "BEARISH_CHOCH" ? "BEARISH_CHOCH" : (st5.bos?.type === "BEARISH_BOS" ? "BEARISH_BOS" : (st5.lastEvent?.type || "NONE"))));
+
   if (bias1hAligned && val15Aligned && exec5Trigger) {
     structurePts = w.marketStructure;
-    reasons.push(`Struktur 1h ${st1h.direction} -> validasi 15m -> trigger ${st5.lastEvent?.type || "BOS/CHoCH"} 5m`);
   } else if (bias1hAligned && (val15Aligned || exec5Trigger)) {
     structurePts = Math.round(w.marketStructure * 0.8);
-    reasons.push(`Struktur utama 1h ${st1h.direction} terkonfirmasi (${val15Aligned ? "15m valid" : "5m trigger"})`);
   } else if (val15Aligned && exec5Trigger && st5.mss) {
     structurePts = Math.round(w.marketStructure * 0.75);
-    reasons.push(`MSS Reversal 15m->5m terkonfirmasi (${st5.mss.type})`);
   } else if (bias1hAligned) {
     structurePts = Math.round(w.marketStructure * 0.5);
-    reasons.push(`Bias struktur 1h ${st1h.direction}`);
   } else if (exec5Trigger) {
     structurePts = Math.round(w.marketStructure * 0.45);
-    reasons.push(`Trigger struktur mikro 5m (${st5.lastEvent?.type})`);
   }
 
-  // 2. Validasi Liquidity Sweep 15m (max 20)
+  // 2. Validasi Liquidity Sweep 15m (Syarat Wajib #2)
   let sweepPts = 0;
+  let sweepReason = "";
   const sweep = liq15.recentSweep;
+  const hasSweep15m = Boolean(
+    (sweep && sweep.side === side && sweep.barsAgo <= 10) ||
+    (pd15.judasSwing && ((isBuy && pd15.judasSwing.type === "BULLISH_JUDAS_SWING") || (!isBuy && pd15.judasSwing.type === "BEARISH_JUDAS_SWING")))
+  );
   if (sweep && sweep.side === side && sweep.barsAgo <= 10) {
     sweepPts = sweep.barsAgo <= 4 ? w.liquiditySweep : Math.round(w.liquiditySweep * 0.8);
-    reasons.push(`Validasi 15m: Liquidity Sweep ${sweep.type} di $${sweep.levelPrice} (${sweep.barsAgo} bar lalu)`);
-  } else if (pd15.judasSwing && ((isBuy && pd15.judasSwing.type === "BULLISH_JUDAS_SWING") || (!isBuy && pd15.judasSwing.type === "BEARISH_JUDAS_SWING"))) {
+    sweepReason = `Validasi 15m: Liquidity Sweep ${sweep.type} di $${sweep.levelPrice} (${sweep.barsAgo} bar lalu)`;
+  } else if (hasSweep15m) {
     sweepPts = w.liquiditySweep;
-    reasons.push(`Validasi 15m: Judas Swing ${pd15.judasSwing.session} menyapu likuiditas`);
+    sweepReason = `Validasi 15m: Judas Swing ${pd15.judasSwing.session} menyapu likuiditas`;
   }
 
-  // 3. Validasi POI 15m & Eksekusi Zona 5m: FVG / Order Block / Breaker (max 15)
+  // 3. Validasi POI 15m: FVG / Order Block / Breaker (Syarat Wajib #3)
   let zonePts = 0;
+  let poi15Reason = "";
   const activeFvg15 = isBuy ? fvg15.activeBullish : fvg15.activeBearish;
   const activeOb15 = isBuy ? ob15.activeBullish : ob15.activeBearish;
   const activeFvg5 = isBuy ? fvg5.activeBullish : fvg5.activeBearish;
@@ -89,91 +93,93 @@ function scoreDirectionalSide(side, ctx, cfg) {
 
   const has15Poi = Boolean((activeFvg15 && (activeFvg15.priceInside || activeFvg15.touched)) || (activeOb15 && (activeOb15.priceInside || activeOb15.retested)));
   const has5Poi = Boolean((activeFvg5 && (activeFvg5.priceInside || activeFvg5.touched)) || (activeOb5 && (activeOb5.priceInside || activeOb5.retested)));
+  const hasPoi15m = Boolean(has15Poi || breaker);
 
   if (has15Poi && has5Poi) {
     zonePts = w.fvgOrderBlock;
-    reasons.push("Konfluensi POI 15m + zona eksekusi FVG/OB 5m");
+    const label15 = activeFvg15 && (activeFvg15.priceInside || activeFvg15.touched) ? `${activeFvg15.type} 15m` : `${activeOb15.type} 15m`;
+    poi15Reason = `Validasi POI ${label15}`;
   } else if (has15Poi) {
     zonePts = Math.round(w.fvgOrderBlock * 0.85);
     const label15 = activeFvg15 && (activeFvg15.priceInside || activeFvg15.touched) ? `${activeFvg15.type} 15m` : `${activeOb15.type} 15m`;
-    reasons.push(`Validasi POI ${label15}`);
-  } else if (has5Poi) {
-    zonePts = Math.round(w.fvgOrderBlock * 0.75);
-    const label5 = activeFvg5 && (activeFvg5.priceInside || activeFvg5.touched) ? `${activeFvg5.type} 5m` : `${activeOb5.type} 5m`;
-    reasons.push(`Zona eksekusi ${label5}`);
+    poi15Reason = `Validasi POI ${label15}`;
   } else if (breaker) {
     zonePts = Math.round(w.fvgOrderBlock * 0.8);
-    reasons.push(`Konfirmasi ${breaker.type} 15m`);
+    poi15Reason = `Validasi POI ${breaker.type} 15m`;
+  } else if (has5Poi) {
+    zonePts = Math.round(w.fvgOrderBlock * 0.75);
   }
 
-  // 4. Eksekusi Displacement 5m (max 15)
+  // 4. Displacement 5m (Pendukung Eksekusi)
   let dispPts = 0;
   const dispMatch = disp5.detected && ((isBuy && disp5.direction === "BULLISH") || (!isBuy && disp5.direction === "BEARISH"));
   if (dispMatch && disp5.recent.barsAgo <= 6) {
     dispPts = disp5.recent.createdFvg ? w.displacement : Math.round(w.displacement * 0.8);
-    reasons.push(`Eksekusi 5m: Displacement ${disp5.direction} (${disp5.recent.bodyToAtr}x ATR, body ${(disp5.recent.bodyToRange * 100).toFixed(0)}%)`);
   }
 
-  // 5. Multi-TF Volume Delta: 1h Positif VD + 15m Validasi VD + 5m Eksekusi VD (max 20)
+  // 5. Positif VD MTF Penuh: 1h + 15m + 5m (Syarat Wajib #4)
   let vdPts = 0;
   let vdPenalty = 0;
   const vd1hOk = isVdAligned(of1h, isBuy);
   const vd15Ok = isVdAligned(of15, isBuy);
   const vd5Ok = isVdAligned(of5, isBuy);
+  const hasFullMtfVd = Boolean(vd1hOk && vd15Ok && vd5Ok);
 
-  if (vd1hOk && vd15Ok && vd5Ok) {
+  if (hasFullMtfVd) {
     vdPts = w.volumeDelta;
-    reasons.push(`Positif VD MTF penuh: 1h (${of1h.deltaPct}%) + 15m (${of15.deltaPct}%) + 5m (${of5.deltaPct}%)`);
   } else if (vd1hOk && (vd15Ok || vd5Ok)) {
     vdPts = Math.round(w.volumeDelta * 0.85);
-    reasons.push(`VD 1h positif (${of1h.deltaPct}%) + ${vd15Ok ? "15m valid" : "5m eksekusi"} searah`);
   } else if (vd1hOk) {
     vdPts = Math.round(w.volumeDelta * 0.6);
-    reasons.push(`VD 1h positif searah (${of1h.deltaPct}% · Buy ${of1h.buyPct}%)`);
   } else if (vd15Ok && vd5Ok) {
     vdPts = Math.round(w.volumeDelta * 0.55);
-    reasons.push(`VD 15m (${of15.deltaPct}%) & 5m (${of5.deltaPct}%) searah`);
   }
 
-  if (isVdOpposing(of1h, isBuy) && (of1h.isExtreme || of1h.isSpike)) {
-    vdPenalty += 12;
-    reasons.push(`Penalti: Volume Delta 1h berlawanan (${of1h.deltaPct}%)`);
-  }
-  if (isVdOpposing(of5, isBuy) && of5.isExtreme) {
-    vdPenalty += 6;
-    reasons.push("Peringatan: Tekanan VD 5m berlawanan ekstrem");
-  }
+  if (isVdOpposing(of1h, isBuy) && (of1h.isExtreme || of1h.isSpike)) vdPenalty += 12;
+  if (isVdOpposing(of5, isBuy) && of5.isExtreme) vdPenalty += 6;
 
-  // 6. CVD Trend, Divergence & Absorption (1h & 15m, max 10)
+  // 6. CVD 1h Searah Tren Utama (Syarat Wajib #5)
   let cvdPts = 0;
-  const cvd1hAligned = of1h && of1h.valid && ((isBuy && of1h.cvdDirection === "BULLISH") || (!isBuy && of1h.cvdDirection === "BEARISH"));
+  const cvd1hAligned = Boolean(of1h && of1h.valid && ((isBuy && of1h.cvdDirection === "BULLISH") || (!isBuy && of1h.cvdDirection === "BEARISH")));
   const divMatch = (of15?.divergence && of15.divergence.side === side) || (of5?.divergence && of5.divergence.side === side);
   const absMatch = (of15?.absorption && of15.absorption.side === side) || (of5?.absorption && of5.absorption.side === side);
 
   if (cvd1hAligned && (divMatch || absMatch)) {
     cvdPts = w.cvdDivergence;
-    reasons.push(`CVD 1h ${of1h.cvdSlope} + ${divMatch ? "Divergensi" : "Absorpsi"} terkonfirmasi`);
   } else if (cvd1hAligned) {
     cvdPts = Math.round(w.cvdDivergence * 0.7);
-    reasons.push(`CVD 1h ${of1h.cvdSlope} searah tren utama`);
   } else if (divMatch || absMatch) {
     cvdPts = Math.round(w.cvdDivergence * 0.6);
-    reasons.push(divMatch ? "Divergensi CVD terkonfirmasi" : "Absorpsi institusional terdeteksi");
   }
 
-  // Contextual Bonus (Premium/Discount & OTE 15m)
+  // 7. Validasi 15m: Premium/Discount Zone & Fibonacci OTE 0.62-0.79 (Syarat Wajib #6 & #7)
   let contextBonus = 0;
-  if (isBuy && pd15.dealingRange.zone === "DISCOUNT") {
-    contextBonus += 3;
-    reasons.push(`Validasi 15m: Discount Zone (${pd15.dealingRange.rangePct}%)`);
-  } else if (!isBuy && pd15.dealingRange.zone === "PREMIUM") {
-    contextBonus += 3;
-    reasons.push(`Validasi 15m: Premium Zone (${pd15.dealingRange.rangePct}%)`);
-  }
-  if ((isBuy && pd15.ote.inBullishOte) || (!isBuy && pd15.ote.inBearishOte)) {
-    contextBonus += 3;
-    reasons.push("Validasi 15m: Area Fibonacci OTE (0.62–0.79)");
-  }
+  const hasZone15m = isBuy ? pd15.dealingRange.zone === "DISCOUNT" : pd15.dealingRange.zone === "PREMIUM";
+  const hasOte15m = Boolean((isBuy && pd15.ote.inBullishOte) || (!isBuy && pd15.ote.inBearishOte));
+  if (hasZone15m) contextBonus += 3;
+  if (hasOte15m) contextBonus += 3;
+
+  const missingConfluence = [];
+  if (!exec5Trigger) missingConfluence.push("Trigger struktur mikro 5m");
+  if (!hasSweep15m) missingConfluence.push("Validasi 15m Liquidity Sweep");
+  if (!hasPoi15m) missingConfluence.push("Validasi POI FVG/OB 15m");
+  if (!hasFullMtfVd || vdPenalty > 0) missingConfluence.push("Positif VD MTF penuh (1h+15m+5m)");
+  if (!cvd1hAligned) missingConfluence.push("CVD 1h searah tren utama");
+  if (!hasZone15m) missingConfluence.push(isBuy ? "Validasi 15m Discount Zone" : "Validasi 15m Premium Zone");
+  if (!hasOte15m) missingConfluence.push("Validasi 15m Area Fibonacci OTE (0.62–0.79)");
+
+  const strict7Confluence = missingConfluence.length === 0;
+  const reasons = strict7Confluence
+    ? [
+        `Trigger struktur mikro 5m (${trigger5mLabel})`,
+        sweepReason,
+        poi15Reason,
+        `Positif VD MTF penuh: 1h (${of1h.deltaPct}%) + 15m (${of15.deltaPct}%) + 5m (${of5.deltaPct}%)`,
+        `CVD 1h ${of1h.cvdSlope} searah tren utama`,
+        `Validasi 15m: ${isBuy ? "Discount" : "Premium"} Zone (${pd15.dealingRange.rangePct}%)`,
+        "Validasi 15m: Area Fibonacci OTE (0.62–0.79)"
+      ]
+    : [`Belum lengkap 7 syarat konfluensi: kurang ${missingConfluence.join(", ")}`];
 
   const rawTotal = structurePts + sweepPts + zonePts + dispPts + vdPts + cvdPts + contextBonus - vdPenalty;
   const totalScore = Math.max(0, Math.min(100, Math.round(rawTotal)));
@@ -182,8 +188,10 @@ function scoreDirectionalSide(side, ctx, cfg) {
   return {
     side,
     totalScore,
-    category: classifyScore(totalScore, cfg.thresholds),
+    category: strict7Confluence ? classifyScore(totalScore, cfg.thresholds) : "WAIT",
     isCountertrend,
+    strict7Confluence,
+    missingConfluence,
     breakdown: {
       marketStructure: structurePts,
       liquiditySweep: sweepPts,
@@ -206,6 +214,7 @@ function evaluateSignalScore(ctx, cfg) {
       category: "WAIT",
       score: 0,
       isCountertrend: false,
+      strict7Confluence: false,
       reason: "DATA_UNAVAILABLE: Data Volume Delta tidak tersedia.",
       reasons: ["DATA_UNAVAILABLE: Menunggu data kline & Volume Delta."],
       buyEval: null,
@@ -216,35 +225,27 @@ function evaluateSignalScore(ctx, cfg) {
   const buyEval = scoreDirectionalSide("BUY", ctx, cfg);
   const sellEval = scoreDirectionalSide("SELL", ctx, cfg);
 
-  const best = buyEval.totalScore >= sellEval.totalScore ? buyEval : sellEval;
-  const other = best.side === "BUY" ? sellEval : buyEval;
+  const best = buyEval.strict7Confluence && !sellEval.strict7Confluence
+    ? buyEval
+    : (sellEval.strict7Confluence && !buyEval.strict7Confluence
+        ? sellEval
+        : (buyEval.totalScore >= sellEval.totalScore ? buyEval : sellEval));
 
-  if (best.totalScore - other.totalScore < 10 && best.totalScore >= cfg.thresholds.watchlist) {
-    return {
-      signal: "WAIT",
-      category: "WATCHLIST",
-      score: best.totalScore,
-      isCountertrend: best.isCountertrend,
-      reason: `Kondisi pasar belum tegas (Skor BUY ${buyEval.totalScore} vs SELL ${sellEval.totalScore}).`,
-      reasons: best.reasons,
-      buyEval,
-      sellEval
-    };
-  }
-
-  const minActionableScore = best.isCountertrend ? Math.max(cfg.thresholds.validSetup, 72) : cfg.thresholds.validSetup;
-  const isActionable = best.totalScore >= minActionableScore && primaryOf.dataQuality === "VALID";
+  const minActionableScore = Math.max(cfg.thresholds.validSetup, 75);
+  const isActionable = best.strict7Confluence && best.totalScore >= minActionableScore && primaryOf.dataQuality === "VALID";
 
   const signal = isActionable ? best.side : "WAIT";
-  const summaryReason = best.reasons.length
-    ? best.reasons.slice(0, 3).join(" • ")
-    : "Belum ada konfluensi struktur ICT 1h->15m->5m & Volume Delta yang memadai.";
+  const summaryReason = best.strict7Confluence
+    ? best.reasons.join(" | ")
+    : (best.reasons[0] || "Menunggu 7 konfluensi wajib ICT + Volume Delta.");
 
   return {
     signal,
-    category: best.category,
+    category: isActionable ? best.category : "WAIT",
     score: best.totalScore,
     isCountertrend: best.isCountertrend,
+    strict7Confluence: best.strict7Confluence,
+    missingConfluence: best.missingConfluence,
     breakdown: best.breakdown,
     reason: summaryReason,
     reasons: best.reasons,

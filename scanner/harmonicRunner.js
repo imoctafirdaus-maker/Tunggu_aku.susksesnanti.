@@ -1004,6 +1004,14 @@ async function executeHarmonicOrder(symbol, sig, cfg, paper) {
  * Runner Utama Pemindaian Harmonic Pattern (Hierarki wajib: 4h -> 1h -> 15m)
  */
 async function runHarmonicScanCycle({ candidates, sharedCandles = {}, apiGetFn, db, admin, dryRun = false, futuresSymbols = null }) {
+  try {
+    if (fs.existsSync(AI_CFG_PATH)) {
+      const aiCfg = JSON.parse(fs.readFileSync(AI_CFG_PATH, "utf8"));
+      if (aiCfg.harmonicScannerEnabled === false) {
+        return { scanned: 0, patternFound: 0, futuresEligible: 0, watch: 0, skipped: 0, executed: 0, found: 0, disabled: true };
+      }
+    }
+  } catch (_) {}
   if (db) __sharedAdminDb = db;
   const cfg = await loadHarmonicSettings();
   cfg.enabled = true; // Pastikan Harmonic selalu aktif memindai bersama EMA Expert

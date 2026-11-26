@@ -298,7 +298,22 @@ async function checkBtcMacroRegime(rec) {
 
 async function executeSignalTrade(rec, snap) {
   const MIN_EXEC_PROB = 75;
-  if (rec.strategy === "ICT_SMC_VD" && rec.dataQuality && rec.dataQuality !== "VALID") {
+  if (rec.strategy !== "ICT_SMC_VD") {
+    return { executed: false, skipped: true, reason: "Ditolak: Hanya strategi ICT + SMC + VD dengan 7 konfluensi yang diizinkan eksekusi" };
+  }
+  try {
+    const aiCfgFile = path.join(__dirname, "aiConfig.json");
+    if (fs.existsSync(aiCfgFile)) {
+      const aiCfg = JSON.parse(fs.readFileSync(aiCfgFile, "utf8"));
+      if (aiCfg.ictScannerEnabled === false) {
+        return { executed: false, skipped: true, reason: "Scanner ICT + VD sedang OFF" };
+      }
+    }
+  } catch (_) {}
+  if (rec.strict7Confluence !== true) {
+    return { executed: false, skipped: true, reason: rec.reason || "Ditolak: Belum memenuhi 7 syarat wajib konfluensi ICT + SMC + VD" };
+  }
+  if (rec.dataQuality && rec.dataQuality !== "VALID") {
     return { executed: false, skipped: true, reason: `Data Order Flow tidak valid (${rec.dataQuality})` };
   }
   const sigProb = Number(rec.score ?? rec.probability ?? rec.winrate ?? 0);

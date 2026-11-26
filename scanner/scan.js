@@ -157,6 +157,7 @@ function buildIctExpertRecord(sym, ictRes, chg24) {
     ictEvidence: ictRes.ictEvidence || {},
     volumeDeltaEvidence: ictRes.volumeDeltaEvidence || {},
     dataQuality: ictRes.dataQuality,
+    strict7Confluence: Boolean(ictRes.strict7Confluence),
     candleTime: ictRes.candleTime,
     source: SCANNER_SOURCE
   };
@@ -254,8 +255,22 @@ async function main() {
 
     }, CONCURRENCY);
 
+    // Baca status saklar mesin scanner (ICT+VD & Harmonic)
+    let scannerFlags = { ictScannerEnabled: true, harmonicScannerEnabled: true };
+    try {
+      const aiCfgFile = path.join(__dirname, "aiConfig.json");
+      if (fs.existsSync(aiCfgFile)) {
+        const parsed = JSON.parse(fs.readFileSync(aiCfgFile, "utf8"));
+        if (typeof parsed.ictScannerEnabled === "boolean") scannerFlags.ictScannerEnabled = parsed.ictScannerEnabled;
+        if (typeof parsed.harmonicScannerEnabled === "boolean") scannerFlags.harmonicScannerEnabled = parsed.harmonicScannerEnabled;
+      }
+    } catch (_) {}
+
     // 2) Mesin ICT + SMC + True Volume Delta Expert MTF (1h Struktur & VD -> 15m Validasi -> 5m Eksekusi)
-    const ictCands = cands.slice(0, 35);
+    const ictCands = scannerFlags.ictScannerEnabled ? cands.slice(0, 35) : [];
+    if (!scannerFlags.ictScannerEnabled) {
+      console.log("⏸ [ICT-SMC-VD] Scanner ICT + VD OFF via saklar UI — pemindaian ICT dilewati.");
+    }
     await runPool(ictCands, async (c) => {
       try {
         const [f1h, f15, f5] = await Promise.all([
@@ -435,7 +450,20 @@ async function main() {
     } catch (e) { console.error("Gagal menulis status:", e.message); st.ok = false; }
 
     
-    const hmRes = await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin, futuresSymbols: cands && cands.futuresSymbols }).catch(e => ({ scanned: 0, patternFound: 0, futuresEligible: 0, watch: 0, skipped: 0, executed: 0, found: 0, err: e.message }));
+    let harmonicOn = scannerFlags.harmonicScannerEnabled;
+    try {
+      const aiCfgFile = path.join(__dirname, "aiConfig.json");
+      if (fs.existsSync(aiCfgFile)) {
+        const parsed = JSON.parse(fs.readFileSync(aiCfgFile, "utf8"));
+        if (typeof parsed.harmonicScannerEnabled === "boolean") harmonicOn = parsed.harmonicScannerEnabled;
+      }
+    } catch (_) {}
+    if (!harmonicOn) {
+      console.log("⏸ [HARMONIC] Scanner Harmonic OFF via saklar UI — pemindaian Harmonic dilewati.");
+    }
+    const hmRes = harmonicOn
+      ? await runHarmonicScanCycle({ candidates: cands, sharedCandles, apiGetFn: apiGet, db, admin, futuresSymbols: cands && cands.futuresSymbols }).catch(e => ({ scanned: 0, patternFound: 0, futuresEligible: 0, watch: 0, skipped: 0, executed: 0, found: 0, err: e.message }))
+      : { scanned: 0, patternFound: 0, futuresEligible: 0, watch: 0, skipped: 0, executed: 0, found: 0, disabled: true };
     await syncDailyAnalyticsToFirebase(db, admin, { scanned: (hmRes && hmRes.scanned) || 0, found: (hmRes && hmRes.found) || 0 }).catch(() => {});
 
     try {
